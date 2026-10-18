@@ -21,3 +21,18 @@ Findings:
 - [NICE] Header 规则来源: cite production/milestones/alpha-0.1.md for 「测试版结束」. Sibling note: combat-system.md Dependencies still lists 「战斗界面 未编写」 — stale.
 Reviewed-Content-Hash: design/gdd/game-ui.md 3a61a4b401b330744ca9b2bd5886abfafea77aaa
 Reviewed-Content-Hash: design/registry/entities.yaml 216ffa67ed4d5d24548df37b2ce899fcba892285
+
+## Review — 2026-10-18 — Verdict: APPROVED
+Scope signal: M
+Specialists: none (lean mode; ux-designer / ui-programmer / qa-lead analysis done in main review by independent reviewer). Automation guided: freshness check CHANGED → full re-review; Phase 5 prompts took defaults (append to review log only).
+Blocking items: 0 | Recommended: 4
+Summary: Re-review at commit 277c925. The prior blocker is resolved: rules 17a/17b define a 武将页 (等级、经验与下一级、三核心与派生属性、兵种、技能、装备) reachable from town and 战前准备, entry provisional in OQ10, with an AC. Nearly all prior recommendations applied (OQ9 command order, 兵种 display incl. 黄巾军/文官军师, 11a skill text with 「含施放当回合」, per-member diff, story-gift configured sell price, 城镇探索 dependency, objective display 29b, save UI 28–29a, testable 中文 checklist and 破阵 values, new ACs). Content is consistent with V1_SPEC §2.2/§4/§6/§8/§9/§10, ZHUOJUN §4 and combat-system.md.
+Prior verdict resolved: Yes
+Findings:
+- [RECOMMENDED] States and Transitions: 城镇 HUD → 「菜单」 still has no target row; add 主菜单 / 武将页 rows (enter: 菜单键 or 战前准备 entry; leave: 关闭 → previous screen). OQ10's 「物品」「设置」 sub-screens are new and undefined — mark them as part of the provisional answer or drop.
+- [RECOMMENDED] Rule 32 / AC 「桃园演出播放中按菜单键」: align with story-events.md OQ9 (system menu may open to quit to title); currently rule 32 says 菜单不响应 without distinguishing 队伍菜单 vs 系统菜单, and no screen offers 退出.
+- [RECOMMENDED] Rule 26: 「提示的触发时机……【待编写】」 is stale — story-events.md Rule 18 / OQ8 now owns timing; reference it and keep only text 【待编写】.
+- [RECOMMENDED] Edge Cases: 「若所有饰品槽为空」 → 「若该武将饰品槽为空」 (carried over, nice-to-have level).
+- [NICE-TO-HAVE] Header 规则来源 could cite production/milestones/alpha-0.1.md for 「测试版结束」; Player Fantasy / Tuning Knobs absent (advisory at standard); 装备道具与商店 / 城镇探索 GDDs not written (known).
+Reviewed-Content-Hash: design/gdd/game-ui.md bbfc3bdc643d6eadb92a2e90d9b3271ce2065d9b
+Reviewed-Content-Hash: design/registry/entities.yaml 216ffa67ed4d5d24548df37b2ce899fcba892285

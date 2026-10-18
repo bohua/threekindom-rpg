@@ -19,3 +19,17 @@ Findings:
 - [NICE-TO-HAVE] Clarify snapshot vs auto-save relationship (same payload? retry after relaunch uses auto-save) for the ADR; "不可读档中断恢复" wording unclear; Player Fantasy / Tuning Knobs absent (advisory at standard; constants already noted in Formulas).
 Reviewed-Content-Hash: design/gdd/save-system.md f2f90ab0844b0c73c215324941ab044df9a2b463
 Reviewed-Content-Hash: design/registry/entities.yaml 216ffa67ed4d5d24548df37b2ce899fcba892285
+
+## Review — 2026-10-18 — Verdict: APPROVED
+Scope signal: M (5 dependencies, no formulas, save format/serialization still needs an ADR; producer should verify before sprint planning)
+Specialists: none (lean mode; game-designer / systems-designer / qa-lead analysis done in main review by independent reviewer). Automation guided: freshness check CHANGED → full re-review; Phase 5 prompts took defaults (append to review log only; systems-index not touched per caller restriction).
+Blocking items: 0 | Recommended: 3
+Summary: Re-review at commit 277c925. Both prior blockers are resolved: Core Rule 4 now ties event state to the story-events.md flag table, defines 具体落点 (酒馆 / 该战战前准备) and puts the safe-stage enum in OQ6; ACs now cover §9 round-trip, unsupported-version handling, one auto-save per battle (V1_SPEC §11) and manual save unavailable outside 涿郡/in battle. Most prior recommendations were also applied (§2.1 wording, OQ7 version policy, no post-victory auto-save, OQ3 ending-flag consequence, OQ4 游玩时间 caveat, testable save-point AC). All 推荐暂用 items are labelled and consistent with V1_SPEC §1/§2.1/§4/§9/§11 and ZHUOJUN §3–§4.
+Prior verdict resolved: Yes
+Findings:
+- [RECOMMENDED] States and Transitions / Interactions: 战败选择 row still says 「返回标题【待定】」 and UI row says 「显示内容待定」 — point them at OQ5 / OQ4 so the provisional answers are visible where implemented.
+- [RECOMMENDED] Acceptance Criteria: 「酒馆手动存档和三场战斗各自的战前自动存档，逐个读档」 — only one rolling auto-save slot exists; state the test is run by capturing each battle's auto-save in sequence (or copying the file) before it is overwritten.
+- [RECOMMENDED] Cross-doc: story-events.md OQ7 calls 涿郡西门内侧 「演出后的存档安全落点」, but this GDD's 具体落点 lists only 酒馆 and 战前准备 and nothing auto-saves after the oath; align wording (it is a control-resume point, not a save point).
+- [NICE-TO-HAVE] Snapshot vs auto-save payload relationship for the ADR; Player Fantasy / Tuning Knobs absent (advisory at standard). Dependencies: 装备道具与商店 GDD still not written (known, not a doc defect).
+Reviewed-Content-Hash: design/gdd/save-system.md 8c900481653a2972a0ee6f7320986c7042b067b7
+Reviewed-Content-Hash: design/registry/entities.yaml 216ffa67ed4d5d24548df37b2ce899fcba892285

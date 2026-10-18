@@ -1,6 +1,6 @@
 # 游戏界面（Game UI）
 
-> **Status**: In Review（2026-10-18 `/design-review` NEEDS REVISION，已按评审修订，待复审；评审记录见 `design/gdd/reviews/game-ui-review-log.md`）
+> **Status**: Approved（2026-10-18 复审 APPROVED；评审记录见 `design/gdd/reviews/game-ui-review-log.md`）
 > **Author**: Bohua（规则确认）+ Claude（按 V1_SPEC 与已有 GDD 整理）
 > **Last Updated**: 2026-10-18
 > **Last Verified**: 2026-10-18
@@ -64,7 +64,7 @@ Alpha 0.1 的全部界面：战斗指令菜单与行动队列、战前整备、�
 
 **教学提示**（V1_SPEC §2.2）
 25. 三场教学战中，提示分步出现；不锁掉已获得的合法指令（即提示期间玩家仍可下任何合法指令）。
-26. 每战的教学重点：第一战 下令、选目标、行动顺序、普攻、兵力与战后恢复；第二战 技力、技能、防御、治疗、集火、克制；第三战 三级技能、减益、道具、目标优先级（`combat-system.md`）。提示的触发时机和文字【待编写】。
+26. 每战的教学重点：第一战 下令、选目标、行动顺序、普攻、兵力与战后恢复；第二战 技力、技能、防御、治疗、集火、克制；第三战 三级技能、减益、道具、目标优先级（`combat-system.md`）。提示的触发时机见 `story-events.md` Open Questions 8，文字【待编写】。
 27. 已看过的提示是否可以重看【推荐暂用，待用户确认（2026-10-18），见 Open Questions 5】。
 
 **存档、标题与结束**
@@ -78,7 +78,7 @@ Alpha 0.1 的全部界面：战斗指令菜单与行动队列、战前整备、�
 31. 第三战后简短过场结束，显示「测试版结束」，返回标题（测试版临时处理）。
 
 **演出期间**
-32. 桃园结义等自动演出期间，菜单与队伍操作不响应；对白可推进的方式【推荐暂用，待用户确认（2026-10-18），见 Open Questions 6】。
+32. 桃园结义等自动演出期间，队伍菜单与队伍操作不响应；系统菜单是否可开按 `story-events.md` Open Questions 9；对白可推进的方式【推荐暂用，待用户确认（2026-10-18），见 Open Questions 6】。
 
 ### States and Transitions
 

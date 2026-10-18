@@ -1,6 +1,6 @@
 # 存档与战前快照（Save System）
 
-> **Status**: In Review（2026-10-18 `/design-review` NEEDS REVISION，已按评审修订，待复审；评审记录见 `design/gdd/reviews/save-system-review-log.md`）
+> **Status**: Approved（2026-10-18 复审 APPROVED；评审记录见 `design/gdd/reviews/save-system-review-log.md`）
 > **Author**: Bohua（规则确认）+ Claude（按 V1_SPEC 整理为 GDD）
 > **Last Updated**: 2026-10-18
 > **Last Verified**: 2026-10-18

@@ -4,7 +4,7 @@
 > **Author**: Bohua（规则确认）+ Claude（按 V1_SPEC 整理为 GDD）
 > **Last Updated**: 2026-10-18
 > **Last Verified**: 2026-10-18
-> **Implements Pillar**: Pillar 2「武将即部队」（`design/gdd/game-concept.md`；支柱为【建议】，待用户确认）
+> **Implements Pillar**: Pillar 2「武将即部队」（`design/gdd/game-concept.md`；支柱为用户 2026-10-18 暂定采用）
 > **规则来源**: `ThreeKingdomsJRPG-Docs/V1_SPEC.md` §4（战斗流程）、§5（属性与伤害）、§6（技能）、§7（等级与奖励）。本文整理 V1_SPEC 规则；标「用户 2026-10-18 确认」的条目为用户新确认，敌方专用兵种、敌方数值与 AI 由本文起草，已于 2026-10-18 经用户确认（数值待试玩调整）。V1_SPEC 与本文冲突时以 V1_SPEC 为准。所有数值为「已采用初值，未测试平衡」。
 > **Creative Director Review (CD-GDD-ALIGN)**: 跳过 — Lean 模式
 

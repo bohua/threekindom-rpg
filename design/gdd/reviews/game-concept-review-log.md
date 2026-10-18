@@ -36,3 +36,18 @@ Findings:
 - [NICE-TO-HAVE] Onboarding curve (101) still plain 【已确认】 for V1_SPEC's 「教学重点（执行设计）」 column; 演义第2回 still listed as a used supplement rather than a check source.
 Reviewed-Content-Hash: design/gdd/game-concept.md 2fab3a006d3b3467790a3c3a7fb1df7d07a24795
 Reviewed-Content-Hash: design/registry/entities.yaml 216ffa67ed4d5d24548df37b2ce899fcba892285
+
+## Review — 2026-10-18 — Verdict: APPROVED
+Scope signal: L (concept-level; whole first release — producer should verify before sprint planning)
+Specialists: none (lean mode; independent re-review, analysis done in main review)
+Blocking items: 0 | Recommended: 3
+Summary: Re-review against the latest shared folder (PROJECT / V1_SPEC / MEMORY / INITIAL_SCENARIO_ART / STORY_BRANCH_STRUCTURE, 23:27 versions). The prior blocker is resolved: Long-Term Progression (120), Anti-Pillars (160) and Full Vision (269) now state the user-confirmed multi-volume structure (分卷、每卷史实结局＋尾声变体、赤壁共同终章切换主角、孙策→孙权写到夷陵) as 【已确认·长期，不排期】, with 「分支结局」 scoped to 首版 and the §4.7 exception cited. Alpha 0.1 / 首版 tiers, MVP list and battle-1 roster now match alpha-0.1.md, systems-index.md and V1_SPEC §2.2. Remaining issues are label-level: one leftover 【待定】 that reads as the confirmed presentation form, and one enemy-type claim that rests on a repo GDD the SSOT still lists as undecided.
+Prior verdict resolved: Yes (blocker) — 5 of 6 recommended also resolved (头领数量 open question removed and difficulty line fixed; Unique Hook notes enemy-only types; 穿越 reworded per §4.7; MVP list gains 装备／商店／整备／存档／战败重试 and 「并返回标题」; pillars ticked as 暂定采用 and STORY_BRANCH_STRUCTURE.md added to the header). Residual: Open Questions line 242 「长期多主角切换形式【待定】」 survived the cleanup (see below). Prior nice-to-haves unchanged.
+Reviewer decisions (guided defaults): concept doc is not a system GDD — gdd-structure-check reports all 8 sections ABSENT, applied as advisory only; brainstorm-template sections checked instead. Registry unchanged and has no game-concept entries; cross-checks used the shared folder, alpha-0.1.md, systems-index.md and combat-system.md directly. Line 242 graded RECOMMENDED rather than BLOCKING because the body states the confirmed form in three places and STORY_BRANCH_STRUCTURE §2 does leave the 共同终章 switching rules to be designed.
+Findings:
+- [RECOMMENDED] Open Questions (242): 「长期多主角切换形式【待定】」 contradicts Q2=D (user-confirmed; PROJECT §3/§8). Reword to 「共同终章的主角切换规则【待定】（STORY_BRANCH_STRUCTURE §2 决定二 D）」.
+- [RECOMMENDED] Open Questions (243): 敌方专用兵种 (黄巾军／文官／军师) rules are labelled user-confirmed via combat-system.md, but the SSOT still lists them as undecided (V1_SPEC §2.2 「军师的克制映射、数值…仍需配置」; MEMORY latest 「仍未定：黄巾军与文官／军师兵种规则、敌方数值与AI」), and alpha-0.1.md's risk register keeps 「敌方数值／AI 仅为草案」 Open. Per the header's conflict rule, label it 【仓库 combat-system.md 用户确认，尚未回写共享目录】 and ask the user to write the rule back to V1_SPEC §2.2 / §6.
+- [RECOMMENDED] Pillar 1 / Flow State (102): V1_SPEC §2.2 now fixes 张梁（第二战）与张角三兄弟（第三战）只写兵败退走、不写死亡，最终结局按史实另交代 — the only first-release effect of the long-term structure. The concept does not mention it; add it to the third battle line or Pillar 1's design test so downstream story-events work inherits it.
+- [NICE-TO-HAVE] Carried over: Onboarding curve (101) still plain 【已确认】 for V1_SPEC's 「教学重点（执行设计）」 column; Non-game inspirations (190) still lists 演义第2回 as a used supplement rather than a check source. Cross-doc: combat-system.md line 7 still calls the pillars 「【建议】，待用户确认」 while the concept records them as 暂定采用 — align the sibling GDD.
+Reviewed-Content-Hash: design/gdd/game-concept.md b3c9cdf78005a5ef01953b3f839d4c8286242eed
+Reviewed-Content-Hash: design/registry/entities.yaml 216ffa67ed4d5d24548df37b2ce899fcba892285

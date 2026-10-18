@@ -20,11 +20,11 @@ Alpha 0.1 是一条约 30–60 分钟（待实测）的单人短流程：在涿�
 |---|-------------|----------|----------|--------|------------|------------|
 | 1 | 战斗系统 | Gameplay | MVP | Approved | design/gdd/combat-system.md | 武将成长与技能、装备道具与商店、存档与快照、剧情事件 |
 | 2 | 武将成长与技能 | Progression | MVP | Approved | design/gdd/character-progression.md | 无（读取武将数据） |
-| 3 | 装备、道具与商店（含铜钱） | Economy | MVP | Not Started | — | 武将成长与技能（兵种用于武器限制） |
-| 4 | 存档与战前快照 | Persistence | MVP | In Review | design/gdd/save-system.md | 武将成长、装备道具、剧情事件（保存它们的状态） |
-| 5 | 剧情事件与过场 | Narrative | MVP | In Review | design/gdd/story-events.md | 城镇探索与交互、存档与快照 |
-| 6 | 游戏界面（战斗、整备、商店、教学、存读档） | UI | MVP | In Review | design/gdd/game-ui.md | 战斗、成长、装备商店、存档、剧情事件 |
-| 7 | 城镇探索与交互 (inferred) | Core | MVP | Not Started | — | 无（现有原型已有移动、碰撞、正交相机） |
+| 3 | 装备、道具与商店（含铜钱） | Economy | MVP | In Review | design/gdd/equipment-items.md | 武将成长与技能（兵种用于武器限制） |
+| 4 | 存档与战前快照 | Persistence | MVP | Approved | design/gdd/save-system.md | 武将成长、装备道具、剧情事件（保存它们的状态） |
+| 5 | 剧情事件与过场 | Narrative | MVP | Approved | design/gdd/story-events.md | 城镇探索与交互、存档与快照 |
+| 6 | 游戏界面（战斗、整备、商店、教学、存读档） | UI | MVP | Approved | design/gdd/game-ui.md | 战斗、成长、装备商店、存档、剧情事件 |
+| 7 | 城镇探索与交互 (inferred) | Core | MVP | In Review | design/gdd/town-exploration.md | 无（现有原型已有移动、碰撞、正交相机） |
 
 「(inferred)」：V1_SPEC 与 ZHUOJUN_TOWN_DESIGN 都要求可走动的涿郡、NPC 交互和南门出城，但没有把它列为一个独立系统。
 
