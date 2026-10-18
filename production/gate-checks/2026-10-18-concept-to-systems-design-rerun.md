@@ -51,4 +51,11 @@ Chain-of-Verification: 5 questions checked — verdict unchanged
 - 这些 CONCERN 叠在一起会不会构成阻断？不会：它们都是 Systems Design 阶段本来就要做的工作。
 
 ### Accepted Risks
-（待用户决定；接受后在这里记录，并把阶段写为 Systems Design）
+用户于 2026-10-18 21:23 在项目线程回复「接受」，接受以下风险并同意推进到 Systems Design：
+- 4 条支柱和视觉锚点仍是【建议】，待用户确认 — accepted by the user, 2026-10-18
+- 没有概念原型（HD-2D 渲染原型待做） — accepted by the user, 2026-10-18
+- 装备／商店是否纳入 Alpha 0.1 尚未决定（战斗系统的硬依赖） — accepted by the user, 2026-10-18
+- 概念文档修订后尚未复审 — accepted by the user, 2026-10-18
+- 引擎版本记录与性能预算尚空（Technical Setup 前补齐） — accepted by the user, 2026-10-18
+
+阶段已写为 **Systems Design**（`project.yaml` 与 `production/stage.txt`）。

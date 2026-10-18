@@ -30,7 +30,7 @@ project:
   name: "Three Kingdoms HD-2D JRPG"
   genre: "JRPG"
   kind: "game"
-  stage: Concept
+  stage: Systems Design
 
 modes:
   rigor: standard
