@@ -314,14 +314,14 @@ V1_SPEC 的兵种体系只定义了步、骑、弓三类。下面为「黄巾军
 | 系统 | 方向 | 硬／软 | 接口 | GDD 状态 |
 | --- | --- | --- | --- | --- |
 | 武将成长与技能 | 上游 | 硬 | 等级、属性、技能解锁；接收经验 | `character-progression.md` |
-| 装备与道具 | 上游 | 硬 | 装备加值、军粮库存与消耗 | 未编写（数值待定） |
+| 装备、道具与商店 | 上游 | 硬 | 装备加值、军粮库存与消耗 | `equipment-items.md`（目录数值为草案） |
 | 存档与战前快照 | 上游／下游 | 硬 | 快照建立与还原、自动存档、防重标记 | `save-system.md` |
 | 剧情事件与教学提示 | 上游／下游 | 硬 | 按战斗 ID 发起战斗、提供教学提示触发；接收胜利。敌方编组数据由本文持有 | `story-events.md` |
-| 经济（铜钱） | 下游 | 软 | 战斗奖励铜钱 | 未编写 |
+| 装备、道具与商店（铜钱） | 下游 | 软 | 战斗奖励铜钱 | `equipment-items.md` |
 | 战斗界面 | 下游 | 硬 | 指令输入、行动队列、数值与剩余回合显示 | `game-ui.md` |
 | 敌方 AI（固定规则） | 内部子系统 | 硬 | 读回合开始状态选指令 | 已确认（用户 2026-10-18） |
 
-所有上游系统尚无 GDD，本文对其接口的描述为临时约定（provisional），待各自 GDD 编写时双向核对。
+所有依赖系统均已有 GDD；装备目录数值为草案。
 
 ## Visual/Audio Requirements
 
@@ -386,10 +386,10 @@ V1_SPEC 的兵种体系只定义了步、骑、弓三类。下面为「黄巾军
 | This Document References | Target GDD | Specific Element Referenced | Nature |
 | --- | --- | --- | --- |
 | 等级、属性固定成长、技能解锁 | `design/gdd/character-progression.md` | 经验表、每级成长 | Data dependency |
-| 装备加值、军粮 | `design/gdd/equipment-items.md`（未编写） | 装备属性、军粮库存 | Data dependency |
+| 装备加值、军粮 | `design/gdd/equipment-items.md` | 装备属性、军粮库存 | Data dependency |
 | 战前快照与自动存档 | `design/gdd/save-system.md` | 快照还原、防重标记 | Rule dependency |
 | 教学战编组与胜利推进 | `design/gdd/story-events.md` | 战斗 ID、事件标记 | State trigger |
-| 战斗铜钱奖励 | `design/gdd/equipment-items.md`（未编写；铜钱归入装备、道具与商店系统） | 30／50／60 铜钱 | Ownership handoff |
+| 战斗铜钱奖励 | `design/gdd/equipment-items.md`（铜钱归入装备、道具与商店系统） | 30／50／60 铜钱 | Ownership handoff |
 
 （文件名以 `design/gdd/systems-index.md` 为准；战斗界面见 `design/gdd/game-ui.md`。）
 

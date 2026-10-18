@@ -127,10 +127,10 @@ Alpha 0.1 的全部界面：战斗指令菜单与行动队列、战前整备、�
 | --- | --- | --- | --- | --- |
 | 战斗系统 | 上游 | 硬 | 战斗状态与指令 | `combat-system.md` Approved |
 | 武将成长与技能 | 上游 | 硬 | 成长信息 | `character-progression.md` |
-| 装备道具与商店 | 上游 | 硬 | 商品与装备数值 | 未编写 |
+| 装备道具与商店 | 上游 | 硬 | 商品与装备数值 | `equipment-items.md` |
 | 存档与战前快照 | 上游 | 硬 | 存档位与操作 | `save-system.md` |
 | 剧情事件与过场 | 上游 | 硬 | 目标、对白、教学、字幕 | `story-events.md` |
-| 城镇探索与交互 | 上游 | 硬 | 接近提示、交互入口 | 未编写 |
+| 城镇探索与交互 | 上游 | 硬 | 接近提示、交互入口 | `town-exploration.md` |
 
 ## Visual/Audio Requirements
 
@@ -190,7 +190,7 @@ Alpha 0.1 的全部界面：战斗指令菜单与行动队列、战前整备、�
 | 升级与新技能显示 | `design/gdd/character-progression.md` | UI Requirements | Data dependency |
 | 存读档位与错误提示 | `design/gdd/save-system.md` | 存档位、读档规则 | Data dependency |
 | 目标、对白、教学提示、「测试版结束」 | `design/gdd/story-events.md` | 剧情标志、结尾 | State trigger |
-| 商店价格、卖价、武器限制 | 装备道具与商店（未编写，见 `systems-index.md`） | V1_SPEC §8 规则 | Data dependency |
+| 商店价格、卖价、武器限制 | `design/gdd/equipment-items.md` | 商店规则、卖价 | Data dependency |
 
 ## Acceptance Criteria
 
