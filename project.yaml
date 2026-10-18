@@ -26,11 +26,15 @@ framework:
 # edits this file. See `.claude/docs/config-resolution.md` for the full
 # precedence order.
 
-# project.stage is intentionally absent: /start (or /project-stage-detect) sets it.
 project:
   name: "Three Kingdoms HD-2D JRPG"
   genre: "JRPG"
   kind: "game"
+  stage: Concept
+
+modes:
+  rigor: standard
+  automation: guided
 
 platform:
   multiplayer: false
