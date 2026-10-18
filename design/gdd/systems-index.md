@@ -19,7 +19,7 @@ Alpha 0.1 是一条约 30–60 分钟（待实测）的单人短流程：在涿�
 | # | System Name | Category | Priority | Status | Design Doc | Depends On |
 |---|-------------|----------|----------|--------|------------|------------|
 | 1 | 战斗系统 | Gameplay | MVP | Approved | design/gdd/combat-system.md | 武将成长与技能、装备道具与商店、存档与快照、剧情事件 |
-| 2 | 武将成长与技能 | Progression | MVP | In Review | design/gdd/character-progression.md | 无（读取武将数据） |
+| 2 | 武将成长与技能 | Progression | MVP | Approved | design/gdd/character-progression.md | 无（读取武将数据） |
 | 3 | 装备、道具与商店（含铜钱） | Economy | MVP | Not Started | — | 武将成长与技能（兵种用于武器限制） |
 | 4 | 存档与战前快照 | Persistence | MVP | In Review | design/gdd/save-system.md | 武将成长、装备道具、剧情事件（保存它们的状态） |
 | 5 | 剧情事件与过场 | Narrative | MVP | In Review | design/gdd/story-events.md | 城镇探索与交互、存档与快照 |
@@ -118,8 +118,8 @@ Alpha 0.1 是一条约 30–60 分钟（待实测）的单人短流程：在涿�
 |--------|-------|
 | Total systems identified | 7 |
 | Design docs started | 5 |
-| Design docs reviewed | 1（另 4 份评审中） |
-| Design docs approved | 1 |
+| Design docs reviewed | 5（成长、战斗 Approved；存档、剧情、界面 NEEDS REVISION，已修订待复审） |
+| Design docs approved | 2 |
 | MVP systems designed | 5/7 |
 | Vertical Slice systems designed | — |
 
