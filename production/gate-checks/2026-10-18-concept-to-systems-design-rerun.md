@@ -52,10 +52,11 @@ Chain-of-Verification: 5 questions checked — verdict unchanged
 
 ### Accepted Risks
 用户于 2026-10-18 21:23 在项目线程回复「接受」，接受以下风险并同意推进到 Systems Design：
-- 4 条支柱和视觉锚点仍是【建议】，待用户确认 — accepted by the user, 2026-10-18
-- 没有概念原型（HD-2D 渲染原型待做） — accepted by the user, 2026-10-18
-- 装备／商店是否纳入 Alpha 0.1 尚未决定（战斗系统的硬依赖） — accepted by the user, 2026-10-18
-- 概念文档修订后尚未复审 — accepted by the user, 2026-10-18
-- 引擎版本记录与性能预算尚空（Technical Setup 前补齐） — accepted by the user, 2026-10-18
+- 支柱与视觉锚点未定稿（用户同时决定按当前草稿暂定采用，可随时修改） — accepted by the user, 2026-10-18
+- 没有 HD-2D 渲染原型 — accepted by the user, 2026-10-18
+- 成长、存档、剧情、界面系统尚无 GDD（另无 systems index） — accepted by the user, 2026-10-18
+- 引擎版本记录与性能预算空缺（Technical Setup 前补齐） — accepted by the user, 2026-10-18
+
+同时已解决：装备／商店纳入 Alpha 0.1（用户 2026-10-18 确认）。概念文档修订后尚未复审，仍为跟进项。
 
 阶段已写为 **Systems Design**（`project.yaml` 与 `production/stage.txt`）。
