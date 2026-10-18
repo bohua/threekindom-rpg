@@ -385,13 +385,13 @@ V1_SPEC 的兵种体系只定义了步、骑、弓三类。下面为「黄巾军
 
 | This Document References | Target GDD | Specific Element Referenced | Nature |
 | --- | --- | --- | --- |
-| 等级、属性固定成长、技能解锁 | `design/gdd/character-progression.md`（未编写） | 经验表、每级成长 | Data dependency |
+| 等级、属性固定成长、技能解锁 | `design/gdd/character-progression.md` | 经验表、每级成长 | Data dependency |
 | 装备加值、军粮 | `design/gdd/equipment-items.md`（未编写） | 装备属性、军粮库存 | Data dependency |
-| 战前快照与自动存档 | `design/gdd/save-system.md`（未编写） | 快照还原、防重标记 | Rule dependency |
-| 教学战编组与胜利推进 | `design/gdd/story-events.md`（未编写） | 战斗 ID、事件标记 | State trigger |
-| 战斗铜钱奖励 | `design/gdd/economy.md`（未编写） | 30／50／60 铜钱 | Ownership handoff |
+| 战前快照与自动存档 | `design/gdd/save-system.md` | 快照还原、防重标记 | Rule dependency |
+| 教学战编组与胜利推进 | `design/gdd/story-events.md` | 战斗 ID、事件标记 | State trigger |
+| 战斗铜钱奖励 | `design/gdd/equipment-items.md`（未编写；铜钱归入装备、道具与商店系统） | 30／50／60 铜钱 | Ownership handoff |
 
-（目标文件名为暂定，待 `/map-systems` 确定。）
+（文件名以 `design/gdd/systems-index.md` 为准；战斗界面见 `design/gdd/game-ui.md`。）
 
 ## Acceptance Criteria
 
