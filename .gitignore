@@ -1,0 +1,18 @@
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Bb]uild*/
+/.vs/
+*.csproj
+*.sln
+*.slnx
+*.user
+*.pidb
+*.unitypackage
+*.log
+.DS_Store
+
+# Keep plugin binaries shipped inside Assets
+!Assets/**/*.dll
