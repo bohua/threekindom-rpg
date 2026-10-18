@@ -17,3 +17,19 @@ Findings:
 - [RECOMMENDED] Advisory sections Player Fantasy / Tuning Knobs absent (advisory at standard).
 Reviewed-Content-Hash: design/gdd/combat-system.md dbd91e6fd473c20985cde287b7959020eeab636b
 Reviewed-Content-Hash: design/registry/entities.yaml 216ffa67ed4d5d24548df37b2ce899fcba892285
+
+## Review — 2026-10-18 — Verdict: APPROVED
+Scope signal: L
+Specialists: none (lean mode; game-designer / systems-designer / qa-lead analysis done in main review by independent re-reviewer; guided-mode prompts took recommended defaults)
+Blocking items: 0 | Recommended: 6
+Summary: Both prior blockers are resolved: enemy troop types now match V1_SPEC §2.2 (张宝/张梁 步, 张角 文官／军师 not mapped to archer, all ordinary Yellow Turban units on one 黄巾军 type), the 黄巾军/军师 rules are labelled 草案待用户确认 and avoid sorcery, and immediate-defeat timing is labelled draft. The full enemy table (incl. 技力), player L1 table, output ranges and all worked examples/ACs (102/51, 54, 威慑 21/32, heal 39/33/37, XP 10/30/60) recompute correctly. Main remaining issue is a dead branch in 张角's draft AI that contradicts the battle-3 design intent.
+Prior verdict resolved: Yes
+Findings:
+- [RECOMMENDED] Detailed Design / 固定 AI 规则 3: 威慑 lasts 2 turns but skill turns are every 3, so "我方没有物攻减益" is always true on 3/6/9 — 张角 never casts 火矢, contradicting the stated intent that his 计策伤害 is a priority threat.
+- [RECOMMENDED] Formulas / 伤害 Output Range: "普攻约 10–55、技能约 20–95" understates draft values (e.g. L2 关羽 普攻 vs 黄巾将领 = 67; L2 突击 vs 黄巾将领 = 107).
+- [RECOMMENDED] Header / Formulas footnote: "本文只整理、不新增规则" and "按 V1_SPEC 原样转录、未提出新数值" are stale now that drafted troop-type values and enemy stats exist (they are labelled, but the blanket statements contradict them).
+- [RECOMMENDED] Acceptance Criteria: defend AC uses an enemy 骑兵 and the 弓→骑 / 骑→弓 AC uses unit pairings that do not exist in any V1 encounter — mark as harness-level tests or add an encounter-based 步克弓 AC (e.g. 张梁 vs 刘备).
+- [RECOMMENDED] Edge Cases / AI rule 2: clarify that enemy execution-time retargeting (target retreated mid-round) follows Core Rule 7 (first surviving unit), distinct from AI rule 2's turn-start fallback to lowest troops.
+- [RECOMMENDED] Advisory sections Player Fantasy / Tuning Knobs still absent (advisory at standard); 增减益倍率 example still says enemy buff skills "待定" though no drafted enemy skill grants a buff.
+Reviewed-Content-Hash: design/gdd/combat-system.md e202c37e8c136487ff71a5f462478d709e46ba2a
+Reviewed-Content-Hash: design/registry/entities.yaml 216ffa67ed4d5d24548df37b2ce899fcba892285
