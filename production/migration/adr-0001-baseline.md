@@ -206,4 +206,49 @@
 | EditMode | 3/3 Passed（名字同第 5 节） |
 | PlayMode | 2/2 Passed（名字同第 5 节）；测试本身不依赖旧输入，未修改 |
 
-**需要人工验证**（batchmode 测试覆盖不到真实按键）：键盘、手柄各一遍——移动；靠近史莱姆按 Interact 开战并攻击到胜利；柱子和墙能挡住；Esc／Start 退出（在编辑器 Play 模式里不会真的退出，需构建后验证）。
+**需要人工验证**（batchmode 测试覆盖不到真实按键，见第 9 节补充）：键盘、手柄各一遍——移动；靠近史莱姆按 Interact 开战并攻击到胜利；柱子和墙能挡住；Esc／Start 退出（在编辑器 Play 模式里不会真的退出，需构建后验证）。
+
+## 9. 第 5 步：Build Profile、IL2CPP 构建与性能基线（2026-10-19）
+
+**构建环境**：Unity 6000.3.26f1，已装 IL2CPP 模块（`win64_player_*_il2cpp`）；Visual Studio Community 2022 17.14 带 C++ 工具集（VC.Tools.x86.x64）；Windows SDK 10.0.26100 / 19041。无需额外安装。
+
+**Build Profile**（`Assets/_Project/Settings/BuildProfiles/`）：
+
+| Profile | 平台 | Player Settings | 构建选项 |
+| --- | --- | --- | --- |
+| `Win64-Dev` | Windows x64 Player | 不覆盖，沿用全局（Mono、.NET Standard 2.1、不剥离） | Development Build |
+| `Win64-Release` | Windows x64 Player | 覆盖：IL2CPP、.NET Standard 2.1、托管剥离 Low、IL2CPP 编译配置 Release | 非 Development |
+
+- 两个 Profile 都不覆盖场景列表，用全局 Build Settings（`Glade.unity`）。全局 Player Settings 未改动，仍为 Mono。
+- 创建方式：Unity 6.3 没有公开的“创建 Build Profile”API（`BuildProfile.CreateInstance(BuildTarget, StandaloneBuildSubtarget)` 为 internal），本次用一次性 batchmode 脚本通过反射调用它，并经 `BuildProfile.SetActiveBuildProfile` 写入 Release 的 Player Settings 覆盖；脚本未提交。之后在编辑器的 Build Profiles 窗口里查看或修改即可，不需要再跑脚本。
+- 注意：`Win64-Release` 保存的是一整份 Player Settings 副本（约 34 KB YAML）。以后改全局 Player Settings（例如公司名、图标、分辨率）时，Release 不会自动跟着变，需要在 Profile 里同步。
+- 尚未加 `link.xml`：本次 Low 剥离下构建与运行都正常。
+
+**构建命令与结论**：
+
+| 方式 | 结果 |
+| --- | --- |
+| 编辑器脚本 `BuildPipeline.BuildPlayer(new BuildPlayerWithProfileOptions { buildProfile = Win64-Release, … })` | 成功，0 错误；首次全量约 3 分 53 秒，增量约 35–47 秒 |
+| 命令行 `Unity.exe -batchmode -quit -activeBuildProfile Assets/_Project/Settings/BuildProfiles/Win64-Release.asset -buildWindows64Player <exe>` | 成功，输出含 `GameAssembly.dll`（IL2CPP 产物），日志显示 “Build profile assigned via command line”。**结论：与 `-activeBuildProfile` 同用时，`-buildWindows64Player` 会遵守 Profile 的 Player Settings 覆盖** |
+
+输出目录（仓库外，未提交）：`D:\BuildArtifacts\Codex\hd2d-jrpg\builds\adr0001-il2cpp\MoonlitGlade.exe`（可发布部分约 93 MB；`*_DoNotShip`／`*_DontShip` 目录为调试符号）。命令行实验产物在 `...\builds\adr0001-cli-test\`。
+
+**启动与性能基线**（IL2CPP 发行构建，1920×1080 窗口，场景 `Glade`，5 秒预热后采样 30 秒）：
+
+采样用 `ThreeKingdoms.App.PerfBaselineProbe`：默认不启用，只有带 `-perfBaseline <秒> -perfOut <文件>` 启动时才采样，结束后写 JSON 并退出；加 `-perfUncapped` 时关闭垂直同步。进程内存由外部每 0.5 秒读取一次。
+
+| 指标 | 垂直同步开（默认） | 不限帧（`-perfUncapped`） | ADR 预算 |
+| --- | --- | --- | --- |
+| 平均帧时间 | 16.67 ms（被 60 Hz 显示器锁帧） | 0.68 ms | 16.6 ms |
+| p50／p95／p99／最大 | 16.67／16.69／16.69／16.69 ms | 0.62／0.92／2.20／7.34 ms | — |
+| 采样帧数 | 1801 | 44342 | — |
+| 进程工作集（平均／峰值） | 181.7／189.0 MB | 190.1／192.6 MB | ≤ 2 GB |
+| 进程私有内存峰值 | 312 MB | 313 MB | — |
+| Unity 托管堆已用 | 3.1 MB | 3.5 MB | — |
+| Unity 总分配／总保留 | 105.1／176.6 MB | 105.1／176.6 MB | — |
+
+开发机：Intel Xeon E-2146G、32 GB 内存、NVIDIA Quadro P2000（5 GB），Direct3D 11。播放器日志无异常，Input System 正常初始化（未出现旧输入 `InvalidOperationException`）。这是“原型场景、无 HD-2D 后处理”的基线；最低配置 60 fps 的验证按 ADR 移交 ADR-0005。
+
+**IL2CPP 冒烟发现的问题**：采样脚本最初调用了 `System.Diagnostics.Process`，在 IL2CPP 下运行时报 `NotSupportedException`（Mono 下不会出现），已改为从外部读取进程内存。这正是 ADR 要求每个里程碑出 IL2CPP 冒烟构建的原因。
+
+**Esc 退出**：用脚本向窗口发送合成的 Esc 按键后进程没有退出。合成按键很可能没有进入 Input System 的原始输入通道，因此结论不确定，需要人工确认：启动上面的 exe，按 Esc（手柄按 Start），窗口应立即关闭。
