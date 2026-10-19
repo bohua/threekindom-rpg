@@ -1,6 +1,6 @@
 # 开发接续与验证记录
 
-更新日期：2026-10-18。游戏设计以 `PROJECT.md` 为准；本文件记录开发入口与已有证据，不替代实时检查。
+更新日期：2026-10-19（按 ADR-0001 的工程目录迁移更新路径）。游戏设计以 `PROJECT.md` 为准；本文件记录开发入口与已有证据，不替代实时检查。架构决定见 `docs/architecture/`（ADR-0001 工程结构，ADR-0005 HD-2D 渲染）。
 
 ## Codex 与 Claude Code 共享文档目录
 
@@ -17,8 +17,9 @@ Claude Code Project添加这个独立文档目录。游戏设定唯一正文是�
 ## 技术基线
 
 - Unity `6000.3.26f1`，URP `17.3.0`，Test Framework `1.6.0`，C#。
-- 首个构建目标：Windows x64 Mono。编辑器已安装 Windows Build Support (IL2CPP) 模块，但 IL2CPP 尚未配置为交付目标。
-- 现有工程使用正交相机、SpriteRenderer、CharacterController 和 3D 碰撞。
+- 构建目标：Windows x64。两个 Build Profile（`Assets/_Project/Settings/BuildProfiles/`）：`Win64-Dev`（Mono、Development）与 `Win64-Release`（IL2CPP、托管剥离 Low）。命令行：`Unity.exe -batchmode -quit -projectPath <工程> -activeBuildProfile Assets/_Project/Settings/BuildProfiles/Win64-Release.asset -buildWindows64Player <exe>`。
+- 输入只用 Input System（Active Input Handling = Input System Package (New)），按键配置在 `Assets/_Project/Settings/GameControls.inputactions`；不得使用旧 `UnityEngine.Input`。
+- 原型场景 Glade 使用正交相机、CharacterController 和 3D 碰撞；HD-2D 方案（透视相机、受光像素面片）见 ADR-0005。
 - VS Code、C#／Unity 扩展、Git、Python、Blender、Krita、LibreSprite 已在环境搭建阶段准备；在其他机器上需重新检测。
 - 2026-10-18 工具链补充：Visual Studio 2022 Community（Unity 与 C++ 桌面工作负载）、jq、Audacity；Git 升级到 2.55、Git LFS 3.7。Aseprite、REAPER 为付费软件，未安装。
 
@@ -28,7 +29,7 @@ Claude Code Project添加这个独立文档目录。游戏设定唯一正文是�
 
 | 包 | 版本 | 理由 |
 | --- | --- | --- |
-| `com.unity.inputsystem` | 1.20.0 | 正式版手柄／键位重绑定输入；Active Input Handling 暂保持旧版 Input Manager，现有 `Input.GetKeyDown` 代码不受影响，迁移时再切换 |
+| `com.unity.inputsystem` | 1.20.0 | 正式版手柄／键位重绑定输入；2026-10-19 起为唯一输入后端（ADR-0001 迁移第 4 步） |
 | `com.unity.cinemachine` | 3.1.7 | HD-2D 场景镜头与过场；编辑器推荐 2.10.7，按 3.x API 方向选用 registry 最新 3.x |
 | `com.unity.timeline` | 1.8.13 | 剧情过场演出 |
 | `com.unity.2d.sprite` | 1.0.0 | Sprite Editor 切图 |
@@ -51,26 +52,32 @@ git config merge.unityyamlmerge.recursive binary
 
 ## 源码入口
 
-| 文件／目录 | 职责 |
-| --- | --- |
-| `Assets/Game/Runtime/CharacterDefinition.cs` | 角色静态数据 |
-| `Assets/Game/Runtime/SkillDefinition.cs` | 技能静态数据 |
-| `Assets/Game/Runtime/QuestDefinition.cs` | 任务静态数据 |
-| `Assets/Game/Runtime/Definitions.cs` | 运行时战斗状态、回合排序、任务进度 |
-| `Assets/Game/Runtime/PlayerMover.cs` | 移动输入和 CharacterController 碰撞 |
-| `Assets/Game/Runtime/FollowCamera.cs` | 相机跟随 |
-| `Assets/Game/Runtime/DemoEncounter.cs` | 原型遭遇、输入与 IMGUI 界面 |
-| `Assets/Game/Editor/ProjectSetup.cs` | 缺失时生成原型场景、Windows 构建入口 |
-| `Assets/Game/Tests/` | EditMode 和 PlayMode 自动化测试 |
-| `Assets/Game/Data/` | 当前占位角色、技能和任务资产 |
+项目代码按 ADR-0001 分在 `Assets/_Project/Scripts/<程序集>/`，每个文件夹一个 `ThreeKingdoms.*` 程序集（依赖方向见 ADR-0001 §4）；命名空间暂时仍是 `Jrpg`，新代码用 `ThreeKingdoms.<程序集>`。
+
+| 文件／目录 | 程序集 | 职责 |
+| --- | --- | --- |
+| `Assets/_Project/Scripts/Core/` | `ThreeKingdoms.Core` | 纯 C# 规则（不引用 UnityEngine），目前为空，战斗核心待 ADR-0002 |
+| `Assets/_Project/Scripts/Data/CharacterDefinition.cs` | `ThreeKingdoms.Data` | 角色静态数据 |
+| `Assets/_Project/Scripts/Data/SkillDefinition.cs` | `ThreeKingdoms.Data` | 技能静态数据 |
+| `Assets/_Project/Scripts/Data/QuestDefinition.cs` | `ThreeKingdoms.Data` | 任务静态数据 |
+| `Assets/_Project/Scripts/Data/Definitions.cs` | `ThreeKingdoms.Data` | 运行时战斗状态、回合排序、任务进度（暂放 Data，见 ADR-0001 迁移基线） |
+| `Assets/_Project/Scripts/Gameplay/PlayerMover.cs` | `ThreeKingdoms.Gameplay` | 移动输入（Input System）和 CharacterController 碰撞 |
+| `Assets/_Project/Scripts/Gameplay/FollowCamera.cs` | `ThreeKingdoms.Gameplay` | 相机跟随 |
+| `Assets/_Project/Scripts/Gameplay/DemoEncounter.cs` | `ThreeKingdoms.Gameplay` | 原型遭遇、输入与 IMGUI 界面 |
+| `Assets/_Project/Scripts/App/PerfBaselineProbe.cs` | `ThreeKingdoms.App` | 构建版帧时间／内存采样（`-perfBaseline 30 -perfOut <文件>`） |
+| `Assets/_Project/Scripts/EditorTools/ProjectSetup.cs` | `ThreeKingdoms.EditorTools` | 缺失时生成原型场景、Windows 构建入口 |
+| `Assets/Tests/EditMode/`、`Assets/Tests/PlayMode/` | `ThreeKingdoms.Tests.*` | 自动化测试 |
+| `Assets/_Project/Data/` | — | 占位角色（`Characters/`）、技能（`Skills/`）、任务（`Quests/`）资产 |
+| `Assets/_Project/Settings/` | — | URP 资产、Volume Profile、按键配置、Build Profile |
+| `production/migration/adr-0001-baseline.md` | — | 目录迁移前后基线、测试与性能记录 |
 
 不要把现有 DemoEncounter 直接扩张成全部剧情系统。新需求落实前先确认它的设计状态，并保持静态定义与运行时状态分离。
 
 ## 打开与运行
 
-Unity Hub 中项目名为 `hd2d-jrpg`。打开后双击 `Assets/Game/Scenes/Glade.unity`，点击 Play。
+Unity Hub 中项目名为 `hd2d-jrpg`。打开后双击 `Assets/_Project/Scenes/Glade.unity`，点击 Play。
 
-当前原型操作：WASD／方向键移动；靠近史莱姆按 E；点击 Attack 战斗；独立播放器中按 Escape 退出。该操作方案尚不是正式游戏 UI 规范。
+当前原型操作：WASD／方向键／左摇杆移动；靠近史莱姆按 E（手柄 A）开战，战斗中再按 E／A 或点击 Attack 攻击；独立播放器中按 Escape（手柄 Start）退出。该操作方案尚不是正式游戏 UI 规范。
 
 ## 自动化命令
 
