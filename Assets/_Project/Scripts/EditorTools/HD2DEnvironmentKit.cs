@@ -230,7 +230,9 @@ namespace ThreeKingdoms.EditorTools
         public enum HouseStyle { Tiled, Thatched, Tavern, Smithy }
 
         // Front faces local -Z; yaw turns the front toward the street.
-        public static Transform House(Transform parent, string name, Vector3 position, float yaw, float width, HouseStyle style, Palette p)
+        // bannerFacesFront: shop banners hang parallel to the façade (for straight-on battle backdrops) instead of
+        // perpendicular to it (readable from a street that runs past the house).
+        public static Transform House(Transform parent, string name, Vector3 position, float yaw, float width, HouseStyle style, Palette p, bool bannerFacesFront = false)
         {
             var house = Group(parent, name, position, yaw);
             const float depth = 4.2f, wallH = 2.4f, plinth = 0.3f, eave = 0.6f, slope = 27f;
@@ -291,17 +293,29 @@ namespace ThreeKingdoms.EditorTools
             if (style == HouseStyle.Smithy)
             {
                 Piece(house, "Banner pole", new Vector3(-width / 2 - 0.6f, 1.6f, -depth / 2 - 0.6f), new Vector3(0.1f, 3.2f, 0.1f), p.Timber, collider: false);
-                Piece(house, "Banner arm", new Vector3(-width / 2 - 0.6f, 3.1f, -depth / 2 - 0.95f), new Vector3(0.08f, 0.08f, 0.8f), p.Timber, collider: false);
-                Piece(house, "Iron banner", new Vector3(-width / 2 - 0.6f, 2.45f, -depth / 2 - 1.05f), new Vector3(0.02f, 1.2f, 0.6f), p.IronBanner, fit: true, collider: false);
+                Banner(house, new Vector3(-width / 2 - 0.6f, 0, -depth / 2 - 0.6f), p.IronBanner, bannerFacesFront, p);
             }
             if (style == HouseStyle.Tavern)
             {
                 Piece(house, "Signboard", new Vector3(0, top + 0.05f, -depth / 2 - 0.2f), new Vector3(1.8f, 0.6f, 0.08f), p.Sign, fit: true, collider: false);
                 Piece(house, "Banner pole", new Vector3(width / 2 + 0.6f, 1.6f, -depth / 2 - 0.6f), new Vector3(0.1f, 3.2f, 0.1f), p.Timber, collider: false);
-                Piece(house, "Banner arm", new Vector3(width / 2 + 0.6f, 3.1f, -depth / 2 - 0.95f), new Vector3(0.08f, 0.08f, 0.8f), p.Timber, collider: false);
-                Piece(house, "Wine banner", new Vector3(width / 2 + 0.6f, 2.45f, -depth / 2 - 1.05f), new Vector3(0.02f, 1.2f, 0.6f), p.Banner, fit: true, collider: false);
+                Banner(house, new Vector3(width / 2 + 0.6f, 0, -depth / 2 - 0.6f), p.Banner, bannerFacesFront, p);
             }
             return house;
+        }
+
+        static void Banner(Transform house, Vector3 pole, Material cloth, bool facesFront, Palette p)
+        {
+            if (facesFront)
+            {
+                Piece(house, "Banner arm", pole + new Vector3(0, 3.1f, -0.25f), new Vector3(0.08f, 0.08f, 0.5f), p.Timber, collider: false);
+                Piece(house, "Banner", pole + new Vector3(0, 2.45f, -0.45f), new Vector3(0.6f, 1.2f, 0.02f), cloth, fit: true, collider: false);
+            }
+            else
+            {
+                Piece(house, "Banner arm", pole + new Vector3(0, 3.1f, -0.35f), new Vector3(0.08f, 0.08f, 0.8f), p.Timber, collider: false);
+                Piece(house, "Banner", pole + new Vector3(0, 2.45f, -0.45f), new Vector3(0.02f, 1.2f, 0.6f), cloth, fit: true, collider: false);
+            }
         }
 
         // City wall along local X with crenellations on the camera side (local -Z).
