@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c399791f71bd2ab49b20ffd855fefe5d, type: 3}
+  m_Name: TroopTable
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.TroopTableDefinition
+  Types:
+  - Type: 0
+    TroopBonus: 30
+    DefenseBonus: 5
+    BaseSpeed: 6
+    PlayerUsable: 1
+  - Type: 1
+    TroopBonus: 10
+    DefenseBonus: 0
+    BaseSpeed: 10
+    PlayerUsable: 1
+  - Type: 2
+    TroopBonus: 0
+    DefenseBonus: 0
+    BaseSpeed: 8
+    PlayerUsable: 1
+  - Type: 3
+    TroopBonus: 20
+    DefenseBonus: 0
+    BaseSpeed: 6
+    PlayerUsable: 0
+  - Type: 4
+    TroopBonus: 0
+    DefenseBonus: 0
+    BaseSpeed: 7
+    PlayerUsable: 0
+  Advantages:
+  - Attacker: 1
+    Defender: 0
+  - Attacker: 0
+    Defender: 2
+  - Attacker: 2
+    Defender: 1
+  - Attacker: 1
+    Defender: 3

@@ -9,6 +9,7 @@ namespace ThreeKingdoms.App
     //   -scene <name>                    load a scene from Build Settings instead of the first one
     //   -camera <object name>            move the main camera to that (disabled) camera's pose and stop following
     //   -screenshot <file> [-screenshotDelay <seconds>]   capture one frame, then quit
+    //   -battleAuto [<stop round>]       let BattleAutoPilot issue commands in battle scenes (screenshots, soak runs)
     public static class DevLaunchOptions
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -23,6 +24,13 @@ namespace ThreeKingdoms.App
                 var go = new GameObject(nameof(CameraPresetProbe));
                 go.AddComponent<CameraPresetProbe>().PresetName = preset;
                 Object.DontDestroyOnLoad(go);
+            }
+
+            if (LaunchArgs.Has("-battleAuto"))
+            {
+                var pilot = new GameObject(nameof(BattleAutoPilot)).AddComponent<BattleAutoPilot>();
+                if (int.TryParse(LaunchArgs.Get("-battleAuto"), out int stop)) pilot.StopAtRound = stop;
+                Object.DontDestroyOnLoad(pilot.gameObject);
             }
 
             string shot = LaunchArgs.Get("-screenshot");

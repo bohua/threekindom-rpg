@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f339b962fc7237b4caa3336b2137fa37, type: 3}
+  m_Name: GuanYu
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
+  Id: guan_yu
+  DisplayName: "\u5173\u7FBD"
+  Troop: 1
+  Force: 90
+  Command: 80
+  Intellect: 60
+  ForceGrowth: 2
+  CommandGrowth: 2
+  IntellectGrowth: 1
+  Skills:
+  - Level: 1
+    Skill: {fileID: 11400000, guid: 204be75e4041f1b47896194864654ff4, type: 2}
+  - Level: 3
+    Skill: {fileID: 11400000, guid: 987c8392709995943b5676b1d3c588dc, type: 2}

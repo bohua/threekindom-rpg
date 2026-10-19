@@ -1,0 +1,135 @@
+using System.IO;
+using ThreeKingdoms.Core.Battle;
+using ThreeKingdoms.Data.Battle;
+using UnityEditor;
+using UnityEngine;
+
+namespace ThreeKingdoms.EditorTools
+{
+    // Writes the V1 battle data assets from the combat GDD (all values: adopted initial values, untested
+    // balance). Idempotent: existing assets are updated in place so their GUIDs and references survive.
+    public static class BattleDataBuilder
+    {
+        const string Root = "Assets/_Project/Data";
+        public const string CatalogPath = Root + "/Battle/BattleCatalog.asset";
+
+        [MenuItem("JRPG/Build Battle Data (combat GDD)")]
+        public static BattleCatalog Build()
+        {
+            foreach (var dir in new[] { "Battle", "Characters", "Skills", "Items", "Encounters" })
+                Directory.CreateDirectory($"{Root}/{dir}");
+
+            var config = Asset<BattleConfigDefinition>("Battle/BattleConfig", c =>
+            {
+                c.AdvantagePercent = 140; c.GuardPercent = 50; c.MinModifierPercent = 20; c.MaxAttribute = 100;
+                c.ExpTable = new[] { 0, 10, 30, 60, 100 };
+            });
+            var troops = Asset<TroopTableDefinition>("Battle/TroopTable", t =>
+            {
+                t.Types = new[]
+                {
+                    new TroopTypeEntry { Type = TroopType.Infantry, TroopBonus = 30, DefenseBonus = 5, BaseSpeed = 6, PlayerUsable = true },
+                    new TroopTypeEntry { Type = TroopType.Cavalry, TroopBonus = 10, DefenseBonus = 0, BaseSpeed = 10, PlayerUsable = true },
+                    new TroopTypeEntry { Type = TroopType.Archer, TroopBonus = 0, DefenseBonus = 0, BaseSpeed = 8, PlayerUsable = true },
+                    new TroopTypeEntry { Type = TroopType.YellowTurban, TroopBonus = 20, DefenseBonus = 0, BaseSpeed = 6, PlayerUsable = false },
+                    new TroopTypeEntry { Type = TroopType.Strategist, TroopBonus = 0, DefenseBonus = 0, BaseSpeed = 7, PlayerUsable = false },
+                };
+                t.Advantages = new[]
+                {
+                    new AdvantagePair { Attacker = TroopType.Cavalry, Defender = TroopType.Infantry },
+                    new AdvantagePair { Attacker = TroopType.Infantry, Defender = TroopType.Archer },
+                    new AdvantagePair { Attacker = TroopType.Archer, Defender = TroopType.Cavalry },
+                    new AdvantagePair { Attacker = TroopType.Cavalry, Defender = TroopType.YellowTurban },
+                };
+            });
+            var ration = Asset<ItemDefinition>("Items/Ration", i => { i.Id = "ration"; i.DisplayName = "军粮"; i.HealPercent = 30; });
+
+            // Our six skills (V1_SPEC §6).
+            var regroup = Skill("regroup", "整队", "回复一支存活友军最大兵力的 30%，可对自己使用。", 3, SkillTarget.SingleAlly, DamageKind.None, 0, heal: 30);
+            var fireArrows = Skill("fire_arrows", "火矢", "部队火箭战术：对单体敌军造成 1.3 倍计策伤害。", 4, SkillTarget.SingleEnemy, DamageKind.Strategy, 130);
+            var charge = Skill("charge", "突击", "对单体敌军造成 1.5 倍物理伤害。", 3, SkillTarget.SingleEnemy, DamageKind.Physical, 150);
+            var breakFormation = Skill("break_formation", "破阵", "对单体敌军造成 1.1 倍物理伤害，之后 2 回合其物防 −20%（从下一击起生效）。", 4,
+                SkillTarget.SingleEnemy, DamageKind.Physical, 110, stat: BattleStat.PhysicalDefense, mod: -20, turns: 2);
+            var sweep = Skill("sweep", "横扫", "对全部敌军各造成 0.65 倍物理伤害。", 4, SkillTarget.AllEnemies, DamageKind.Physical, 65);
+            var intimidate = Skill("intimidate", "威慑", "全体敌军物攻 −20%，持续 2 回合。", 4, SkillTarget.AllEnemies, DamageKind.None, 0,
+                stat: BattleStat.PhysicalAttack, mod: -20, turns: 2);
+            // Enemy skills: same effects as ours, names to be decided (combat GDD Open Question 2) — marked 暂名.
+            var enemyCharge = Skill("enemy_assault", "猛攻（暂名）", "效果同突击。", 3, SkillTarget.SingleEnemy, DamageKind.Physical, 150);
+            var enemySweep = Skill("enemy_rampage", "乱击（暂名）", "效果同横扫。", 4, SkillTarget.AllEnemies, DamageKind.Physical, 65);
+            var enemyRumour = Skill("enemy_rumour", "惑众（暂名）", "号令与谣言动摇军心：全体物攻 −20%，持续 2 回合。效果同威慑。", 4,
+                SkillTarget.AllEnemies, DamageKind.None, 0, stat: BattleStat.PhysicalAttack, mod: -20, turns: 2);
+            var enemyFire = Skill("enemy_arson", "纵火（暂名）", "指挥部队纵火：单体 1.3 倍计策伤害。效果同火矢。", 4, SkillTarget.SingleEnemy, DamageKind.Strategy, 130);
+
+            var liu = General("liu_bei", "LiuBei", "刘备", TroopType.Archer, 65, 75, 75, 1, 2, 2, (1, regroup), (3, fireArrows));
+            var guan = General("guan_yu", "GuanYu", "关羽", TroopType.Cavalry, 90, 80, 60, 2, 2, 1, (1, charge), (3, breakFormation));
+            var zhang = General("zhang_fei", "ZhangFei", "张飞", TroopType.Infantry, 95, 75, 45, 3, 2, 1, (1, sweep), (3, intimidate));
+
+            // Enemies: fixed attributes, no growth (combat GDD enemy table).
+            var cheng = General("cheng_yuanzhi", "ChengYuanzhi", "程远志", TroopType.YellowTurban, 60, 55, 30, 0, 0, 0);
+            var headman = General("yt_headman", "YellowTurbanHeadman", "杂兵头领", TroopType.YellowTurban, 40, 40, 20, 0, 0, 0);
+            var officer = General("yt_officer", "YellowTurbanOfficer", "黄巾将领", TroopType.YellowTurban, 55, 45, 30, 0, 0, 0);
+            var zhangLiang = General("zhang_liang", "ZhangLiang", "张梁", TroopType.Infantry, 75, 65, 50, 0, 0, 0, (1, enemyCharge));
+            var zhangBao = General("zhang_bao", "ZhangBao", "张宝", TroopType.Infantry, 70, 65, 60, 0, 0, 0, (1, enemySweep));
+            var zhangJiao = General("zhang_jiao", "ZhangJiao", "张角", TroopType.Strategist, 40, 70, 85, 0, 0, 0, (1, enemyRumour), (1, enemyFire));
+
+            var b1 = Encounter("battle_1", "Battle1_ChengYuanzhi", "第一战 · 程远志来犯", EnemyAiKind.HighestTroops, 10, 30, (cheng, 2), (headman, 1), (headman, 1));
+            var b2 = Encounter("battle_2", "Battle2_ZhangLiang", "第二战 · 张梁", EnemyAiKind.FacingSlot, 20, 50, (zhangLiang, 3), (officer, 1), (officer, 1), (officer, 1));
+            var b3 = Encounter("battle_3", "Battle3_ZhangBrothers", "第三战 · 张角三兄弟", EnemyAiKind.FacingSlot, 30, 60, (zhangJiao, 4), (zhangBao, 4), (zhangLiang, 4));
+
+            var catalog = Asset<BattleCatalog>("Battle/BattleCatalog", c =>
+            {
+                c.Config = config; c.Troops = troops; c.Ration = ration;
+                c.Party = new[] { liu, guan, zhang };
+                c.Encounters = new[] { b1, b2, b3 };
+            });
+            AssetDatabase.SaveAssets();
+            catalog.ToRuntime();   // validate
+            Debug.Log("BATTLE_DATA_BUILT");
+            return catalog;
+        }
+
+        public static void BuildFromCommandLine()
+        {
+            try { Build(); EditorApplication.Exit(0); }
+            catch (System.Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
+        }
+
+        static T Asset<T>(string path, System.Action<T> fill) where T : ScriptableObject
+        {
+            string full = $"{Root}/{path}.asset";
+            var asset = AssetDatabase.LoadAssetAtPath<T>(full);
+            bool created = !asset;
+            if (created) asset = ScriptableObject.CreateInstance<T>();
+            fill(asset);
+            if (created) AssetDatabase.CreateAsset(asset, full);
+            EditorUtility.SetDirty(asset);
+            return asset;
+        }
+
+        static BattleSkillDefinition Skill(string id, string name, string description, int cost, SkillTarget target, DamageKind damage, int power,
+            int heal = 0, BattleStat stat = BattleStat.PhysicalAttack, int mod = 0, int turns = 0) =>
+            Asset<BattleSkillDefinition>($"Skills/{id}", s =>
+            {
+                s.Id = id; s.DisplayName = name; s.Description = description; s.TechCost = cost; s.Target = target; s.Damage = damage;
+                s.PowerPercent = power; s.HealPercent = heal; s.ModifierStat = stat; s.ModifierPercent = mod; s.ModifierTurns = turns;
+            });
+
+        static GeneralDefinition General(string id, string file, string name, TroopType troop, int force, int command, int intellect,
+            int fg, int cg, int ig, params (int level, BattleSkillDefinition skill)[] skills) =>
+            Asset<GeneralDefinition>($"Characters/{file}", g =>
+            {
+                g.Id = id; g.DisplayName = name; g.Troop = troop;
+                g.Force = force; g.Command = command; g.Intellect = intellect;
+                g.ForceGrowth = fg; g.CommandGrowth = cg; g.IntellectGrowth = ig;
+                g.Skills = System.Array.ConvertAll(skills, s => new SkillUnlockEntry { Level = s.level, Skill = s.skill });
+            });
+
+        static EncounterDefinition Encounter(string id, string file, string name, EnemyAiKind ai, int exp, int copper,
+            params (GeneralDefinition general, int level)[] enemies) =>
+            Asset<EncounterDefinition>($"Encounters/{file}", e =>
+            {
+                e.Id = id; e.DisplayName = name; e.Ai = ai; e.SkillEveryRounds = 3; e.ExpReward = exp; e.CopperReward = copper;
+                e.Enemies = System.Array.ConvertAll(enemies, x => new EnemyEntry { General = x.general, Level = x.level });
+            });
+    }
+}

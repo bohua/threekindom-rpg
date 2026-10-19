@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b545bebb4d2cf641a4afa620590b29d, type: 3}
+  m_Name: BattleCatalog
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.BattleCatalog
+  Config: {fileID: 11400000, guid: 550bcce8eedaed147b595ad21c64f939, type: 2}
+  Troops: {fileID: 11400000, guid: 77bb05adb89ee774cac9d8ac1a1efd9d, type: 2}
+  Ration: {fileID: 11400000, guid: 0cbd0d1db7b2bf84db5c5a9b0e5b572d, type: 2}
+  Party:
+  - {fileID: 11400000, guid: 5e29858fabf05534791eb726680d1824, type: 2}
+  - {fileID: 11400000, guid: 09555b2a125b4454982e3436fe6663ed, type: 2}
+  - {fileID: 11400000, guid: 01247940dcbcb48498212dd691b3785d, type: 2}
+  Encounters:
+  - {fileID: 11400000, guid: b060991ea103d8644883d614dc18c2a6, type: 2}
+  - {fileID: 11400000, guid: 42c2c60cf2cec08478517b328dc4f85d, type: 2}
+  - {fileID: 11400000, guid: 7aafaa4d362d61e4a93842e2bb4e2747, type: 2}

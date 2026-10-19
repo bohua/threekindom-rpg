@@ -1,17 +1,19 @@
 using System;
+using ThreeKingdoms.Core.Battle;
 using UnityEngine;
 
-namespace Jrpg.Battle
+namespace ThreeKingdoms.Data.Battle
 {
     [Serializable]
-    public struct SkillUnlock
+    public struct SkillUnlockEntry
     {
         [Min(1)] public int Level;
         public BattleSkillDefinition Skill;
     }
 
-    // 一名武将率一支部队；兵力即HP（V1_SPEC §1、§5）。敌我共用同一定义。
-    [CreateAssetMenu(menuName = "JRPG/Battle/General")]
+    // One general leads one unit; troops are its HP. Shared by both sides; enemies use zero growth
+    // (fixed attributes across battles, only the level changes — combat GDD).
+    [CreateAssetMenu(menuName = "ThreeKingdoms/Battle/General")]
     public sealed class GeneralDefinition : ScriptableObject
     {
         public string Id;
@@ -23,6 +25,7 @@ namespace Jrpg.Battle
         [Min(0)] public int ForceGrowth;
         [Min(0)] public int CommandGrowth;
         [Min(0)] public int IntellectGrowth;
-        public SkillUnlock[] Skills = Array.Empty<SkillUnlock>();
+        [Tooltip("按顺序解锁；敌方的技能轮换也按此顺序")]
+        public SkillUnlockEntry[] Skills = Array.Empty<SkillUnlockEntry>();
     }
 }

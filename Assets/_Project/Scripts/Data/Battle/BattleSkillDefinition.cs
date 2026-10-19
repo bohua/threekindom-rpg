@@ -1,9 +1,10 @@
+using ThreeKingdoms.Core.Battle;
 using UnityEngine;
 
-namespace Jrpg.Battle
+namespace ThreeKingdoms.Data.Battle
 {
-    // 静态技能数据。系数与百分比用整数百分数保存，保证结算是精确的十进制运算。
-    [CreateAssetMenu(menuName = "JRPG/Battle/Skill")]
+    // Static skill data. Coefficients and percentages are integer percents so the rules stay exact.
+    [CreateAssetMenu(menuName = "ThreeKingdoms/Battle/Skill")]
     public sealed class BattleSkillDefinition : ScriptableObject
     {
         public string Id;
@@ -19,8 +20,10 @@ namespace Jrpg.Battle
         public BattleStat ModifierStat;
         [Tooltip("属性变化百分数，例如 -20；0 表示无增减益")]
         public int ModifierPercent;
+        [Tooltip("持续回合，含施放当回合")]
         [Min(0)] public int ModifierTurns;
 
-        public bool TargetsAllies => Target == SkillTarget.SingleAlly;
+        public SkillSpec ToRuntime() =>
+            new SkillSpec(Id, DisplayName, Description, TechCost, Target, Damage, PowerPercent, HealPercent, ModifierStat, ModifierPercent, ModifierTurns);
     }
 }

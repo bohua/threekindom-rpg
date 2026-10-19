@@ -1,21 +1,25 @@
 using System;
+using ThreeKingdoms.Core.Battle;
 using UnityEngine;
 
-namespace Jrpg.Battle
+namespace ThreeKingdoms.Data.Battle
 {
     [Serializable]
     public struct EnemyEntry
     {
         public GeneralDefinition General;
-        [Range(1, BattleRules.MaxLevel)] public int Level;
+        [Min(1)] public int Level;
     }
 
-    [CreateAssetMenu(menuName = "JRPG/Battle/Encounter")]
+    [CreateAssetMenu(menuName = "ThreeKingdoms/Battle/Encounter")]
     public sealed class EncounterDefinition : ScriptableObject
     {
+        [Tooltip("与剧情标志一致：battle_1／battle_2／battle_3")]
         public string Id;
         public string DisplayName;
         public EnemyEntry[] Enemies = Array.Empty<EnemyEntry>();
+        public EnemyAiKind Ai;
+        [Min(1)] public int SkillEveryRounds = 3;
         [Min(0)] public int ExpReward;
         [Min(0)] public int CopperReward;
     }

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d74cacfb40d6e7047828c2990b1c7f0c, type: 3}
+  m_Name: intimidate
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.BattleSkillDefinition
+  Id: intimidate
+  DisplayName: "\u5A01\u6151"
+  Description: "\u5168\u4F53\u654C\u519B\u7269\u653B \u221220%\uFF0C\u6301\u7EED
+    2 \u56DE\u5408\u3002"
+  TechCost: 4
+  Target: 1
+  Damage: 0
+  PowerPercent: 0
+  HealPercent: 0
+  ModifierStat: 0
+  ModifierPercent: -20
+  ModifierTurns: 2
