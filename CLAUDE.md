@@ -42,3 +42,4 @@
 - 每次收尾说明实际修改、验证结果和仍未决定的内容。纯文档修改无需运行 Unity 构建。
 
 文档读取机制参考：https://code.claude.com/docs/en/memory 。本入口与导入路径经过文件检查；尚未在 Claude Code 会话中验证加载效果。
+@CLAUDE.ccgs.md

@@ -17,9 +17,36 @@ Claude Code Project添加这个独立文档目录。游戏设定唯一正文是�
 ## 技术基线
 
 - Unity `6000.3.26f1`，URP `17.3.0`，Test Framework `1.6.0`，C#。
-- 首个构建目标：Windows x64 Mono。其他平台和 IL2CPP 尚未配置为交付目标。
+- 首个构建目标：Windows x64 Mono。编辑器已安装 Windows Build Support (IL2CPP) 模块，但 IL2CPP 尚未配置为交付目标。
 - 现有工程使用正交相机、SpriteRenderer、CharacterController 和 3D 碰撞。
 - VS Code、C#／Unity 扩展、Git、Python、Blender、Krita、LibreSprite 已在环境搭建阶段准备；在其他机器上需重新检测。
+- 2026-10-18 工具链补充：Visual Studio 2022 Community（Unity 与 C++ 桌面工作负载）、jq、Audacity；Git 升级到 2.55、Git LFS 3.7。Aseprite、REAPER 为付费软件，未安装。
+
+### 2026-10-18 新增 UPM 包及理由
+
+版本除 Cinemachine 外均取编辑器 6000.3.26f1 内置清单的推荐版本。
+
+| 包 | 版本 | 理由 |
+| --- | --- | --- |
+| `com.unity.inputsystem` | 1.20.0 | 正式版手柄／键位重绑定输入；Active Input Handling 暂保持旧版 Input Manager，现有 `Input.GetKeyDown` 代码不受影响，迁移时再切换 |
+| `com.unity.cinemachine` | 3.1.7 | HD-2D 场景镜头与过场；编辑器推荐 2.10.7，按 3.x API 方向选用 registry 最新 3.x |
+| `com.unity.timeline` | 1.8.13 | 剧情过场演出 |
+| `com.unity.2d.sprite` | 1.0.0 | Sprite Editor 切图 |
+| `com.unity.2d.aseprite` | 3.0.2 | 直接导入 .aseprite／.ase 像素素材 |
+| `com.unity.nuget.newtonsoft-json` | 3.2.2 | 存档与数据表 JSON 序列化 |
+
+加包后 batchmode 复测：EditMode 3/3、PlayMode 2/2 通过，无编译错误；结果见 `D:\BuildArtifacts\Codex\hd2d-jrpg\toolchain-20261018\` 与 `toolchain-20261018-pm\`。未加入 DOTS、Netcode、Services、IAP、广告；Yarn Spinner、DOTween、UniTask 留到内容阶段。
+
+### 版本控制
+
+- GitHub 私有仓库 `bohua/threekindom-rpg`。png/jpg/tga/psd/kra/exr/hdr/aseprite/ase/fbx/blend/obj/wav/ogg/mp3/flac/ttf/otf/mp4/dll 走 Git LFS。
+- `*.unity`、`*.prefab`、`*.asset` 使用 `merge=unityyamlmerge`。该合并驱动写在本地 `.git/config`，新克隆后需重新注册：
+
+```powershell
+git config merge.unityyamlmerge.name "Unity SmartMerge (UnityYAMLMerge)"
+git config merge.unityyamlmerge.driver "'C:/Program Files/Unity/Hub/Editor/6000.3.26f1/Editor/Data/Tools/UnityYAMLMerge.exe' merge -h -p --force %O %B %A %A"
+git config merge.unityyamlmerge.recursive binary
+```
 - 工具及素材的商业使用条件见 `../LICENSES.md`。Unity Personal 及部分 Microsoft 扩展有资格条件，不能把“免费”理解为无限制。
 
 ## 源码入口

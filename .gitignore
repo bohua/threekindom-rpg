@@ -16,3 +16,13 @@
 
 # Keep plugin binaries shipped inside Assets
 !Assets/**/*.dll
+
+# Claude Code Game Studios (CCGS) local/runtime state
+.claude/settings.local.json
+.claude/agent-memory/
+CLAUDE.local.md
+project.local.yaml
+production/session-logs/
+production/session-state/*
+!production/session-state/.gitkeep
+docs/consistency-failures.md
