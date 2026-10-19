@@ -1,5 +1,0 @@
-{
-  "name": "Jrpg.Editor",
-  "references": ["Jrpg.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
-  "includePlatforms": ["Editor"]
-}

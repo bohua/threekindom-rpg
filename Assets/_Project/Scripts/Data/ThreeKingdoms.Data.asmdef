@@ -1,0 +1,6 @@
+{
+  "name": "ThreeKingdoms.Data",
+  "rootNamespace": "ThreeKingdoms.Data",
+  "references": ["ThreeKingdoms.Core"],
+  "autoReferenced": true
+}

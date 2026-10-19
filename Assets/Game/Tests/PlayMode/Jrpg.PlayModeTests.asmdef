@@ -1,5 +1,0 @@
-{
-  "name": "Jrpg.PlayModeTests",
-  "references": ["Jrpg.Runtime"],
-  "optionalUnityReferences": ["TestAssemblies"]
-}
