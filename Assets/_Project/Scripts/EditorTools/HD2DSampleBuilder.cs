@@ -25,7 +25,8 @@ namespace ThreeKingdoms.EditorTools
         const string DefaultArtSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg";
 
         // ADR-0005 camera and pixel-density decisions.
-        public const float CameraFov = 20f, CameraPitch = 30f, CameraDistance = 34f;
+        // Pitch 25° (user 2026-10-19): shows more of the façades than 30° while keeping the HD-2D look-down.
+        public const float CameraFov = 20f, CameraPitch = 25f, CameraDistance = 34f;
         public const float PixelsPerUnit = 30f;
         public const int FrameSize = 48;
 
