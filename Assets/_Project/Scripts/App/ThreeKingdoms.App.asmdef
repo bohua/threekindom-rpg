@@ -1,0 +1,6 @@
+{
+  "name": "ThreeKingdoms.App",
+  "rootNamespace": "ThreeKingdoms.App",
+  "references": ["ThreeKingdoms.Narrative", "ThreeKingdoms.UI", "ThreeKingdoms.Gameplay", "ThreeKingdoms.Save", "ThreeKingdoms.Data", "ThreeKingdoms.Core"],
+  "autoReferenced": true
+}

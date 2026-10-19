@@ -115,3 +115,54 @@
 - 现有代码全部在单一 `Jrpg.Runtime` 中，`Combatant`／`TurnBattle` 直接持有 ScriptableObject，不能原样放入 `noEngineReferences` 的 `ThreeKingdoms.Core`。第 3 步只做“按职责搬位置 + 建 asmdef”，需决定：要么暂时把 `Definitions.cs` 放进 `ThreeKingdoms.Data`/`Gameplay`，Core 先建空壳；要么在第 3 步内顺带把战斗逻辑改为吃纯数据（这属于代码改动，建议留给 ADR-0002 的战斗核心故事）。
 - 改程序集名或命名空间（`Jrpg` → `ThreeKingdoms.*`）不影响 MonoScript 的 GUID 引用，但若类名或命名空间变化，场景与 `.asset` 中的 `m_Script` 仍按 GUID 解析，可正常保留；`[FormerlySerializedAs]` 仅在字段改名时需要。
 - 测试 asmdef 需按 ADR 改为 `overrideReferences` + `nunit.framework.dll` + `UNITY_INCLUDE_TESTS`，替换已弃用的 `optionalUnityReferences`。
+
+## 7. 迁移后结果（第 3 步，2026-10-19）
+
+用户选择“先只搬位置”：`Definitions.cs` 暂放 `ThreeKingdoms.Data`，`ThreeKingdoms.Core` 先建空程序集，改纯数据留给 ADR-0002。命名空间仍为 `Jrpg`，未改。
+
+**搬迁方式**：临时编辑器脚本经 `Unity.exe -batchmode -executeMethod` 调用 `AssetDatabase.CreateFolder`／`AssetDatabase.MoveAsset`，每步校验 GUID 不变；`Assets/Game/` 搬空后用 `AssetDatabase.DeleteAsset` 删除。临时脚本用完已删除，未提交。
+
+**文件去向**：
+
+| 原位置 | 新位置 |
+| --- | --- |
+| `Game/Runtime/{Character,Skill,Quest}Definition.cs`、`Definitions.cs` | `_Project/Scripts/Data/` |
+| `Game/Runtime/{DemoEncounter,PlayerMover,FollowCamera}.cs` | `_Project/Scripts/Gameplay/` |
+| `Game/Editor/ProjectSetup.cs` | `_Project/Scripts/EditorTools/` |
+| `Game/Tests/EditMode|PlayMode/*.cs` | `Tests/EditMode|PlayMode/` |
+| `Game/Art/*.png`／`*.mat` | `_Project/Art/Sprites/`／`_Project/Art/Materials/` |
+| `Game/Data/Hero|Slime.asset`、`Strike.asset`、`ClearGlade.asset` | `_Project/Data/Characters/`、`Skills/`、`Quests/` |
+| `Game/Scenes/Glade.unity` | `_Project/Scenes/`（Build Settings 路径自动更新） |
+| `Game/Settings/*`、`Assets/DefaultVolumeProfile.asset`、`Assets/UniversalRenderPipelineGlobalSettings.asset` | `_Project/Settings/` |
+
+**程序集与依赖**（旧 `Jrpg.*` asmdef 搬移并改名，`.meta` GUID 保留；其余为新建）：
+
+| 程序集 | 引用 | 备注 |
+| --- | --- | --- |
+| `ThreeKingdoms.Core` | — | 新建，`noEngineReferences: true`，暂无代码 |
+| `ThreeKingdoms.Data` | Core | 原 `Jrpg.Runtime`（GUID `4be5ac34…`）；含 3 个定义类与 `Definitions.cs` |
+| `ThreeKingdoms.Save` | Core | 新建，暂无代码 |
+| `ThreeKingdoms.Gameplay` | Save、Data、Core | 新建；含 `DemoEncounter`、`PlayerMover`、`FollowCamera` |
+| `ThreeKingdoms.UI` | Gameplay、Core | 新建，暂无代码 |
+| `ThreeKingdoms.Narrative` | UI、Gameplay、Core | 新建，暂无代码 |
+| `ThreeKingdoms.App` | Narrative、UI、Gameplay、Save、Data、Core | 新建，暂无代码 |
+| `ThreeKingdoms.EditorTools` | 全部运行时程序集 + `Unity.RenderPipelines.Universal.Runtime` | 原 `Jrpg.Editor`（GUID `6836e05c…`）；仅 Editor |
+| `ThreeKingdoms.Tests.EditMode` | TestRunner ×2、Core、Data、Save | 原 `Jrpg.EditModeTests`；改为 `overrideReferences` + `nunit.framework.dll` + `UNITY_INCLUDE_TESTS`，仅 Editor |
+| `ThreeKingdoms.Tests.PlayMode` | TestRunner ×2、Gameplay、UI、Narrative、App、**Data** | 原 `Jrpg.PlayModeTests`；同上写法，不限平台 |
+
+**与 ADR 的两处偏离**（用户 2026-10-19 知悉）：
+1. `Tests.PlayMode` 额外引用 `ThreeKingdoms.Data`：`MovementTests` 读取 `DemoEncounter.HeroDefinition` 等 Data 类型字段，不引用无法编译。
+2. `ProjectSetup.cs` 只改了硬编码路径字符串（`Assets/Game/...` → `Assets/_Project/...` 对应子目录），否则 `BuildWindows()` 会在旧位置重建空场景；逻辑与命名空间未改。
+
+**验证**：
+
+| 项 | 结果 |
+| --- | --- |
+| 编译 | 通过（batchmode 无 `error CS`） |
+| EditMode | 3/3 Passed，测试名与第 5 节一致 |
+| PlayMode | 2/2 Passed，测试名与第 5 节一致；`GladeHasPlayableWiring` 加载场景并检查脚本与数据引用 |
+| 场景脚本引用 | `Glade.unity` 的 `m_Script` 全部解析到新位置的同一 GUID（另 1 个为 URP 包内脚本） |
+| GUID | 第 2 节所有文件 GUID 保留；只有 10 个旧文件夹 `.meta`（`Assets/Game/**`）随文件夹删除，仓库中无任何引用 |
+| git | 文件与其 `.meta` 识别为改名；4 个旧 asmdef 因内容整体改写显示为删除 + 新增，但对应 `.meta` 识别为改名、GUID 不变 |
+
+另：一并提交 `Assets/CLAUDE.md.meta`，避免每次导入都重新生成。

@@ -1,6 +1,0 @@
-{
-  "name": "Jrpg.EditModeTests",
-  "references": ["Jrpg.Runtime"],
-  "includePlatforms": ["Editor"],
-  "optionalUnityReferences": ["TestAssemblies"]
-}
