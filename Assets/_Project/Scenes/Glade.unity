@@ -1065,6 +1065,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Jrpg.Runtime::Jrpg.PlayerMover
   Speed: 3.5
   InputEnabled: 1
+  MoveAction: {fileID: 2000520655870528951, guid: a3a751d107d0dbd429835dda51f5cbdb, type: 3}
 --- !u!4 &1085907650
 Transform:
   m_ObjectHideFlags: 0
@@ -1141,6 +1142,8 @@ MonoBehaviour:
   EnemyDefinition: {fileID: 11400000, guid: 6edf2c551fe20ce4d8a42132edfce521, type: 2}
   AttackSkill: {fileID: 11400000, guid: a7f23e607da56264e80779ca44c62cff, type: 2}
   Quest: {fileID: 11400000, guid: afc2d183d4bb73744b56b7252a7a761b, type: 2}
+  InteractAction: {fileID: 3309837309965767117, guid: a3a751d107d0dbd429835dda51f5cbdb, type: 3}
+  MenuAction: {fileID: -4747744625775552981, guid: a3a751d107d0dbd429835dda51f5cbdb, type: 3}
 --- !u!4 &1120412721
 Transform:
   m_ObjectHideFlags: 0

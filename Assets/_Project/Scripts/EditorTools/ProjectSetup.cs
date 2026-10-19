@@ -1,15 +1,18 @@
 using System.IO;
+using System.Linq;
 using Jrpg;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 public static class ProjectSetup
 {
     const string ScenePath = "Assets/_Project/Scenes/Glade.unity";
+    const string ControlsPath = "Assets/_Project/Settings/GameControls.inputactions";
     [MenuItem("JRPG/Create First Scene (only if absent)")]
     public static void Create()
     {
@@ -55,7 +58,7 @@ public static class ProjectSetup
         controller.height = 1.4f;
         controller.radius = .28f;
         controller.center = new Vector3(0, .7f, 0);
-        var mover = player.AddComponent<PlayerMover>();
+        var mover = player.AddComponent<PlayerMover>(); mover.MoveAction = Action("Move");
         SpriteObject("Hero pixels", player.transform, HeroSprite(), new Vector3(0, .8f, 0));
         var enemy = new GameObject("Slime");
         enemy.transform.position = new Vector3(3, 0, 1);
@@ -87,11 +90,14 @@ public static class ProjectSetup
         var encounter = new GameObject("Encounter").AddComponent<DemoEncounter>();
         encounter.Player = mover; encounter.Enemy = enemy.transform; encounter.HeroDefinition = hero;
         encounter.EnemyDefinition = slime; encounter.AttackSkill = skill; encounter.Quest = quest;
+        encounter.InteractAction = Action("Interact"); encounter.MenuAction = Action("Menu");
         EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ScenePath);
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
         AssetDatabase.SaveAssets();
         Debug.Log("JRPG_SETUP_COMPLETE");
     }
+    public static InputActionReference Action(string name) =>
+        AssetDatabase.LoadAllAssetsAtPath(ControlsPath).OfType<InputActionReference>().First(r => r && r.action != null && r.action.name == name && r.action.actionMap?.name == "Player");
     static CharacterDefinition Character(string id, string label, int hp, int attack, int defense, int speed, SkillDefinition skill)
     {
         var value = ScriptableObject.CreateInstance<CharacterDefinition>();

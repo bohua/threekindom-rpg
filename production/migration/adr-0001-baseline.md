@@ -166,3 +166,44 @@
 | git | 文件与其 `.meta` 识别为改名；4 个旧 asmdef 因内容整体改写显示为删除 + 新增，但对应 `.meta` 识别为改名、GUID 不变 |
 
 另：一并提交 `Assets/CLAUDE.md.meta`，避免每次导入都重新生成。
+
+## 8. 第 4 步：切换到 Input System（2026-10-19）
+
+**改动**：
+
+- 新增 `Assets/_Project/Settings/GameControls.inputactions`（不生成 C# 包装类），含两个 action map，键盘与手柄都有绑定。
+- `PlayerMover` 新增 `MoveAction`；`DemoEncounter` 新增 `InteractAction`、`MenuAction`（均为 `InputActionReference`，在 `OnEnable`／`OnDisable` 中启用／停用）。三处旧调用已替换：
+  - `PlayerMover.cs`：`Input.GetAxisRaw("Horizontal"/"Vertical")` → `MoveAction.action.ReadValue<Vector2>()`
+  - `DemoEncounter.cs`：`Input.GetKeyDown(KeyCode.E)` → `InteractAction.action.WasPressedThisFrame()`
+  - `DemoEncounter.cs`：`OnGUI` 里的 `Input.GetKeyDown(KeyCode.Escape)` → `Update` 中 `MenuAction.action.WasPressedThisFrame()`
+- 战斗中按 Interact（E／Enter／手柄 A）也会执行“攻击”，这样手柄不用鼠标点 IMGUI 按钮也能打完；画面提示文字同步更新。
+- 场景 `Glade.unity` 用一次性 batchmode 脚本挂上三个引用（场景 diff 仅 +3 行）；临时脚本已删除、未提交。`ProjectSetup.Create()` 同步挂上这些引用。
+- `ThreeKingdoms.Gameplay`、`ThreeKingdoms.EditorTools` 增加对 `Unity.InputSystem` 的引用。
+- `ProjectSettings.asset`：`activeInputHandler: 0` → `1`（Input System Package (New)）。
+- EventSystem：场景中没有 EventSystem（当前 UI 是 IMGUI `OnGUI`），无需替换；以后加 uGUI/UI Toolkit 运行时 UI 时按 ADR 使用 `InputSystemUIInputModule`。
+
+**按键绑定**：
+
+| Map／Action | 键盘 | 手柄 | 当前用途 |
+| --- | --- | --- | --- |
+| Player/Move | WASD、方向键 | 左摇杆、十字键 | 移动 |
+| Player/Interact | E、Enter | South（A／×） | 接触史莱姆开战；战斗中攻击 |
+| Player/Cancel | X、Backspace | East（B／○） | 预留，暂未使用 |
+| Player/Menu | Esc | Start | 退出原型（原 Esc 行为） |
+| UI/Navigate | WASD、方向键 | 左摇杆、十字键 | 预留给菜单 |
+| UI/Submit | Enter | South | 预留 |
+| UI/Cancel | Esc | East | 预留 |
+| UI/Point、Click、ScrollWheel | 鼠标位置、左键、滚轮 | — | 预留 |
+
+**验证**：
+
+| 项 | 结果 |
+| --- | --- |
+| `Assets/` 搜索 `\bInput\.(Get|any|mouse)` | 0 命中 |
+| `Packages/`（本地嵌入包） | 无 `.cs`，0 命中 |
+| 已安装包中的旧输入调用 | Cinemachine、URP Core 的调用都在 `ENABLE_LEGACY_INPUT_MANAGER` 条件编译内；uGUI 的旧输入只经 `StandaloneInputModule`／`BaseInput` 使用，本项目没有 EventSystem，也不会使用它们。没有包要求保持 “Both” |
+| 编译 | 通过 |
+| EditMode | 3/3 Passed（名字同第 5 节） |
+| PlayMode | 2/2 Passed（名字同第 5 节）；测试本身不依赖旧输入，未修改 |
+
+**需要人工验证**（batchmode 测试覆盖不到真实按键）：键盘、手柄各一遍——移动；靠近史莱姆按 Interact 开战并攻击到胜利；柱子和墙能挡住；Esc／Start 退出（在编辑器 Play 模式里不会真的退出，需构建后验证）。
