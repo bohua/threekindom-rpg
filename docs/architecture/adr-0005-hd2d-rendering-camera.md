@@ -98,6 +98,7 @@ V1_SPEC §10 要求首版达到“基本一致的中式 HD-2D 样板”：像素
 - 人物用**竖直四边形面片（Quad）+ URP Lit 材质**：Alpha Clip 开（阈值 0.5）、双面渲染、Receive Shadows 开、Cast Shadows 开。URP Lit 自带 ShadowCaster Pass，因此人物能投影、受方向光与点光照明，也参与 Forward+ 光照。
 - 不使用 SpriteRenderer + Sprite-Lit-Default（只响应 2D 灯光，见 ADR-0001 风险）。不在 V1 写自定义精灵着色器；若之后需要轮廓光、受击闪白等效果，再用 Shader Graph 做 Lit 变体（单独 ADR 补充）。
 - 朝向：面片保持竖直，只绕 Y 轴对齐相机偏航角（不是完全朝向相机的 billboard），这样影子形状稳定、人物不随相机俯仰倾倒。
+- 方形像素补偿：竖直面片在 30° 俯角下会被压扁到 cos 30° ≈ 0.87（样板场景实测人物从约 132 像素变成约 115 像素高，像素变成横向长方形）。面片高度乘以 1/cos(俯角)，并上移半个增量保持脚贴地，使每个美术像素在屏幕上保持正方形。代价是影子略长约 15%。
 - 动作帧：一张图集 + 按帧切换 UV（`MaterialPropertyBlock` 设置 `_BaseMap_ST`），避免为每帧建材质。
 
 ### 5. 后处理 Volume
@@ -106,7 +107,7 @@ V1_SPEC §10 要求首版达到“基本一致的中式 HD-2D 样板”：像素
 
 | 效果 | 高档（默认） | 低档（最低配置） |
 | --- | --- | --- |
-| 景深 | Bokeh：对焦距离 = 相机到主角距离，焦距约 300 mm、光圈约 f/5.6，近景和远景都虚化，模拟移轴 | 关闭（URP 的 Gaussian 模式只虚化远景，效果不像移轴，宁可关闭） |
+| 景深 | Bokeh：对焦距离 = 相机到主角距离，焦距 300 mm、光圈 f/2（样板场景实测 f/5.6 时几乎看不出虚化，因为俯视镜头下前后景与焦点的距离差只有十几个单位），近景和远景都虚化，模拟移轴 | 关闭（URP 的 Gaussian 模式只虚化远景，效果不像移轴，宁可关闭） |
 | Bloom | 阈值 0.9、强度 0.6、散射 0.7 | 强度 0.4，降采样 |
 | 色调映射 | ACES | ACES |
 | 暗角 | 强度 0.3、平滑 0.4 | 同左 |
@@ -191,11 +192,11 @@ V1_SPEC §10 要求首版达到“基本一致的中式 HD-2D 样板”：像素
 
 | Metric | Before（Glade 原型，ADR-0001 基线） | Expected After（样板场景） | Budget |
 |--------|--------|---------------|--------|
-| CPU+GPU 帧时间 | 0.68 ms（不限帧，开发机） | 数毫秒（景深、Bloom、阴影） | 16.6 ms @1080p；最低配置待实测 |
-| Memory | 约 190 MB 工作集 | 小幅增加 | ≤ 2 GB |
+| CPU+GPU 帧时间 | 0.68 ms（不限帧，开发机） | 样板实测（IL2CPP，1080p，不限帧，Quadro P2000）：High 平均 2.94 ms（p95 3.53、p99 4.09），Low 平均 2.42 ms（p95 3.45） | 16.6 ms @1080p；最低配置待实测 |
+| Memory | 约 190 MB 工作集 | 样板实测约 195–201 MB 工作集 | ≤ 2 GB |
 | Load Time | — | 场景切换 ≤ 3 s | 同 ADR-0001 |
 
-验证方法：IL2CPP 构建 + `PerfBaselineProbe`（`-perfBaseline 30 -perfUncapped`），分别在 High 与 Low 档各测一次；最低配置在对应硬件上复测（或在有该档硬件时补测，未测前标为待验证）。
+验证方法：IL2CPP 构建 + `PerfBaselineProbe`（`-scene HD2D_Sample -perfBaseline 30 -perfUncapped`，Low 档加 `-hd2dLow`），分别在 High 与 Low 档各测一次；最低配置在对应硬件上复测（或在有该档硬件时补测，未测前标为待验证）。开发机 Quadro P2000 的性能大致介于 GTX 1050 Ti 与 GTX 1060 之间，样板在其上的帧时间不到预算的 20%，最低配置达标的可能性较高，但仍需实机确认。
 
 ## Migration Plan
 
