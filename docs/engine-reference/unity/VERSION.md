@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Engine Version** | Unity 6.3 LTS |
-| **Installed at pin time** | NOT DETERMINED — `/setup-engine` §3 probes the installed editor and records the result here. |
+| **Installed at pin time** | 6000.3.26f1 (de8167e7440c) — read from `ProjectSettings/ProjectVersion.txt`, 2026-10-19 (ADR-0001 Migration Plan step 1) |
 | **Release Date** | December 2025 |
 | **Project Pinned** | 2026-02-13 |
 | **Last Docs Verified** | 2026-02-13 |

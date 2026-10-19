@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Game/Scenes/Glade.unity
+    path: Assets/_Project/Scenes/Glade.unity
     guid: a8dca94985d26c743a7648af9d18619c
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
