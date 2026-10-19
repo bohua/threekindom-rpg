@@ -14,5 +14,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Battle_ZhuojunMarket.unity
     guid: 5a1eb5277a4b32e4f91460c370aa3521
+  - enabled: 1
+    path: Assets/_Project/Scenes/Zhuojun_Corner.unity
+    guid: 51f2ad8ed1cb20e44a0d6915b1b6ca83
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

@@ -96,7 +96,7 @@ namespace ThreeKingdoms.EditorTools
                 m.SetTexture("_EmissionMap", texture);
                 m.SetColor("_EmissionColor", Color.white * emission);
                 m.EnableKeyword("_EMISSION");
-                m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+                m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;   // URP keeps _EMISSION only when a GI flag says "emissive"
             }
             if (alphaClip)
             {

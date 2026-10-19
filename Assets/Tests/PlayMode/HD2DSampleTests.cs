@@ -18,7 +18,7 @@ public sealed class HD2DSampleTests
         Assert.IsNotNull(camera);
         Assert.IsFalse(camera.orthographic);
         Assert.AreEqual(20f, camera.fieldOfView, 0.01f);
-        Assert.AreEqual(30f, camera.transform.eulerAngles.x, 0.01f);
+        Assert.AreEqual(25f, camera.transform.eulerAngles.x, 0.01f);
         Assert.IsTrue(camera.GetUniversalAdditionalCameraData().renderPostProcessing);
 
         var sprites = Object.FindObjectsByType<PixelBillboard>(FindObjectsSortMode.None);
@@ -35,7 +35,7 @@ public sealed class HD2DSampleTests
             Assert.AreEqual(FilterMode.Point, texture.filterMode);
             Assert.AreEqual(0f, sprite.transform.eulerAngles.x, 0.01f, "billboard must stay upright");
             Assert.AreEqual(1.6f, sprite.transform.lossyScale.x, 0.001f, "48 px at 30 px/unit");
-            Assert.AreEqual(1.6f / Mathf.Cos(30f * Mathf.Deg2Rad), sprite.transform.lossyScale.y, 0.001f, "stretched so pixels stay square under a 30° pitch");
+            Assert.AreEqual(1.6f / Mathf.Cos(25f * Mathf.Deg2Rad), sprite.transform.lossyScale.y, 0.001f, "stretched so pixels stay square under the 25° pitch");
             Assert.AreEqual(sprite.transform.lossyScale.y / 2f, sprite.transform.localPosition.y, 0.001f, "feet stay on the ground");
         }
 
