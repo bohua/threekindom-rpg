@@ -1,8 +1,8 @@
 # Systems Index: 三国 HD-2D JRPG（正式名称待定）— Alpha 0.1「涿郡起兵」
 
-> **Status**: Draft
+> **Status**: Approved（用户 2026-10-19 确认）
 > **Created**: 2026-10-18
-> **Last Updated**: 2026-10-18
+> **Last Updated**: 2026-10-19
 > **Source Concept**: design/gdd/game-concept.md
 > **Scope**: 只列 Alpha 0.1 测试版需要的系统（`production/milestones/alpha-0.1.md`）。规则来源以用户电脑上共享目录 `ThreeKingdomsJRPG-Docs` 的最新 V1_SPEC.md、ZHUOJUN_TOWN_DESIGN.md 为准。
 
@@ -127,7 +127,7 @@ Alpha 0.1 是一条约 30–60 分钟（待实测）的单人短流程：在涿�
 
 ## Next Steps
 
-- [ ] 用户确认本系统清单
-- [ ] 为「装备、道具与商店」「城镇探索与交互」写 GDD
-- [ ] 各 GDD 跑 `/design-review`
+- [x] 用户确认本系统清单（2026-10-19）
+- [x] 为「装备、道具与商店」「城镇探索与交互」写 GDD
+- [x] 各 GDD 跑 `/design-review`
 - [ ] 全部 MVP GDD 评审后跑 `/review-all-gdds`，再 `/gate-check technical-setup`
