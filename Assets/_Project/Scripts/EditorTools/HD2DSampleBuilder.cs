@@ -248,7 +248,7 @@ namespace ThreeKingdoms.EditorTools
             EditorBuildSettings.scenes = scenes.ToArray();
         }
 
-        static GameObject Character(string name, string key, Vector3 position, int frame, bool isPlayer)
+        internal static GameObject Character(string name, string key, Vector3 position, int frame, bool isPlayer)
         {
             var root = new GameObject(name);
             root.transform.position = position;
