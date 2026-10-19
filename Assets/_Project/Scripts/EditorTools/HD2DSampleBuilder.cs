@@ -121,7 +121,7 @@ namespace ThreeKingdoms.EditorTools
             dof.aperture.Override(2f);
 
             var bloom = profile.Add<Bloom>(true);
-            bloom.threshold.Override(0.9f);
+            bloom.threshold.Override(1.0f);
             bloom.intensity.Override(lowTier ? 0.4f : 0.6f);
             bloom.scatter.Override(0.7f);
             bloom.highQualityFiltering.Override(!lowTier);
@@ -149,12 +149,13 @@ namespace ThreeKingdoms.EditorTools
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.55f, 0.56f, 0.68f);
-            RenderSettings.ambientEquatorColor = new Color(0.48f, 0.40f, 0.34f);
-            RenderSettings.ambientGroundColor = new Color(0.20f, 0.16f, 0.13f);
+            // Linear colour space (ADR-0005): ambient and sun are brighter than the Gamma-era values to keep the same exposure.
+            RenderSettings.ambientSkyColor = new Color(0.78f, 0.80f, 0.92f);
+            RenderSettings.ambientEquatorColor = new Color(0.72f, 0.60f, 0.50f);
+            RenderSettings.ambientGroundColor = new Color(0.36f, 0.29f, 0.23f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Exponential;
-            RenderSettings.fogDensity = 0.01f;
+            RenderSettings.fogDensity = 0.006f;
             RenderSettings.fogColor = new Color(0.78f, 0.62f, 0.50f);
 
             var env = new GameObject("Environment").transform;
@@ -194,7 +195,7 @@ namespace ThreeKingdoms.EditorTools
             var sun = new GameObject("Evening sun").AddComponent<Light>();
             sun.type = LightType.Directional;
             sun.color = new Color(1f, 0.80f, 0.58f);
-            sun.intensity = 1.5f;
+            sun.intensity = 2.3f;
             sun.shadows = LightShadows.Soft;
             sun.shadowStrength = 0.85f;
             sun.transform.rotation = Quaternion.Euler(38f, -35f, 0f);
