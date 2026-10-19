@@ -20,21 +20,14 @@ namespace ThreeKingdoms.App
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
         {
-            string[] args = Environment.GetCommandLineArgs();
-            string seconds = Arg(args, "-perfBaseline");
+            string seconds = LaunchArgs.Get("-perfBaseline");
             if (seconds == null) return;
             Application.runInBackground = true; // keep sampling when the window doesn't get focus
-            if (Array.IndexOf(args, "-perfUncapped") >= 0) { QualitySettings.vSyncCount = 0; Application.targetFrameRate = -1; }
+            if (LaunchArgs.Has("-perfUncapped")) { QualitySettings.vSyncCount = 0; Application.targetFrameRate = -1; }
             var probe = new GameObject(nameof(PerfBaselineProbe)).AddComponent<PerfBaselineProbe>();
             probe.sampleSeconds = float.Parse(seconds, System.Globalization.CultureInfo.InvariantCulture);
-            probe.outPath = Arg(args, "-perfOut") ?? Path.Combine(Application.persistentDataPath, "perf-baseline.json");
+            probe.outPath = LaunchArgs.Get("-perfOut") ?? Path.Combine(Application.persistentDataPath, "perf-baseline.json");
             DontDestroyOnLoad(probe.gameObject);
-        }
-
-        static string Arg(string[] args, string name)
-        {
-            int i = Array.IndexOf(args, name);
-            return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
         }
 
         void Start() => started = Time.realtimeSinceStartup;
@@ -67,6 +60,7 @@ namespace ThreeKingdoms.App
                 $"  \"totalAllocatedMB\": {Profiler.GetTotalAllocatedMemoryLong() / 1048576.0:F1},\n" +
                 $"  \"totalReservedMB\": {Profiler.GetTotalReservedMemoryLong() / 1048576.0:F1},\n" +
                 $"  \"graphicsDriverMB\": {Profiler.GetAllocatedMemoryForGraphicsDriver() / 1048576.0:F1},\n" +
+                $"  \"scene\": \"{UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}\",\n" +
                 $"  \"gpu\": \"{SystemInfo.graphicsDeviceName}\",\n" +
                 $"  \"cpu\": \"{SystemInfo.processorType}\"\n}}\n";
             File.WriteAllText(outPath, json);

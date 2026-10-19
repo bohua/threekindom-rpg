@@ -1,7 +1,7 @@
 {
   "name": "ThreeKingdoms.EditorTools",
   "rootNamespace": "ThreeKingdoms.EditorTools",
-  "references": ["ThreeKingdoms.App", "ThreeKingdoms.Narrative", "ThreeKingdoms.UI", "ThreeKingdoms.Gameplay", "ThreeKingdoms.Save", "ThreeKingdoms.Data", "ThreeKingdoms.Core", "Unity.RenderPipelines.Universal.Runtime", "Unity.InputSystem"],
+  "references": ["ThreeKingdoms.App", "ThreeKingdoms.Narrative", "ThreeKingdoms.UI", "ThreeKingdoms.Gameplay", "ThreeKingdoms.Save", "ThreeKingdoms.Data", "ThreeKingdoms.Core", "Unity.RenderPipelines.Universal.Runtime", "Unity.InputSystem", "Unity.RenderPipelines.Core.Runtime"],
   "includePlatforms": ["Editor"],
   "autoReferenced": false
 }

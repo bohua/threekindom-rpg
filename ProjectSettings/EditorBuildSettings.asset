@@ -8,5 +8,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Glade.unity
     guid: a8dca94985d26c743a7648af9d18619c
+  - enabled: 1
+    path: Assets/_Project/Scenes/HD2D_Sample.unity
+    guid: 5565e670f84c66543bc54e98d896fe1d
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_ZhuojunMarket.unity
+    guid: 5a1eb5277a4b32e4f91460c370aa3521
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
