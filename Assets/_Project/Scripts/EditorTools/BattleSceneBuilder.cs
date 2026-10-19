@@ -72,8 +72,9 @@ namespace ThreeKingdoms.EditorTools
             es.AddComponent<InputSystemUIInputModule>();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
-            var scenes = EditorBuildSettings.scenes.ToList();
-            if (!scenes.Any(s => s.path == ScenePath)) scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
+            // First in the list = what a player build opens without arguments (user 2026-10-19: start in battle 1).
+            var scenes = EditorBuildSettings.scenes.Where(s => s.path != ScenePath).ToList();
+            scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
             Debug.Log("BATTLE_TUTORIAL_BUILT");

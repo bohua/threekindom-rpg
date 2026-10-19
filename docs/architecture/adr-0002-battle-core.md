@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed（2026-10-19 起草并完成两项评审，评审意见已改进正文，见文末“评审记录”；待用户确认“待确认决定”后改为 Accepted）
+Accepted（2026-10-19，用户确认全部 7 项推荐方案；评审意见已按文末“评审记录”处理）
 
 ## Date
 
@@ -14,7 +14,7 @@ Proposed（2026-10-19 起草并完成两项评审，评审意见已改进正文�
 
 ## Decision Makers
 
-- 用户 Bohua：2026-10-19 授权按 CCGS 流程起草本 ADR 并跑评审，在 `feature/battle-core` 上继续开发并完成刘关张对程远志的 3v3 验收；同日确定界面用简体、场景招牌用繁体
+- 用户 Bohua：2026-10-19 授权按 CCGS 流程起草本 ADR 并跑评审，在 `feature/battle-core` 上继续开发并完成刘关张对程远志的 3v3 验收；同日确定界面用简体、场景招牌用繁体；手柄实测第一战通过后确认“用户确认”表 7 项，并让构建默认进入第一战
 - 起草：Claude（`/architecture-decision` 流程，在用户电脑上操作仓库的线程）
 - 评审：`unity-specialist` 引擎校验与 `technical-director` TD-ADR 门（项目 `review_mode` 为 solo，本次按用户要求补跑）
 
@@ -331,11 +331,11 @@ namespace ThreeKingdoms.Core.Battle
 - 战前快照与读旧档再领奖：ADR-0004
 - 置灰样式、教学提示、溃退演出细节：战斗界面 UX 规格与剧情事件故事
 
-## 待确认决定
+## 用户确认（2026-10-19）
 
-以下为推荐方案，用户确认后改为 Accepted：
+用户确认按以下推荐方案执行：
 
-| # | 问题 | 推荐 |
+| # | 问题 | 确认结果 |
 | --- | --- | --- |
 | 1 | 规则层位置 | 纯 C#，`ThreeKingdoms.Core`；SO 经 `ToRuntime()` 转成规格对象 |
 | 2 | 结算模型 | 整回合一次性结算 + 事件列表回放 |
@@ -379,7 +379,7 @@ namespace ThreeKingdoms.Core.Battle
 | unity-specialist 7 | UI 拿头像的路径未定 | `BattleUnitView` 持有胸像，HUD 经 `ViewOf` 读取，UI 不引用 Data |
 | unity-specialist 8 | 依赖 IL2CPP Build Profile | Dependencies 写明依赖 ADR-0001 的 `Win64-Release` |
 
-### 登记表候选（Accepted 时写入 `docs/registry/architecture.yaml`）
+### 登记表（已于 2026-10-19 写入 `docs/registry/architecture.yaml`）
 
 - forbidden_patterns：Core 引用 UnityEngine 或 ScriptableObject；规则层使用随机数、时间或 I/O；敌方 AI 读取我方本回合指令；战斗改写战斗外状态
 - interfaces：`battle_event_playback`（规则层产出 `BattleEvent` 列表，Gameplay 回放、UI 显示）；`battle_result`（`BattleResult` 由成长、装备与道具、剧情系统消费）

@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: ""
+last_updated: "2026-10-19"
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -43,7 +43,57 @@ last_updated: ""
 # interface: how other systems access this state (read-only property, method call,
 #   signal, shared resource, etc.) — this is the contract other ADRs depend on.
 
-state_ownership: []
+state_ownership:
+  - state: battle_unit_state
+    status: active
+    owner_system: combat-system
+    adr: docs/architecture/adr-0002-battle-core.md
+    interface: "BattleSession.State (read-only queries); only BattleSession.PlayRound advances it"
+    write_access: combat-system-only
+    referenced_by:
+      - docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+    revised: ""
+  - state: general_exp_and_level
+    status: active
+    owner_system: character-progression
+    adr: docs/architecture/adr-0002-battle-core.md
+    interface: "Combat reads level and learned skills via CombatantInput; progression applies BattleResult.Exp"
+    write_access: character-progression-only
+    referenced_by:
+      - docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+    revised: ""
+  - state: inventory_and_copper
+    status: active
+    owner_system: equipment-items
+    adr: docs/architecture/adr-0002-battle-core.md
+    interface: "Combat gets ration count and equipment StatBonus as inputs; equipment-items applies BattleResult.Copper / RationsUsed"
+    write_access: equipment-items-only
+    referenced_by:
+      - docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+    revised: ""
+  - state: battle_clear_flags
+    status: active
+    owner_system: story-events
+    adr: docs/architecture/adr-0002-battle-core.md
+    interface: "battle_1_done / battle_2_done / battle_3_done, set from BattleResult.EncounterId on victory; gates reward-once"
+    write_access: story-events-only
+    referenced_by:
+      - docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+    revised: ""
+  - state: pre_battle_snapshot
+    status: active
+    owner_system: save-system
+    adr: docs/architecture/adr-0002-battle-core.md
+    interface: "Format and persistence decided by ADR-0004; combat never writes out-of-battle state, so defeat discards the session"
+    write_access: save-system-only
+    referenced_by:
+      - docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+    revised: ""
 
 # Example:
 #
@@ -71,7 +121,34 @@ state_ownership: []
 #
 # pattern options: signal | direct_call | event_bus | shared_resource | rpc | none
 
-interfaces: []
+interfaces:
+  - contract: battle_event_playback
+    status: active
+    pattern: direct_call
+    producer: combat-system
+    consumers:
+      - battle-controller   # Gameplay: animates each BattleEvent
+      - game-ui             # UI: text via BattleText, numbers, popups
+    adr: docs/architecture/adr-0002-battle-core.md
+    signal_signature: "IReadOnlyList<BattleEvent> BattleSession.PlayRound(IEnumerable<BattleCommand>); BattleController.EventPlayed(BattleEvent)"
+    referenced_by:
+      - docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+    revised: ""
+  - contract: battle_result
+    status: active
+    pattern: direct_call
+    producer: combat-system
+    consumers:
+      - character-progression
+      - equipment-items
+      - story-events
+    adr: docs/architecture/adr-0002-battle-core.md
+    signal_signature: "BattleResult { EncounterId, Outcome, Rounds, Exp, Copper, RationsUsed } via BattleSession.Result"
+    referenced_by:
+      - docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+    revised: ""
 
 # Example:
 #
@@ -131,7 +208,27 @@ performance_budgets: []
 # Register an API decision when the choice is non-obvious and other ADRs might
 # make a different choice for the same purpose without knowing this was decided.
 
-api_decisions: []
+api_decisions:
+  - purpose: battle_damage_arithmetic
+    status: active
+    api: "integer fixed-point (long) in BattleRules.Damage, single floor division"
+    not: "float / decimal"
+    adr: docs/architecture/adr-0002-battle-core.md
+    reason: "Exact GDD examples (40.8 → 21) and identical results on every platform and scripting backend"
+    referenced_by:
+      - docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+    revised: ""
+  - purpose: temporary_cjk_ui_font
+    status: active
+    api: "Font.CreateDynamicFontFromOSFont + FontDefinition.FromFont (BattleFont), Windows only"
+    not: "bundled third-party font files before ADR-0007"
+    adr: docs/architecture/adr-0002-battle-core.md
+    reason: "Development / validation builds until ADR-0007 ships a licensed bundled font"
+    referenced_by:
+      - docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+    revised: ""
 
 # Example:
 #
@@ -157,7 +254,37 @@ api_decisions: []
 # Register a pattern when an ADR explicitly bans it AND other ADRs might
 # unknowingly use it (i.e., it's a tempting but wrong approach for this project).
 
-forbidden_patterns: []
+forbidden_patterns:
+  - pattern: core_engine_or_asset_reference
+    status: active
+    description: "ThreeKingdoms.Core (battle rules) must not reference UnityEngine, ScriptableObjects or save DTOs."
+    why: "Rules stay testable in EditMode and independent of data/persistence formats (ADR-0001 layering)."
+    adr: docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+  - pattern: battle_rules_nondeterminism
+    status: active
+    description: "Battle rules must not use random numbers, time, frame counts, logging or I/O."
+    why: "Same input and commands must give the same result on every platform; retries and tests depend on it."
+    adr: docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+  - pattern: enemy_ai_reads_player_commands
+    status: active
+    description: "Enemy AI must only receive the round-start BattleView, never the player's commands for the round."
+    why: "Combat GDD: AI choices are independent of the player's pending commands."
+    adr: docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+  - pattern: battle_writes_out_of_battle_state
+    status: active
+    description: "Combat must not write exp, inventory, copper, story flags or snapshots; it only hands back BattleResult."
+    why: "Those states belong to progression, equipment-items, story-events and save-system."
+    adr: docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
+  - pattern: hardcoded_battle_numbers
+    status: active
+    description: "Advantage, guard, modifier floor, heal ratios and troop-type numbers must come from data, never literals in rule code."
+    why: "Combat GDD: all variables are data-driven; tuning must not need code changes."
+    adr: docs/architecture/adr-0002-battle-core.md
+    added: 2026-10-19
 
 # Example:
 #
