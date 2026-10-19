@@ -19,16 +19,18 @@ namespace ThreeKingdoms.EditorTools
         public sealed class Palette
         {
             public Material Plaster, RammedEarth, Timber, Roof, Thatch, Paving, Dirt, Door, Lattice, Leaves, Blossom, Lantern, Banner, Sign;
+            public Material Cloth, Clay, Iron, Forge, IronBanner, ProduceRed, ProduceGreen, ProduceYellow;
         }
 
         static Mesh meshContainer;
         static readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
 
-        public static Palette CreatePalette()
+        // meshAssetPath lets a temporary diorama (e.g. the battle backdrop baker) keep its meshes apart from the town's.
+        public static Palette CreatePalette(string meshAssetPath = MeshAssetPath)
         {
             Directory.CreateDirectory(TextureDir);
             Directory.CreateDirectory(MaterialDir);
-            BeginMeshes();
+            BeginMeshes(meshAssetPath);
             return new Palette
             {
                 Plaster = Mat("Plaster", HD2DTexturePainter.Plaster(), tiled: true),
@@ -45,6 +47,14 @@ namespace ThreeKingdoms.EditorTools
                 Lantern = Mat("Lantern", HD2DTexturePainter.Lantern(), tiled: false, emission: 0.9f),
                 Banner = Mat("WineBanner", HD2DTexturePainter.WineBanner(), tiled: false, alphaClip: true),
                 Sign = Mat("Signboard", HD2DTexturePainter.Signboard(), tiled: false),
+                Cloth = Mat("Cloth", HD2DTexturePainter.Cloth(), tiled: true),
+                Clay = Mat("Clay", HD2DTexturePainter.Clay(), tiled: true),
+                Iron = Mat("Iron", HD2DTexturePainter.Iron(), tiled: true),
+                Forge = Mat("ForgeCoals", HD2DTexturePainter.ForgeCoals(), tiled: false, emission: 3f),
+                IronBanner = Mat("IronBanner", HD2DTexturePainter.IronBanner(), tiled: false, alphaClip: true),
+                ProduceRed = Mat("ProduceRed", HD2DTexturePainter.Produce(200, 52, 40), tiled: true),
+                ProduceGreen = Mat("ProduceGreen", HD2DTexturePainter.Produce(92, 150, 60), tiled: true),
+                ProduceYellow = Mat("ProduceYellow", HD2DTexturePainter.Produce(222, 178, 70), tiled: true),
             };
         }
 
@@ -112,12 +122,12 @@ namespace ThreeKingdoms.EditorTools
 
         // ---------- meshes ----------
 
-        static void BeginMeshes()
+        static void BeginMeshes(string path)
         {
             meshes.Clear();
-            if (AssetDatabase.LoadAssetAtPath<Mesh>(MeshAssetPath)) AssetDatabase.DeleteAsset(MeshAssetPath);
-            meshContainer = new Mesh { name = "HD2D_EnvMeshes" };
-            AssetDatabase.CreateAsset(meshContainer, MeshAssetPath);
+            if (AssetDatabase.LoadAssetAtPath<Mesh>(path)) AssetDatabase.DeleteAsset(path);
+            meshContainer = new Mesh { name = Path.GetFileNameWithoutExtension(path) };
+            AssetDatabase.CreateAsset(meshContainer, path);
         }
 
         static Mesh Store(string key, System.Func<Mesh> build)
@@ -126,6 +136,7 @@ namespace ThreeKingdoms.EditorTools
             mesh = build();
             mesh.name = key;
             mesh.RecalculateBounds();
+            Unwrapping.GenerateSecondaryUVSet(mesh);         // lightmap UVs for the baked town (ADR-0005 §8)
             AssetDatabase.AddObjectToAsset(mesh, meshContainer);
             meshes[key] = mesh;
             return mesh;
@@ -216,7 +227,7 @@ namespace ThreeKingdoms.EditorTools
 
         // ---------- buildings ----------
 
-        public enum HouseStyle { Tiled, Thatched, Tavern }
+        public enum HouseStyle { Tiled, Thatched, Tavern, Smithy }
 
         // Front faces local -Z; yaw turns the front toward the street.
         public static Transform House(Transform parent, string name, Vector3 position, float yaw, float width, HouseStyle style, Palette p)
@@ -274,6 +285,14 @@ namespace ThreeKingdoms.EditorTools
                         Piece(house, "Eave corner", new Vector3(s * (roofW / 2 - 0.25f), top - Mathf.Tan(rad) * eave + 0.12f, f * (halfRun - 0.15f)),
                             new Vector3(0.8f, 0.12f, 0.5f), p.Roof, new Vector3(f * slope * 0.5f, s * 35f * f, s * 16f), collider: false);
                 }
+            }
+            if (style == HouseStyle.Tavern || style == HouseStyle.Smithy)
+                Piece(house, "Awning", new Vector3(0, plinth + 2.05f, -depth / 2 - 0.75f), new Vector3(width * 0.7f, 0.05f, 1.5f), p.Cloth, new Vector3(-14f, 0, 0), collider: false);
+            if (style == HouseStyle.Smithy)
+            {
+                Piece(house, "Banner pole", new Vector3(-width / 2 - 0.6f, 1.6f, -depth / 2 - 0.6f), new Vector3(0.1f, 3.2f, 0.1f), p.Timber, collider: false);
+                Piece(house, "Banner arm", new Vector3(-width / 2 - 0.6f, 3.1f, -depth / 2 - 0.95f), new Vector3(0.08f, 0.08f, 0.8f), p.Timber, collider: false);
+                Piece(house, "Iron banner", new Vector3(-width / 2 - 0.6f, 2.45f, -depth / 2 - 1.05f), new Vector3(0.02f, 1.2f, 0.6f), p.IronBanner, fit: true, collider: false);
             }
             if (style == HouseStyle.Tavern)
             {
@@ -363,6 +382,7 @@ namespace ThreeKingdoms.EditorTools
             light.intensity = 2.2f;
             light.color = new Color(1f, 0.58f, 0.28f);
             light.shadows = LightShadows.None;
+            light.lightmapBakeType = LightmapBakeType.Mixed;
         }
 
         public static void Stall(Transform parent, Vector3 at, float yaw, Palette p)
@@ -395,6 +415,127 @@ namespace ThreeKingdoms.EditorTools
             crown.transform.localScale = new Vector3(2.6f, 2.2f, 2.6f);
             Object.DestroyImmediate(crown.GetComponent<Collider>());
             crown.GetComponent<Renderer>().sharedMaterial = crownOverride ? crownOverride : p.Leaves;
+        }
+    
+        // ---------- set dressing (town beauty corner) ----------
+
+        public static void Barrel(Transform parent, Vector3 at, Palette p, float height = 0.9f)
+        {
+            Cyl(parent, "Barrel", at + new Vector3(0, height / 2, 0), new Vector3(0.7f, height / 2, 0.7f), p.Timber);
+            foreach (float y in new[] { 0.18f, height - 0.18f })
+                Cyl(parent, "Barrel band", at + new Vector3(0, y, 0), new Vector3(0.73f, 0.03f, 0.73f), p.Iron, collider: false);
+        }
+
+        public static void Jar(Transform parent, Vector3 at, Palette p, float scale = 1f)
+        {
+            var jar = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            jar.name = "Wine jar"; jar.transform.SetParent(parent, false);
+            jar.transform.localPosition = at + new Vector3(0, 0.32f * scale, 0);
+            jar.transform.localScale = new Vector3(0.5f, 0.64f, 0.5f) * scale;
+            jar.GetComponent<Renderer>().sharedMaterial = p.Clay;
+            Cyl(parent, "Jar neck", at + new Vector3(0, 0.66f * scale, 0), new Vector3(0.22f, 0.06f, 0.22f) * scale, p.Clay, collider: false);
+        }
+
+        public static void Basket(Transform parent, Vector3 at, Palette p, Material produce)
+        {
+            Cyl(parent, "Basket", at + new Vector3(0, 0.12f, 0), new Vector3(0.62f, 0.12f, 0.62f), p.Thatch, collider: false);
+            var rng = new System.Random((int)(at.x * 100 + at.z * 7));
+            for (int i = 0; i < 6; i++)
+            {
+                var fruit = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                fruit.name = "Produce"; fruit.transform.SetParent(parent, false);
+                fruit.transform.localPosition = at + new Vector3((float)rng.NextDouble() * 0.36f - 0.18f, 0.28f + (i / 3) * 0.08f, (float)rng.NextDouble() * 0.36f - 0.18f);
+                fruit.transform.localScale = Vector3.one * 0.2f;
+                Object.DestroyImmediate(fruit.GetComponent<Collider>());
+                fruit.GetComponent<Renderer>().sharedMaterial = produce;
+            }
+        }
+
+        public static void Crate(Transform parent, Vector3 at, float size, float yaw, Palette p) =>
+            Piece(parent, "Crate", at + new Vector3(0, size / 2, 0), Vector3.one * size, p.Door, new Vector3(0, yaw, 0), fit: true);
+
+        public static void Fence(Transform parent, Vector3 from, Vector3 to, Palette p)
+        {
+            Vector3 d = to - from; float len = d.magnitude; float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
+            int posts = Mathf.Max(2, Mathf.RoundToInt(len / 1.1f) + 1);
+            for (int i = 0; i < posts; i++)
+                Piece(parent, "Fence post", Vector3.Lerp(from, to, i / (float)(posts - 1)) + new Vector3(0, 0.5f, 0), new Vector3(0.12f, 1.0f, 0.12f), p.Timber, collider: false);
+            foreach (float y in new[] { 0.4f, 0.8f })
+                Piece(parent, "Fence rail", (from + to) / 2 + new Vector3(0, y, 0), new Vector3(0.06f, 0.08f, len), p.Timber, new Vector3(0, yaw, 0));
+        }
+
+        public static void Cart(Transform parent, Vector3 at, float yaw, Palette p)
+        {
+            var cart = Group(parent, "Hand cart", at, yaw);
+            Piece(cart, "Bed", new Vector3(0, 0.75f, 0), new Vector3(1.2f, 0.12f, 2.0f), p.Timber);
+            Piece(cart, "Side L", new Vector3(-0.58f, 0.95f, 0), new Vector3(0.06f, 0.3f, 2.0f), p.Timber, collider: false);
+            Piece(cart, "Side R", new Vector3(0.58f, 0.95f, 0), new Vector3(0.06f, 0.3f, 2.0f), p.Timber, collider: false);
+            foreach (int s in new[] { -1, 1 })
+            {
+                var wheel = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                wheel.name = "Wheel"; wheel.transform.SetParent(cart, false);
+                wheel.transform.localPosition = new Vector3(s * 0.72f, 0.5f, -0.2f);
+                wheel.transform.localRotation = Quaternion.Euler(0, 0, 90);
+                wheel.transform.localScale = new Vector3(1.0f, 0.05f, 1.0f);
+                wheel.GetComponent<Renderer>().sharedMaterial = p.Timber;
+                Object.DestroyImmediate(wheel.GetComponent<Collider>());
+            }
+            Piece(cart, "Handles", new Vector3(0, 0.7f, 1.6f), new Vector3(0.9f, 0.06f, 1.2f), p.Timber, collider: false);
+            Basket(cart, new Vector3(0.2f, 0.82f, -0.3f), p, p.ProduceYellow);
+        }
+
+        // Tavern W1 sits at (-7.5, 0, 3) with its front facing +X; dress the strip between it and the street.
+        public static void DressTavernCorner(Transform env, Palette p)
+        {
+            var corner = Group(env, "Tavern corner dressing", Vector3.zero, 0);
+            Barrel(corner, new Vector3(-4.9f, 0, 0.9f), p);
+            Barrel(corner, new Vector3(-4.3f, 0, 0.5f), p, 0.75f);
+            Jar(corner, new Vector3(-5.0f, 0, 5.4f), p);
+            Jar(corner, new Vector3(-4.55f, 0, 5.75f), p, 0.8f);
+            Jar(corner, new Vector3(-5.05f, 0, 6.05f), p, 0.9f);
+            Piece(corner, "Produce table", new Vector3(-4.1f, 0.4f, 4.4f), new Vector3(0.9f, 0.08f, 1.8f), p.Timber);
+            foreach (float z in new[] { 3.85f, 4.95f })
+                Piece(corner, "Table leg", new Vector3(-4.1f, 0.2f, z), new Vector3(0.7f, 0.4f, 0.08f), p.Timber, collider: false);
+            Basket(corner, new Vector3(-4.1f, 0.44f, 3.85f), p, p.ProduceRed);
+            Basket(corner, new Vector3(-4.1f, 0.44f, 4.45f), p, p.ProduceGreen);
+            Basket(corner, new Vector3(-4.1f, 0.44f, 5.05f), p, p.ProduceYellow);
+            Piece(corner, "Bench", new Vector3(-4.6f, 0.3f, 2.4f), new Vector3(0.4f, 0.08f, 1.4f), p.Timber);
+            Fence(corner, new Vector3(-3.4f, 0, -5.5f), new Vector3(-3.4f, 0, -3.2f), p);
+            Crate(corner, new Vector3(-4.7f, 0, -3.9f), 0.6f, 12f, p);
+            Crate(corner, new Vector3(-4.7f, 0.6f, -3.9f), 0.45f, -8f, p);
+        }
+
+        // Smithy E1 sits at (7.5, 0, 5) with its front facing -X: forge, anvil, weapon rack, crates and a cart.
+        public static void DressSmithy(Transform env, Palette p)
+        {
+            var smithy = Group(env, "Smithy dressing", Vector3.zero, 0);
+            Piece(smithy, "Forge hearth", new Vector3(4.95f, 0.45f, 3.1f), new Vector3(1.0f, 0.9f, 1.0f), p.Paving);
+            Piece(smithy, "Forge coals", new Vector3(4.95f, 0.92f, 3.1f), new Vector3(0.8f, 0.06f, 0.8f), p.Forge, fit: true, collider: false);
+            var fire = new GameObject("Forge light").AddComponent<Light>();
+            fire.transform.SetParent(smithy, false);
+            fire.transform.localPosition = new Vector3(4.8f, 1.3f, 3.1f);
+            fire.type = LightType.Point; fire.range = 4.5f; fire.intensity = 4f; fire.color = new Color(1f, 0.45f, 0.15f);
+            fire.shadows = LightShadows.None; fire.lightmapBakeType = LightmapBakeType.Mixed;
+            Piece(smithy, "Anvil base", new Vector3(4.1f, 0.25f, 3.9f), new Vector3(0.3f, 0.5f, 0.3f), p.Timber);
+            Piece(smithy, "Anvil", new Vector3(4.1f, 0.58f, 3.9f), new Vector3(0.28f, 0.16f, 0.6f), p.Iron, collider: false);
+            Piece(smithy, "Rack frame", new Vector3(5.05f, 0.9f, 1.3f), new Vector3(0.12f, 1.8f, 1.6f), p.Timber);
+            for (int i = 0; i < 4; i++)
+                Piece(smithy, "Spear", new Vector3(4.9f, 1.1f, 0.7f + i * 0.4f), new Vector3(0.05f, 2.2f, 0.05f), p.Iron, new Vector3(0, 0, 8f), collider: false);
+            Crate(smithy, new Vector3(4.6f, 0, 9.4f), 0.7f, 20f, p);
+            Crate(smithy, new Vector3(5.1f, 0, 9.9f), 0.55f, -10f, p);
+            Barrel(smithy, new Vector3(4.2f, 0, 10.1f), p);
+            Cart(smithy, new Vector3(4.3f, 0, 12.4f), 160f, p);
+            Fence(smithy, new Vector3(3.4f, 0, -2.6f), new Vector3(3.4f, 0, 0.2f), p);
+        }
+
+        static GameObject Cyl(Transform parent, string name, Vector3 at, Vector3 scale, Material m, bool collider = true)
+        {
+            var c = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            c.name = name; c.transform.SetParent(parent, false);
+            c.transform.localPosition = at; c.transform.localScale = scale;
+            c.GetComponent<Renderer>().sharedMaterial = m;
+            if (!collider) Object.DestroyImmediate(c.GetComponent<Collider>());
+            return c;
         }
     }
 }

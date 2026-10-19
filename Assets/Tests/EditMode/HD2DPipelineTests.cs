@@ -36,6 +36,30 @@ public sealed class HD2DPipelineTests
         }
     }
 
+    [Test] public void ProjectUsesLinearColourSpaceIncludingReleaseProfile()
+    {
+        Assert.AreEqual(ColorSpace.Linear, PlayerSettings.colorSpace);
+        string release = System.IO.File.ReadAllText("Assets/_Project/Settings/BuildProfiles/Win64-Release.asset");
+        StringAssert.Contains("m_ActiveColorSpace: 1", release, "the release build profile carries its own player-settings copy");
+    }
+
+    [Test] public void SharedLutPassesUrpValidationInEveryProfile()
+    {
+        var lut = AssetDatabase.LoadAssetAtPath<Texture2D>(HD2DLutBuilder.LutPath);
+        Assert.IsNotNull(lut);
+        Assert.AreEqual(1024, lut.width);
+        Assert.AreEqual(32, lut.height);
+        Assert.IsFalse(((TextureImporter)AssetImporter.GetAtPath(HD2DLutBuilder.LutPath)).sRGBTexture, "LUTs must be imported as linear data");
+        foreach (string path in new[] { HD2DSampleBuilder.HighProfilePath, HD2DSampleBuilder.LowProfilePath })
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            Assert.IsTrue(profile.TryGet(out ColorLookup lookup), path);
+            Assert.AreSame(lut, lookup.texture.value, path);
+            Assert.AreEqual(1f, lookup.contribution.value, path);
+            Assert.IsTrue(lookup.ValidateLUT(), path + ": URP silently disables an invalid LUT");
+        }
+    }
+
     [Test] public void CharacterAtlasesArePointFilteredWithoutMipmaps()
     {
         foreach (string key in new[] { "LiuBei", "GuanYu", "ZhangFei", "YellowTurban" })
