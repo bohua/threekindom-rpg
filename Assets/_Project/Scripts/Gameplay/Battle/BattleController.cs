@@ -5,6 +5,7 @@ using System.Linq;
 using ThreeKingdoms.Core.Battle;
 using ThreeKingdoms.Data.Battle;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ThreeKingdoms.Gameplay.Battle
 {
@@ -20,6 +21,7 @@ namespace ThreeKingdoms.Gameplay.Battle
         [Tooltip("Our units by line-up slot (Liu Bei, Guan Yu, Zhang Fei)")] public BattleUnitView[] PlayerViews = Array.Empty<BattleUnitView>();
         [Tooltip("Enemy units by slot; extra views are hidden")] public BattleUnitView[] EnemyViews = Array.Empty<BattleUnitView>();
         [Tooltip("Starting rations and copper for the stand-in party (V1_SPEC §8)")] public int StartRations = 2, StartCopper = 120;
+        [Tooltip("Gamepad Start quits the battle scene (keyboard Esc is the UI cancel here)")] public InputActionReference QuitAction;
         [Range(0.5f, 4f)] public float PlaybackSpeed = 1f;
         public bool Fast;
 
@@ -41,6 +43,26 @@ namespace ThreeKingdoms.Gameplay.Battle
         int actorIndex;
 
         float Speed => PlaybackSpeed * (Fast ? 3f : 1f);
+
+        void OnEnable() { if (QuitAction) QuitAction.action.Enable(); }
+        void OnDisable() { if (QuitAction) QuitAction.action.Disable(); }
+
+        void Update()
+        {
+            if (QuitAction && QuitAction.action.WasPressedThisFrame() && QuitAction.action.activeControl?.device is Gamepad)
+                Application.Quit();
+        }
+
+        BattleUnit previewTarget;
+
+        // UI calls this while a target button is focused; null clears the preview.
+        public void PreviewTarget(BattleUnit unit)
+        {
+            if (previewTarget == unit) return;
+            ViewOf(previewTarget)?.SetTargeted(false);
+            previewTarget = Current == Phase.Commanding ? unit : null;
+            ViewOf(previewTarget)?.SetTargeted(true);
+        }
 
         void Start()
         {
@@ -89,6 +111,7 @@ namespace ThreeKingdoms.Gameplay.Battle
 
         void HighlightActor()
         {
+            PreviewTarget(null);
             foreach (var pair in views) pair.Value.SetSelected(pair.Key == Actor);
         }
 

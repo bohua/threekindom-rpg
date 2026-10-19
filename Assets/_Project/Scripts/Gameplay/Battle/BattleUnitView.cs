@@ -11,6 +11,7 @@ namespace ThreeKingdoms.Gameplay.Battle
 
         public SpriteFrameAnimator Sprite;
         public GameObject SelectionRing;
+        [Tooltip("Shown while the player is choosing this unit as a target")] public GameObject TargetMarker;
         [Tooltip("Frame shown while idle, facing the other side")] public int IdleFrame = 2;
         public int AttackFrame = 6;
         public int DefendFrame = 7;
@@ -24,6 +25,7 @@ namespace ThreeKingdoms.Gameplay.Battle
         Renderer quad;
         MaterialPropertyBlock block;
         float alpha = 1f, flash;
+        bool targeted;
 
         public Vector3 Home => home;
 
@@ -42,10 +44,26 @@ namespace ThreeKingdoms.Gameplay.Battle
             gameObject.SetActive(true);
             ShowFrame(IdleFrame, false);
             SetSelected(false);
+            SetTargeted(false);
             ApplyTint();
         }
 
         public void SetSelected(bool on) { if (SelectionRing) SelectionRing.SetActive(on); }
+
+        // Target preview while choosing: marker under the feet and a soft pulse on the sprite.
+        public void SetTargeted(bool on)
+        {
+            targeted = on;
+            if (TargetMarker) TargetMarker.SetActive(on);
+            if (!on) { flash = 0f; ApplyTint(); }
+        }
+
+        void Update()
+        {
+            if (!targeted) return;
+            flash = 0.25f + 0.25f * Mathf.Sin(Time.unscaledTime * 8f);
+            ApplyTint();
+        }
 
         public void SetDefending(bool on) => ShowFrame(on ? DefendFrame : IdleFrame, false);
 

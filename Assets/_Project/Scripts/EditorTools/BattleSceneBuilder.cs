@@ -37,6 +37,7 @@ namespace ThreeKingdoms.EditorTools
             var scene = EditorSceneManager.OpenScene(BattleBackdropBaker.ScenePath, OpenSceneMode.Single);
             var units = GameObject.Find("Units").transform;
             var ringMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Battle/ZhuojunMarket/ActiveRing.mat");
+            var targetMat = TargetRingMaterial(ringMat);
             foreach (var old in units.GetComponentsInChildren<Transform>(true).Where(t => t.name == "Active ring").ToArray())
                 Object.DestroyImmediate(old.gameObject);
 
@@ -44,18 +45,19 @@ namespace ThreeKingdoms.EditorTools
             string[] busts = { "LiuBei", "GuanYu", "ZhangFei" };
             var playerViews = heroes.Select((n, i) =>
             {
-                var v = View(units.Find(n), PlayerFeet[i], ringMat, idle: 2, flipAttack: true);
+                var v = View(units.Find(n), PlayerFeet[i], ringMat, targetMat, idle: 2, flipAttack: true);
                 v.Portrait = LoadPortrait(busts[i]);
                 v.PortraitCrop = new RectInt(0, 0, 256, 256);
                 return v;
             }).ToArray();
-            var enemyViews = Enumerable.Range(1, 4).Select(i => View(units.Find("Yellow Turban " + i), EnemyFeet[i - 1], ringMat, idle: 1, flipAttack: false)).ToArray();
+            var enemyViews = Enumerable.Range(1, 4).Select(i => View(units.Find("Yellow Turban " + i), EnemyFeet[i - 1], ringMat, targetMat, idle: 1, flipAttack: false)).ToArray();
 
             var controller = new GameObject("Battle Controller").AddComponent<BattleController>();
             controller.Catalog = catalog;
             controller.EncounterId = "battle_1";
             controller.PlayerViews = playerViews;
             controller.EnemyViews = enemyViews;
+            controller.QuitAction = ProjectSetup.Action("Menu");
 
             var hudGo = new GameObject("Battle HUD");
             var doc = hudGo.AddComponent<UIDocument>();
@@ -83,24 +85,41 @@ namespace ThreeKingdoms.EditorTools
             catch (System.Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
         }
 
-        static BattleUnitView View(Transform unit, Vector2 feet, Material ringMat, int idle, bool flipAttack)
+        static Material TargetRingMaterial(Material ring)
+        {
+            const string path = "Assets/_Project/Art/Battle/ZhuojunMarket/TargetRing.mat";
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (!m) { m = new Material(ring); AssetDatabase.CreateAsset(m, path); }
+            m.CopyPropertiesFromMaterial(ring);
+            m.SetColor("_BaseColor", new Color(2.2f, 0.55f, 0.4f, 1f));   // warm red, distinct from the gold actor ring
+            EditorUtility.SetDirty(m);
+            return m;
+        }
+
+        static GameObject Ring(Transform unit, string name, Material material, float scale)
+        {
+            var ring = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            ring.name = name;
+            Object.DestroyImmediate(ring.GetComponent<Collider>());
+            ring.transform.SetParent(unit, false);
+            ring.transform.localPosition = new Vector3(0, 0.02f, 0.04f);
+            ring.transform.localScale = new Vector3(1.6f * scale, 0.6f * scale, 1f);
+            var r = ring.GetComponent<MeshRenderer>();
+            r.sharedMaterial = material;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            ring.SetActive(false);
+            return ring;
+        }
+
+        static BattleUnitView View(Transform unit, Vector2 feet, Material ringMat, Material targetMat, int idle, bool flipAttack)
         {
             unit.localPosition = new Vector3(feet.x, feet.y, 10f + feet.y * 0.01f);
             var view = unit.gameObject.AddComponent<BattleUnitView>();
             view.Sprite = unit.GetComponentInChildren<SpriteFrameAnimator>(true);
             view.IdleFrame = idle;
             view.FlipAttack = flipAttack;
-            var ring = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            ring.name = "Selection ring";
-            Object.DestroyImmediate(ring.GetComponent<Collider>());
-            ring.transform.SetParent(unit, false);
-            ring.transform.localPosition = new Vector3(0, 0.02f, 0.04f);
-            ring.transform.localScale = new Vector3(1.6f, 0.6f, 1f);
-            var r = ring.GetComponent<MeshRenderer>();
-            r.sharedMaterial = ringMat;
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            ring.SetActive(false);
-            view.SelectionRing = ring;
+            view.SelectionRing = Ring(unit, "Selection ring", ringMat, 1f);
+            view.TargetMarker = Ring(unit, "Target marker", targetMat, 1.25f);
             return view;
         }
 

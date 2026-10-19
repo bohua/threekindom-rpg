@@ -47,6 +47,7 @@ namespace ThreeKingdoms.UI.Battle
             BattleFont.ApplyTo(root);
             root.style.flexGrow = 1;
             BuildLayout();
+            root.RegisterCallback<NavigationCancelEvent>(e => { e.StopPropagation(); Cancel(); }, TrickleDown.TrickleDown);
             if (!Controller) return;
             Controller.BattleStarted += Rebuild;
             Controller.Changed += Refresh;
@@ -268,12 +269,28 @@ namespace ThreeKingdoms.UI.Battle
                         string adv = target.Side != actor.Side && state.HasAdvantage(actor, target) && pendingKind != CommandKind.Item &&
                                      (pendingSkill == null || pendingSkill.Damage != DamageKind.None) ? "  克制" : "";
                         string label = (plateOf.TryGetValue(target, out var p) ? p.Name.text : target.Name) + $"  {target.Troops}/{target.Stats.MaxTroops}{adv}";
-                        MenuButton(menu, label, () => Commit(target), 20);
+                        var b = MenuButton(menu, label, () => Commit(target), 20);
+                        b.RegisterCallback<FocusInEvent>(_ => { Controller.PreviewTarget(target); HighlightPlate(target); });
+                        b.RegisterCallback<FocusOutEvent>(_ => { Controller.PreviewTarget(null); HighlightPlate(null); });
                     }
                     MenuButton(menu, BattleText.Back, () => { step = Step.Command; BuildMenu(); }, 20);
                     break;
             }
             menu.Query<Button>().Where(b => b.enabledSelf).First()?.Focus();
+        }
+
+        // Cancel (gamepad B / Esc): sub-menu → command menu → previous general's command.
+        void Cancel()
+        {
+            if (Controller == null || Controller.Current != BattleController.Phase.Commanding) return;
+            Controller.PreviewTarget(null); HighlightPlate(null);
+            if (step != Step.Command) { step = Step.Command; BuildMenu(); }
+            else if (Controller.Commands.Count > 0) Controller.Undo();
+        }
+
+        void HighlightPlate(BattleUnit unit)
+        {
+            foreach (var pair in plateOf) pair.Value.Name.style.color = pair.Key == unit ? Gold : Color.white;
         }
 
         void PickTarget(CommandKind kind, SkillSpec skill)
@@ -286,6 +303,7 @@ namespace ThreeKingdoms.UI.Battle
         {
             var actor = Controller.Actor;
             step = Step.Command;
+            Controller.PreviewTarget(null); HighlightPlate(null);
             Controller.Choose(pendingKind switch
             {
                 CommandKind.Attack => BattleCommand.Attack(actor, target),
@@ -423,6 +441,22 @@ namespace ThreeKingdoms.UI.Battle
             b.style.paddingLeft = 16; b.style.height = size + 22; b.style.marginTop = 4;
             if (width > 0) b.style.width = width;
             b.SetEnabled(enabled);
+            // Visible focus for keyboard / gamepad; the mouse moves focus on hover so both stay in sync.
+            var idle = new Color(0.12f, 0.15f, 0.22f, 0.95f);
+            var dim = new Color(0.35f, 0.3f, 0.2f);
+            b.RegisterCallback<FocusInEvent>(_ =>
+            {
+                b.style.backgroundColor = new Color(0.45f, 0.33f, 0.10f, 0.98f);
+                b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = Gold;
+                b.style.borderLeftWidth = 6;
+            });
+            b.RegisterCallback<FocusOutEvent>(_ =>
+            {
+                b.style.backgroundColor = idle;
+                b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = dim;
+                b.style.borderLeftWidth = 1;
+            });
+            b.RegisterCallback<PointerEnterEvent>(_ => { if (b.enabledSelf) b.Focus(); });
             parent.Add(b);
             return b;
         }

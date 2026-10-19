@@ -65,4 +65,28 @@ public sealed class BattleTutorialTests
         Assert.IsFalse(c.LastApplied.RewardGranted);
         Assert.AreEqual(150, c.Progress.Copper);
     }
+
+    [UnityTest] public IEnumerator CancelStepsBackToPreviousGeneralAndTargetsAreMarked()
+    {
+        yield return SceneManager.LoadSceneAsync("Battle_Tutorial01");
+        yield return null;
+        var c = Object.FindFirstObjectByType<BattleController>();
+        var root = Object.FindFirstObjectByType<BattleHud>().GetComponent<UIDocument>().rootVisualElement;
+        var liu = c.Actor;
+        Assert.AreEqual("liu_bei", liu.Id);
+        c.Choose(BattleCommand.Defend(liu));
+        Assert.AreEqual("guan_yu", c.Actor.Id);
+
+        using (var e = NavigationCancelEvent.GetPooled()) { e.target = root; root.SendEvent(e); }
+        yield return null;
+        Assert.AreSame(liu, c.Actor, "cancel on the command menu returns to the previous general");
+        Assert.AreEqual(0, c.Commands.Count);
+
+        var target = c.Session.State.Enemies[0];
+        c.PreviewTarget(target);
+        Assert.IsTrue(c.ViewOf(target).TargetMarker.activeSelf);
+        c.PreviewTarget(null);
+        Assert.IsFalse(c.ViewOf(target).TargetMarker.activeSelf);
+        Assert.IsNotNull(c.QuitAction, "Start quits the battle scene");
+    }
 }

@@ -17,7 +17,12 @@ namespace ThreeKingdoms.App
             if (!controller) { controller = FindAnyObjectByType<BattleController>(); return; }
             if (controller.Current != BattleController.Phase.Commanding || controller.Actor == null) return;
             var state = controller.Session.State;
-            if (state.Round >= StopAtRound) return;
+            if (state.Round >= StopAtRound)
+            {
+                // Leave the menu up and preview a target, so screenshots show the selection feedback.
+                controller.PreviewTarget(state.Enemies.Where(e => e.Active).OrderBy(e => e.Troops).ThenBy(e => e.Slot).First());
+                return;
+            }
             var actor = controller.Actor;
             var target = state.Enemies.Where(e => e.Active).OrderBy(e => e.Troops).ThenBy(e => e.Slot).First();
             var hurt = state.Players.Where(u => u.Active && u.Troops * 2 < u.Stats.MaxTroops).OrderBy(u => u.Troops).FirstOrDefault();
