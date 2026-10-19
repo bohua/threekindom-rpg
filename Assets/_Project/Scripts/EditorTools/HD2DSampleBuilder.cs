@@ -294,7 +294,7 @@ namespace ThreeKingdoms.EditorTools
             cam.transform.SetPositionAndRotation(position, Quaternion.Euler(euler));
         }
 
-        static Material PixelMaterial(string key, Texture2D atlas)
+        internal static Material PixelMaterial(string key, Texture2D atlas)
         {
             var m = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = key + "_Pixel" };
             m.SetTexture("_BaseMap", atlas);
