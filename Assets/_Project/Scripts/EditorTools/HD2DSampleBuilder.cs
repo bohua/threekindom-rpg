@@ -42,8 +42,9 @@ namespace ThreeKingdoms.EditorTools
         {
             ConvertCharacters();
             var pipeline = CreatePipeline();
-            var high = CreateProfile(HighProfilePath, lowTier: false);
-            var low = CreateProfile(LowProfilePath, lowTier: true);
+            var lut = HD2DLutBuilder.Build();
+            var high = CreateProfile(HighProfilePath, depthOfField: true, bloomThreshold: 1.0f, bloomIntensity: 0.6f, highQualityBloom: true, lut);
+            var low = CreateProfile(LowProfilePath, depthOfField: false, bloomThreshold: 1.0f, bloomIntensity: 0.4f, highQualityBloom: false, lut);
             GraphicsSettings.defaultRenderPipeline = pipeline;
             QualitySettings.renderPipeline = pipeline;
             BuildScene(high, low);
@@ -107,24 +108,25 @@ namespace ThreeKingdoms.EditorTools
             return pipeline;
         }
 
-        static VolumeProfile CreateProfile(string path, bool lowTier)
+        // Shared by the town tiers and the battle profile, so every scene grades through the same LUT (ADR-0005 §8).
+        public static VolumeProfile CreateProfile(string path, bool depthOfField, float bloomThreshold, float bloomIntensity, bool highQualityBloom, Texture lut)
         {
             if (AssetDatabase.LoadAssetAtPath<VolumeProfile>(path)) AssetDatabase.DeleteAsset(path);
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
             AssetDatabase.CreateAsset(profile, path);
 
             var dof = profile.Add<DepthOfField>(true);
-            dof.active = !lowTier;
-            dof.mode.Override(lowTier ? DepthOfFieldMode.Off : DepthOfFieldMode.Bokeh);
+            dof.active = depthOfField;
+            dof.mode.Override(depthOfField ? DepthOfFieldMode.Bokeh : DepthOfFieldMode.Off);
             dof.focusDistance.Override(CameraDistance);
             dof.focalLength.Override(300f);
             dof.aperture.Override(2f);
 
             var bloom = profile.Add<Bloom>(true);
-            bloom.threshold.Override(1.0f);
-            bloom.intensity.Override(lowTier ? 0.4f : 0.6f);
+            bloom.threshold.Override(bloomThreshold);
+            bloom.intensity.Override(bloomIntensity);
             bloom.scatter.Override(0.7f);
-            bloom.highQualityFiltering.Override(!lowTier);
+            bloom.highQualityFiltering.Override(highQualityBloom);
 
             profile.Add<Tonemapping>(true).mode.Override(TonemappingMode.ACES);
 
@@ -134,9 +136,13 @@ namespace ThreeKingdoms.EditorTools
 
             var color = profile.Add<ColorAdjustments>(true);
             color.postExposure.Override(0f);
-            color.contrast.Override(10f);
-            color.saturation.Override(10f);
-            color.colorFilter.Override(new Color(1f, 0.96f, 0.9f));
+            color.contrast.Override(6f);
+            color.saturation.Override(6f);
+            color.colorFilter.Override(Color.white);             // warmth now comes from the shared LUT
+
+            var lookup = profile.Add<ColorLookup>(true);
+            lookup.texture.Override(lut);
+            lookup.contribution.Override(1f);
 
             foreach (var component in profile.components) AssetDatabase.AddObjectToAsset(component, profile);
             EditorUtility.SetDirty(profile);
@@ -167,7 +173,7 @@ namespace ThreeKingdoms.EditorTools
             for (int i = 0; i < rows.Length; i++)
             {
                 HD2DEnvironmentKit.House(env, $"House W{i}", new Vector3(-7.5f, 0, rows[i]), -90f, i % 2 == 0 ? 6f : 5f, styles[i], kit);
-                HD2DEnvironmentKit.House(env, $"House E{i}", new Vector3(7.5f, 0, rows[i] + 2f), 90f, i % 2 == 0 ? 5f : 6.5f, styles[(i + 2) % styles.Length], kit);
+                HD2DEnvironmentKit.House(env, $"House E{i}", new Vector3(7.5f, 0, rows[i] + 2f), 90f, i % 2 == 0 ? 5f : 6.5f, (i == 1 ? HD2DEnvironmentKit.HouseStyle.Smithy : styles[(i + 2) % styles.Length]), kit);
             }
             HD2DEnvironmentKit.GateTower(env, new Vector3(0, 0, 32), kit);
             HD2DEnvironmentKit.CityWall(env, "City wall W", new Vector3(-11.4f, 0, 32), 14f, kit);
@@ -185,7 +191,10 @@ namespace ThreeKingdoms.EditorTools
                 HD2DEnvironmentKit.Lantern(env, new Vector3(-2.9f, 0, -3 + i * 7f), kit);
                 HD2DEnvironmentKit.Lantern(env, new Vector3(2.9f, 0, 0.5f + i * 7f), kit);
             }
+            HD2DEnvironmentKit.DressTavernCorner(env, kit);
+            HD2DEnvironmentKit.DressSmithy(env, kit);
             HD2DEnvironmentKit.EndMeshes();
+            HD2DLighting.MarkStatic(env);
 
             // Inactive review cameras for close-up shots of the kit (launch with -camera <name>, ideally -hd2dLow so
             // the gameplay-distance depth of field does not blur them).
@@ -199,6 +208,8 @@ namespace ThreeKingdoms.EditorTools
             sun.shadows = LightShadows.Soft;
             sun.shadowStrength = 0.85f;
             sun.transform.rotation = Quaternion.Euler(38f, -35f, 0f);
+            sun.lightmapBakeType = LightmapBakeType.Mixed;
+            HD2DLighting.AddProbeGrid(new Vector3(0, 0, 10), new Vector3(16, 4, 40), 4f);
 
             var player = Character("Liu Bei", "LiuBei", new Vector3(0, 0, -2), 0, isPlayer: true);
             Character("Guan Yu", "GuanYu", new Vector3(-1.5f, 0, 0.6f), 0, isPlayer: false);
@@ -231,6 +242,7 @@ namespace ThreeKingdoms.EditorTools
             tier.Volume = volume; tier.High = high; tier.Low = low;
 
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ScenePath);
+            if (System.Environment.GetEnvironmentVariable("HD2D_SKIP_BAKE") != "1") HD2DLighting.Bake(ScenePath);
             var scenes = EditorBuildSettings.scenes.ToList();
             if (!scenes.Any(s => s.path == ScenePath)) scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();

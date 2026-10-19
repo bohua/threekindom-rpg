@@ -33,12 +33,31 @@ namespace ThreeKingdoms.EditorTools
                 if (cv.Pixels[i].a > 0) cv.Pixels[i] = Shade(cv.Pixels[i], rng.Next(-range, range + 1) * step);
         }
 
+        // Tileable value noise in [0,1] on a cells×cells lattice: soft "painted" variation instead of per-pixel static.
+        static float Noise(int x, int y, int size, int cells, int seed)
+        {
+            float fx = x * cells / (float)size, fy = y * cells / (float)size;
+            int x0 = Mathf.FloorToInt(fx), y0 = Mathf.FloorToInt(fy);
+            float tx = fx - x0, ty = fy - y0;
+            tx = tx * tx * (3 - 2 * tx); ty = ty * ty * (3 - 2 * ty);
+            float H(int i, int j) { i = ((i % cells) + cells) % cells; j = ((j % cells) + cells) % cells; uint h = (uint)(i * 374761393 + j * 668265263 + seed * 2246822519); h = (h ^ (h >> 13)) * 1274126177u; return (h & 0xffff) / 65535f; }
+            return Mathf.Lerp(Mathf.Lerp(H(x0, y0), H(x0 + 1, y0), tx), Mathf.Lerp(H(x0, y0 + 1), H(x0 + 1, y0 + 1), tx), ty);
+        }
+
+        // Quantise a 0–1 value to a few tone steps so painted variation stays readable as pixel art.
+        static int Step(float v, int steps, int amplitude) => Mathf.RoundToInt((Mathf.Round(v * steps) / steps - 0.5f) * 2f * amplitude);
+
         public static Canvas Plaster()
         {
             var rng = new System.Random(11);
             var cv = new Canvas(TilePixels, TilePixels);
-            cv.Fill(C(208, 186, 146));
-            Jitter(cv, rng, 4, 1);
+            for (int y = 0; y < 60; y++)
+            for (int x = 0; x < 60; x++)
+            {
+                int d = Step(Noise(x, y, 60, 4, 1) * 0.65f + Noise(x, y, 60, 10, 2) * 0.35f, 4, 10);
+                cv.Set(x, y, C(212 + d, 190 + d, 150 + d - 2));
+            }
+            Jitter(cv, rng, 3, 1);
             for (int k = 0; k < 14; k++) cv.Set(rng.Next(60), rng.Next(60), C(176, 154, 118));
             for (int k = 0; k < 3; k++)
             {
@@ -91,11 +110,15 @@ namespace ThreeKingdoms.EditorTools
             for (int y = 0; y < 60; y++)
             for (int x = 0; x < 60; x++)
             {
-                int column = x % 6, row = y % 10;
-                Color32 c = column < 3 ? C(96, 104, 118) : column == 3 ? C(74, 80, 92) : C(58, 62, 72);
-                if (column == 1 && row > 1) c = C(112, 120, 134);           // highlight on the convex tile
-                if (row == 0) c = C(40, 42, 50);                             // shadow under the row above
-                if (row == 1 && column < 3) c = C(120, 126, 138);            // tile lip
+                int column = x % 6, row = y % 10, tile = (x / 6) * 7 + (y / 10) * 3;
+                int tone = (tile * 37 % 5 - 2) * 4 + Step(Noise(x, y, 60, 3, 9), 3, 6);   // per-tile and broad colour variation
+                int course = (9 - row) * 2;                                                 // each course lighter toward its lip
+                Color32 c = column < 3 ? C(92 + course, 100 + course, 116 + course) : column == 3 ? C(70, 76, 90) : C(54, 58, 70);
+                if (column == 1 && row > 1) c = C(116 + course, 124 + course, 138 + course);
+                if (row == 0) c = C(36, 38, 46);
+                if (row == 1 && column < 3) c = C(132, 136, 146);
+                c = Shade(c, tone);
+                if (column >= 4 && row > 6 && Noise(x, y, 60, 6, 4) > 0.72f) c = C(92, 108, 64);  // moss in the channels
                 cv.Set(x, y, c);
             }
             Jitter(cv, rng, 3, 1);
@@ -126,7 +149,12 @@ namespace ThreeKingdoms.EditorTools
                     float d = dx * dx + dy * dy;
                     if (d < best) { second = best; best = d; bestIndex = i; } else if (d < second) second = d;
                 }
-                cv.Set(x, y, Mathf.Sqrt(second) - Mathf.Sqrt(best) < 1.6f ? C(96, 88, 76) : tones[bestIndex]);
+                float edge = Mathf.Sqrt(second) - Mathf.Sqrt(best);
+                Vector2 toSeed = new Vector2(x, y) - seeds[bestIndex];
+                int bevel = edge < 3.2f ? (toSeed.y + toSeed.x > 0 ? 12 : -14) : 0;   // light upper-right rim, dark lower-left rim
+                var stone = Shade(tones[bestIndex], bevel + Step(Noise(x, y, 60, 8, bestIndex), 3, 5));
+                bool mortar = edge < 1.6f;
+                cv.Set(x, y, mortar ? (Noise(x, y, 60, 12, 5) > 0.7f ? C(98, 112, 66) : C(96, 88, 76)) : stone);
             }
             Jitter(cv, rng, 3, 1);
             return cv;
@@ -245,12 +273,93 @@ namespace ThreeKingdoms.EditorTools
         public static Canvas WineBanner()
         {
             var cv = new Canvas(30, 60);
-            cv.Fill(C(228, 214, 180));
-            cv.Rect(0, 0, 30, 4, C(176, 40, 30));
-            cv.Rect(0, 56, 30, 4, C(176, 40, 30));
-            for (int y = 4; y < 56; y++) { cv.Set(0, y, C(176, 40, 30)); cv.Set(29, y, C(176, 40, 30)); }
-            DrawGlyph(cv, WineGlyph, 5, 22, 2, C(36, 28, 24));
+            PaintBanner(cv, WineGlyph);
             for (int x = 1; x < 29; x += 3) { cv.Set(x, 0, C(0, 0, 0, 0)); }                 // ragged hem
+            return cv;
+        }
+
+        // 铁 as an 8-row glyph: 钅 on the left, 失 on the right. Placeholder until pixel calligraphy (ADR-0005 §9).
+        static readonly string[] IronGlyph =
+        {
+            ".#....#...",
+            "###.######",
+            ".#....#...",
+            "###.######",
+            ".#....#...",
+            ".#...#.#..",
+            ".##.#...#.",
+            "##.#.....#",
+        };
+
+        public static Canvas IronBanner()
+        {
+            var cv = new Canvas(30, 60);
+            PaintBanner(cv, IronGlyph);
+            for (int x = 2; x < 29; x += 4) cv.Set(x, 0, C(0, 0, 0, 0));
+            return cv;
+        }
+
+        // Red cloth banner with a darker border, soft folds and a near-black glyph, as in the battle reference.
+        static void PaintBanner(Canvas cv, string[] glyph)
+        {
+            for (int y = 0; y < cv.Height; y++)
+            for (int x = 0; x < cv.Width; x++)
+            {
+                int fold = (x % 10 < 2) ? -14 : (x % 10 > 7 ? 8 : 0);
+                cv.Set(x, y, Shade(C(176, 50, 40), fold));
+            }
+            cv.Rect(0, 0, cv.Width, 3, C(120, 30, 26));
+            cv.Rect(0, cv.Height - 4, cv.Width, 4, C(120, 30, 26));
+            DrawGlyph(cv, glyph, 5, 20, 2, C(36, 20, 18));
+        }
+
+        public static Canvas Cloth()
+        {
+            var rng = new System.Random(21);
+            var cv = new Canvas(TilePixels, TilePixels);
+            for (int y = 0; y < 60; y++)
+            for (int x = 0; x < 60; x++)
+                cv.Set(x, y, Shade(C(196, 180, 150), (x % 12 < 2 ? -12 : 0) + Step(Noise(x, y, 60, 3, 21), 3, 6)));
+            Jitter(cv, rng, 2, 1);
+            return cv;
+        }
+
+        public static Canvas Clay()
+        {
+            var cv = new Canvas(30, 30);
+            for (int y = 0; y < 30; y++)
+            for (int x = 0; x < 30; x++)
+                cv.Set(x, y, Shade(C(170, 92, 56), (y % 10 == 0 ? -18 : 0) + Step(Noise(x, y, 30, 3, 22), 3, 8)));
+            return cv;
+        }
+
+        public static Canvas Iron()
+        {
+            var rng = new System.Random(23);
+            var cv = new Canvas(30, 30);
+            cv.Fill(C(70, 72, 78));
+            Jitter(cv, rng, 6, 1);
+            return cv;
+        }
+
+        public static Canvas ForgeCoals()
+        {
+            var rng = new System.Random(24);
+            var cv = new Canvas(16, 16);
+            for (int i = 0; i < cv.Pixels.Length; i++)
+            {
+                int t = rng.Next(4);
+                cv.Pixels[i] = t == 0 ? C(255, 210, 90) : t == 1 ? C(250, 120, 30) : t == 2 ? C(180, 50, 20) : C(50, 30, 26);
+            }
+            return cv;
+        }
+
+        public static Canvas Produce(int r, int g, int b)
+        {
+            var cv = new Canvas(30, 30);
+            for (int y = 0; y < 30; y++)
+            for (int x = 0; x < 30; x++)
+                cv.Set(x, y, Shade(C(r, g, b), Step(Noise(x, y, 30, 5, r + g), 3, 18)));
             return cv;
         }
 
