@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 using ThreeKingdoms.EditorTools;
 using UnityEditor;
@@ -46,6 +47,24 @@ public sealed class HD2DPipelineTests
             Assert.AreEqual(9 * HD2DSampleBuilder.FrameSize, texture.width, key);
             Assert.AreEqual(HD2DSampleBuilder.FrameSize, texture.height, key);
         }
+    }
+
+    [Test] public void EnvironmentSurfacesMatchCharacterTexelDensity()
+    {
+        // A 3-unit-wide wall face must span 3 × 30 = 90 texture pixels, the same density as the 48 px / 1.6 unit characters.
+        var plaster = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Environment/Materials/Plaster.mat");
+        Assert.IsNotNull(plaster);
+        var texture = (Texture2D)plaster.GetTexture("_BaseMap");
+        Assert.AreEqual(FilterMode.Point, texture.filterMode);
+        Vector2 tiling = plaster.GetTextureScale("_BaseMap");
+
+        var mesh = AssetDatabase.LoadAllAssetsAtPath(HD2DEnvironmentKit.MeshAssetPath).OfType<Mesh>()
+            .First(m => m.name.StartsWith("Box_") && !m.name.EndsWith("_fit"));
+        Vector3 size = mesh.bounds.size;
+        float uSpan = 0f;
+        var uvs = mesh.uv; var normals = mesh.normals;
+        for (int i = 0; i < uvs.Length; i++) if (normals[i] == Vector3.back) uSpan = Mathf.Max(uSpan, uvs[i].x);
+        Assert.AreEqual(size.x * HD2DSampleBuilder.PixelsPerUnit, uSpan * tiling.x * texture.width, 0.01f);
     }
 
     [Test] public void ConverterProducesBinaryAlphaAndScalesFigureToTargetHeight()
