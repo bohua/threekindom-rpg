@@ -20,7 +20,7 @@
 <!-- Written by /setup-engine. Read by /ux-design, /ux-review, /test-setup, /team-ui, and /dev-story -->
 <!-- to scope interaction specs, test helpers, and implementation to the correct input methods. -->
 
-- **Target Platforms**: PC (Windows x64, Mono scripting backend)
+- **Target Platforms**: PC (Windows 10/11 x64). Dev builds Mono (`Win64-Dev` build profile), release builds IL2CPP (`Win64-Release`) — ADR-0001. Steam Deck (Proton) is a post-V1 compatibility target; consoles, macOS, mobile and Web are out of scope until a new ADR
 - **Input Methods**: Keyboard/Mouse, Gamepad (via Input System)
 - **Primary Input**: Mixed
 - **Gamepad Support**: Full
@@ -38,10 +38,10 @@
 
 ## Performance Budgets
 
-- **Target Framerate**: [TO BE CONFIGURED]
-- **Frame Budget**: [TO BE CONFIGURED]
+- **Target Framerate**: 60 fps at 1920×1080 (provisional, ADR-0001; minimum-spec validation deferred to ADR-0005)
+- **Frame Budget**: 16.6 ms
 - **Draw Calls**: [TO BE CONFIGURED]
-- **Memory Ceiling**: [TO BE CONFIGURED]
+- **Memory Ceiling**: 2 GB process memory (provisional, ADR-0001). Baseline 2026-10-19: ~190 MB working set, see `production/migration/adr-0001-baseline.md`
 
 ## Testing
 
@@ -55,6 +55,12 @@
 - DOTS / ECS (Entities), Netcode, Unity Gaming Services, IAP, ads SDKs — out of scope
 - Gameplay rules inside MonoBehaviours — keep rules deterministic and separate from presentation
 - Mutating ScriptableObject definition assets at runtime — copy into runtime state
+- Legacy `UnityEngine.Input` class (`Input.GetKey*`, `Input.GetAxis*`, `Input.mousePosition` …) — use Input System actions (`Assets/_Project/Settings/GameControls.inputactions`); `StandaloneInputModule` — use `InputSystemUIInputModule` (ADR-0001)
+- `UnityEngine` references in `ThreeKingdoms.Core` (asmdef has `noEngineReferences`); assembly references against the ADR-0001 dependency graph (ADR-0001)
+- Game code in the `Assets/` root or `Assembly-CSharp`; third-party code without its own asmdef (ADR-0001)
+- Custom URP render passes without RenderGraph (`RecordRenderGraph`); URP compatibility mode (ADR-0001)
+- `System.Diagnostics.Process` and other APIs unsupported under IL2CPP in runtime code (found by the ADR-0001 IL2CPP smoke build)
+- Save files outside `Application.persistentDataPath` (ADR-0001)
 
 ## Allowed Libraries / Addons
 
@@ -78,7 +84,7 @@ Third-party (approved, not yet installed — record source and license in LICENS
 ## Architecture Decisions Log
 
 <!-- Quick reference linking to full ADRs in docs/architecture/ -->
-- [No ADRs yet — use /architecture-decision to create one]
+- [ADR-0001](../../docs/architecture/adr-0001-engine-platform-project-structure.md) — Engine (Unity 6.3 LTS, URP Universal Renderer, Input System only), platform targets (Windows x64 first, Steam Deck later), build profiles, `Assets/_Project` layout and `ThreeKingdoms.*` assemblies. Accepted 2026-10-18; migration steps 1–5 done 2026-10-19
 
 ## Engine Specialists
 
@@ -91,7 +97,7 @@ Third-party (approved, not yet installed — record source and license in LICENS
 - **Shader Specialist**: unity-shader-specialist
 - **UI Specialist**: unity-ui-specialist
 - **Additional Specialists**: unity-addressables-specialist (DOTS not used — no unity-dots-specialist)
-- **Routing Notes**: Code root is `Assets/`; route by file type per the table below
+- **Routing Notes**: Code root is `Assets/_Project/Scripts/` (one folder per `ThreeKingdoms.*` assembly), tests in `Assets/Tests/`; route by file type per the table below. Unity 6 APIs post-date model training data — verify against `docs/engine-reference/unity/` and the Unity 6.3 docs (ADR-0001)
 
 ### File Extension Routing
 

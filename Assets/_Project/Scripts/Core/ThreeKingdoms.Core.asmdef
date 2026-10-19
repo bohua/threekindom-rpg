@@ -1,0 +1,7 @@
+{
+  "name": "ThreeKingdoms.Core",
+  "rootNamespace": "ThreeKingdoms.Core",
+  "references": [],
+  "noEngineReferences": true,
+  "autoReferenced": true
+}
