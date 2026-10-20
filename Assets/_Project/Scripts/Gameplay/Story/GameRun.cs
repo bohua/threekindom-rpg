@@ -26,6 +26,8 @@ namespace ThreeKingdoms.Gameplay.Story
         public StoryState Story { get; }
         public BattleData Data { get; }
         public DevPartyProgress Progress { get; }
+        // Teaching hints already shown this play-through (each appears once; story-events answer 8).
+        public System.Collections.Generic.List<string> SeenHints { get; } = new System.Collections.Generic.List<string>();
         // Where the next town load puts the player.
         public Arrival NextArrival { get; set; } = Arrival.NewGame;
 

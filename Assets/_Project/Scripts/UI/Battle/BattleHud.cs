@@ -17,6 +17,7 @@ namespace ThreeKingdoms.UI.Battle
     public sealed class BattleHud : MonoBehaviour
     {
         public BattleController Controller;
+        [Tooltip("Teaching hints; optional")] public BattleTutor Tutor;
         public Camera BattleCamera;
         public string LocationName = "涿郡 · 街市";
         [Tooltip("Infantry, Cavalry, Archer, YellowTurban, Strategist")] public Texture2D[] TroopIcons = Array.Empty<Texture2D>();
@@ -26,6 +27,8 @@ namespace ThreeKingdoms.UI.Battle
         static readonly Color PanelEdge = new Color(0.62f, 0.50f, 0.28f);
 
         VisualElement root, menu, cards, plates, popups, resultPanel, prepPanel;
+        Label hintLabel;
+        float hintUntil;
         Label roundLabel, orderLabel, messageLabel, promptLabel;
         Button fastButton;
         readonly Dictionary<BattleUnit, Card> cardOf = new Dictionary<BattleUnit, Card>();
@@ -47,7 +50,7 @@ namespace ThreeKingdoms.UI.Battle
         }
 
         // Command entry state for the current actor.
-        enum Step { Command, Skill, Item, Target }
+        enum Step { Command, Skill, Item, Target, Hints }
         Step step;
         CommandKind pendingKind;
         SkillSpec pendingSkill;
@@ -67,6 +70,7 @@ namespace ThreeKingdoms.UI.Battle
             Controller.BattleStarted += Rebuild;
             Controller.PreparationStarted += Refresh;
             Controller.Changed += Refresh;
+            if (Tutor) Tutor.HintShown += ShowHint;
             Controller.EventPlayed += OnEvent;
             if (Controller.Session != null) Rebuild();
         }
@@ -77,6 +81,7 @@ namespace ThreeKingdoms.UI.Battle
             Controller.BattleStarted -= Rebuild;
             Controller.PreparationStarted -= Refresh;
             Controller.Changed -= Refresh;
+            if (Tutor) Tutor.HintShown -= ShowHint;
             Controller.EventPlayed -= OnEvent;
         }
 
@@ -124,10 +129,34 @@ namespace ThreeKingdoms.UI.Battle
             resultPanel.style.backgroundColor = new Color(0.05f, 0.06f, 0.10f, 0.96f);
             resultPanel.style.paddingTop = resultPanel.style.paddingBottom = 24;
 
+            // Teaching hint (game-ui rule 25): shown beside the command menu, never blocks a command.
+            hintLabel = Text("", 22, Color.white);
+            Absolute(hintLabel, 520, 190, 520, -1);   // under the battle message, clear of both lines of units
+            hintLabel.style.whiteSpace = WhiteSpace.Normal;
+            hintLabel.style.backgroundColor = new Color(0.10f, 0.08f, 0.03f, 0.92f);
+            hintLabel.style.borderLeftWidth = 6; hintLabel.style.borderLeftColor = Gold;
+            hintLabel.style.paddingLeft = hintLabel.style.paddingRight = 16; hintLabel.style.paddingTop = hintLabel.style.paddingBottom = 10;
+            hintLabel.pickingMode = PickingMode.Ignore;
+            hintLabel.style.display = DisplayStyle.None;
+            root.Add(hintLabel);
+
             prepPanel = Framed(root); Absolute(prepPanel, 300, 150, 300, 150);
             prepPanel.style.flexDirection = FlexDirection.Column;
             prepPanel.style.backgroundColor = new Color(0.05f, 0.06f, 0.10f, 0.96f);
             prepPanel.style.display = DisplayStyle.None;
+        }
+
+        // ---------- teaching hints ----------
+
+        public string CurrentHint => hintLabel.style.display == DisplayStyle.Flex ? hintLabel.text : null;
+
+        void ShowHint(string key)
+        {
+            hintLabel.text = BattleText.Hint(key);
+            hintLabel.style.display = DisplayStyle.Flex;
+            hintUntil = Time.unscaledTime + 12f;
+            // The first hint can arrive after the command menu was built: rebuild it so 「提示」 is offered at once.
+            if (Controller.Current == BattleController.Phase.Commanding && step == Step.Command) BuildMenu();
         }
 
         // ---------- pre-battle preparation (game-ui GDD rules 16–17) ----------
@@ -319,7 +348,18 @@ namespace ThreeKingdoms.UI.Battle
                     var defend = MenuButton(menu, BattleText.Command(CommandKind.Defend), () => Controller.Choose(BattleCommand.Defend(actor)));
                     defend.tooltip = BattleText.DefendHelp;
                     MenuButton(menu, BattleText.Command(CommandKind.Item), () => { step = Step.Item; BuildMenu(); }, enabled: state.CanUseRation(actor));
+                    if (Tutor && Tutor.Seen.Count > 0) MenuButton(menu, BattleText.Hints, () => { step = Step.Hints; BuildMenu(); }, 20);
                     if (Controller.Commands.Count > 0) MenuButton(menu, BattleText.Back, () => { step = Step.Command; Controller.Undo(); }, 20);
+                    break;
+                case Step.Hints:
+                    // Every hint seen so far can be read again (game-ui answer 5).
+                    promptLabel.text = BattleText.Hints;
+                    foreach (var key in Tutor.Seen.ToList())
+                    {
+                        var k = key;
+                        MenuButton(menu, BattleText.HintTitle(k), () => ShowHint(k), 20);
+                    }
+                    MenuButton(menu, BattleText.Back, () => { step = Step.Command; BuildMenu(); }, 20);
                     break;
                 case Step.Skill:
                     promptLabel.text = $"{actor.Name}：{BattleText.Command(CommandKind.Skill)}";
@@ -346,7 +386,7 @@ namespace ThreeKingdoms.UI.Battle
                     {
                         var target = t;
                         string adv = target.Side != actor.Side && state.HasAdvantage(actor, target) && pendingKind != CommandKind.Item &&
-                                     (pendingSkill == null || pendingSkill.Damage != DamageKind.None) ? "  克制" : "";
+                                     (pendingSkill == null || pendingSkill.Damage != DamageKind.None) ? "  " + BattleText.Advantaged : "";
                         string label = (plateOf.TryGetValue(target, out var p) ? p.Name.text : target.Name) + $"  {target.Troops}/{target.Stats.MaxTroops}{adv}";
                         var b = MenuButton(menu, label, () => Commit(target), 20);
                         b.RegisterCallback<FocusInEvent>(_ => { Controller.PreviewTarget(target); HighlightPlate(target); });
@@ -520,6 +560,7 @@ namespace ThreeKingdoms.UI.Battle
 
         void LateUpdate()
         {
+            if (hintLabel != null && hintLabel.style.display == DisplayStyle.Flex && Time.unscaledTime > hintUntil) hintLabel.style.display = DisplayStyle.None;
             if (Controller == null || Controller.Session == null || root?.panel == null || !BattleCamera) return;
             foreach (var pair in plateOf)
             {

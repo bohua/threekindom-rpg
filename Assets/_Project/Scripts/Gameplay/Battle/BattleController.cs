@@ -40,6 +40,8 @@ namespace ThreeKingdoms.Gameplay.Battle
         public event Action<BattleEvent> EventPlayed;      // one resolution event is being shown
         public event Action BattleStarted;
         public event Action PreparationStarted;
+        public event Action<BattleUnit, BattleUnit> TargetPreviewed;   // actor, target (teaching hints)
+        public event Action<BattleCommand> CommandChosen;
         // Shop-style panels opened from preparation ("outfit"), same contract as the town's (ShopHud listens to both).
         public event Action<string> PanelOpened, PanelClosed;
 
@@ -68,6 +70,7 @@ namespace ThreeKingdoms.Gameplay.Battle
             ViewOf(previewTarget)?.SetTargeted(false);
             previewTarget = Current == Phase.Commanding ? unit : null;
             ViewOf(previewTarget)?.SetTargeted(true);
+            if (previewTarget != null) TargetPreviewed?.Invoke(Actor, previewTarget);
         }
 
         void Start()
@@ -224,6 +227,7 @@ namespace ThreeKingdoms.Gameplay.Battle
         {
             if (Current != Phase.Commanding || command == null || command.Actor != Actor) return;
             commands[command.Actor] = command;
+            CommandChosen?.Invoke(command);
             actorIndex++;
             if (actorIndex >= pending.Count) { StartCoroutine(Resolve()); return; }
             HighlightActor();

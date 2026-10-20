@@ -146,6 +146,10 @@ namespace ThreeKingdoms.EditorTools
             hud.TroopIcons = icons;
             hud.LocationName = battle.Location;
 
+            var tutor = controller.gameObject.AddComponent<ThreeKingdoms.Gameplay.Battle.BattleTutor>();
+            tutor.Controller = controller;
+            hud.Tutor = tutor;
+
             // Pre-battle "配装" reuses the shop panel in outfit-only mode, above the battle HUD.
             var outfitGo = new GameObject("Outfit HUD");
             var outfitDoc = outfitGo.AddComponent<UIDocument>();
