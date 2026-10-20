@@ -31,3 +31,10 @@ MonoBehaviour:
   BarTroops: {fileID: 2800000, guid: 440144b66c37c864daf13be7935fe6f7, type: 3}
   BarTroopsLow: {fileID: 2800000, guid: 23860836dc176734fbbf436a5b24d07f, type: 3}
   BarSkill: {fileID: 2800000, guid: 98e08526e5f7aa642b67ddb245b85984, type: 3}
+  EnemyPlate: {fileID: 2800000, guid: 853e48fcf8881b645814fed4355022fa, type: 3}
+  EnemyPlateBoss: {fileID: 2800000, guid: f4b5f117d65e39c4194cf349ff0ec17e, type: 3}
+  EnemyPlateTarget: {fileID: 2800000, guid: 4d0cec6ca3a02c04e90345af998d96da, type: 3}
+  EnemyBarFrame: {fileID: 2800000, guid: 3cbcb2bb1611fff4caed13c7ee8a9a78, type: 3}
+  EnemyBarFill: {fileID: 2800000, guid: afbda1dee77915547bd472f975dbfc35, type: 3}
+  EnemyBarFillLow: {fileID: 2800000, guid: 7c70c2d3cc95bb84cb4dfd64200ef63f, type: 3}
+  EnemyRouted: {fileID: 2800000, guid: f18a1957486c48549a2dc80b91aa7ca0, type: 3}

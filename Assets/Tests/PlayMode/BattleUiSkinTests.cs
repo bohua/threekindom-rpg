@@ -29,6 +29,8 @@ public sealed class BattleUiSkinTests
         Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.CardActive)), "the acting general's card has the active frame");
         Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.CardNormal)), "the others have the normal frame");
         Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.ItemSelected)), "the focused command uses the selected item frame");
+        Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.EnemyPlateBoss)), "Cheng Yuanzhi has the boss nameplate");
+        Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.EnemyPlate)), "the headmen have the normal nameplate");
         var panel = all.First(e => Uses(e, hud.Skin.CommandPanel));
         Assert.AreEqual(SliceType.Tiled, panel.resolvedStyle.unitySliceType, "edges tile instead of stretching");
         Assert.AreEqual(2f, panel.resolvedStyle.unitySliceScale);

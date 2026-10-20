@@ -10,6 +10,7 @@ namespace ThreeKingdoms.EditorTools
     public static class BattleUiSkinBuilder
     {
         const string DefaultSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-ui";
+        const string EnemySource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-ui-enemy";
         public const string Dir = "Assets/_Project/Art/UI/Battle";
         public const string SkinPath = Dir + "/BattleUiSkin.asset";
 
@@ -22,6 +23,12 @@ namespace ThreeKingdoms.EditorTools
             "ui_bar_frame", "ui_bar_fill_troops", "ui_bar_fill_troops_low", "ui_bar_fill_skill",
         };
 
+        static readonly string[] EnemyFiles =
+        {
+            "ui_enemy_nameplate", "ui_enemy_nameplate_boss", "ui_enemy_nameplate_target",
+            "ui_enemy_bar_frame", "ui_enemy_bar_fill", "ui_enemy_bar_fill_low", "ui_enemy_routed_mark",
+        };
+
         [MenuItem("JRPG/Build Battle UI Skin")]
         public static BattleUiSkin Build()
         {
@@ -29,23 +36,12 @@ namespace ThreeKingdoms.EditorTools
             if (string.IsNullOrEmpty(root)) root = DefaultSource;
             Directory.CreateDirectory(Dir);
             foreach (var f in Files)
-            {
-                string source = Path.Combine(root, f + ".png"), target = $"{Dir}/{f}.png";
-                if (File.Exists(source)) File.Copy(source, target, true);
-                else if (!File.Exists(target)) { Debug.Log($"Battle UI texture {f} not found; the HUD keeps its flat style."); return null; }
-                AssetDatabase.ImportAsset(target, ImportAssetOptions.ForceUpdate);
-                var importer = (TextureImporter)AssetImporter.GetAtPath(target);
-                importer.textureType = TextureImporterType.Default;
-                importer.filterMode = FilterMode.Point;
-                importer.mipmapEnabled = false;
-                importer.textureCompression = TextureImporterCompression.Uncompressed;
-                importer.npotScale = TextureImporterNPOTScale.None;
-                importer.alphaIsTransparency = true;
-                importer.wrapMode = TextureWrapMode.Repeat;   // bar fills tile; nine-slices ignore it
-                importer.SaveAndReimport();
-            }
+                if (!Import(Path.Combine(root, f + ".png"), f)) { Debug.Log($"Battle UI texture {f} not found; the HUD keeps its flat style."); return null; }
+            foreach (var f in EnemyFiles)
+                if (!Import(Path.Combine(EnemySource, f + ".png"), f)) Debug.Log($"Enemy plate texture {f} not found; enemy plates keep their flat style.");
 
             Texture2D T(string f) => AssetDatabase.LoadAssetAtPath<Texture2D>($"{Dir}/{f}.png");
+
             var skin = AssetDatabase.LoadAssetAtPath<BattleUiSkin>(SkinPath);
             bool created = !skin;
             if (created) skin = ScriptableObject.CreateInstance<BattleUiSkin>();
@@ -55,10 +51,32 @@ namespace ThreeKingdoms.EditorTools
             skin.CardWounded = T("ui_card_wounded"); skin.CardRouted = T("ui_card_routed"); skin.RoutedSeal = T("ui_card_routed_seal");
             skin.PortraitFrame = T("ui_portrait_frame"); skin.PortraitFrameActive = T("ui_portrait_frame_active"); skin.UnitBadge = T("ui_unit_badge_frame");
             skin.BarFrame = T("ui_bar_frame"); skin.BarTroops = T("ui_bar_fill_troops"); skin.BarTroopsLow = T("ui_bar_fill_troops_low"); skin.BarSkill = T("ui_bar_fill_skill");
+            skin.EnemyPlate = T("ui_enemy_nameplate"); skin.EnemyPlateBoss = T("ui_enemy_nameplate_boss"); skin.EnemyPlateTarget = T("ui_enemy_nameplate_target");
+            skin.EnemyBarFrame = T("ui_enemy_bar_frame"); skin.EnemyBarFill = T("ui_enemy_bar_fill"); skin.EnemyBarFillLow = T("ui_enemy_bar_fill_low");
+            skin.EnemyRouted = T("ui_enemy_routed_mark");
             if (created) AssetDatabase.CreateAsset(skin, SkinPath);
             EditorUtility.SetDirty(skin);
             AssetDatabase.SaveAssets();
             return skin;
+        }
+
+        // Copies one texture in (when the source exists) and sets pixel import settings; false if neither exists.
+        static bool Import(string source, string name)
+        {
+            string target = $"{Dir}/{name}.png";
+            if (File.Exists(source)) File.Copy(source, target, true);
+            else if (!File.Exists(target)) return false;
+            AssetDatabase.ImportAsset(target, ImportAssetOptions.ForceUpdate);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(target);
+            importer.textureType = TextureImporterType.Default;
+            importer.filterMode = FilterMode.Point;
+            importer.mipmapEnabled = false;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.alphaIsTransparency = true;
+            importer.wrapMode = TextureWrapMode.Repeat;   // bar fills tile; nine-slices ignore it
+            importer.SaveAndReimport();
+            return true;
         }
     }
 }

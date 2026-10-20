@@ -60,7 +60,7 @@ namespace ThreeKingdoms.UI.Battle
         SkillSpec pendingSkill;
 
         sealed class Card { public VisualElement Root, TroopFill, TechFill, Glow, Frame, Seal; public Label Name, TroopText, TechText, Status; }
-        sealed class Plate { public VisualElement Root, Fill; public Label Name; }
+        sealed class Plate { public VisualElement Root, Fill, NameBox, Mark; public Label Name; public bool Boss; }
 
         void OnEnable()
         {
@@ -230,7 +230,7 @@ namespace ThreeKingdoms.UI.Battle
             {
                 string label = u.Name;
                 if (names.Contains(u.Name)) { counter.TryGetValue(u.Name, out int n); counter[u.Name] = n + 1; label += "甲乙丙丁"[n]; }
-                plateOf[u] = MakePlate(label);
+                plateOf[u] = MakePlate(label, boss: !u.Id.StartsWith("yt_"));   // named commanders get the boss plate
             }
             Refresh();
         }
@@ -309,8 +309,9 @@ namespace ThreeKingdoms.UI.Battle
             return c;
         }
 
-        Plate MakePlate(string name)
+        Plate MakePlate(string name, bool boss)
         {
+            if (skin && skin.HasEnemyPlates) return MakeSkinnedPlate(name, boss);
             var p = new Plate { Root = new VisualElement { pickingMode = PickingMode.Ignore } };
             p.Root.style.position = Position.Absolute;
             p.Root.style.width = 150;
@@ -320,6 +321,38 @@ namespace ThreeKingdoms.UI.Battle
             var bar = new VisualElement(); bar.style.height = 8; bar.style.backgroundColor = new Color(0, 0, 0, 0.7f);
             p.Fill = new VisualElement(); p.Fill.style.height = 8; p.Fill.style.backgroundColor = new Color(0.86f, 0.3f, 0.22f);
             bar.Add(p.Fill); p.Root.Add(bar);
+            plates.Add(p.Root);
+            return p;
+        }
+
+        // Enemy nameplate 70×14 and troop bar 70×6 at 2× (BATTLE_UI_ENEMY_SKIN.md): white name on the plate, the fill in
+        // the groove at (3, 2), striped below half, the 退 seal over a routed enemy.
+        Plate MakeSkinnedPlate(string name, bool boss)
+        {
+            const float scale = BattleUiSkin.Scale;
+            var p = new Plate { Root = new VisualElement { pickingMode = PickingMode.Ignore }, Boss = boss };
+            p.Root.style.position = Position.Absolute;
+            p.Root.style.width = 70 * scale;
+            p.NameBox = new VisualElement { pickingMode = PickingMode.Ignore };
+            p.NameBox.style.height = 14 * scale;
+            p.NameBox.style.justifyContent = Justify.Center;
+            skin.EnemyName(p.NameBox, boss ? skin.EnemyPlateBoss : skin.EnemyPlate);
+            p.Name = Text(name, 18, Color.white); p.Name.style.unityTextAlign = TextAnchor.MiddleCenter;
+            p.NameBox.Add(p.Name);
+            p.Root.Add(p.NameBox);
+            var bar = new VisualElement { pickingMode = PickingMode.Ignore };
+            bar.style.height = 6 * scale; bar.style.marginTop = 2;
+            skin.EnemyBar(bar);
+            var inner = new VisualElement { pickingMode = PickingMode.Ignore }; Absolute(inner, 3 * scale, 2 * scale, 3 * scale, 2 * scale);
+            p.Fill = new VisualElement { pickingMode = PickingMode.Ignore };
+            p.Fill.style.height = new Length(100, LengthUnit.Percent);
+            BattleUiSkin.Fill(p.Fill, skin.EnemyBarFill);
+            inner.Add(p.Fill); bar.Add(inner); p.Root.Add(bar);
+            p.Mark = new VisualElement { pickingMode = PickingMode.Ignore };
+            BattleUiSkin.Image(p.Mark, skin.EnemyRouted);
+            Absolute(p.Mark, -1, -4, -6, -1);
+            p.Mark.style.display = DisplayStyle.None;
+            p.Root.Add(p.Mark);
             plates.Add(p.Root);
             return p;
         }
@@ -479,7 +512,12 @@ namespace ThreeKingdoms.UI.Battle
 
         void HighlightPlate(BattleUnit unit)
         {
-            foreach (var pair in plateOf) pair.Value.Name.style.color = pair.Key == unit ? Gold : Color.white;
+            foreach (var pair in plateOf)
+            {
+                if (pair.Value.NameBox != null)
+                    skin.EnemyName(pair.Value.NameBox, pair.Key == unit && skin.EnemyPlateTarget ? skin.EnemyPlateTarget : pair.Value.Boss ? skin.EnemyPlateBoss : skin.EnemyPlate);
+                else pair.Value.Name.style.color = pair.Key == unit ? Gold : Color.white;
+            }
         }
 
         void PickTarget(CommandKind kind, SkillSpec skill)
@@ -640,12 +678,25 @@ namespace ThreeKingdoms.UI.Battle
             foreach (var pair in plateOf)
             {
                 var view = Controller.ViewOf(pair.Key);
-                bool show = view && view.gameObject.activeInHierarchy && Troops(pair.Key) > 0;
-                pair.Value.Root.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+                var plate = pair.Value;
+                int troops = Troops(pair.Key);
+                // A skinned plate stays up with its 退 seal while the routed unit plays its retreat.
+                bool show = view && view.gameObject.activeInHierarchy && (troops > 0 || plate.Mark != null);
+                plate.Root.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
                 if (!show) continue;
                 var p = RuntimePanelUtils.CameraTransformWorldToPanel(root.panel, view.transform.position + Vector3.up * 1.75f, BattleCamera);
-                pair.Value.Root.style.left = p.x - 75; pair.Value.Root.style.top = p.y - 34;
-                pair.Value.Fill.style.width = new Length(100f * Troops(pair.Key) / pair.Key.Stats.MaxTroops, LengthUnit.Percent);
+                float ratio = (float)troops / pair.Key.Stats.MaxTroops;
+                if (plate.Mark != null)
+                {
+                    plate.Root.style.left = p.x - 70; plate.Root.style.top = p.y - 46;
+                    // Whole native pixels of the 64-px groove, at 2×.
+                    plate.Fill.style.width = Mathf.Floor(64 * ratio) * BattleUiSkin.Scale;
+                    BattleUiSkin.Fill(plate.Fill, ratio < 0.5f && skin.EnemyBarFillLow ? skin.EnemyBarFillLow : skin.EnemyBarFill);
+                    plate.Mark.style.display = troops <= 0 ? DisplayStyle.Flex : DisplayStyle.None;
+                    continue;
+                }
+                plate.Root.style.left = p.x - 75; plate.Root.style.top = p.y - 34;
+                plate.Fill.style.width = new Length(100f * ratio, LengthUnit.Percent);
             }
             for (int i = floating.Count - 1; i >= 0; i--)
             {

@@ -16,6 +16,10 @@ namespace ThreeKingdoms.UI.Battle
         public Texture2D CardNormal, CardActive, CardActiveGlow, CardWounded, CardRouted, RoutedSeal;
         public Texture2D PortraitFrame, PortraitFrameActive, UnitBadge;
         public Texture2D BarFrame, BarTroops, BarTroopsLow, BarSkill;
+        [Header("Enemy plates (BATTLE_UI_ENEMY_SKIN.md)")]
+        public Texture2D EnemyPlate, EnemyPlateBoss, EnemyPlateTarget, EnemyBarFrame, EnemyBarFill, EnemyBarFillLow, EnemyRouted;
+
+        public bool HasEnemyPlates => EnemyPlate && EnemyBarFrame && EnemyBarFill;
 
         // Nine-slice a texture onto an element: corners fixed, edges and centre tiled, drawn at Scale.
         public static void Apply(VisualElement e, Texture2D tex, int left, int right, int top, int bottom)
@@ -38,6 +42,8 @@ namespace ThreeKingdoms.UI.Battle
         public void Card(VisualElement e, Texture2D state) => Apply(e, state, 24, 24, 24, 24);
         public void Portrait(VisualElement e, bool active) => Apply(e, active ? PortraitFrameActive : PortraitFrame, 8, 8, 8, 8);
         public void Bar(VisualElement e) => Apply(e, BarFrame, 4, 4, 2, 2);
+        public void EnemyName(VisualElement e, Texture2D state) => Apply(e, state, 6, 6, 4, 4);
+        public void EnemyBar(VisualElement e) => Apply(e, EnemyBarFrame, 3, 3, 2, 2);
 
         // A plain image at Scale (badge, seal) or a fill tiled along x at Scale.
         public static void Image(VisualElement e, Texture2D tex)
