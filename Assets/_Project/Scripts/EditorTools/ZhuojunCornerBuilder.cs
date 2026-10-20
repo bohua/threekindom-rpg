@@ -289,7 +289,8 @@ namespace ThreeKingdoms.EditorTools
             var root = new GameObject(key).transform;
             root.SetParent(parent, false);
             root.localPosition = new Vector3(x, y, z);
-            var q = Quad(root, "Sprite", new Vector3(0, size.y / 2f, 0), Vector3.zero, size, Mat(key, clip: true, twoSided: true));
+            // Unit quad: PixelBillboard scales it to the prop size (and adds the square-pixel stretch).
+            var q = Quad(root, "Sprite", new Vector3(0, size.y / 2f, 0), Vector3.zero, Vector2.one, Mat(key, clip: true, twoSided: true));
             q.AddComponent<PixelBillboard>().BaseSize = size;
         }
 
