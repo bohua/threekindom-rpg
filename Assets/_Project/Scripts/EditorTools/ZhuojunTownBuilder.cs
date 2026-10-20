@@ -275,6 +275,33 @@ namespace ThreeKingdoms.EditorTools
             return g;
         }
 
+        // Walkable stairs up to a landing in front of a door at doorBase (the wall plane): each step is a solid
+        // block from the ground to its tread, so the character controller climbs it like any step.
+        internal static void Stairs(Transform parent, string name, Vector3 doorBase, float width, int count, float rise, float tread, float landing, string key)
+        {
+            var g = Group(parent, name, doorBase);
+            StairBlock(g, "Landing", key, width, count * rise, -landing, 0f);
+            for (int i = 0; i < count; i++)
+            {
+                float zTo = -landing - (count - 1 - i) * tread;
+                StairBlock(g, $"Step {i + 1}", key, width, (i + 1) * rise, zTo - tread, zTo);
+            }
+        }
+
+        static void StairBlock(Transform parent, string name, string key, float width, float height, float zFrom, float zTo)
+        {
+            var b = Group(parent, name);
+            float depth = zTo - zFrom, zc = (zFrom + zTo) / 2f;
+            var top = new Vector2(width, depth);
+            Quad(b, "Tread", new Vector3(0, height, zc), new Vector3(90f, 0, 0), top, Mat(key), Repeat(key, top), castShadows: false);
+            var front = new Vector2(width, height);
+            Quad(b, "Riser", new Vector3(0, height / 2f, zFrom), Vector3.zero, front, Mat(key), Repeat(key, front));
+            var side = new Vector2(depth, height);
+            Quad(b, "Side L", new Vector3(-width / 2f, height / 2f, zc), new Vector3(0, 90, 0), side, Mat(key), Repeat(key, side));
+            Quad(b, "Side R", new Vector3(width / 2f, height / 2f, zc), new Vector3(0, -90, 0), side, Mat(key), Repeat(key, side));
+            Solid(b, new Vector3(0, height / 2f, zc), new Vector3(width, height, depth));
+        }
+
         static void Solid(Transform parent, Vector3 center, Vector3 size)
         {
             var box = new GameObject("Collider").AddComponent<BoxCollider>();
@@ -521,7 +548,9 @@ namespace ThreeKingdoms.EditorTools
             var op = Group(office, "Office props");
             Prop(op, "prop_banner_han", -4.2f, 12.2f);
             Prop(op, "prop_banner_han", 4.2f, 12.2f);
-            Prop(op, "steps_stone", 0f, 21.2f);
+            // Real stone steps and a landing before the hall door (user 2026-10-20: the flat step sprite let the party
+            // walk through it). Door sill about 1.05 m: three 0.35 m risers, under the controller's 0.4 m step offset.
+            Stairs(op, "Hall steps", new Vector3(0, 0, 22f), 3.2f, 3, 0.35f, 0.5f, 0.7f, "ground_square_brick");
             Prop(op, "prop_lantern_red", -2.6f, 21.6f, y: 2.6f);
             Prop(op, "prop_lantern_red", 2.6f, 21.6f, y: 2.6f);
             Prop(op, "prop_potted_tree", -7.5f, 18f, key: "prop_tree_elm", scale: 0.7f);

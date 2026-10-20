@@ -67,7 +67,8 @@ namespace ThreeKingdoms.App
 
         IEnumerator Start()
         {
-            yield return null; // let a -scene switch finish loading
+            yield return LaunchArgs.WaitForRequestedScene();   // the title is the first scene; let a -scene switch finish
+            yield return null;
             yield return null;
             var preset = GameObject.Find(PresetName);
             var main = Camera.main;
@@ -105,7 +106,8 @@ namespace ThreeKingdoms.App
 
         IEnumerator Start()
         {
-            yield return null; // let a -scene switch finish loading
+            yield return LaunchArgs.WaitForRequestedScene();   // the title is the first scene; let a -scene switch finish
+            yield return null;
             yield return null;
             var spot = GameObject.Find(SpotName);
             var player = Object.FindFirstObjectByType<Jrpg.PlayerMover>();

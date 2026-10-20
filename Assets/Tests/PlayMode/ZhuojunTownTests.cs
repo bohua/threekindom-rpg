@@ -80,6 +80,24 @@ public sealed class ZhuojunTownTests
         }
     }
 
+    // The commandery hall steps are solid and climbable (user 2026-10-20: the party used to walk through them).
+    [UnityTest] public IEnumerator PlayerClimbsTheHallSteps()
+    {
+        yield return SceneManager.LoadSceneAsync("Zhuojun_Town");
+        yield return null;
+        var mover = Object.FindFirstObjectByType<PlayerMover>();
+        var cc = mover.GetComponent<CharacterController>();
+        cc.enabled = false; mover.transform.position = new Vector3(0, 0, 18.5f); cc.enabled = true;
+        yield return null;
+        for (float t = 0; t < 1.2f; t += 0.02f) { mover.Move(Vector2.up, 0.02f); yield return null; }
+        Assert.Greater(mover.transform.position.y, 0.9f, "standing on the landing, not inside the steps");
+        Assert.Greater(mover.transform.position.z, 20.4f, "up at the door");
+        Assert.Less(mover.transform.position.z, 22f, "the hall wall still stops the player");
+        // And back down again.
+        for (float t = 0; t < 1f; t += 0.02f) { mover.Move(Vector2.down, 0.02f); yield return null; }
+        Assert.Less(mover.transform.position.y, 0.1f);
+    }
+
     // Speed doubled (user 2026-10-20) and walking plays the drawn 4-frame cycle for the facing direction.
     [UnityTest] public IEnumerator PlayerWalksFastWithTheDrawnCycle()
     {
