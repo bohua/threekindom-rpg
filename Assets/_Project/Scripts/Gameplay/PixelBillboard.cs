@@ -13,6 +13,10 @@ namespace ThreeKingdoms.Gameplay
         public bool SquarePixels = true;
         [Tooltip("Unstretched quad size in world units (frame pixels / pixels-per-unit).")]
         public Vector2 BaseSize = new Vector2(1.6f, 1.6f);
+        [Tooltip("Mirror the sprite horizontally (walk cycle alternates a pose and its mirror).")]
+        public bool Flip;
+        [Tooltip("Extra height above the ground in world units (step bounce).")]
+        public float Lift;
 
         void LateUpdate()
         {
@@ -24,9 +28,9 @@ namespace ThreeKingdoms.Gameplay
             float pitch = Mathf.DeltaAngle(0f, euler.x);
             float height = BaseSize.y;
             if (SquarePixels && Mathf.Abs(pitch) < 80f) height /= Mathf.Cos(pitch * Mathf.Deg2Rad);
-            var scale = new Vector3(BaseSize.x, height, 1f);
+            var scale = new Vector3(Flip ? -BaseSize.x : BaseSize.x, height, 1f);
             if (transform.localScale != scale) transform.localScale = scale;
-            var position = new Vector3(transform.localPosition.x, height / 2f, transform.localPosition.z);
+            var position = new Vector3(transform.localPosition.x, height / 2f + Lift, transform.localPosition.z);
             if (transform.localPosition != position) transform.localPosition = position;
         }
     }

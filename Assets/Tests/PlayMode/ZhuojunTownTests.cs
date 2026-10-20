@@ -31,7 +31,7 @@ public sealed class ZhuojunTownTests
         Assert.Less(mover.transform.position.z, -38f, "the player starts outside the south gate (design §5)");
 
         // Walk north through the gate passage into the main axis.
-        yield return Walk(mover, Vector2.up, 5f);   // 3.5 m/s: from z -46 to about -28.5
+        yield return Walk(mover, Vector2.up, 2.5f);   // 7 m/s: from z -46 to about -28.5
         Assert.Greater(mover.transform.position.z, -30f, "the south gate passage is open");
         Assert.AreEqual(0f, mover.transform.position.x, 0.3f);
 
@@ -42,9 +42,9 @@ public sealed class ZhuojunTownTests
         Assert.AreEqual(ShadowCastingMode.ShadowsOnly, r.shadowCastingMode, "the gate block hides while it covers the player");
 
         // Walk west along the south loop street into the west city wall: it blocks.
-        yield return Walk(mover, Vector2.up, 1.2f);
+        yield return Walk(mover, Vector2.up, 0.6f);
         float z = mover.transform.position.z;
-        yield return Walk(mover, Vector2.left, 18f);
+        yield return Walk(mover, Vector2.left, 9f);
         Assert.Greater(mover.transform.position.x, -46.5f, "the west city wall blocks");
         Assert.AreEqual(z, mover.transform.position.z, 1.5f);
     }
@@ -78,5 +78,28 @@ public sealed class ZhuojunTownTests
             var a = boxes[i].bounds; a.Expand(-0.1f);
             Assert.IsFalse(a.Intersects(boxes[j].bounds), boxes[i].name + " overlaps " + boxes[j].name);
         }
+    }
+
+    // Speed doubled (user 2026-10-20) and walking animates: the pose alternates with its mirror and bounces.
+    [UnityTest] public IEnumerator PlayerWalksFastWithAStepCycle()
+    {
+        yield return SceneManager.LoadSceneAsync("Zhuojun_Town");
+        yield return null;
+        var mover = Object.FindFirstObjectByType<PlayerMover>();
+        var walk = mover.GetComponent<PixelWalkFrames>();
+        Assert.AreEqual(7f, mover.Speed, 0.01f);
+        float z0 = mover.transform.position.z;
+        bool sawFlip = false, sawPlain = false;
+        for (float t = 0; t < 1f; t += 0.02f)
+        {
+            mover.Move(Vector2.up, 0.02f);
+            yield return null;
+            if (walk.Walking) { if (walk.Mirrored) sawFlip = true; else sawPlain = true; }
+        }
+        Assert.Greater(mover.transform.position.z - z0, 6f, "about 7 m in a second");
+        Assert.IsTrue(sawFlip && sawPlain, "the step cycle alternates the pose and its mirror");
+        for (int i = 0; i < 3; i++) yield return null;
+        Assert.IsFalse(walk.Walking, "standing still stops the cycle");
+        Assert.IsFalse(walk.Mirrored);
     }
 }
