@@ -75,7 +75,7 @@ namespace ThreeKingdoms.EditorTools
             // N13 / N14 (design §4): the two companions, standing where the player meets them.
             HD2DSampleBuilder.Character("Guan Yu", "GuanYu", new Vector3(-11.6f, 0, -5.4f), 0, isPlayer: false).transform.SetParent(people, true);
             HD2DSampleBuilder.Character("Zhang Fei", "ZhangFei", new Vector3(-9.6f, 0, -10.5f), 0, isPlayer: false).transform.SetParent(people, true);
-            NpcMarkers(people);
+            Residents(people, player.transform);
 
             var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camGo.AddComponent<Camera>();
@@ -275,31 +275,38 @@ namespace ThreeKingdoms.EditorTools
             return g;
         }
 
-        // Walkable stairs up to a landing in front of a door at doorBase (the wall plane): each step is a solid
-        // block from the ground to its tread, so the character controller climbs it like any step.
-        internal static void Stairs(Transform parent, string name, Vector3 doorBase, float width, int count, float rise, float tread, float landing, string key)
+        // Walkable stairs up to a landing in front of a door at doorBase (the wall plane), skinned with the Codex
+        // stone-steps delivery (STONE_STEPS_TEXTURES.md): pale treads, darker risers, the three-step side profile,
+        // dressed platform stones and a coursed platform edge. Each step is a solid block from the ground to its
+        // tread, so the character controller climbs it like any step.
+        internal static void Stairs(Transform parent, string name, Vector3 doorBase, float width, int count, float rise, float tread, float landing)
         {
             var g = Group(parent, name, doorBase);
-            StairBlock(g, "Landing", key, width, count * rise, -landing, 0f);
+            float top = count * rise, front = -landing - count * tread;
             for (int i = 0; i < count; i++)
             {
-                float zTo = -landing - (count - 1 - i) * tread;
-                StairBlock(g, $"Step {i + 1}", key, width, (i + 1) * rise, zTo - tread, zTo);
+                float zFrom = front + i * tread, h = (i + 1) * rise;
+                var treadSize = new Vector2(width, tread);
+                Quad(g, $"Tread {i + 1}", new Vector3(0, h, zFrom + tread / 2f), new Vector3(90f, 0, 0), treadSize, Mat("steps_tread"),
+                    new Vector2(width / Metres("steps_tread").x, 1f), castShadows: false);
+                Quad(g, $"Riser {i + 1}", new Vector3(0, h - rise / 2f, zFrom), Vector3.zero, new Vector2(width, rise), Mat("steps_riser"),
+                    new Vector2(width / Metres("steps_riser").x, 1f));
+                Solid(g, new Vector3(0, h / 2f, zFrom + tread / 2f), new Vector3(width, h, tread));
             }
-        }
-
-        static void StairBlock(Transform parent, string name, string key, float width, float height, float zFrom, float zTo)
-        {
-            var b = Group(parent, name);
-            float depth = zTo - zFrom, zc = (zFrom + zTo) / 2f;
-            var top = new Vector2(width, depth);
-            Quad(b, "Tread", new Vector3(0, height, zc), new Vector3(90f, 0, 0), top, Mat(key), Repeat(key, top), castShadows: false);
-            var front = new Vector2(width, height);
-            Quad(b, "Riser", new Vector3(0, height / 2f, zFrom), Vector3.zero, front, Mat(key), Repeat(key, front));
-            var side = new Vector2(depth, height);
-            Quad(b, "Side L", new Vector3(-width / 2f, height / 2f, zc), new Vector3(0, 90, 0), side, Mat(key), Repeat(key, side));
-            Quad(b, "Side R", new Vector3(width / 2f, height / 2f, zc), new Vector3(0, -90, 0), side, Mat(key), Repeat(key, side));
-            Solid(b, new Vector3(0, height / 2f, zc), new Vector3(width, height, depth));
+            var landingTop = new Vector2(width, landing);
+            Quad(g, "Landing", new Vector3(0, top, -landing / 2f), new Vector3(90f, 0, 0), landingTop, Mat("platform_top"), Repeat("platform_top", landingTop), castShadows: false);
+            Solid(g, new Vector3(0, top / 2f, -landing / 2f), new Vector3(width, top, landing));
+            // Sides: the stepped profile (low end toward the street) and the platform's coursed edge.
+            var profile = new Vector2(count * tread, top);
+            var landingSide = new Vector2(landing, top);
+            foreach (int s in new[] { -1, 1 })
+            {
+                var side = Quad(g, "Steps side", new Vector3(s * width / 2f, top / 2f, front + count * tread / 2f), new Vector3(0, s < 0 ? 90 : -90, 0), profile,
+                    Mat("steps_side", clip: true));
+                if (s < 0) side.transform.localScale = new Vector3(-1, 1, 1);   // keep the low step at the street end on both sides
+                Quad(g, "Platform side", new Vector3(s * width / 2f, top / 2f, -landing / 2f), new Vector3(0, s < 0 ? 90 : -90, 0), landingSide,
+                    Mat("platform_edge"), new Vector2(landing / Metres("platform_edge").x, 1f));
+            }
         }
 
         static void Solid(Transform parent, Vector3 center, Vector3 size)
@@ -550,7 +557,7 @@ namespace ThreeKingdoms.EditorTools
             Prop(op, "prop_banner_han", 4.2f, 12.2f);
             // Real stone steps and a landing before the hall door (user 2026-10-20: the flat step sprite let the party
             // walk through it). Door sill about 1.05 m: three 0.35 m risers, under the controller's 0.4 m step offset.
-            Stairs(op, "Hall steps", new Vector3(0, 0, 22f), 3.2f, 3, 0.35f, 0.5f, 0.7f, "ground_square_brick");
+            Stairs(op, "Hall steps", new Vector3(0, 0, 22f), 3.2f, 3, 0.35f, 0.4f, 0.7f);   // 0.4 m treads = the 12 px tread texture
             Prop(op, "prop_lantern_red", -2.6f, 21.6f, y: 2.6f);
             Prop(op, "prop_lantern_red", 2.6f, 21.6f, y: 2.6f);
             Prop(op, "prop_potted_tree", -7.5f, 18f, key: "prop_tree_elm", scale: 0.7f);
@@ -733,20 +740,39 @@ namespace ThreeKingdoms.EditorTools
             if (size.y > 3.5f) root.gameObject.AddComponent<Occluder>();
         }
 
-        // The 12 other residents of design §4 have no sprites yet; their posts are marked so dialogue can attach later.
-        static void NpcMarkers(Transform people)
+        // The 12 residents of design §4 (ZHUOJUN_RESIDENTS.md sprites). Root names keep the "N0x 职务" form the story
+        // controller looks up. The patrol soldier, the child and the grain porter walk their short routes; the rest
+        // hold their posts facing the street.
+        static void Residents(Transform people, Transform player)
         {
-            var g = Group(people, "NPC posts (no sprites yet)");
-            (string name, Vector3 at)[] posts =
+            var g = Group(people, "Residents");
+            (string id, string name, Vector3 at, Vector3[] route)[] posts =
             {
-                ("N01 南门守卫", new Vector3(3.6f, 0, -32.5f)), ("N02 巡城兵", new Vector3(6f, 0, -20f)),
-                ("N03 城主府掌士", new Vector3(-3f, 0, 18f)), ("N04 铁匠兼装备商", new Vector3(14f, 0, -5.4f)),
-                ("N05 酒馆掌柜", new Vector3(-14f, 0, -5.2f)), ("N06 医者", new Vector3(16f, 0, -21.2f)),
-                ("N07 驿卒", new Vector3(33f, 0, -21.6f)), ("N08 织席妇人", new Vector3(-35.4f, 0, -22f)),
-                ("N09 街坊老者", new Vector3(-21.2f, 0, -13.2f)), ("N10 孩童", new Vector3(-26f, 0, -12.6f)),
-                ("N11 粮贩", new Vector3(5.6f, 0, -12.6f)), ("N12 运粮脚夫", new Vector3(-26f, 0, 11f)),
+                ("N01", "N01 南门守卫", new Vector3(3.6f, 0, -32.5f), null),
+                ("N02", "N02 巡城兵", new Vector3(1.8f, 0, -27f), new[] { new Vector3(1.8f, 0, -27f), new Vector3(1.8f, 0, -17f) }),
+                ("N03", "N03 城主府掌士", new Vector3(-3f, 0, 18f), null),
+                ("N04", "N04 铁匠兼装备商", new Vector3(14f, 0, -5.4f), null),
+                ("N05", "N05 酒馆掌柜", new Vector3(-14f, 0, -5.2f), null),
+                ("N06", "N06 医者", new Vector3(16f, 0, -21.2f), null),
+                ("N07", "N07 驿卒", new Vector3(33f, 0, -21.6f), null),
+                ("N08", "N08 织席妇人", new Vector3(-35.4f, 0, -22f), null),
+                ("N09", "N09 街坊老者", new Vector3(-21.2f, 0, -13.2f), null),
+                ("N10", "N10 孩童", new Vector3(-26f, 0, -12.6f), new[] { new Vector3(-26f, 0, -12.6f), new Vector3(-24.2f, 0, -11f), new Vector3(-23.6f, 0, -14f) }),
+                ("N11", "N11 粮贩", new Vector3(5.6f, 0, -12.6f), null),
+                ("N12", "N12 运粮脚夫", new Vector3(-26f, 0, 11f), new[] { new Vector3(-26f, 0, 11f), new Vector3(-19f, 0, 10.5f) }),
             };
-            foreach (var (name, at) in posts) { var t = new GameObject(name).transform; t.SetParent(g, false); t.localPosition = at; }
+            foreach (var (id, name, at, route) in posts)
+            {
+                string key = ResidentImporter.Residents.First(r => r.Id == id).Key;
+                var npc = HD2DSampleBuilder.Character(name, key, at, 0, isPlayer: false);
+                npc.transform.SetParent(g, true);
+                if (route == null) continue;
+                var animator = npc.GetComponentInChildren<SpriteFrameAnimator>();
+                npc.AddComponent<PixelWalkFrames>().Animator = animator;
+                var patrol = npc.AddComponent<NpcPatrol>();
+                patrol.Waypoints = route;
+                patrol.Player = player;
+            }
         }
 
         internal static void PointLight(Transform parent, string name, Vector3 at, Color color, float intensity, float range)

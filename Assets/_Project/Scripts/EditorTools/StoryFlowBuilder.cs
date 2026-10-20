@@ -25,6 +25,7 @@ namespace ThreeKingdoms.EditorTools
         public static void Build()
         {
             WalkCycleImporter.Import();   // 9 poses + 16 walk frames per character atlas (CHARACTER_WALK_CYCLES.md)
+            ResidentImporter.Import();    // the 12 Zhuojun residents (ZHUOJUN_RESIDENTS.md)
             BattleSceneBuilder.Build();
             ZhuojunTownBuilder.Build();
             WireTown();
@@ -100,6 +101,9 @@ namespace ThreeKingdoms.EditorTools
             if (!c.Smith) throw new System.InvalidOperationException("Town has no N04 smith post");
             c.Innkeeper = GameObject.Find("N05 酒馆掌柜")?.transform;
             if (!c.Innkeeper) throw new System.InvalidOperationException("Town has no N05 innkeeper post");
+            c.Residents = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Where(t => t.parent && t.parent.name == "Residents").OrderBy(t => t.name).ToArray();
+            if (c.Residents.Length != 12) throw new System.InvalidOperationException($"Town has {c.Residents.Length} residents, expected 12");
             c.InteractAction = ProjectSetup.Action("Interact");
             c.MenuAction = ProjectSetup.Action("Menu");
             c.NewGameSpot = Spot("New game (outside the south gate)", ZhuojunTownBuilder.PlayerStart);

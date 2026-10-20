@@ -35,6 +35,8 @@ namespace ThreeKingdoms.Gameplay.Story
         public Transform Smith;
         [Tooltip("N05 酒馆掌柜：在此对话打开手动存档（save-system GDD answer 1）")]
         public Transform Innkeeper;
+        [Tooltip("The town residents N01–N12 (ZHUOJUN_TOWN_DESIGN.md §4); N04 and N05 open the shop and the save panel")]
+        public Transform[] Residents = Array.Empty<Transform>();
         [Header("Spots")]
         public Transform NewGameSpot, ReturnSpot, OathEndSpot, GroveFocus, TavernSpot;
         public Transform[] GroveSpots = Array.Empty<Transform>();   // Liu, Guan, Zhang
@@ -116,6 +118,8 @@ namespace ThreeKingdoms.Gameplay.Story
 
         void Update()
         {
+            foreach (var r in Residents)
+                if (r && r.TryGetComponent<NpcPatrol>(out var patrol)) patrol.Paused = Busy;   // residents stop while a conversation or panel holds the town
             bool menuPressed = MenuAction && MenuAction.action.WasPressedThisFrame();
             // The menu key also closes the main menu; other panels own input until they close.
             if (Panel == MenuPanel && menuPressed && Time.frameCount > openedPanelFrame) { ClosePanel(); return; }
@@ -142,7 +146,8 @@ namespace ThreeKingdoms.Gameplay.Story
             if (Prompt == "talk:" + StoryState.GuanYu) StartCoroutine(Meet(StoryState.GuanYu, GuanYu, GuanYuMeeting));
             else if (Prompt == "talk:" + StoryState.ZhangFei) StartCoroutine(Meet(StoryState.ZhangFei, ZhangFei, ZhangFeiMeeting));
             else if (Prompt == "gate:locked" || Prompt == "gate:done") StartCoroutine(Say(new[] { new DialogueLine("system", Prompt) }));
-            else if (Prompt == ShopPanel || Prompt == SavePanel) OpenPanel(Prompt);
+            else if (Prompt == ShopPanel || Prompt == SavePanel) { Face(Prompt == ShopPanel ? Smith : Innkeeper); OpenPanel(Prompt); }
+            else if (Prompt.StartsWith("npc:")) TalkToResident(Prompt.Substring(4));
             else if (Prompt.StartsWith("gate:battle_"))
             {
                 // A general without a weapon may still fight; warn once per visit (equipment-items GDD answer 2).
@@ -184,6 +189,36 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public void OpenShop() => OpenPanel(ShopPanel);
 
+        // ---------- residents ----------
+
+        // "N03 城主府掌士" → "N03".
+        public static string ResidentId(Transform resident) => resident.name.Split(' ')[0];
+
+        public Transform Resident(string id) => Residents.FirstOrDefault(r => r && ResidentId(r) == id);
+
+        // One useful line, switching after the oath and again after the first victory (design §4); the UI falls back
+        // to the earlier line when a resident has nothing new to say.
+        public void TalkToResident(string id)
+        {
+            var who = Resident(id);
+            if (!who || Busy) return;
+            Face(who);
+            var story = Run.Story;
+            string stage = story.BattlesDone > 0 ? ".won" : story.Oath == SequenceState.Done ? ".after" : "";
+            StartCoroutine(Say(new[] { new DialogueLine("npc." + id, "npc." + id + stage) }));
+        }
+
+        // A standing resident turns to Liu Bei (pose frames: 0 front, 1 left, 2 right, 3 back).
+        void Face(Transform who)
+        {
+            if (!who || who.GetComponent<PixelWalkFrames>()) return;   // walkers keep their walk facing
+            var animator = who.GetComponentInChildren<SpriteFrameAnimator>();
+            if (!animator) return;
+            Vector3 d = Player.transform.position - who.position;
+            animator.Frame = Mathf.Abs(d.x) > Mathf.Abs(d.z) ? (d.x < 0f ? 1 : 2) : (d.z > 0f ? 3 : 0);
+            animator.Apply();
+        }
+
         // From the main menu: one panel at a time, so the menu closes before the outfit panel opens.
         public void SwitchPanel(string panel)
         {
@@ -214,6 +249,15 @@ namespace ThreeKingdoms.Gameplay.Story
             else if (Near(ZhangFei, p) && !story.ZhangFeiJoined) prompt = "talk:" + StoryState.ZhangFei;
             else if (Near(Smith, p)) prompt = ShopPanel;
             else if (Near(Innkeeper, p)) prompt = SavePanel;
+            else
+            {
+                // The nearest other resident within reach (design §4: prompts appear only up close).
+                Transform best = null;
+                foreach (var r in Residents)
+                    if (r && r != Smith && r != Innkeeper && Near(r, p) && (!best || Vector3.Distance(Flat(r.position), Flat(p)) < Vector3.Distance(Flat(best.position), Flat(p))))
+                        best = r;
+                if (best) prompt = "npc:" + ResidentId(best);
+            }
             if (prompt == Prompt) return;
             Prompt = prompt;
             Changed?.Invoke();
