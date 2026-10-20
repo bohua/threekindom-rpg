@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d74cacfb40d6e7047828c2990b1c7f0c, type: 3}
+  m_Name: enemy_arson
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.BattleSkillDefinition
+  Id: enemy_arson
+  DisplayName: "\u7EB5\u706B\uFF08\u6682\u540D\uFF09"
+  Description: "\u6307\u6325\u90E8\u961F\u7EB5\u706B\uFF1A\u5355\u4F53 1.3 \u500D\u8BA1\u7B56\u4F24\u5BB3\u3002\u6548\u679C\u540C\u706B\u77E2\u3002"
+  TechCost: 4
+  Target: 0
+  Damage: 2
+  PowerPercent: 130
+  HealPercent: 0
+  ModifierStat: 0
+  ModifierPercent: 0
+  ModifierTurns: 0

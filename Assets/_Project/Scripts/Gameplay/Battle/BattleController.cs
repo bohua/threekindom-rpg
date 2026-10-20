@@ -1,0 +1,212 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using ThreeKingdoms.Core.Battle;
+using ThreeKingdoms.Data.Battle;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace ThreeKingdoms.Gameplay.Battle
+{
+    // The only component that drives the battle core (ADR-0002 §8):
+    // Commanding → Resolving (core) → Playback (events) → next round, or Finished.
+    // The UI reads state and events from here and submits commands through here.
+    public sealed class BattleController : MonoBehaviour
+    {
+        public enum Phase { Starting, Commanding, Playback, Finished }
+
+        public BattleCatalog Catalog;
+        public string EncounterId = "battle_1";
+        [Tooltip("Our units by line-up slot (Liu Bei, Guan Yu, Zhang Fei)")] public BattleUnitView[] PlayerViews = Array.Empty<BattleUnitView>();
+        [Tooltip("Enemy units by slot; extra views are hidden")] public BattleUnitView[] EnemyViews = Array.Empty<BattleUnitView>();
+        [Tooltip("Stand-in party when this scene is opened directly: battle 1 = 0 exp / 120 copper, battle 2 = 10 / 150, battle 3 = 30 / 200 (V1_SPEC §7–8)")]
+        public int StartRations = 2, StartCopper = 120, StartExp;
+        [Tooltip("Scene loaded by the HUD's next-battle button after a victory; empty after the last battle")] public string NextScene;
+        [Tooltip("Gamepad Start quits the battle scene (keyboard Esc is the UI cancel here)")] public InputActionReference QuitAction;
+        [Range(0.5f, 4f)] public float PlaybackSpeed = 1f;
+        public bool Fast;
+
+        public BattleData Data { get; private set; }
+        public DevPartyProgress Progress { get; private set; }
+        public BattleSession Session { get; private set; }
+        public Phase Current { get; private set; } = Phase.Starting;
+        public BattleUnit Actor => Current == Phase.Commanding && actorIndex < pending.Count ? pending[actorIndex] : null;
+        public IReadOnlyDictionary<BattleUnit, BattleCommand> Commands => commands;
+        public DevPartyProgress.Applied LastApplied { get; private set; }
+
+        public event Action Changed;                       // phase, actor or commands changed
+        public event Action<BattleEvent> EventPlayed;      // one resolution event is being shown
+        public event Action BattleStarted;
+
+        readonly Dictionary<BattleUnit, BattleCommand> commands = new Dictionary<BattleUnit, BattleCommand>();
+        readonly Dictionary<BattleUnit, BattleUnitView> views = new Dictionary<BattleUnit, BattleUnitView>();
+        readonly List<BattleUnit> pending = new List<BattleUnit>();
+        int actorIndex;
+
+        float Speed => PlaybackSpeed * (Fast ? 3f : 1f);
+
+        void OnEnable() { if (QuitAction) QuitAction.action.Enable(); }
+        void OnDisable() { if (QuitAction) QuitAction.action.Disable(); }
+
+        void Update()
+        {
+            if (QuitAction && QuitAction.action.WasPressedThisFrame() && QuitAction.action.activeControl?.device is Gamepad)
+                Application.Quit();
+        }
+
+        BattleUnit previewTarget;
+
+        // UI calls this while a target button is focused; null clears the preview.
+        public void PreviewTarget(BattleUnit unit)
+        {
+            if (previewTarget == unit) return;
+            ViewOf(previewTarget)?.SetTargeted(false);
+            previewTarget = Current == Phase.Commanding ? unit : null;
+            ViewOf(previewTarget)?.SetTargeted(true);
+        }
+
+        void Start()
+        {
+            Data = Catalog.ToRuntime();
+            Progress = DevPartyProgress.Carried ?? new DevPartyProgress(Data, StartRations, StartCopper, StartExp);
+            DevPartyProgress.Carried = null;
+            StartBattle();
+        }
+
+        public BattleUnitView ViewOf(BattleUnit unit) => unit != null && views.TryGetValue(unit, out var v) ? v : null;
+
+        // Also used for "retry" (nothing was applied on defeat) and "fight again" (levels carry over, no second reward).
+        public void StartBattle()
+        {
+            StopAllCoroutines();
+            Current = Phase.Starting;
+            Session = new BattleSession(Data.Encounter(EncounterId), Progress.Lineup(), Data.Ration, Progress.Rations, Data.Config, Data.Troops);
+            views.Clear();
+            Bind(Session.State.Players, PlayerViews);
+            Bind(Session.State.Enemies, EnemyViews);
+            LastApplied = null;
+            BattleStarted?.Invoke();
+            BeginCommanding();
+        }
+
+        void Bind(IReadOnlyList<BattleUnit> units, BattleUnitView[] slots)
+        {
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (!slots[i]) continue;
+                slots[i].ResetView();
+                if (i < units.Count) views[units[i]] = slots[i];
+                else slots[i].gameObject.SetActive(false);
+            }
+        }
+
+        void BeginCommanding()
+        {
+            commands.Clear();
+            pending.Clear();
+            pending.AddRange(Session.State.Players.Where(u => u.Active));
+            actorIndex = 0;
+            Current = Phase.Commanding;
+            HighlightActor();
+            Changed?.Invoke();
+        }
+
+        void HighlightActor()
+        {
+            PreviewTarget(null);
+            foreach (var pair in views) pair.Value.SetSelected(pair.Key == Actor);
+        }
+
+        // Before the whole party is submitted any command can be changed (step back with Undo).
+        public void Choose(BattleCommand command)
+        {
+            if (Current != Phase.Commanding || command == null || command.Actor != Actor) return;
+            commands[command.Actor] = command;
+            actorIndex++;
+            if (actorIndex >= pending.Count) { StartCoroutine(Resolve()); return; }
+            HighlightActor();
+            Changed?.Invoke();
+        }
+
+        public void Undo()
+        {
+            if (Current != Phase.Commanding || actorIndex == 0) return;
+            actorIndex--;
+            commands.Remove(pending[actorIndex]);
+            HighlightActor();
+            Changed?.Invoke();
+        }
+
+        IEnumerator Resolve()
+        {
+            Current = Phase.Playback;
+            HighlightActor();
+            Changed?.Invoke();
+            var mine = pending.Select(u => commands[u]).ToList();
+            var log = Session.PlayRound(mine);
+            yield return Playback(log);
+            foreach (var v in views.Values) v.SetDefending(false);
+            if (Session.Result != null) Finish();
+            else BeginCommanding();
+        }
+
+        IEnumerator Playback(IReadOnlyList<BattleEvent> log)
+        {
+            for (int i = 0; i < log.Count; i++)
+            {
+                var e = log[i];
+                EventPlayed?.Invoke(e);
+                var actor = ViewOf(e.Actor);
+                var target = ViewOf(e.Target);
+                switch (e.Kind)
+                {
+                    case BattleEventKind.Defend:
+                        actor?.SetDefending(true);
+                        yield return Wait(0.35f);
+                        break;
+                    case BattleEventKind.ActionStarted:
+                        if (!actor) break;
+                        bool melee = e.Command == CommandKind.Attack ||
+                            (e.Command == CommandKind.Skill && e.Skill != null && e.Skill.Damage != DamageKind.None && e.Skill.IsSingleTarget);
+                        if (melee && target && target.gameObject.activeSelf) yield return actor.Lunge(target.Home, Speed);
+                        else yield return actor.Cast(Speed);
+                        break;
+                    case BattleEventKind.Damage:
+                        if (target) yield return target.Hit(Speed);
+                        yield return Wait(0.15f);
+                        break;
+                    case BattleEventKind.Retreated:
+                        if (target) yield return target.Retreat(Speed);
+                        break;
+                    case BattleEventKind.RoundEnded:
+                    case BattleEventKind.ModifierExpired:
+                        break;
+                    default:
+                        yield return Wait(0.45f);
+                        break;
+                }
+            }
+            yield return Wait(0.2f);
+        }
+
+        public bool HasNextBattle => !string.IsNullOrEmpty(NextScene) && Session?.Result?.Outcome == BattleOutcome.Victory;
+
+        public void GoToNextBattle()
+        {
+            if (!HasNextBattle) return;
+            DevPartyProgress.Carried = Progress;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(NextScene);
+        }
+
+        IEnumerator Wait(float seconds) { yield return new WaitForSeconds(seconds / Speed); }
+
+        void Finish()
+        {
+            Current = Phase.Finished;
+            LastApplied = Progress.Apply(Session.Result);
+            HighlightActor();
+            Changed?.Invoke();
+        }
+    }
+}

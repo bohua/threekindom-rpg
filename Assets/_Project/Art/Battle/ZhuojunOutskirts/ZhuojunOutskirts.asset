@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05ba117cf8163a741bf8478f2b3de1d3, type: 3}
+  m_Name: ZhuojunOutskirts
+  m_EditorClassIdentifier: ThreeKingdoms.Gameplay::ThreeKingdoms.Gameplay.BattleBackdrop
+  DisplayName: "\u6DBF\u90E1 \xB7 \u57CE\u5916"
+  Layers:
+  - {fileID: 2800000, guid: 5681420922f0a194f8cfeee58dd88241, type: 3}
+  - {fileID: 2800000, guid: f3e975dbdac427d46bd86db29f983133, type: 3}
+  - {fileID: 2800000, guid: 6eb22470f21ae1144a36078034fc45e1, type: 3}
+  - {fileID: 2800000, guid: 5b2da16aaf63ff34d8bc21fc7eb94b76, type: 3}
+  - {fileID: 2800000, guid: 58781a96360388d4b9392c05fd7d82c2, type: 3}
+  LightPitchYaw: {x: 35, y: 45}
+  LightColor: {r: 1, g: 0.93, b: 0.82, a: 1}
+  LightIntensity: 2.4

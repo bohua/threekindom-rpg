@@ -10,7 +10,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace ThreeKingdoms.EditorTools
 {
-    // ADR-0005 §8 placeholder pipeline for battle backgrounds: build a small 3D diorama from the town kit, render
+    // ADR-0005 §8 pipeline for battle backgrounds: build a small 3D diorama from the Codex native textures, render
     // it as far / mid / foreground layers at 2× and box-downsample to 640×360 pixel art, then assemble the
     // battle scene (orthographic camera, unlit backdrop quads, lit character quads, blob shadows, shared LUT).
     // Final backgrounds are meant to be painted over or replaced; the layer contract stays the same.
@@ -21,6 +21,7 @@ namespace ThreeKingdoms.EditorTools
         public const string ScenePath = "Assets/_Project/Scenes/Battle_ZhuojunMarket.unity";
         public const string ProfilePath = "Assets/_Project/Settings/HD2D_Battle.asset";
         const string DioramaMeshes = Root + "/Diorama_Meshes_TEMP.asset";
+        const string DioramaMaterials = Root + "/Diorama_Materials_TEMP";
         const int FarLayer = 8, MidLayer = 9, ForeLayer = 10, Supersample = 2;
         public const float OrthoSize = 6f;                                   // 360 / 2 / 30 px per unit
         static readonly Vector2 LightPitchYaw = new Vector2(30f, 50f);       // from the front-left, as in the reference
@@ -43,8 +44,49 @@ namespace ThreeKingdoms.EditorTools
             backdrop.LightIntensity = SunIntensity;
             EditorUtility.SetDirty(backdrop);
             AssetDatabase.SaveAssets();
-            BuildBattleScene(backdrop);
+            BuildBattleScene(backdrop, ScenePath, Root);
             Debug.Log("BATTLE_BACKDROP_BUILT");
+        }
+
+        // ---------- painted backdrops ----------
+
+        const string OutskirtsRoot = "Assets/_Project/Art/Battle/ZhuojunOutskirts";
+        public const string OutskirtsBackdropPath = OutskirtsRoot + "/ZhuojunOutskirts.asset";
+        public const string OutskirtsScenePath = "Assets/_Project/Scenes/Battle_ZhuojunOutskirts.unity";
+
+        // Battles 2 and 3 (BATTLE_OUTSKIRTS_ASSETS.md): the Codex five-layer painting of the Yellow Turban camp outside
+        // Zhuojun — sky, far hills and wall, camp, ground, edge foreground — used as delivered, not baked.
+        [MenuItem("JRPG/Build Zhuojun Outskirts Battle Scene (painted layers)")]
+        public static void BuildOutskirts()
+        {
+            string[] layers = { "bg_outskirts_sky", "bg_outskirts_far", "bg_outskirts_mid", "bg_outskirts_ground", "bg_outskirts_front" };
+            foreach (string path in Directory.GetFiles(OutskirtsRoot, "*.png"))
+            {
+                var importer = (TextureImporter)AssetImporter.GetAtPath(path.Replace('\\', '/'));
+                string key = Path.GetFileNameWithoutExtension(path);
+                bool tiled = key.StartsWith("ground_");
+                importer.textureType = TextureImporterType.Default;
+                importer.filterMode = FilterMode.Point;
+                importer.mipmapEnabled = false;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.npotScale = TextureImporterNPOTScale.None;
+                importer.wrapMode = tiled ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                importer.alphaIsTransparency = key != "bg_outskirts_sky" && !tiled;
+                importer.sRGBTexture = true;
+                importer.SaveAndReimport();
+            }
+            var backdrop = AssetDatabase.LoadAssetAtPath<BattleBackdrop>(OutskirtsBackdropPath);
+            if (!backdrop) { backdrop = ScriptableObject.CreateInstance<BattleBackdrop>(); AssetDatabase.CreateAsset(backdrop, OutskirtsBackdropPath); }
+            backdrop.DisplayName = "涿郡 · 城外";
+            backdrop.Layers = layers.Select(k => AssetDatabase.LoadAssetAtPath<Texture2D>($"{OutskirtsRoot}/{k}.png")).ToArray();
+            // Afternoon light from the front-left, as painted (warm highlights on the left of trees and tents).
+            backdrop.LightPitchYaw = new Vector2(35f, 45f);
+            backdrop.LightColor = new Color(1f, 0.93f, 0.82f);
+            backdrop.LightIntensity = 2.4f;
+            EditorUtility.SetDirty(backdrop);
+            AssetDatabase.SaveAssets();
+            BuildBattleScene(backdrop, OutskirtsScenePath, OutskirtsRoot);
+            Debug.Log("OUTSKIRTS_BATTLE_SCENE_BUILT");
         }
 
         public static void BuildFromCommandLine()
@@ -57,7 +99,9 @@ namespace ThreeKingdoms.EditorTools
 
         static Texture2D[] BakeLayers()
         {
-            var kit = HD2DEnvironmentKit.CreatePalette(DioramaMeshes);
+            // The diorama is built from the Codex native textures (ZHUOJUN_CORNER / ZHUOJUN_TOWN deliveries) with the
+            // town builder's helpers; materials and meshes go to a temporary folder deleted after the bake.
+            ZhuojunTownBuilder.BeginSession(DioramaMaterials, DioramaMeshes);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.ambientMode = AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = new Color(0.80f, 0.78f, 0.86f);
@@ -71,7 +115,8 @@ namespace ThreeKingdoms.EditorTools
             var far = new GameObject("Far").transform;
             var mid = new GameObject("Mid").transform;
             var fore = new GameObject("Fore").transform;
-            BuildDiorama(far, mid, fore, kit);
+            BuildDiorama(far, mid, fore);
+            ZhuojunTownBuilder.EndSession();
             SetLayer(far, FarLayer); SetLayer(mid, MidLayer); SetLayer(fore, ForeLayer);
 
             var sun = new GameObject("Sun").AddComponent<Light>();
@@ -100,6 +145,7 @@ namespace ThreeKingdoms.EditorTools
             RenderSettings.fog = false;
             var foreTex = RenderLayer(cam, 1 << ForeLayer, Color.black, opaque: false, blur: 3, "Fore");
             AssetDatabase.DeleteAsset(DioramaMeshes);
+            AssetDatabase.DeleteAsset(DioramaMaterials);
             return new[] { farTex, midTex, foreTex };
         }
 
@@ -231,59 +277,57 @@ namespace ThreeKingdoms.EditorTools
             foreach (var t in root.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = layer;
         }
 
-        // Market plaza modelled on the user's reference: tavern (酒) left, smithy (铁) with forge right, tree and
-        // houses behind, distant gate tower and hazy hills, fence posts in the near corners.
-        static void BuildDiorama(Transform far, Transform mid, Transform fore, HD2DEnvironmentKit.Palette p)
+        // Market plaza modelled on the user's reference, built from the Codex native textures: tavern (酒肆) left and
+        // weapons shop (鐵匠鋪) with its forge right, both turned toward the plaza; houses and trees behind; the city
+        // wall, a distant gate and hazy hills far back; fence and a barrel blurred in the near corners.
+        static void BuildDiorama(Transform far, Transform mid, Transform fore)
         {
-            // far: hills, city wall and gate tower
-            HD2DEnvironmentKit.GateTower(far, new Vector3(1.5f, 1.2f, 46f), p);
-            HD2DEnvironmentKit.CityWall(far, "Wall W", new Vector3(-10f, 1.2f, 46f), 14f, p);
-            HD2DEnvironmentKit.CityWall(far, "Wall E", new Vector3(13f, 1.2f, 46f), 14f, p);
-            for (int i = 0; i < 6; i++)
-                HD2DEnvironmentKit.Piece(far, "Hill", new Vector3(-40f + i * 16f, -2f, 85f + (i % 2) * 8f), new Vector3(30f, 14f + (i % 3) * 4f, 12f), p.Leaves, new Vector3(0, 0, i % 2 == 0 ? 12f : -10f), collider: false);
-            HD2DEnvironmentKit.Piece(far, "Far ground", new Vector3(0, 1.1f, 60f), new Vector3(140f, 0.2f, 40f), p.Dirt, collider: false);
+            // far: hills, city wall, distant gate and rooftops
+            ZhuojunTownBuilder.Patch(far, "Far ground", "ground_packed_earth", -60f, 60f, 30f, 80f, 0f);
+            ZhuojunTownBuilder.WallRun(far, "City wall", new Vector3(-40f, 0, 48f), new Vector3(40f, 0, 48f));
+            ZhuojunTownBuilder.Prop(far, "bg_city_gate_far", 1.5f, 46f, scale: 1.4f);
+            ZhuojunTownBuilder.Prop(far, "bg_town_rooftops_far", -14f, 44f, scale: 1.6f);
+            ZhuojunTownBuilder.Prop(far, "bg_town_rooftops_far", 18f, 44f, scale: 1.6f);
+            ZhuojunTownBuilder.Prop(far, "bg_hills_far", 0f, 75f, scale: 5f);
 
-            // mid: plaza, shops, props
-            HD2DEnvironmentKit.Piece(mid, "Plaza", new Vector3(0, -0.05f, 12f), new Vector3(44f, 0.1f, 36f), p.Paving, collider: false);
-            HD2DEnvironmentKit.House(mid, "Tavern", new Vector3(-8.0f, 0, 11.5f), -20f, 7f, HD2DEnvironmentKit.HouseStyle.Tavern, p, bannerFacesFront: true);
-            HD2DEnvironmentKit.House(mid, "Smithy", new Vector3(8.4f, 0, 11.5f), 20f, 7f, HD2DEnvironmentKit.HouseStyle.Smithy, p, bannerFacesFront: true);
-            HD2DEnvironmentKit.House(mid, "Back house W", new Vector3(-3.6f, 0, 24f), 0f, 5f, HD2DEnvironmentKit.HouseStyle.Tiled, p);
-            HD2DEnvironmentKit.House(mid, "Back house E", new Vector3(4.8f, 0, 25f), 0f, 5.5f, HD2DEnvironmentKit.HouseStyle.Thatched, p);
-            HD2DEnvironmentKit.Tree(mid, new Vector3(1.2f, 0, 17.5f), p);
-            HD2DEnvironmentKit.Tree(mid, new Vector3(-12.5f, 0, 18f), p, p.Blossom);
+            // mid: plaza, the two shops, houses and trees behind, market props
+            ZhuojunTownBuilder.Patch(mid, "Plaza paving", "ground_street_stone", -24f, 24f, 2f, 30f, 0f);
+            var tavern = ZhuojunTownBuilder.Building(mid, "Tavern", new Vector3(-7.4f, 0, 11.6f), 8f, "tavern_front", "tavern_side", "tavern_back");
+            ZhuojunTownBuilder.EaveSign(tavern, "plaque_tavern", "tavern_front", "tavern_side");
+            var smithy = ZhuojunTownBuilder.Building(mid, "Smithy", new Vector3(7.6f, 0, 11.8f), -8f, "smithy_front", "smithy_side", null, glowMask: "smithy_forge_glow_mask");
+            ZhuojunTownBuilder.EaveSign(smithy, "plaque_smithy", "smithy_front", "smithy_side");
+            ZhuojunTownBuilder.Building(mid, "Back house W", new Vector3(-4.4f, 0, 24f), 0f, "house_front", "house_side", "house_back");
+            ZhuojunTownBuilder.Building(mid, "Back house E", new Vector3(5.4f, 0, 25f), 0f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
+            ZhuojunTownBuilder.Prop(mid, "prop_tree_locust", 0.6f, 19.5f, scale: 0.9f);
+            ZhuojunTownBuilder.Prop(mid, "prop_tree_peach", -13f, 20f);
 
-            HD2DEnvironmentKit.Stall(mid, new Vector3(-4.2f, 0, 12.5f), 0f, p);
-            HD2DEnvironmentKit.Stall(mid, new Vector3(4.6f, 0, 13f), 0f, p);
-            HD2DEnvironmentKit.Fence(mid, new Vector3(-2.6f, 0, 15.5f), new Vector3(-0.4f, 0, 15.5f), p);
-            HD2DEnvironmentKit.Fence(mid, new Vector3(2.4f, 0, 15.8f), new Vector3(3.8f, 0, 15.8f), p);
-            foreach (var x in new[] { -6.2f, -5.6f }) HD2DEnvironmentKit.Barrel(mid, new Vector3(x, 0, 7.6f), p);
-            HD2DEnvironmentKit.Jar(mid, new Vector3(-7.6f, 0, 7.2f), p);
-            HD2DEnvironmentKit.Jar(mid, new Vector3(-7.1f, 0, 6.9f), p, 0.8f);
-            HD2DEnvironmentKit.Basket(mid, new Vector3(-4.9f, 0, 7.9f), p, p.ProduceRed);
-            HD2DEnvironmentKit.Basket(mid, new Vector3(-4.3f, 0, 7.6f), p, p.ProduceGreen);
-            HD2DEnvironmentKit.Basket(mid, new Vector3(-8.3f, 0, 7.0f), p, p.ProduceYellow);
-            HD2DEnvironmentKit.Piece(mid, "Forge hearth", new Vector3(7.3f, 0.45f, 7.4f), new Vector3(1.1f, 0.9f, 1.0f), p.Paving, collider: false);
-            HD2DEnvironmentKit.Piece(mid, "Forge coals", new Vector3(7.3f, 0.92f, 7.4f), new Vector3(0.9f, 0.06f, 0.8f), p.Forge, fit: true, collider: false);
-            var fire = new GameObject("Forge light").AddComponent<Light>();
-            fire.transform.SetParent(mid, false);
-            fire.transform.localPosition = new Vector3(7.1f, 1.4f, 7.1f);
-            fire.type = LightType.Point; fire.range = 5f; fire.intensity = 5f; fire.color = new Color(1f, 0.45f, 0.15f);
-            HD2DEnvironmentKit.Barrel(mid, new Vector3(8.4f, 0, 6.9f), p);
-            HD2DEnvironmentKit.Crate(mid, new Vector3(5.6f, 0, 8.4f), 0.8f, 15f, p);
-            HD2DEnvironmentKit.Crate(mid, new Vector3(5.7f, 0.8f, 8.4f), 0.55f, -5f, p);
-            HD2DEnvironmentKit.Cart(mid, new Vector3(6.2f, 0, 11.4f), 250f, p);
-            foreach (var x in new[] { -6.6f, 6.4f })
-                HD2DEnvironmentKit.Lantern(mid, new Vector3(x, 0, 7.4f), p);
+            ZhuojunTownBuilder.Prop(mid, "prop_stall_cloth", -2.4f, 15.0f);
+            ZhuojunTownBuilder.Prop(mid, "prop_stall_grain", 2.8f, 15.4f);
+            ZhuojunTownBuilder.Prop(mid, "prop_notice_board", 0.3f, 17.4f);
+            ZhuojunTownBuilder.Prop(mid, "prop_wine_jars", -9.6f, 10.0f);
+            ZhuojunTownBuilder.Prop(mid, "prop_barrel", -4.6f, 10.2f);
+            ZhuojunTownBuilder.Prop(mid, "prop_produce_basket", -3.6f, 9.8f);
+            ZhuojunTownBuilder.Prop(mid, "prop_banner_wine", -2.8f, 10.8f, y: 0.9f);
+            ZhuojunTownBuilder.Prop(mid, "prop_lantern_red", -11.2f, 10.4f, y: 2.2f);
+            ZhuojunTownBuilder.Prop(mid, "prop_anvil", 6.4f, 10.2f);
+            ZhuojunTownBuilder.Prop(mid, "prop_weapon_rack", 10.0f, 10.6f);
+            ZhuojunTownBuilder.Prop(mid, "prop_banner_iron", 4.0f, 11.0f, y: 0.9f);
+            ZhuojunTownBuilder.Prop(mid, "prop_water_vat", 5.0f, 10.0f);
+            ZhuojunTownBuilder.Prop(mid, "prop_grain_sacks", 4.6f, 14.0f);
+            ZhuojunTownBuilder.Prop(mid, "prop_basket_stack", -4.4f, 13.8f);
+            ZhuojunTownBuilder.PointLight(mid, "Forge light", new Vector3(8.0f, 1.2f, 11.0f), new Color(1f, 0.45f, 0.15f), 5f, 5f);
+            ZhuojunTownBuilder.PointLight(mid, "Lantern light", new Vector3(-11.2f, 2.5f, 10.2f), new Color(1f, 0.55f, 0.3f), 2.2f, 5f);
 
-            // fore: blurred fence posts and a barrel in the bottom corners
-            HD2DEnvironmentKit.Fence(fore, new Vector3(-6.6f, 0, 3.6f), new Vector3(-4.6f, 0, 2.6f), p);
-            HD2DEnvironmentKit.Fence(fore, new Vector3(4.6f, 0, 2.6f), new Vector3(6.8f, 0, 3.8f), p);
-            HD2DEnvironmentKit.Barrel(fore, new Vector3(-5.6f, 0, 3.3f), p);
+            // fore: blurred fence posts, a bush and a barrel in the bottom corners
+            ZhuojunTownBuilder.Prop(fore, "prop_fence", -5.6f, 3.2f);
+            ZhuojunTownBuilder.Prop(fore, "prop_fence", 5.8f, 3.2f);
+            ZhuojunTownBuilder.Prop(fore, "prop_barrel", -6.8f, 3.0f);
+            ZhuojunTownBuilder.Prop(fore, "prop_bush", 7.2f, 2.8f, scale: 1.3f);
         }
 
         // ---------- battle scene ----------
 
-        static void BuildBattleScene(BattleBackdrop backdrop)
+        static void BuildBattleScene(BattleBackdrop backdrop, string scenePath, string materialFolder)
         {
             var lut = AssetDatabase.LoadAssetAtPath<Texture2D>(HD2DLutBuilder.LutPath) ?? HD2DLutBuilder.Build();
             // No depth of field (orthographic, ADR-0005 §8.1); bloom threshold above 1 so painted highlights never glow (§8.2).
@@ -310,11 +354,13 @@ namespace ThreeKingdoms.EditorTools
 
             float width = BattleBackdrop.Width / HD2DSampleBuilder.PixelsPerUnit, height = BattleBackdrop.Height / HD2DSampleBuilder.PixelsPerUnit;
             var layerRoot = new GameObject("Backdrop").transform;
-            float[] depth = { 40f, 30f, 1f };
+            // Far → near behind the units (z 10); the last layer is the foreground in front of them.
             for (int i = 0; i < backdrop.Layers.Length; i++)
             {
-                var mode = i == 0 ? UnlitMode.Opaque : i == backdrop.Layers.Length - 1 ? UnlitMode.Blend : UnlitMode.Cutout;
-                Quad(layerRoot, "Layer " + backdrop.Layers[i].name, new Vector3(0, 0, depth[i]), new Vector2(width, height), UnlitMaterial(backdrop.Layers[i], mode));
+                bool last = i == backdrop.Layers.Length - 1;
+                var mode = i == 0 ? UnlitMode.Opaque : last ? UnlitMode.Blend : UnlitMode.Cutout;
+                float depth = last ? 1f : 40f - i * 7.5f;
+                Quad(layerRoot, "Layer " + backdrop.Layers[i].name, new Vector3(0, 0, depth), new Vector2(width, height), UnlitMaterial(backdrop.Layers[i], mode, folder: materialFolder));
             }
 
             var sun = new GameObject("Battle key light").AddComponent<Light>();
@@ -346,9 +392,9 @@ namespace ThreeKingdoms.EditorTools
             var tier = volumeGo.AddComponent<HD2DQualityTier>();
             tier.Volume = volume; tier.High = profile; tier.Low = profile;
 
-            EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ScenePath);
+            EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), scenePath);
             var scenes = EditorBuildSettings.scenes.ToList();
-            if (!scenes.Any(s => s.path == ScenePath)) scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
+            if (!scenes.Any(s => s.path == scenePath)) scenes.Add(new EditorBuildSettingsScene(scenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
         }
@@ -384,7 +430,7 @@ namespace ThreeKingdoms.EditorTools
 
         enum UnlitMode { Opaque, Cutout, Blend }
 
-        static Material UnlitMaterial(Texture2D texture, UnlitMode mode, string saveAs = null, float hdr = 1f)
+        static Material UnlitMaterial(Texture2D texture, UnlitMode mode, string saveAs = null, float hdr = 1f, string folder = Root)
         {
             var m = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { name = saveAs ?? texture.name };
             m.SetTexture("_BaseMap", texture);
@@ -404,7 +450,7 @@ namespace ThreeKingdoms.EditorTools
                 m.SetOverrideTag("RenderType", "Transparent");
                 m.renderQueue = (int)RenderQueue.Transparent;
             }
-            string path = $"{Root}/{m.name}.mat";
+            string path = $"{folder}/{m.name}.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (existing) AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(m, path);

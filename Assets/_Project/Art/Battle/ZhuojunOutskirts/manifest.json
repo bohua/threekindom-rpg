@@ -1,0 +1,162 @@
+{
+  "project": "battle-outskirts",
+  "date": "2026-10-20",
+  "complete": true,
+  "native_resolution": [
+    640,
+    360
+  ],
+  "palette": "palette_outskirts.png",
+  "palette_colors": 64,
+  "base_palette": "D:\\BuildArtifacts\\Codex\\hd2d-jrpg\\art\\zhuojun-corner\\palette.png",
+  "base_palette_path_resolution": "Town manifest points to original shared corner palette; town/palette.png absent",
+  "layer_order": [
+    "bg_outskirts_sky.png",
+    "bg_outskirts_far.png",
+    "bg_outskirts_mid.png",
+    "bg_outskirts_ground.png",
+    "bg_outskirts_front.png"
+  ],
+  "battle_usage": [
+    "第二战：张梁",
+    "第三战：张角、张宝、张梁"
+  ],
+  "files": [
+    {
+      "filename": "palette_outskirts.png",
+      "width": 64,
+      "height": 1,
+      "layer": "palette",
+      "purpose": "原48色不变，追加16色"
+    },
+    {
+      "filename": "bg_outskirts_sky.png",
+      "width": 640,
+      "height": 360,
+      "layer": 0,
+      "purpose": "天空：淡蓝到近地平线暖色的像素色阶抖动，几朵大块积云，整张不透明。",
+      "available": true,
+      "tileable": false,
+      "tile_axes": "none"
+    },
+    {
+      "filename": "bg_outskirts_far.png",
+      "width": 640,
+      "height": 360,
+      "layer": 1,
+      "purpose": "远处燕山余脉，空气透视蓝灰；左侧隐约涿郡城墙和汉式城门楼，山以上透明。",
+      "available": true,
+      "tileable": false,
+      "tile_axes": "none"
+    },
+    {
+      "filename": "bg_outskirts_mid.png",
+      "width": 640,
+      "height": 360,
+      "layer": 2,
+      "purpose": "右上偏远黄巾营地十几顶粗布帐篷，木栅营门两侧黄色黃字大旗、粮车和拒马；左侧稀疏柳树和田埂，营地底边不低于y170。",
+      "available": true,
+      "tileable": false,
+      "tile_axes": "none"
+    },
+    {
+      "filename": "bg_outskirts_ground.png",
+      "width": 640,
+      "height": 360,
+      "layer": 3,
+      "purpose": "下部平坦草地，有斜穿土路与车辙、草色变化、零星低野花碎石；上部透明。",
+      "available": true,
+      "tileable": false,
+      "tile_axes": "none"
+    },
+    {
+      "filename": "bg_outskirts_front.png",
+      "width": 640,
+      "height": 360,
+      "layer": 4,
+      "purpose": "最左右边缘与底边前景：左下芦苇高草，右下断木栅栏与倒地黄旗，其余透明。",
+      "available": true,
+      "tileable": false,
+      "tile_axes": "none"
+    },
+    {
+      "filename": "ground_outskirts_grass.png",
+      "width": 120,
+      "height": 120,
+      "layer": "optional",
+      "purpose": "可平铺站位区草地。",
+      "available": true,
+      "tileable": true,
+      "tile_axes": "xy"
+    },
+    {
+      "filename": "ground_outskirts_dirt.png",
+      "width": 120,
+      "height": 120,
+      "layer": "optional",
+      "purpose": "可平铺土路。",
+      "available": true,
+      "tileable": true,
+      "tile_axes": "xy"
+    },
+    {
+      "filename": "prop_tent_yellowturban.png",
+      "width": 120,
+      "height": 90,
+      "layer": "optional",
+      "purpose": "单顶黄巾营地粗布帐篷，30°斜视，落点底中。",
+      "available": true,
+      "tileable": false,
+      "tile_axes": "none",
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_banner_huang.png",
+      "width": 30,
+      "height": 90,
+      "layer": "optional",
+      "purpose": "带旗杆的黄底深色繁体黃字大旗。",
+      "available": true,
+      "tileable": false,
+      "tile_axes": "none",
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_cheval_de_frise.png",
+      "width": 90,
+      "height": 36,
+      "layer": "optional",
+      "purpose": "一段木制拒马，透明背景。",
+      "available": true,
+      "tileable": false,
+      "tile_axes": "none",
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "preview.png",
+      "width": 640,
+      "height": 360,
+      "layer": "composite-preview",
+      "purpose": "五层按从远到近合成，无人物与界面",
+      "available": true
+    },
+    {
+      "filename": "preview_2x.png",
+      "width": 1280,
+      "height": 720,
+      "layer": "composite-preview",
+      "purpose": "五层按从远到近合成，无人物与界面",
+      "available": true
+    }
+  ],
+  "evidence_boundary": "Generated art and static checks, not Unity implementation"
+}

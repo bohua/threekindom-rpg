@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d74cacfb40d6e7047828c2990b1c7f0c, type: 3}
+  m_Name: enemy_rampage
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.BattleSkillDefinition
+  Id: enemy_rampage
+  DisplayName: "\u4E71\u51FB\uFF08\u6682\u540D\uFF09"
+  Description: "\u6548\u679C\u540C\u6A2A\u626B\u3002"
+  TechCost: 4
+  Target: 1
+  Damage: 1
+  PowerPercent: 65
+  HealPercent: 0
+  ModifierStat: 0
+  ModifierPercent: 0
+  ModifierTurns: 0

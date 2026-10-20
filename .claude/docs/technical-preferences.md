@@ -85,6 +85,7 @@ Third-party (approved, not yet installed — record source and license in LICENS
 
 <!-- Quick reference linking to full ADRs in docs/architecture/ -->
 - [ADR-0001](../../docs/architecture/adr-0001-engine-platform-project-structure.md) — Engine (Unity 6.3 LTS, URP Universal Renderer, Input System only), platform targets (Windows x64 first, Steam Deck later), build profiles, `Assets/_Project` layout and `ThreeKingdoms.*` assemblies. Accepted 2026-10-18; migration steps 1–5 done 2026-10-19
+- [ADR-0002](../../docs/architecture/adr-0002-battle-core.md) — Battle rules core: pure C# in `ThreeKingdoms.Core`, SO → spec via `ToRuntime()`, `CombatantInput` in / event list + `BattleResult` out (no out-of-battle writes), data-driven troop table incl. enemy-only types, `IEnemyAi` policies, integer fixed-point damage. Accepted 2026-10-19
 
 ## Engine Specialists
 

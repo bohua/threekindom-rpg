@@ -26,8 +26,9 @@ namespace ThreeKingdoms.EditorTools
         public const string ScenePath = "Assets/_Project/Scenes/Zhuojun_Town.unity";
         public const string TownDir = "Assets/_Project/Art/Environment/ZhuojunTown";
         const string CornerDir = ZhuojunCornerBuilder.TextureDir;
-        const string MaterialDir = TownDir + "/Materials";
+        const string TownMaterialDir = TownDir + "/Materials";
         const string MeshPath = TownDir + "/Town_Meshes.asset";
+        static string materialDir = TownMaterialDir;
         const float Ppm = 30f;
         public static readonly Vector3 PlayerStart = new Vector3(0f, 0f, -46f);   // outside the south gate (design §5 step 1)
 
@@ -39,11 +40,7 @@ namespace ThreeKingdoms.EditorTools
         [MenuItem("JRPG/Build Zhuojun Town (native textures)")]
         public static void Build()
         {
-            ReadManifests();
-            ConfigureTextures(TownDir);
-            materials.Clear();
-            Directory.CreateDirectory(MaterialDir);
-            BeginMeshes();
+            BeginSession(TownMaterialDir, MeshPath);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
@@ -62,7 +59,7 @@ namespace ThreeKingdoms.EditorTools
             MiddleRow(env);
             SouthRows(env);
             Outside(env);
-            EndMeshes();
+            EndSession();
 
             var sun = new GameObject("Late-afternoon sun").AddComponent<Light>();
             sun.type = LightType.Directional;
@@ -132,6 +129,24 @@ namespace ThreeKingdoms.EditorTools
 
         // ---------- textures, materials, meshes ----------
 
+        // Other builders (the battle backdrop diorama) reuse the building and prop helpers with their own material
+        // folder and mesh asset, so the town scene's materials keep their GUIDs.
+        internal static void BeginSession(string materials, string meshPath)
+        {
+            ReadManifests();
+            ConfigureTextures(TownDir);
+            ZhuojunTownBuilder.materials.Clear();
+            materialDir = materials;
+            Directory.CreateDirectory(materialDir);
+            BeginMeshes(meshPath);
+        }
+
+        internal static void EndSession()
+        {
+            EndMeshes();
+            materialDir = TownMaterialDir;
+        }
+
         [System.Serializable] sealed class ManifestFile { public string filename; public string tile_axes; }
         [System.Serializable] sealed class Manifest { public ManifestFile[] files; }
 
@@ -195,19 +210,19 @@ namespace ThreeKingdoms.EditorTools
                 m.EnableKeyword("_EMISSION");
                 m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             }
-            string path = $"{MaterialDir}/{id}.mat";
+            string path = $"{materialDir}/{id}.mat";
             if (AssetDatabase.LoadAssetAtPath<Material>(path)) AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(m, path);
             materials[id] = m;
             return m;
         }
 
-        static void BeginMeshes()
+        static void BeginMeshes(string meshPath)
         {
             meshes.Clear();
-            if (AssetDatabase.LoadAssetAtPath<Mesh>(MeshPath)) AssetDatabase.DeleteAsset(MeshPath);
-            container = new Mesh { name = "Town_Meshes" };
-            AssetDatabase.CreateAsset(container, MeshPath);
+            if (AssetDatabase.LoadAssetAtPath<Mesh>(meshPath)) AssetDatabase.DeleteAsset(meshPath);
+            container = new Mesh { name = Path.GetFileNameWithoutExtension(meshPath) };
+            AssetDatabase.CreateAsset(container, meshPath);
         }
 
         static void EndMeshes() => AssetDatabase.SaveAssets();
@@ -270,7 +285,7 @@ namespace ThreeKingdoms.EditorTools
         // ---------- ground ----------
 
         // A ground patch facing up; texture "up" points north. y separates overlapping layers.
-        static void Patch(Transform parent, string name, string key, float xMin, float xMax, float zMin, float zMax, float y)
+        internal static void Patch(Transform parent, string name, string key, float xMin, float xMax, float zMin, float zMax, float y)
         {
             var size = new Vector2(xMax - xMin, zMax - zMin);
             Quad(parent, name, new Vector3((xMin + xMax) / 2f, y, (zMin + zMax) / 2f), new Vector3(90f, 0, 0), size, Mat(key), Repeat(key, size), castShadows: false);
@@ -311,7 +326,7 @@ namespace ThreeKingdoms.EditorTools
 
         // A straight wall run along X (horizontal) or Z, from a to b on its centre line. Faces carry citywall_face,
         // the top the walkway, both top edges a parapet. The whole run is one occluder.
-        static void WallRun(Transform parent, string name, Vector3 a, Vector3 b)
+        internal static void WallRun(Transform parent, string name, Vector3 a, Vector3 b)
         {
             bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
             float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
@@ -390,7 +405,7 @@ namespace ThreeKingdoms.EditorTools
 
         // A building whose front faces south (yaw 0) or north (yaw 180, back toward the camera). Size comes from the
         // textures: front = width × wall height, side = depth × (wall + gable). roofKey "tile" or "thatch".
-        static Transform Building(Transform parent, string name, Vector3 frontCenter, float yaw, string front, string side, string back,
+        internal static Transform Building(Transform parent, string name, Vector3 frontCenter, float yaw, string front, string side, string back,
             string roofKey = "tile", string glowMask = null, bool collide = true)
         {
             var f = Metres(front); var sd = Metres(side);
@@ -455,7 +470,7 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A shop sign hung on the front edge of the eave, where the eave strip cannot hide it.
-        static void EaveSign(Transform building, string key, string front, string side) =>
+        internal static void EaveSign(Transform building, string key, string front, string side) =>
             Plaque(building, key, new Vector3(0, EaveY(front, side) - 0.25f, -0.72f), 0f);
 
         // A flat run of a tileable fence-like strip (courtyard wall, palisade, wattle) along X or Z.
@@ -673,7 +688,7 @@ namespace ThreeKingdoms.EditorTools
 
         // ---------- props, people, lights ----------
 
-        static void Prop(Transform parent, string name, float x, float z, float y = 0f, float scale = 1f, bool solid = false, string key = null, string glowMask = null)
+        internal static void Prop(Transform parent, string name, float x, float z, float y = 0f, float scale = 1f, bool solid = false, string key = null, string glowMask = null)
         {
             key ??= name;
             var t = Tex(key);
@@ -683,6 +698,7 @@ namespace ThreeKingdoms.EditorTools
             root.localPosition = new Vector3(x, y, z);
             // Unit quad: PixelBillboard scales it to the prop size (and adds the square-pixel stretch).
             var q = Quad(root, "Sprite", new Vector3(0, size.y / 2f, 0), Vector3.zero, Vector2.one, Mat(key, clip: true, twoSided: true, emissionMask: glowMask));
+            q.transform.localScale = new Vector3(size.x, size.y, 1f);   // right before the first LateUpdate too (offline bakes)
             q.AddComponent<PixelBillboard>().BaseSize = size;
             if (solid) Solid(root, new Vector3(0, 0.75f, 0), new Vector3(Mathf.Min(size.x * 0.7f, 4f), 1.5f, Mathf.Min(size.x * 0.4f, 2f)));
             if (size.y > 3.5f) root.gameObject.AddComponent<Occluder>();
@@ -704,7 +720,7 @@ namespace ThreeKingdoms.EditorTools
             foreach (var (name, at) in posts) { var t = new GameObject(name).transform; t.SetParent(g, false); t.localPosition = at; }
         }
 
-        static void PointLight(Transform parent, string name, Vector3 at, Color color, float intensity, float range)
+        internal static void PointLight(Transform parent, string name, Vector3 at, Color color, float intensity, float range)
         {
             var l = new GameObject(name).AddComponent<Light>();
             l.transform.SetParent(parent, false);
