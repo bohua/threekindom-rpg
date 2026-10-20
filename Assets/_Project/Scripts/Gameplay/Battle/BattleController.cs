@@ -6,6 +6,7 @@ using ThreeKingdoms.Core.Battle;
 using ThreeKingdoms.Data.Battle;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using ThreeKingdoms.Gameplay.Story;
 
 namespace ThreeKingdoms.Gameplay.Battle
 {
@@ -22,7 +23,7 @@ namespace ThreeKingdoms.Gameplay.Battle
         [Tooltip("Enemy units by slot; extra views are hidden")] public BattleUnitView[] EnemyViews = Array.Empty<BattleUnitView>();
         [Tooltip("Stand-in party when this scene is opened directly: battle 1 = 0 exp / 120 copper, battle 2 = 10 / 150, battle 3 = 30 / 200 (V1_SPEC §7–8)")]
         public int StartRations = 2, StartCopper = 120, StartExp;
-        [Tooltip("Scene loaded by the HUD's next-battle button after a victory; empty after the last battle")] public string NextScene;
+        [Tooltip("Development run only: scene the next-battle button loads after a victory; empty after the last battle")] public string NextScene;
         [Tooltip("Gamepad Start quits the battle scene (keyboard Esc is the UI cancel here)")] public InputActionReference QuitAction;
         [Range(0.5f, 4f)] public float PlaybackSpeed = 1f;
         public bool Fast;
@@ -69,8 +70,10 @@ namespace ThreeKingdoms.Gameplay.Battle
         void Start()
         {
             Data = Catalog.ToRuntime();
-            Progress = DevPartyProgress.Carried ?? new DevPartyProgress(Data, StartRations, StartCopper, StartExp);
-            DevPartyProgress.Carried = null;
+            // Part of a play-through (ADR-0006) — or, opened on its own, a development run at this battle's expected state.
+            Run = GameRun.Current ?? GameRun.ForBattle(Catalog, GameRun.BattleIndex(EncounterId), StartExp, StartCopper, StartRations);
+            Data = Run.Data;
+            Progress = Run.Progress;
             StartBattle();
         }
 
@@ -81,7 +84,7 @@ namespace ThreeKingdoms.Gameplay.Battle
         {
             StopAllCoroutines();
             Current = Phase.Starting;
-            Session = new BattleSession(Data.Encounter(EncounterId), Progress.Lineup(), Data.Ration, Progress.Rations, Data.Config, Data.Troops);
+            Session = new BattleSession(Data.Encounter(EncounterId), Progress.Lineup(Run.Story.HasJoined), Data.Ration, Progress.Rations, Data.Config, Data.Troops);
             views.Clear();
             Bind(Session.State.Players, PlayerViews);
             Bind(Session.State.Enemies, EnemyViews);
@@ -190,13 +193,38 @@ namespace ThreeKingdoms.Gameplay.Battle
             yield return Wait(0.2f);
         }
 
-        public bool HasNextBattle => !string.IsNullOrEmpty(NextScene) && Session?.Result?.Outcome == BattleOutcome.Victory;
+        public GameRun Run { get; private set; }
+        bool Won => Session?.Result?.Outcome == BattleOutcome.Victory;
+        // After a victory: back to town (play-through), the next battle (development run), or the ending (last battle).
+        public bool HasNextBattle => Won && Run.IsDevelopment && !string.IsNullOrEmpty(NextScene);
+        public bool CanReturnToTown => Won && !Run.IsDevelopment && Run.Story.NextBattleId != null;
+        public bool ReachedEnding => Won && Run.Story.NextBattleId == null;
 
         public void GoToNextBattle()
         {
             if (!HasNextBattle) return;
-            DevPartyProgress.Carried = Progress;
             UnityEngine.SceneManagement.SceneManager.LoadScene(NextScene);
+        }
+
+        public void ReturnToTown()
+        {
+            if (!CanReturnToTown) return;
+            Run.NextArrival = GameRun.Arrival.ReturnFromBattle;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(GameRun.TownScene);
+        }
+
+        // Alpha 0.1 ending (story-events rule 19): narration, then "test version ends"; restart starts a new game.
+        public void BeginEnding() { if (ReachedEnding) Run.Story.BeginEnding(); }
+
+        public void FinishEnding()
+        {
+            if (Run.Story.Ending == ThreeKingdoms.Core.Story.SequenceState.Playing) Run.Story.CompleteEnding();
+        }
+
+        public void RestartGame()
+        {
+            GameRun.Clear();
+            UnityEngine.SceneManagement.SceneManager.LoadScene(GameRun.TownScene);
         }
 
         IEnumerator Wait(float seconds) { yield return new WaitForSeconds(seconds / Speed); }
@@ -204,7 +232,9 @@ namespace ThreeKingdoms.Gameplay.Battle
         void Finish()
         {
             Current = Phase.Finished;
-            LastApplied = Progress.Apply(Session.Result);
+            // The story is the single reward-once gate: only the first win of the next battle grants exp and copper.
+            bool firstClear = Session.Result.Outcome == BattleOutcome.Victory && Run.Story.RecordVictory(Session.Encounter.Id);
+            LastApplied = Progress.Apply(Session.Result, firstClear);
             HighlightActor();
             Changed?.Invoke();
         }

@@ -13,29 +13,22 @@ namespace ThreeKingdoms.Gameplay.Battle
     {
         readonly BattleData data;
         readonly Dictionary<string, int> exp = new Dictionary<string, int>();
-        readonly HashSet<string> cleared = new HashSet<string>();
 
         public int Rations { get; private set; }
         public int Copper { get; private set; }
 
-        public DevPartyProgress(BattleData data, int rations, int copper, int startExp = 0, IEnumerable<string> clearedEncounters = null)
+        public DevPartyProgress(BattleData data, int rations, int copper, int startExp = 0)
         {
             this.data = data;
             Rations = rations; Copper = copper;
             foreach (var g in data.Party) exp[g.Id] = startExp;
-            if (clearedEncounters != null) cleared.UnionWith(clearedEncounters);
         }
-
-        // Carried between the three battle scenes when played in order ("next battle"), so levels, copper and
-        // rations continue. Opening a later scene directly starts from that battle's expected state instead.
-        public static DevPartyProgress Carried;
 
         public int Exp(GeneralSpec g) => exp.TryGetValue(g.Id, out int e) ? e : 0;
         public int Level(GeneralSpec g) => BattleRules.LevelForExp(Exp(g), data.Config);
-        public bool HasCleared(string encounterId) => cleared.Contains(encounterId);
-
-        public IReadOnlyList<CombatantInput> Lineup() =>
-            data.Party.Select(g => CombatantInput.AtLevel(g, Level(g))).ToList();
+        // The roster is whoever the story says has joined (ADR-0006: StoryState join flags), in party order.
+        public IReadOnlyList<CombatantInput> Lineup(System.Func<string, bool> hasJoined) =>
+            data.Party.Where(g => hasJoined(g.Id)).Select(g => CombatantInput.AtLevel(g, Level(g))).ToList();
 
         public sealed class Applied
         {
@@ -43,14 +36,15 @@ namespace ThreeKingdoms.Gameplay.Battle
             public readonly List<(GeneralSpec general, int from, int to, List<SkillSpec> learned)> LevelUps = new List<(GeneralSpec, int, int, List<SkillSpec>)>();
         }
 
-        // Victory: rations used are spent either way; rewards only the first time this save clears it.
+        // Victory: rations used are spent either way; exp and copper only when the story recorded this battle as a
+        // first clear (StoryState.RecordVictory is the single reward-once gate, ADR-0006).
         // Defeat: nothing is applied, which is the "restore pre-battle state" rule.
-        public Applied Apply(BattleResult result)
+        public Applied Apply(BattleResult result, bool firstClear)
         {
             var applied = new Applied();
             if (result.Outcome != BattleOutcome.Victory) return applied;
             Rations -= result.RationsUsed;
-            if (!cleared.Add(result.EncounterId)) return applied;
+            if (!firstClear) return applied;
             applied.RewardGranted = true;
             Copper += result.Copper;
             foreach (var g in data.Party)

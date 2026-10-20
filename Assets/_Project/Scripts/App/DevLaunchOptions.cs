@@ -10,6 +10,7 @@ namespace ThreeKingdoms.App
     //   -camera <object name>            move the main camera to that (disabled) camera's pose and stop following
     //   -teleport <object name>          move the player to that object (e.g. a town "Spot …" marker), camera keeps following
     //   -screenshot <file> [-screenshotDelay <seconds>]   capture one frame, then quit
+    //   -storyAuto                       play the main line by itself (town, oath, gate, battles); implies -battleAuto
     //   -battleAuto [<stop round>]       let BattleAutoPilot issue commands in battle scenes (screenshots, soak runs)
     public static class DevLaunchOptions
     {
@@ -25,6 +26,13 @@ namespace ThreeKingdoms.App
                 var go = new GameObject(nameof(CameraPresetProbe));
                 go.AddComponent<CameraPresetProbe>().PresetName = preset;
                 Object.DontDestroyOnLoad(go);
+            }
+
+            if (LaunchArgs.Has("-storyAuto"))
+            {
+                var story = new GameObject(nameof(StoryAutoPilot)).AddComponent<StoryAutoPilot>();
+                Object.DontDestroyOnLoad(story.gameObject);
+                if (!LaunchArgs.Has("-battleAuto")) Object.DontDestroyOnLoad(new GameObject(nameof(BattleAutoPilot)).AddComponent<BattleAutoPilot>().gameObject);
             }
 
             if (LaunchArgs.Has("-battleAuto"))

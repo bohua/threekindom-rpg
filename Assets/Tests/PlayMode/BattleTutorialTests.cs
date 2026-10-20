@@ -5,6 +5,7 @@ using NUnit.Framework;
 using ThreeKingdoms.Core.Battle;
 using ThreeKingdoms.Gameplay;
 using ThreeKingdoms.Gameplay.Battle;
+using ThreeKingdoms.Gameplay.Story;
 using ThreeKingdoms.UI.Battle;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,6 +16,9 @@ using UnityEngine.UIElements;
 // end through the controller and HUD, grants the reward once, and can be fought again.
 public sealed class BattleTutorialTests
 {
+    [SetUp] public void Fresh() => GameRun.Clear();
+    [TearDown] public void Clean() => GameRun.Clear();
+
     static void AutoCommand(BattleController c)
     {
         var state = c.Session.State;
@@ -94,7 +98,6 @@ public sealed class BattleTutorialTests
 
     [UnityTest] public IEnumerator ThreeBattlesChainWithProgressCarriedOver()
     {
-        DevPartyProgress.Carried = null;
         yield return SceneManager.LoadSceneAsync("Battle_Tutorial01");
         yield return null;
         var c = Object.FindFirstObjectByType<BattleController>();
@@ -115,6 +118,7 @@ public sealed class BattleTutorialTests
         Assert.AreEqual(5, stage.Backdrop.Layers.Length);
         Assert.IsNotNull(Object.FindFirstObjectByType<UIDocument>().panelSettings, "battle 2 has its HUD");
 
+        GameRun.Clear();   // open battle 3 on its own: a fresh development run at its expected state
         yield return SceneManager.LoadSceneAsync("Battle_Tutorial03");
         yield return null;
         c = Object.FindFirstObjectByType<BattleController>();

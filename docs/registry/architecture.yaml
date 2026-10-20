@@ -78,11 +78,22 @@ state_ownership:
     status: active
     owner_system: story-events
     adr: docs/architecture/adr-0002-battle-core.md
-    interface: "battle_1_done / battle_2_done / battle_3_done, set from BattleResult.EncounterId on victory; gates reward-once"
+    # revised 2026-10-20 (ADR-0006): was "battle_1_done / battle_2_done / battle_3_done, set from BattleResult.EncounterId on victory; gates reward-once"
+    interface: "StoryState.BattlesDone (battle_N_done <=> BattlesDone >= N); StoryState.RecordVictory(encounterId) is the single reward-once gate"
     write_access: story-events-only
     referenced_by:
       - docs/architecture/adr-0002-battle-core.md
     added: 2026-10-19
+    revised: ""
+  - state: story_state
+    status: active
+    owner_system: story-events
+    adr: docs/architecture/adr-0006-scene-flow-story-flags.md
+    interface: "StoryState (Core): read-only flags/Phase/NextBattleId; written only through Join, BeginOath/CompleteOath, RecordVictory, BeginEnding/CompleteEnding, ToSafeState; held across scenes by GameRun (Gameplay)"
+    write_access: story-events-only
+    referenced_by:
+      - docs/architecture/adr-0006-scene-flow-story-flags.md
+    added: 2026-10-20
     revised: ""
   - state: pre_battle_snapshot
     status: active
@@ -306,3 +317,15 @@ forbidden_patterns:
 #       ownership model. The owning system must be the sole writer."
 #     adr: docs/architecture/adr-0000-architecture-principles.md
 #     added: 2026-03-26
+  - pattern: scene_composes_story_conditions
+    status: active
+    description: "Scene scripts must not build main-line conditions (who has joined, may the player leave town, which battle is next) themselves; they ask StoryState."
+    why: "One rule set, testable in EditMode; scattered conditions drift from the story-events GDD."
+    adr: docs/architecture/adr-0006-scene-flow-story-flags.md
+    added: 2026-10-20
+  - pattern: game_run_static_in_core
+    status: active
+    description: "ThreeKingdoms.Core must not read the static GameRun; only Gameplay and App layers may."
+    why: "Core stays engine- and scene-free; the static is a runtime container until the save system (ADR-0004)."
+    adr: docs/architecture/adr-0006-scene-flow-story-flags.md
+    added: 2026-10-20

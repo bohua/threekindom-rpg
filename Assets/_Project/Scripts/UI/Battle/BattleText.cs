@@ -43,6 +43,17 @@ namespace ThreeKingdoms.UI.Battle
         public const string Retry = "重新挑战";
         public const string Again = "再战一次";
         public const string NextBattle = "下一战";
+        public const string ReturnToTown = "回到涿郡";
+        public const string Continue = "继续";
+        public const string Restart = "重新开始";
+        public const string TestVersionEnd = "测试版结束";
+        public const string ThanksForPlaying = "感谢试玩";
+        // Alpha 0.1 ending narration (story-events answer 5). 暂定 — final wording to be written.
+        public static readonly string[] EndingNarration =
+        {
+            "黄巾主力兵败，张角三兄弟各自退走，涿郡城外重归平静。",
+            "刘备、关羽、张飞三人义兵之名，自此渐渐传开。",
+        };
         public const string AllBattlesDone = "三场黄巾教学战全部完成";
         public const string Fast = "加速";
         public static string Level(int level) => $"Lv.{level}";

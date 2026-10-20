@@ -12,6 +12,8 @@ using UnityEngine.TestTools;
 // walks in through the south gate, walls block, and walls between camera and player are cut away (design §6).
 public sealed class ZhuojunTownTests
 {
+    [SetUp] public void Fresh() => ThreeKingdoms.Gameplay.Story.GameRun.Clear();
+
     static IEnumerator Walk(PlayerMover mover, Vector2 input, float seconds)
     {
         for (float t = 0; t < seconds; t += 0.02f) { mover.Move(input, 0.02f); yield return null; }

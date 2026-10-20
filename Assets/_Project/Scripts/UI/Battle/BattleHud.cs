@@ -355,11 +355,53 @@ namespace ThreeKingdoms.UI.Battle
             var buttons = new VisualElement(); buttons.style.flexDirection = FlexDirection.Row; buttons.style.marginTop = 18;
             resultPanel.Add(buttons);
             Button first = null;
-            if (Controller.HasNextBattle) first = MenuButton(buttons, BattleText.NextBattle, Controller.GoToNextBattle, 24, 220);
-            else if (won) { var t = Text(BattleText.AllBattlesDone, 22, Gold); t.style.marginTop = 10; resultPanel.Insert(resultPanel.childCount - 1, t); }
-            var again = MenuButton(buttons, won ? BattleText.Again : BattleText.Retry, () => Controller.StartBattle(), 24, 220);
-            again.style.marginLeft = first != null ? 16 : 0;
-            (first ?? again).Focus();
+            if (Controller.ReachedEnding) first = MenuButton(buttons, BattleText.Continue, ShowEnding, 24, 220);
+            else if (Controller.CanReturnToTown) first = MenuButton(buttons, BattleText.ReturnToTown, Controller.ReturnToTown, 24, 220);
+            else if (Controller.HasNextBattle) first = MenuButton(buttons, BattleText.NextBattle, Controller.GoToNextBattle, 24, 220);
+            if (!won || Controller.Run.IsDevelopment)
+            {
+                var again = MenuButton(buttons, won ? BattleText.Again : BattleText.Retry, () => Controller.StartBattle(), 24, 220);
+                again.style.marginLeft = first != null ? 16 : 0;
+                first ??= again;
+            }
+            first.Focus();
+        }
+
+        // Alpha 0.1 ending (story-events rule 19, answer 5): a couple of narration lines, then "test version ends".
+        int endingStep;
+
+        void ShowEnding()
+        {
+            Controller.BeginEnding();
+            endingStep = 0;
+            ShowEndingStep();
+        }
+
+        void ShowEndingStep()
+        {
+            resultPanel.Clear();
+            resultPanel.style.display = DisplayStyle.Flex;
+            resultPanel.style.left = 0; resultPanel.style.right = 0; resultPanel.style.top = 0; resultPanel.style.bottom = 0;
+            resultPanel.style.justifyContent = Justify.Center;
+            resultPanel.style.backgroundColor = new Color(0.02f, 0.02f, 0.03f, 0.97f);
+            menu.style.display = DisplayStyle.None;
+            bool narration = endingStep < BattleText.EndingNarration.Length;
+            if (narration)
+            {
+                var line = Text(BattleText.EndingNarration[endingStep], 30, new Color(0.95f, 0.92f, 0.85f));
+                line.style.whiteSpace = WhiteSpace.Normal; line.style.maxWidth = 1100; line.style.unityTextAlign = TextAnchor.MiddleCenter;
+                resultPanel.Add(line);
+                var next = MenuButton(resultPanel, BattleText.Continue, () => { endingStep++; ShowEndingStep(); }, 24, 220);
+                next.style.marginTop = 40;
+                next.Focus();
+                return;
+            }
+            Controller.FinishEnding();
+            resultPanel.Add(Text(BattleText.TestVersionEnd, 48, Gold));
+            var thanks = Text(BattleText.ThanksForPlaying, 24, Color.white); thanks.style.marginTop = 16; resultPanel.Add(thanks);
+            var restart = MenuButton(resultPanel, BattleText.Restart, Controller.RestartGame, 24, 220);
+            restart.style.marginTop = 40;
+            restart.Focus();
         }
 
         // ---------- events & per-frame ----------
