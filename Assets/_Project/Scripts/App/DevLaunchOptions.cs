@@ -8,6 +8,7 @@ namespace ThreeKingdoms.App
     // Development launch switches for builds:
     //   -scene <name>                    load a scene from Build Settings instead of the first one
     //   -camera <object name>            move the main camera to that (disabled) camera's pose and stop following
+    //   -teleport <object name>          move the player to that object (e.g. a town "Spot …" marker), camera keeps following
     //   -screenshot <file> [-screenshotDelay <seconds>]   capture one frame, then quit
     //   -battleAuto [<stop round>]       let BattleAutoPilot issue commands in battle scenes (screenshots, soak runs)
     public static class DevLaunchOptions
@@ -31,6 +32,14 @@ namespace ThreeKingdoms.App
                 var pilot = new GameObject(nameof(BattleAutoPilot)).AddComponent<BattleAutoPilot>();
                 if (int.TryParse(LaunchArgs.Get("-battleAuto"), out int stop)) pilot.StopAtRound = stop;
                 Object.DontDestroyOnLoad(pilot.gameObject);
+            }
+
+            string spot = LaunchArgs.Get("-teleport");
+            if (spot != null)
+            {
+                var go = new GameObject(nameof(TeleportProbe));
+                go.AddComponent<TeleportProbe>().SpotName = spot;
+                Object.DontDestroyOnLoad(go);
             }
 
             string shot = LaunchArgs.Get("-screenshot");
@@ -79,6 +88,24 @@ namespace ThreeKingdoms.App
             System.IO.File.WriteAllBytes(Path, frame.EncodeToPNG());
             Destroy(frame);
             Application.Quit();
+        }
+    }
+
+    public sealed class TeleportProbe : MonoBehaviour
+    {
+        public string SpotName;
+
+        IEnumerator Start()
+        {
+            yield return null; // let a -scene switch finish loading
+            yield return null;
+            var spot = GameObject.Find(SpotName);
+            var player = Object.FindFirstObjectByType<Jrpg.PlayerMover>();
+            if (!spot || !player) { Debug.LogWarning($"Teleport spot '{SpotName}' or player not found."); yield break; }
+            var controller = player.GetComponent<CharacterController>();
+            if (controller) controller.enabled = false;
+            player.transform.position = spot.transform.position;
+            if (controller) controller.enabled = true;
         }
     }
 }

@@ -1,0 +1,1735 @@
+{
+  "project": "zhuojun-town",
+  "date": "2026-10-19",
+  "pixels_per_meter": 30,
+  "palette": "../zhuojun-corner/palette.png",
+  "palette_colors": 48,
+  "complete": true,
+  "batches": {
+    "A": {
+      "planned": 44,
+      "available": 44,
+      "static_pass": true,
+      "complete": true,
+      "status": "ready_static"
+    },
+    "B": {
+      "planned": 38,
+      "available": 38,
+      "static_pass": true,
+      "complete": true,
+      "status": "ready_static"
+    },
+    "C": {
+      "planned": 15,
+      "available": 15,
+      "static_pass": true,
+      "complete": true,
+      "status": "ready_static"
+    }
+  },
+  "files": [
+    {
+      "filename": "citywall_face.png",
+      "width": 120,
+      "height": 150,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "夯土城墙墙面，4×5 米：一层层夯土版筑痕迹，底部 0.5 米石基，零星补土和草根。内外侧通用",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "citywall_parapet.png",
+      "width": 120,
+      "height": 36,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "城墙顶的女墙与垛口，正面看；垛口之间的空隙透明",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "citywall_walkway.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "城墙顶走道的夯土地面，正对地面",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "south_gate_wall_front.png",
+      "width": 270,
+      "height": 150,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "南门城台正面，9×5 米：中间一个汉式**平顶木过梁**门洞（宽 4 米、高 3.6 米，不是拱门），门洞内透明；两侧是城墙墙面，过梁和门框露出木构",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "south_gate_tower_front.png",
+      "width": 270,
+      "height": 108,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "城台上的木构门楼正面，9×3.6 米：5 开间，木柱、栏杆、直棂窗，不含屋顶",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "south_gate_tower_side.png",
+      "width": 150,
+      "height": 180,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "门楼山墙，进深 5 米：墙 3.6 米 + 山尖 2.4 米",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "gate_door_leaf.png",
+      "width": 60,
+      "height": 105,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "一扇城门门扇，2×3.5 米，厚木板、铁钉、铁箍；会左右镜像使用，画成开启时贴墙的正面",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "plaque_south_gate.png",
+      "width": 72,
+      "height": 27,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "门楼匾额，黑底金字「涿郡」，木框",
+      "batch": "A",
+      "available": true,
+      "expected_text": "涿郡"
+    },
+    {
+      "filename": "west_gate_front.png",
+      "width": 180,
+      "height": 135,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "西门，6×4.5 米，比南门窄小朴素：平顶门洞宽 2.5 米、高 3 米，门洞透明",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "west_gate_side.png",
+      "width": 120,
+      "height": 159,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "西门山墙，进深 4 米：墙 4.5 米 + 山尖 0.8 米",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "ground_grass.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "华北短草地，夹杂裸土和小石子",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "ground_earth_to_grass.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "上半夯土、下半草地的过渡；上下边缘用窄混合回接带，做法同街角的 `ground_transition`",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "ground_square_brick.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "汉代方砖铺地，用于郡署前院；砖缝、缺角、少量青苔",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "ground_petals.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "桃林草地，散落粉白落花",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "ground_vegetable_plot.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "菜圃：起垄的土地和成行青菜",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "house_back.png",
+      "width": 180,
+      "height": 90,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "街角民居（`house_front`）的背面，6×3 米：夯土墙，一扇小后窗，比正面更朴素",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "house_b_front.png",
+      "width": 180,
+      "height": 90,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "第二栋民居，6×3 米：白灰墙局部剥落，单扇门、方格窗，配茅草顶",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "house_b_back.png",
+      "width": 180,
+      "height": 90,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "第二栋背面",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "house_b_side.png",
+      "width": 150,
+      "height": 159,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "第二栋山墙，进深 5 米：墙 3 米 + 山尖 2.3 米",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "house_c_front.png",
+      "width": 150,
+      "height": 90,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "第三栋小屋，5×3 米：夯土墙、窄门、小直棂窗，最旧最小",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "house_c_back.png",
+      "width": 150,
+      "height": 90,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "第三栋背面",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "house_c_side.png",
+      "width": 120,
+      "height": 144,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "第三栋山墙，进深 4 米：墙 3 米 + 山尖 1.8 米",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "roof_thatch.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "茅草屋面，草束顺坡向，每隔约 12 像素一道压草绳",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "roof_thatch_eave.png",
+      "width": 120,
+      "height": 18,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "茅草檐口的毛边，下缘透明",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "fence_wattle.png",
+      "width": 90,
+      "height": 36,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "竹木编的篱笆，空隙透明",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "prop_stall_cloth.png",
+      "width": 90,
+      "height": 75,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "布匹摊：木架、米白遮棚，台面上叠着染色布匹",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_stall_bamboo.png",
+      "width": 90,
+      "height": 75,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "竹篾摊：竹筐、簸箕、竹席挂满",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_stall_grain.png",
+      "width": 90,
+      "height": 75,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "粮菜摊：敞口粮袋、斗量器和青菜筐",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_notice_board.png",
+      "width": 60,
+      "height": 66,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木告示板，带小瓦顶；贴着几张纸，纸上只画不可辨认的墨线",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_cloth_bolts.png",
+      "width": 36,
+      "height": 27,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "地上一摞布匹",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_grain_sacks.png",
+      "width": 48,
+      "height": 36,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "三四只麻袋堆在一起",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_carry_pole.png",
+      "width": 54,
+      "height": 36,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "放在地上的扁担和两只挑筐",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_basket_stack.png",
+      "width": 36,
+      "height": 36,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "叠起来的空竹筐",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_well.png",
+      "width": 45,
+      "height": 48,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "石井圈加木辘轳架，旁边一只木桶",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_stone_bench.png",
+      "width": 42,
+      "height": 18,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "石条凳",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_mat_loom.png",
+      "width": 60,
+      "height": 48,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "织席架，上面有织到一半的草席（刘备家以织席贩履为业）",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_straw_mats.png",
+      "width": 48,
+      "height": 42,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "靠墙晾着的几卷草席和草鞋",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_laundry_line.png",
+      "width": 90,
+      "height": 60,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "两根木杆加一根晾衣绳，挂着两三件粗布衣",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_chopping_block.png",
+      "width": 24,
+      "height": 21,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木墩上插着一把柴斧",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_tree_elm.png",
+      "width": 90,
+      "height": 120,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "较小的榆树，叶簇逐簇画出",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_tree_peach.png",
+      "width": 120,
+      "height": 135,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "盛开的桃树，粉白花簇，枝干清楚",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_tree_peach_small.png",
+      "width": 75,
+      "height": 90,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "小桃树",
+      "batch": "A",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "bg_town_rooftops_far.png",
+      "width": 480,
+      "height": 120,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "城内远处的屋顶剪影，上方透明，用作城墙后的远景层",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "bg_hills_far.png",
+      "width": 480,
+      "height": 150,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "城北远山，上方透明，比 `bg_city_gate_far` 更远更淡",
+      "batch": "A",
+      "available": true
+    },
+    {
+      "filename": "yamen_hall_front.png",
+      "width": 360,
+      "height": 135,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "郡署正堂正面，12×4.5 米：5 开间，粗木柱，中间双扇大门，两侧直棂窗，白灰墙，0.4 米石台基",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "yamen_hall_side.png",
+      "width": 240,
+      "height": 225,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "正堂山墙，进深 8 米：墙 4.5 米 + 山尖 3 米",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "yamen_gate_front.png",
+      "width": 180,
+      "height": 135,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "前院大门，6×4.5 米：门洞宽 2.4 米、高 3 米，门洞透明",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "yamen_gate_side.png",
+      "width": 120,
+      "height": 195,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "大门山墙，进深 4 米：墙 4.5 米 + 山尖 2 米",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "courtyard_wall.png",
+      "width": 120,
+      "height": 66,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "院墙，4×2.2 米：夯土墙，墙脚石基；顶部的瓦压顶另用下一张",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "courtyard_wall_cap.png",
+      "width": 120,
+      "height": 24,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "院墙顶的小瓦压顶，正面看，上缘透明",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "plaque_yamen.png",
+      "width": 72,
+      "height": 27,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "匾额，黑底金字「郡署」",
+      "batch": "B",
+      "available": true,
+      "expected_text": "郡署"
+    },
+    {
+      "filename": "prop_banner_han.png",
+      "width": 30,
+      "height": 120,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "立在旗杆上的军旗，砖红底米白字「漢」；郡署门前和军营共用",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ],
+      "expected_text": "漢"
+    },
+    {
+      "filename": "plaque_smithy.png",
+      "width": 90,
+      "height": 27,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "匾额，完整深褐木框、黑底金字「鐵匠鋪」；用户指定重绘，与其他匾额木框一致",
+      "batch": "B",
+      "available": true,
+      "expected_text": "鐵匠鋪"
+    },
+    {
+      "filename": "plaque_tavern.png",
+      "width": 72,
+      "height": 27,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "酒肆匾额，黑底金字「酒肆」",
+      "batch": "B",
+      "available": true,
+      "expected_text": "酒肆"
+    },
+    {
+      "filename": "prop_bow_rack.png",
+      "width": 48,
+      "height": 60,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木弓架，挂着三张弓和一个箭囊",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_armor_stand.png",
+      "width": 30,
+      "height": 57,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木架上的札甲（小甲片编缀的汉式甲），不要明清布面甲",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_shop_counter.png",
+      "width": 90,
+      "height": 36,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木柜台，上面放着一把环首刀和几枚铜钱",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "clinic_front.png",
+      "width": 150,
+      "height": 90,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "医舍正面，5×3 米：低矮小屋，窗下挂着晒干的草药束",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "clinic_side.png",
+      "width": 120,
+      "height": 144,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "医舍山墙，进深 4 米：墙 3 米 + 山尖 1.8 米",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "prop_herb_rack.png",
+      "width": 60,
+      "height": 51,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "晒药架，几层竹匾摊着草药",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_herb_mortar.png",
+      "width": 21,
+      "height": 21,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "石药臼加杵",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_banner_medicine.png",
+      "width": 30,
+      "height": 72,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "布幌，样式与街角酒幌相同，字为「藥」",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ],
+      "expected_text": "藥"
+    },
+    {
+      "filename": "palisade_stakes.png",
+      "width": 120,
+      "height": 75,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "尖头木桩栅墙，4×2.5 米；桩尖以上透明",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "prop_army_tent.png",
+      "width": 150,
+      "height": 105,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "汉式行军帐，5×3.5 米，门帘半掀",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_archery_target.png",
+      "width": 36,
+      "height": 51,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "草靶加木架",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_training_dummy.png",
+      "width": 24,
+      "height": 51,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "草扎人靶，绑在木桩上",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_war_drum.png",
+      "width": 36,
+      "height": 42,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木架上的战鼓",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_brazier.png",
+      "width": 24,
+      "height": 30,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "铁火盆，炭火发亮",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_brazier_glow_mask.png",
+      "width": 24,
+      "height": 30,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "上图的发光遮罩",
+      "batch": "B",
+      "available": true,
+      "source_texture": "prop_brazier.png",
+      "color_space": "linear"
+    },
+    {
+      "filename": "granary_front.png",
+      "width": 180,
+      "height": 150,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "架高木仓正面，6×5 米：下部 1 米是木柱支脚（柱间透明），上面是木板仓身和小门，旁边靠一架木梯",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "granary_side.png",
+      "width": 150,
+      "height": 210,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "粮仓山墙，进深 5 米：总高 5 米 + 山尖 2 米，柱间同样透明",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "prop_sacks_pile.png",
+      "width": 72,
+      "height": 45,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "一大堆麻袋",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_grain_measure.png",
+      "width": 21,
+      "height": 18,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木斗，装满谷粒",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "post_station_front.png",
+      "width": 210,
+      "height": 99,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "驿站正面，7×3.3 米：两开间，宽门，墙上挂马具",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "post_station_side.png",
+      "width": 150,
+      "height": 165,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "驿站山墙，进深 5 米：墙 3.3 米 + 山尖 2.2 米",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "stable_front.png",
+      "width": 240,
+      "height": 105,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "马棚正面，8×3.5 米：敞开的木构棚，半高隔栏，栏内铺草；隔栏以上透明（不画马）",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "stable_side.png",
+      "width": 150,
+      "height": 159,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "马棚山墙，进深 5 米，同样敞开",
+      "batch": "B",
+      "available": true
+    },
+    {
+      "filename": "prop_banner_post.png",
+      "width": 30,
+      "height": 72,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "布幌，样式同上，字为「驛」",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ],
+      "expected_text": "驛"
+    },
+    {
+      "filename": "prop_hay_pile.png",
+      "width": 48,
+      "height": 33,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "草料堆",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_trough.png",
+      "width": 48,
+      "height": 21,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木水槽／马槽",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_hitching_post.png",
+      "width": 36,
+      "height": 36,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "拴马桩，两根木桩加横杆",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_ox_cart.png",
+      "width": 90,
+      "height": 60,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "大双轮木车侧面，空车，不画牛",
+      "batch": "B",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "floor_wood_planks.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "木地板，酒肆用",
+      "batch": "C",
+      "available": true
+    },
+    {
+      "filename": "floor_mats.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "草席铺地，民居用",
+      "batch": "C",
+      "available": true
+    },
+    {
+      "filename": "interior_tavern_back_wall.png",
+      "width": 360,
+      "height": 105,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "酒肆内墙，12×3.5 米：酒坛架、挂着的酒舀和蒜串",
+      "batch": "C",
+      "available": true
+    },
+    {
+      "filename": "interior_shop_back_wall.png",
+      "width": 270,
+      "height": 105,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "兵器铺内墙，9×3.5 米：墙上挂刀、矛、弓和盾",
+      "batch": "C",
+      "available": true
+    },
+    {
+      "filename": "interior_house_back_wall.png",
+      "width": 210,
+      "height": 90,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "民居内墙，7×3 米：挂着草帽和蓑衣，一扇小窗",
+      "batch": "C",
+      "available": true
+    },
+    {
+      "filename": "prop_low_table.png",
+      "width": 42,
+      "height": 18,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "低矮食案，上面放陶碗",
+      "batch": "C",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_seat_mat.png",
+      "width": 36,
+      "height": 12,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "坐席（单人草席）",
+      "batch": "C",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_tavern_counter.png",
+      "width": 90,
+      "height": 36,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "酒肆柜台，带酒坛",
+      "batch": "C",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_jar_shelf.png",
+      "width": 60,
+      "height": 66,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木架，上面摆满陶罐",
+      "batch": "C",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_cooking_stove.png",
+      "width": 54,
+      "height": 42,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "土灶，灶口有火",
+      "batch": "C",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_cooking_stove_glow_mask.png",
+      "width": 54,
+      "height": 42,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "上图的发光遮罩",
+      "batch": "C",
+      "available": true,
+      "source_texture": "prop_cooking_stove.png",
+      "color_space": "linear"
+    },
+    {
+      "filename": "prop_bed_platform.png",
+      "width": 66,
+      "height": 30,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木榻，铺着席子",
+      "batch": "C",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_chest.png",
+      "width": 30,
+      "height": 24,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木箱",
+      "batch": "C",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_lamp_stand.png",
+      "width": 15,
+      "height": 36,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "陶灯台，灯火发亮",
+      "batch": "C",
+      "available": true,
+      "pivot": [
+        0.5,
+        0
+      ]
+    },
+    {
+      "filename": "prop_lamp_stand_glow_mask.png",
+      "width": 15,
+      "height": 36,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "上图的发光遮罩",
+      "batch": "C",
+      "available": true,
+      "source_texture": "prop_lamp_stand.png",
+      "color_space": "linear"
+    }
+  ],
+  "reused_assets": [
+    {
+      "filename": "palette.png",
+      "width": 48,
+      "height": 1,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "48色固定调色板",
+      "path": "../zhuojun-corner/palette.png",
+      "copied": false
+    },
+    {
+      "filename": "tavern_front.png",
+      "width": 240,
+      "height": 108,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "酒肆正立面，8米×3.6米",
+      "path": "../zhuojun-corner/tavern_front.png",
+      "copied": false
+    },
+    {
+      "filename": "tavern_side.png",
+      "width": 180,
+      "height": 180,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "酒肆三角山墙侧面，下墙3.6米，山尖2.4米",
+      "path": "../zhuojun-corner/tavern_side.png",
+      "copied": false
+    },
+    {
+      "filename": "tavern_back.png",
+      "width": 240,
+      "height": 108,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "酒肆背立面",
+      "path": "../zhuojun-corner/tavern_back.png",
+      "copied": false
+    },
+    {
+      "filename": "smithy_front.png",
+      "width": 180,
+      "height": 96,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "铁匠铺正立面，炉火位置供发光遮罩提取",
+      "path": "../zhuojun-corner/smithy_front.png",
+      "copied": false
+    },
+    {
+      "filename": "smithy_side.png",
+      "width": 150,
+      "height": 168,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "铁匠铺山墙，烟口及烟熏材质",
+      "path": "../zhuojun-corner/smithy_side.png",
+      "copied": false
+    },
+    {
+      "filename": "smithy_forge_glow_mask.png",
+      "width": 180,
+      "height": 96,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "对齐铁匠铺正面的二值炉火自发光遮罩",
+      "path": "../zhuojun-corner/smithy_forge_glow_mask.png",
+      "copied": false
+    },
+    {
+      "filename": "house_front.png",
+      "width": 180,
+      "height": 90,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "民居正立面",
+      "path": "../zhuojun-corner/house_front.png",
+      "copied": false
+    },
+    {
+      "filename": "house_side.png",
+      "width": 150,
+      "height": 159,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "民居三角山墙",
+      "path": "../zhuojun-corner/house_side.png",
+      "copied": false
+    },
+    {
+      "filename": "roof_tiles_grey.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "三栋共用筒瓦与板瓦屋顶材质",
+      "path": "../zhuojun-corner/roof_tiles_grey.png",
+      "copied": false
+    },
+    {
+      "filename": "roof_ridge.png",
+      "width": 120,
+      "height": 24,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "横向连续正脊叠瓦",
+      "path": "../zhuojun-corner/roof_ridge.png",
+      "copied": false
+    },
+    {
+      "filename": "roof_ridge_end.png",
+      "width": 24,
+      "height": 36,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "克制的汉式鸱尾脊端轮廓",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/roof_ridge_end.png",
+      "copied": false
+    },
+    {
+      "filename": "roof_eave.png",
+      "width": 120,
+      "height": 18,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "横向檐口瓦当，下沿镂空",
+      "path": "../zhuojun-corner/roof_eave.png",
+      "copied": false
+    },
+    {
+      "filename": "roof_underside.png",
+      "width": 60,
+      "height": 60,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "木椽与望板屋檐底面",
+      "path": "../zhuojun-corner/roof_underside.png",
+      "copied": false
+    },
+    {
+      "filename": "wall_rammed_earth.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "可平铺夯土墙补缺",
+      "path": "../zhuojun-corner/wall_rammed_earth.png",
+      "copied": false
+    },
+    {
+      "filename": "wall_plaster_white.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "旧白灰墙补缺",
+      "path": "../zhuojun-corner/wall_plaster_white.png",
+      "copied": false
+    },
+    {
+      "filename": "timber_post.png",
+      "width": 12,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "y",
+      "purpose": "纵向木柱补缺",
+      "path": "../zhuojun-corner/timber_post.png",
+      "copied": false
+    },
+    {
+      "filename": "timber_beam.png",
+      "width": 120,
+      "height": 12,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "横向木梁补缺",
+      "path": "../zhuojun-corner/timber_beam.png",
+      "copied": false
+    },
+    {
+      "filename": "stone_plinth.png",
+      "width": 120,
+      "height": 12,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "横向石台基侧面",
+      "path": "../zhuojun-corner/stone_plinth.png",
+      "copied": false
+    },
+    {
+      "filename": "ground_street_stone.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "赭石色不规则石板街道",
+      "path": "../zhuojun-corner/ground_street_stone.png",
+      "copied": false
+    },
+    {
+      "filename": "ground_packed_earth.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "带车辙脚印碎石的夯实土路",
+      "path": "../zhuojun-corner/ground_packed_earth.png",
+      "copied": false
+    },
+    {
+      "filename": "ground_transition.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "上石板下土路的过渡，边缘回接以支持双轴平铺",
+      "path": "../zhuojun-corner/ground_transition.png",
+      "copied": false
+    },
+    {
+      "filename": "curb_drain.png",
+      "width": 120,
+      "height": 18,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "路缘石砌排水沟侧面",
+      "path": "../zhuojun-corner/curb_drain.png",
+      "copied": false
+    },
+    {
+      "filename": "grass_edge.png",
+      "width": 120,
+      "height": 24,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "墙根杂草，镂空上沿",
+      "path": "../zhuojun-corner/grass_edge.png",
+      "copied": false
+    },
+    {
+      "filename": "steps_stone.png",
+      "width": 90,
+      "height": 45,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "三级石台阶正面",
+      "path": "../zhuojun-corner/steps_stone.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_wine_jars.png",
+      "width": 48,
+      "height": 42,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "4至5个红布封口陶酒坛",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_wine_jars.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_barrel.png",
+      "width": 24,
+      "height": 30,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木桶",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_barrel.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_produce_basket.png",
+      "width": 36,
+      "height": 24,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "白菜葫芦枣竹筐",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_produce_basket.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_firewood.png",
+      "width": 48,
+      "height": 30,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "码放柴堆",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_firewood.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_anvil.png",
+      "width": 30,
+      "height": 24,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "木墩上铁砧",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_anvil.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_weapon_rack.png",
+      "width": 48,
+      "height": 60,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "长矛与环首刀木架",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_weapon_rack.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_water_vat.png",
+      "width": 30,
+      "height": 30,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "大陶水缸",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_water_vat.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_handcart.png",
+      "width": 72,
+      "height": 48,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "装麻袋木推车",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_handcart.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_stall.png",
+      "width": 90,
+      "height": 75,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "米白布篷陶器布匹摊",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_stall.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_lantern_red.png",
+      "width": 12,
+      "height": 18,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "暗红小灯笼",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_lantern_red.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_banner_wine.png",
+      "width": 30,
+      "height": 72,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "大酒字竖长红布幌",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_banner_wine.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_banner_iron.png",
+      "width": 30,
+      "height": 72,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "繁体鐵字竖长红布幌",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_banner_iron.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_tree_locust.png",
+      "width": 150,
+      "height": 180,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "浓密暖绿大槐树",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_tree_locust.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_bush.png",
+      "width": 36,
+      "height": 24,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "矮灌木丛",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_bush.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_flowers.png",
+      "width": 30,
+      "height": 18,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "白淡紫黄色野花丛",
+      "pivot": [
+        0.5,
+        0
+      ],
+      "path": "../zhuojun-corner/prop_flowers.png",
+      "copied": false
+    },
+    {
+      "filename": "prop_fence.png",
+      "width": 90,
+      "height": 36,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "横向可接续木栅栏",
+      "path": "../zhuojun-corner/prop_fence.png",
+      "copied": false
+    },
+    {
+      "filename": "bg_city_gate_far.png",
+      "width": 480,
+      "height": 180,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "可选远处涿郡城门与城墙剪影",
+      "path": "../zhuojun-corner/bg_city_gate_far.png",
+      "copied": false
+    }
+  ],
+  "notes": [
+    "Only files[] are new native assets; reused_assets[] reference the existing42 files and are not copied",
+    "Every original source and exact prompt is saved under_sources/ and_prompts/",
+    "Screens/previews and alpha checkerboards are not native game textures",
+    "Terrain transitions include a narrow wrap-return band when both axes must tile"
+  ],
+  "evidence_boundary": "Generated native texture files and static image inspection; no Unity import or runtime acceptance",
+  "support_files": [
+    {
+      "filename": "contact-sheet.png",
+      "width": 3200,
+      "height": 12757,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "Native4x visual review"
+    },
+    {
+      "filename": "_checks/style-match.png",
+      "width": 3400,
+      "height": 2581,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "Native4x visual review"
+    },
+    {
+      "filename": "_checks/tile-repeat-sheet.png",
+      "width": 3200,
+      "height": 5617,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "Native4x visual review"
+    },
+    {
+      "filename": "_checks/contact-A.png",
+      "width": 3200,
+      "height": 6397,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "Native4x visual review"
+    },
+    {
+      "filename": "_checks/contact-B.png",
+      "width": 3200,
+      "height": 5095,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "Native4x visual review"
+    },
+    {
+      "filename": "_checks/contact-C.png",
+      "width": 3200,
+      "height": 1483,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "Native4x visual review"
+    }
+  ]
+}
