@@ -2,29 +2,34 @@ using UnityEngine;
 
 namespace ThreeKingdoms.Gameplay
 {
-    // Walk animation from the single-pose AI sheets (front idle, left walk, right walk, back walk): until real
-    // walk cycles are drawn, a step alternates the pose with its mirror image (the legs swap) and adds a small
-    // bounce; standing still shows the last facing without bounce.
+    // Walk animation. With a walk-cycle atlas (CHARACTER_WALK_CYCLES.md: frames 9–24 = rows down/left/right/up ×
+    // left contact, passing, right contact, passing) it plays the drawn 4-frame cycle for the facing direction and
+    // stands on the passing frame when idle. Older atlases with only the nine poses fall back to alternating a pose
+    // with its mirror plus a small bounce. Either way the cycle follows distance walked, so steps match speed.
     public sealed class PixelWalkFrames : MonoBehaviour
     {
+        public const int WalkStart = 9, WalkFramesPerRow = 4;
+
         public SpriteFrameAnimator Animator;
         public int Front = 0, Left = 1, Right = 2, Back = 3;
-        [Tooltip("Metres per step: the cycle follows distance walked, so steps match speed and feet do not slide")] public float StepLength = 0.5f;
-        [Tooltip("Bounce height per step in world units (about two art pixels)")] public float Bounce = 0.06f;
+        [Tooltip("Metres walked per drawn frame (walk-cycle atlas)")] public float FrameLength = 0.55f;
+        [Tooltip("Metres per step for the mirrored fallback")] public float StepLength = 0.5f;
+        [Tooltip("Fallback bounce height per step in world units (about two art pixels)")] public float Bounce = 0.06f;
 
         Vector3 last;
-        int facing;
+        int row;          // 0 down, 1 left, 2 right, 3 up
         float phase;
         PixelBillboard billboard;
 
         public bool Walking { get; private set; }
         public bool Mirrored => billboard && billboard.Flip;
+        public bool HasWalkCycle => Animator && Animator.Columns >= WalkStart + 4 * WalkFramesPerRow;
+        public int CurrentFrame => Animator ? Animator.Frame : -1;
 
         void Start()
         {
             last = transform.position;
-            facing = Front;
-            if (Animator) billboard = Animator.GetComponent<PixelBillboard>();
+            if (Animator) { billboard = Animator.GetComponent<PixelBillboard>(); Animator.Apply(); }
         }
 
         void LateUpdate()
@@ -36,28 +41,38 @@ namespace ThreeKingdoms.Gameplay
             float speed = Time.deltaTime > 0f ? delta.magnitude / Time.deltaTime : 0f;
             Walking = speed > 0.3f;
             if (Walking)
-                facing = Mathf.Abs(delta.x) > Mathf.Abs(delta.z)
-                    ? (delta.x < 0f ? Left : Right)
-                    : (delta.z > 0f ? Back : Front);
+                row = Mathf.Abs(delta.x) > Mathf.Abs(delta.z) ? (delta.x < 0f ? 1 : 2) : (delta.z > 0f ? 3 : 0);
 
-            int frame = facing;
+            int frame;
             bool flip = false;
             float lift = 0f;
-            if (Walking)
+            if (HasWalkCycle)
             {
-                phase += delta.magnitude / Mathf.Max(0.05f, StepLength);
-                bool second = Mathf.FloorToInt(phase) % 2 == 1;
-                float step = phase - Mathf.Floor(phase);
-                lift = Mathf.Sin(step * Mathf.PI) * Bounce;
-                if (second)
+                if (Walking)
                 {
-                    // The mirrored opposite pose faces the same way with the other leg forward.
-                    if (facing == Left) { frame = Right; flip = true; }
-                    else if (facing == Right) { frame = Left; flip = true; }
-                    else flip = true;
+                    phase += delta.magnitude / Mathf.Max(0.05f, FrameLength);
+                    frame = WalkStart + row * WalkFramesPerRow + Mathf.FloorToInt(phase) % WalkFramesPerRow;
                 }
+                else { phase = 0f; frame = WalkStart + row * WalkFramesPerRow + 1; }   // passing pose = standing
             }
-            else phase = 0f;
+            else
+            {
+                frame = row == 1 ? Left : row == 2 ? Right : row == 3 ? Back : Front;
+                if (Walking)
+                {
+                    phase += delta.magnitude / Mathf.Max(0.05f, StepLength);
+                    float step = phase - Mathf.Floor(phase);
+                    lift = Mathf.Sin(step * Mathf.PI) * Bounce;
+                    if (Mathf.FloorToInt(phase) % 2 == 1)
+                    {
+                        // The mirrored opposite pose faces the same way with the other leg forward.
+                        if (row == 1) frame = Right;
+                        else if (row == 2) frame = Left;
+                        flip = true;
+                    }
+                }
+                else phase = 0f;
+            }
 
             if (Animator.Frame != frame) Animator.Frame = frame;
             if (billboard) { billboard.Flip = flip; billboard.Lift = lift; }

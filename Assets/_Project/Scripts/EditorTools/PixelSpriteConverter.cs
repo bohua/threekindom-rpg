@@ -16,6 +16,9 @@ namespace ThreeKingdoms.EditorTools
         {
             public int Columns, Rows, FrameSize, FigureHeight, ChannelBits;
             public byte AlphaThreshold;
+            // Cell-relative root (x from the left, y from the top, in source pixels). When set, every frame is placed
+            // by this root instead of its own bounds and centroid, so walk cycles keep their authored bob and sway.
+            public Vector2Int? FixedRoot;
 
             public static Settings Default => new Settings
             {
@@ -78,6 +81,11 @@ namespace ThreeKingdoms.EditorTools
                 RectInt bounds = OpaqueBounds(pixels, width, cell, s.AlphaThreshold);
                 if (bounds.height <= 0) continue;
                 float centerX = OpaqueCentroidX(pixels, width, bounds, s.AlphaThreshold);
+                if (s.FixedRoot is Vector2Int root)
+                {
+                    centerX = cell.xMin + root.x;
+                    bounds = new RectInt(bounds.xMin, cell.yMax - root.y, bounds.width, bounds.height);   // feet on the root row
+                }
                 for (int oy = 0; oy < size; oy++)
                 for (int ox = 0; ox < size; ox++)
                 {

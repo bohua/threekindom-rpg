@@ -80,26 +80,29 @@ public sealed class ZhuojunTownTests
         }
     }
 
-    // Speed doubled (user 2026-10-20) and walking animates: the pose alternates with its mirror and bounces.
-    [UnityTest] public IEnumerator PlayerWalksFastWithAStepCycle()
+    // Speed doubled (user 2026-10-20) and walking plays the drawn 4-frame cycle for the facing direction.
+    [UnityTest] public IEnumerator PlayerWalksFastWithTheDrawnCycle()
     {
         yield return SceneManager.LoadSceneAsync("Zhuojun_Town");
         yield return null;
         var mover = Object.FindFirstObjectByType<PlayerMover>();
         var walk = mover.GetComponent<PixelWalkFrames>();
         Assert.AreEqual(7f, mover.Speed, 0.01f);
+        Assert.IsTrue(walk.HasWalkCycle, "Liu Bei's atlas carries the 16 walk frames");
         float z0 = mover.transform.position.z;
-        bool sawFlip = false, sawPlain = false;
+        var seen = new System.Collections.Generic.HashSet<int>();
         for (float t = 0; t < 1f; t += 0.02f)
         {
             mover.Move(Vector2.up, 0.02f);
             yield return null;
-            if (walk.Walking) { if (walk.Mirrored) sawFlip = true; else sawPlain = true; }
+            if (walk.Walking) seen.Add(walk.CurrentFrame);
         }
         Assert.Greater(mover.transform.position.z - z0, 6f, "about 7 m in a second");
-        Assert.IsTrue(sawFlip && sawPlain, "the step cycle alternates the pose and its mirror");
+        int upRow = PixelWalkFrames.WalkStart + 3 * PixelWalkFrames.WalkFramesPerRow;
+        Assert.That(seen, Is.EquivalentTo(new[] { upRow, upRow + 1, upRow + 2, upRow + 3 }), "all four back-view frames play");
+        Assert.IsFalse(walk.Mirrored, "the drawn cycle needs no mirroring");
         for (int i = 0; i < 3; i++) yield return null;
         Assert.IsFalse(walk.Walking, "standing still stops the cycle");
-        Assert.IsFalse(walk.Mirrored);
+        Assert.AreEqual(upRow + 1, walk.CurrentFrame, "idle stands on the passing frame of the last direction");
     }
 }

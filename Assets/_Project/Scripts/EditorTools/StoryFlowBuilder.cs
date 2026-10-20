@@ -20,6 +20,7 @@ namespace ThreeKingdoms.EditorTools
         [MenuItem("JRPG/Build Main Line (town + battles 1-3)")]
         public static void Build()
         {
+            WalkCycleImporter.Import();   // 9 poses + 16 walk frames per character atlas (CHARACTER_WALK_CYCLES.md)
             BattleSceneBuilder.Build();
             ZhuojunTownBuilder.Build();
             WireTown();
