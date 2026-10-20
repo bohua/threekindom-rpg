@@ -15,11 +15,11 @@ namespace ThreeKingdoms.UI.Shop
     // Zhuojun weapons & equipment shop (equipment-items GDD, game-ui GDD §商店与配装): buy, sell (equipped items must
     // be taken off first, every sale is confirmed), and change the three slots, with a new-vs-old preview for each
     // general. All rules live in Inventory; this panel only offers them and shows the result. Cancel steps back one
-    // level and closes the shop from the top.
+    // level and closes the shop from the top. Opened as "outfit" (pre-battle preparation) it only changes gear.
     [RequireComponent(typeof(UIDocument))]
     public sealed class ShopHud : MonoBehaviour
     {
-        public TownStoryController Controller;
+        [Tooltip("TownStoryController or BattleController")] public MonoBehaviour Host;
 
         static readonly Color Gold = new Color(0.93f, 0.76f, 0.36f);
         static readonly Color PanelColor = new Color(0.07f, 0.09f, 0.14f, 0.94f);
@@ -32,9 +32,10 @@ namespace ThreeKingdoms.UI.Shop
         public enum Mode { Closed, Tabs, Buy, Sell, ConfirmSell, PickGeneral, PickSlot, PickItem }
 
         VisualElement root, panel, list, detail;
-        Label money, message;
+        Label title, money, message;
         readonly Dictionary<Mode, int> lastIndex = new Dictionary<Mode, int>();
         int openedFrame;
+        bool outfitOnly;
         GeneralSpec general;
         EquipSlot slot;
         EquipmentSpec pendingSell;     // null with pendingRation = selling a ration
@@ -43,6 +44,7 @@ namespace ThreeKingdoms.UI.Shop
         public Mode Current { get; private set; } = Mode.Closed;
         public string Message => message?.text;
 
+        IPanelHost Controller => Host as IPanelHost;
         DevPartyProgress Progress => Controller.Run.Progress;
         Inventory Inv => Progress.Inventory;
         IEnumerable<GeneralSpec> Joined => Progress.Party.Where(g => Controller.Run.Story.HasJoined(g.Id));
@@ -56,13 +58,13 @@ namespace ThreeKingdoms.UI.Shop
             root.style.flexGrow = 1;
             BuildLayout();
             root.RegisterCallback<NavigationCancelEvent>(e => { e.StopPropagation(); Back(); }, TrickleDown.TrickleDown);
-            if (Controller) { Controller.PanelOpened += OnOpened; Controller.PanelClosed += OnClosed; }
+            if (Controller != null) { Controller.PanelOpened += OnOpened; Controller.PanelClosed += OnClosed; }
             Hide();
         }
 
         void OnDisable()
         {
-            if (Controller) { Controller.PanelOpened -= OnOpened; Controller.PanelClosed -= OnClosed; }
+            if (Controller != null) { Controller.PanelOpened -= OnOpened; Controller.PanelClosed -= OnClosed; }
         }
 
         void BuildLayout()
@@ -75,7 +77,7 @@ namespace ThreeKingdoms.UI.Shop
 
             var header = Row(panel);
             header.style.justifyContent = Justify.SpaceBetween;
-            Text(header, ShopText.Title, 34, Gold);
+            title = Text(header, ShopText.Title, 34, Gold);
             money = Text(header, "", 28, Color.white);
 
             var body = Row(panel);
@@ -97,16 +99,23 @@ namespace ThreeKingdoms.UI.Shop
 
         // ---------- open / close ----------
 
-        void OnOpened(string panel) { if (panel == TownStoryController.ShopPanel) Open(); }
-        void OnClosed(string panel) { if (panel == TownStoryController.ShopPanel) Hide(); }
+        void OnOpened(string panel)
+        {
+            if (panel != TownStoryController.ShopPanel && panel != TownStoryController.OutfitPanel) return;
+            outfitOnly = panel == TownStoryController.OutfitPanel;
+            Open();
+        }
+
+        void OnClosed(string panel) { if (panel == TownStoryController.ShopPanel || panel == TownStoryController.OutfitPanel) Hide(); }
 
         void Open()
         {
             panel.style.display = DisplayStyle.Flex;
             openedFrame = Time.frameCount;
             lastIndex.Clear();
-            Say(ShopText.Welcome);
-            Go(Mode.Tabs);
+            title.text = outfitOnly ? ShopText.Outfit : ShopText.Title;
+            Say(outfitOnly ? ShopText.OutfitHint : ShopText.Welcome);
+            Go(outfitOnly ? Mode.PickGeneral : Mode.Tabs);
         }
 
         void Hide()
@@ -122,8 +131,9 @@ namespace ThreeKingdoms.UI.Shop
         {
             switch (Current)
             {
-                case Mode.Tabs: Controller.CloseShop(); break;
-                case Mode.Buy: case Mode.Sell: case Mode.PickGeneral: Go(Mode.Tabs); break;
+                case Mode.Tabs: Controller.ClosePanel(); break;
+                case Mode.PickGeneral: if (outfitOnly) Controller.ClosePanel(); else Go(Mode.Tabs); break;
+                case Mode.Buy: case Mode.Sell: Go(Mode.Tabs); break;
                 case Mode.ConfirmSell: Go(Mode.Sell); break;
                 case Mode.PickSlot: Go(Mode.PickGeneral); break;
                 case Mode.PickItem: Go(Mode.PickSlot); break;
@@ -142,7 +152,7 @@ namespace ThreeKingdoms.UI.Shop
                     Entry(ShopText.Buy, null, () => Go(Mode.Buy), () => ShowDetail(ShopText.Buy, ShopText.BuyHint));
                     Entry(ShopText.Sell, null, () => Go(Mode.Sell), () => ShowDetail(ShopText.Sell, ShopText.SellHint));
                     Entry(ShopText.Outfit, null, () => Go(Mode.PickGeneral), () => ShowDetail(ShopText.Outfit, ShopText.OutfitHint));
-                    Entry(ShopText.Leave, null, Controller.CloseShop, () => ShowDetail(ShopText.Leave, ShopText.LeaveHint));
+                    Entry(ShopText.Leave, null, Controller.ClosePanel, () => ShowDetail(ShopText.Leave, ShopText.LeaveHint));
                     break;
                 case Mode.Buy:
                     foreach (var item in Inv.Data.ShopStock)

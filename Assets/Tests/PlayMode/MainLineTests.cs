@@ -60,6 +60,11 @@ public sealed class MainLineTests
         yield return null;
         var b = Object.FindFirstObjectByType<BattleController>();
         Assert.IsNotNull(b, "a battle scene loaded");
+        if (b.Current == BattleController.Phase.Preparing)
+        {
+            Assert.That(b.Selected.Select(g => g.Id), Is.EqualTo(new[] { "liu_bei", "guan_yu", "zhang_fei" }), "everyone joined goes by default");
+            b.ConfirmPreparation();
+        }
         b.PlaybackSpeed = 4f; b.Fast = true;
         float deadline = Time.realtimeSinceStartup + 120f;
         while (b.Current != BattleController.Phase.Finished)
@@ -159,7 +164,10 @@ public sealed class MainLineTests
             while (SceneManager.GetActiveScene().name == "Zhuojun_Town") { Assert.Less(Time.realtimeSinceStartup, deadline); yield return null; }
             Assert.AreEqual(GameRun.BattleScenes[battle - 1], SceneManager.GetActiveScene().name);
             yield return null;
-            // The rolling pre-battle save is written as the battle starts (save-system rule 2), one slot overwritten.
+            var prep = Object.FindFirstObjectByType<BattleController>();
+            Assert.AreEqual(BattleController.Phase.Preparing, prep.Current, "a play-through battle opens on preparation");
+            prep.ConfirmPreparation();
+            // Confirming writes the rolling pre-battle save (save-system rule 2): one slot, overwritten each battle.
             Assert.AreEqual(ThreeKingdoms.Save.SaveReadStatus.Ok, GameRun.Current.Slots().Read(ThreeKingdoms.Save.SaveSlots.Auto, out var auto));
             Assert.AreEqual($"battle_{battle}", auto.location);
             Assert.AreEqual(battle - 1, auto.battlesDone);

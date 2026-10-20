@@ -46,6 +46,16 @@ namespace ThreeKingdoms.UI.Battle
         public const string ReturnToTown = "回到涿郡";
         public const string Continue = "继续";
         public const string ToTitle = "返回标题";
+        public const string Prepare = "战前准备";
+        public const string LineupHeader = "出战武将（1–3 名，按选择顺序排位）";
+        public const string IntelHeader = "敌方情报";
+        public const string Outfit = "配装";
+        public const string ConfirmSortie = "确认出战";
+        public const string Standby = "待命";
+        public const string PrepHint = "确认出战后自动存档；战败可还原到此时的状态重新准备。";
+        public const string NeedOne = "至少选择一名武将出战。";
+        public static string SlotMark(int slot) => "①②③".Substring(slot, 1);
+        public static string GeneralLine(string name, TroopType t, int level, int troops) => $"{name}　{Troop(t)}　{Level(level)}　兵力 {troops}";
         public const string TestVersionEnd = "测试版结束";
         public const string ThanksForPlaying = "感谢试玩";
         // Alpha 0.1 ending narration (story-events answer 5). 暂定 — final wording to be written.

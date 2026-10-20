@@ -123,8 +123,27 @@ public sealed class SaveFlowTests
         yield return WaitForScene("Battle_Tutorial02");
         var b = UnityEngine.Object.FindFirstObjectByType<BattleController>();
         Assert.IsFalse(b.Run.IsDevelopment, "a loaded save is a real play-through");
+        Assert.AreEqual(BattleController.Phase.Preparing, b.Current, "back to the pre-battle preparation");
         Assert.AreEqual(150, b.Progress.Copper);
-        Assert.That(b.Session.State.Players.Select(u => u.Level), Is.All.EqualTo(2));
-        Assert.IsTrue(b.AutoSaved, "starting the battle rewrites the rolling pre-battle save");
+        Assert.IsFalse(b.AutoSaved, "nothing is written before confirming");
+
+        // Preparation: send Zhang Fei alone, change gear in the outfit panel, then confirm.
+        var zhang = b.Available.First(g => g.Id == "zhang_fei");
+        foreach (var g in b.Selected.ToList()) if (g != zhang) b.ToggleSelected(g);
+        Assert.That(b.Selected, Is.EqualTo(new[] { zhang }));
+        b.ToggleSelected(zhang);
+        Assert.IsFalse(b.CanConfirm, "an empty line-up cannot sortie");
+        b.ToggleSelected(zhang);
+        b.OpenPanel("outfit");
+        var outfit = UnityEngine.Object.FindFirstObjectByType<ThreeKingdoms.UI.Shop.ShopHud>();
+        Assert.AreEqual(ThreeKingdoms.UI.Shop.ShopHud.Mode.PickGeneral, outfit.Current, "outfit opens straight on the generals");
+        outfit.Back();
+        Assert.IsNull(b.Panel);
+        b.ConfirmPreparation();
+        Assert.IsTrue(b.AutoSaved, "confirming rewrites the rolling pre-battle save");
+        Assert.AreEqual(BattleController.Phase.Commanding, b.Current);
+        Assert.That(b.Session.State.Players.Select(u => u.Id), Is.EqualTo(new[] { "zhang_fei" }));
+        Assert.AreEqual(2, b.Session.State.Players[0].Level);
+        Assert.IsTrue(b.ViewOf(b.Session.State.Players[0]).name.Contains("Zhang"), "Zhang Fei's own sprite stands in slot 1");
     }
 }

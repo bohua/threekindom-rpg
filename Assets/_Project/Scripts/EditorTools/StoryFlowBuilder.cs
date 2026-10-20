@@ -125,7 +125,7 @@ namespace ThreeKingdoms.EditorTools
             var shopDoc = shopGo.AddComponent<UIDocument>();
             shopDoc.panelSettings = doc.panelSettings;
             shopDoc.sortingOrder = 10;
-            shopGo.AddComponent<ShopHud>().Controller = c;
+            shopGo.AddComponent<ShopHud>().Host = c;
             var saveGo = new GameObject("Save HUD");
             var saveDoc = saveGo.AddComponent<UIDocument>();
             saveDoc.panelSettings = doc.panelSettings;

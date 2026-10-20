@@ -13,9 +13,9 @@ namespace ThreeKingdoms.Gameplay.Battle
     // The only component that drives the battle core (ADR-0002 §8):
     // Commanding → Resolving (core) → Playback (events) → next round, or Finished.
     // The UI reads state and events from here and submits commands through here.
-    public sealed class BattleController : MonoBehaviour
+    public sealed class BattleController : MonoBehaviour, IPanelHost
     {
-        public enum Phase { Starting, Commanding, Playback, Finished }
+        public enum Phase { Preparing, Starting, Commanding, Playback, Finished }
 
         public BattleCatalog Catalog;
         public string EncounterId = "battle_1";
@@ -39,6 +39,9 @@ namespace ThreeKingdoms.Gameplay.Battle
         public event Action Changed;                       // phase, actor or commands changed
         public event Action<BattleEvent> EventPlayed;      // one resolution event is being shown
         public event Action BattleStarted;
+        public event Action PreparationStarted;
+        // Shop-style panels opened from preparation ("outfit"), same contract as the town's (ShopHud listens to both).
+        public event Action<string> PanelOpened, PanelClosed;
 
         readonly Dictionary<BattleUnit, BattleCommand> commands = new Dictionary<BattleUnit, BattleCommand>();
         readonly Dictionary<BattleUnit, BattleUnitView> views = new Dictionary<BattleUnit, BattleUnitView>();
@@ -74,8 +77,73 @@ namespace ThreeKingdoms.Gameplay.Battle
             Run = GameRun.Current ?? GameRun.ForBattle(Catalog, GameRun.BattleIndex(EncounterId), StartExp, StartCopper, StartRations);
             Data = Run.Data;
             Progress = Run.Progress;
+            slotHomes = PlayerViews.Select(v => v ? v.Home : Vector3.zero).ToArray();
+            if (NeedsPreparation) BeginPreparation();
+            else StartBattle();
+        }
+
+        // ---------- pre-battle preparation (game-ui GDD rules 16–17) ----------
+
+        Vector3[] slotHomes = Array.Empty<Vector3>();
+        readonly List<GeneralSpec> selected = new List<GeneralSpec>();
+
+        // A play-through prepares every battle; a battle scene opened on its own (development) starts at once.
+        public bool NeedsPreparation => Run != null && !Run.IsDevelopment;
+        public string EncounterName => Data.Encounter(EncounterId).DisplayName;
+        public IReadOnlyList<GeneralSpec> Selected => selected;
+        public IEnumerable<GeneralSpec> Available => Progress.Party.Where(g => Run.Story.HasJoined(g.Id));
+        public bool CanConfirm => Current == Phase.Preparing && selected.Count > 0;
+        public string Panel { get; private set; }
+
+        // Enemy intel shown before the battle (answer 4): name, troop type, level, troops; no skills.
+        public IEnumerable<(GeneralSpec general, int level, int troops)> EnemyIntel =>
+            Data.Encounter(EncounterId).Enemies.Select(e => (e.General, e.Level,
+                BattleRules.Compute(e.General, e.Level, default, Data.Troops, Data.Config).MaxTroops));
+
+        public void BeginPreparation()
+        {
+            StopAllCoroutines();
+            Current = Phase.Preparing;
+            if (selected.Count == 0 || selected.Any(g => !Run.Story.HasJoined(g.Id)))
+            {
+                selected.Clear();
+                selected.AddRange(Available.Take(3));
+            }
+            foreach (var v in PlayerViews) if (v) v.SetSelected(false);
+            PreparationStarted?.Invoke();
+            Changed?.Invoke();
+        }
+
+        // Toggles a general in or out; newly added generals take the next slot (1–3 generals, no empty line-up).
+        public void ToggleSelected(GeneralSpec general)
+        {
+            if (Current != Phase.Preparing || !Run.Story.HasJoined(general.Id)) return;
+            if (!selected.Remove(general) && selected.Count < 3) selected.Add(general);
+            Changed?.Invoke();
+        }
+
+        // Confirming builds the snapshot the battle starts from and writes the rolling pre-battle save (rule 9).
+        public void ConfirmPreparation()
+        {
+            if (!CanConfirm) return;
             AutoSave();
             StartBattle();
+        }
+
+        public void OpenPanel(string panel)
+        {
+            if (Current != Phase.Preparing || Panel != null) return;
+            Panel = panel;
+            PanelOpened?.Invoke(panel);
+        }
+
+        public void ClosePanel()
+        {
+            if (Panel == null) return;
+            string closed = Panel;
+            Panel = null;
+            PanelClosed?.Invoke(closed);
+            Changed?.Invoke();   // gear may have changed: refresh the preparation summary
         }
 
         public bool AutoSaved { get; private set; }
@@ -96,13 +164,31 @@ namespace ThreeKingdoms.Gameplay.Battle
         {
             StopAllCoroutines();
             Current = Phase.Starting;
-            Session = new BattleSession(Data.Encounter(EncounterId), Progress.Lineup(Run.Story.HasJoined), Data.Ration, Progress.Rations, Data.Config, Data.Troops);
+            var lineup = NeedsPreparation && selected.Count > 0 ? Progress.Lineup(selected) : Progress.Lineup(Run.Story.HasJoined);
+            Session = new BattleSession(Data.Encounter(EncounterId), lineup, Data.Ration, Progress.Rations, Data.Config, Data.Troops);
             views.Clear();
-            Bind(Session.State.Players, PlayerViews);
+            BindPlayers(Session.State.Players);
             Bind(Session.State.Enemies, EnemyViews);
             LastApplied = null;
             BattleStarted?.Invoke();
             BeginCommanding();
+        }
+
+        // Our views belong to generals (party order: Liu Bei, Guan Yu, Zhang Fei); each stands at its line-up slot.
+        void BindPlayers(IReadOnlyList<BattleUnit> units)
+        {
+            var used = new HashSet<BattleUnitView>();
+            foreach (var u in units)
+            {
+                int index = Progress.Party.ToList().FindIndex(g => g.Id == u.Id);
+                var view = index >= 0 && index < PlayerViews.Length ? PlayerViews[index] : null;
+                if (!view) continue;
+                if (u.Slot < slotHomes.Length) view.SetHome(slotHomes[u.Slot]);
+                view.ResetView();
+                views[u] = view;
+                used.Add(view);
+            }
+            foreach (var v in PlayerViews) if (v && !used.Contains(v)) v.gameObject.SetActive(false);
         }
 
         void Bind(IReadOnlyList<BattleUnit> units, BattleUnitView[] slots)

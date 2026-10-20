@@ -25,7 +25,7 @@ namespace ThreeKingdoms.UI.Battle
         static readonly Color Panel = new Color(0.07f, 0.09f, 0.14f, 0.88f);
         static readonly Color PanelEdge = new Color(0.62f, 0.50f, 0.28f);
 
-        VisualElement root, menu, cards, plates, popups, resultPanel;
+        VisualElement root, menu, cards, plates, popups, resultPanel, prepPanel;
         Label roundLabel, orderLabel, messageLabel, promptLabel;
         Button fastButton;
         readonly Dictionary<BattleUnit, Card> cardOf = new Dictionary<BattleUnit, Card>();
@@ -65,6 +65,7 @@ namespace ThreeKingdoms.UI.Battle
             root.RegisterCallback<NavigationCancelEvent>(e => { e.StopPropagation(); Cancel(); }, TrickleDown.TrickleDown);
             if (!Controller) return;
             Controller.BattleStarted += Rebuild;
+            Controller.PreparationStarted += Refresh;
             Controller.Changed += Refresh;
             Controller.EventPlayed += OnEvent;
             if (Controller.Session != null) Rebuild();
@@ -74,6 +75,7 @@ namespace ThreeKingdoms.UI.Battle
         {
             if (!Controller) return;
             Controller.BattleStarted -= Rebuild;
+            Controller.PreparationStarted -= Refresh;
             Controller.Changed -= Refresh;
             Controller.EventPlayed -= OnEvent;
         }
@@ -121,6 +123,62 @@ namespace ThreeKingdoms.UI.Battle
             resultPanel.style.display = DisplayStyle.None;
             resultPanel.style.backgroundColor = new Color(0.05f, 0.06f, 0.10f, 0.96f);
             resultPanel.style.paddingTop = resultPanel.style.paddingBottom = 24;
+
+            prepPanel = Framed(root); Absolute(prepPanel, 300, 150, 300, 150);
+            prepPanel.style.flexDirection = FlexDirection.Column;
+            prepPanel.style.backgroundColor = new Color(0.05f, 0.06f, 0.10f, 0.96f);
+            prepPanel.style.display = DisplayStyle.None;
+        }
+
+        // ---------- pre-battle preparation (game-ui GDD rules 16–17) ----------
+
+        int prepFocus = -1;
+
+        void ShowPreparation()
+        {
+            bool open = Controller.Panel == null;
+            prepPanel.style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
+            menu.style.display = promptLabel.style.display = resultPanel.style.display = DisplayStyle.None;
+            cards.style.display = plates.style.display = DisplayStyle.None;
+            orderLabel.text = "";
+            messageLabel.text = Controller.EncounterName;
+            if (!open) return;
+            prepPanel.Clear();
+            prepPanel.Add(Text(BattleText.Prepare, 36, Gold));
+            var body = Row(prepPanel); body.style.flexGrow = 1; body.style.marginTop = 14;
+            var left = new VisualElement(); left.style.width = new Length(55, LengthUnit.Percent); body.Add(left);
+            var right = new VisualElement(); right.style.flexGrow = 1; right.style.marginLeft = 28; body.Add(right);
+
+            left.Add(Text(BattleText.LineupHeader, 22, new Color(0.85f, 0.85f, 0.85f)));
+            var available = Controller.Available.ToList();
+            var buttons = new List<Button>();
+            for (int i = 0; i < available.Count; i++)
+            {
+                var g = available[i];
+                int index = i, slot = Controller.Selected.ToList().IndexOf(g);
+                var stats = Controller.Progress.Stats(g, Controller.Progress.Inventory.Bonus(g.Id));
+                string mark = slot >= 0 ? BattleText.SlotMark(slot) : BattleText.Standby;
+                buttons.Add(MenuButton(left, $"{mark}　{BattleText.GeneralLine(g.DisplayName, g.Troop, Controller.Progress.Level(g), stats.MaxTroops)}",
+                    () => { prepFocus = index; Controller.ToggleSelected(g); }, 24));
+            }
+
+            right.Add(Text(BattleText.IntelHeader, 22, new Color(0.85f, 0.85f, 0.85f)));
+            foreach (var (g, level, troops) in Controller.EnemyIntel)
+            {
+                var line = Text(BattleText.GeneralLine(g.DisplayName, g.Troop, level, troops), 22, Color.white);
+                line.style.marginTop = 10;
+                right.Add(line);
+            }
+
+            var hint = Text(Controller.CanConfirm ? BattleText.PrepHint : BattleText.NeedOne, 20,
+                Controller.CanConfirm ? new Color(0.8f, 0.8f, 0.8f) : new Color(0.9f, 0.5f, 0.42f));
+            hint.style.marginTop = 10; hint.style.whiteSpace = WhiteSpace.Normal;
+            prepPanel.Add(hint);
+            var actions = Row(prepPanel); actions.style.marginTop = 12;
+            var outfit = MenuButton(actions, BattleText.Outfit, () => { prepFocus = -1; Controller.OpenPanel("outfit"); }, 24, 220);
+            var go = MenuButton(actions, BattleText.ConfirmSortie, Controller.ConfirmPreparation, 24, 260, enabled: Controller.CanConfirm);
+            go.style.marginLeft = 16;
+            (prepFocus >= 0 && prepFocus < buttons.Count ? buttons[prepFocus] : Controller.CanConfirm ? go : outfit).Focus();
         }
 
         void Rebuild()
@@ -207,6 +265,9 @@ namespace ThreeKingdoms.UI.Battle
 
         void Refresh()
         {
+            if (Controller.Current == BattleController.Phase.Preparing) { ShowPreparation(); return; }
+            prepPanel.style.display = DisplayStyle.None;
+            cards.style.display = plates.style.display = DisplayStyle.Flex;
             if (Controller.Session == null) return;
             var state = Controller.Session.State;
             if (Controller.Current != BattleController.Phase.Playback) SyncShown();
@@ -360,7 +421,9 @@ namespace ThreeKingdoms.UI.Battle
             else if (Controller.HasNextBattle) first = MenuButton(buttons, BattleText.NextBattle, Controller.GoToNextBattle, 24, 220);
             if (!won || Controller.Run.IsDevelopment)
             {
-                var again = MenuButton(buttons, won ? BattleText.Again : BattleText.Retry, () => Controller.StartBattle(), 24, 220);
+                // A play-through retry restores the pre-battle state and goes back to preparation (save-system rule 11).
+                Action retry = !won && Controller.NeedsPreparation ? Controller.BeginPreparation : (Action)Controller.StartBattle;
+                var again = MenuButton(buttons, won ? BattleText.Again : BattleText.Retry, retry, 24, 220);
                 again.style.marginLeft = first != null ? 16 : 0;
                 first ??= again;
             }
@@ -442,10 +505,13 @@ namespace ThreeKingdoms.UI.Battle
         // panel's event handler exists (first frames) leaves nothing selected, so keep the menu focused until it is.
         void Update()
         {
-            if (Controller == null || Controller.Current != BattleController.Phase.Commanding && Controller.Current != BattleController.Phase.Finished) return;
+            if (Controller == null) return;
+            bool preparing = Controller.Current == BattleController.Phase.Preparing;
+            if (preparing && Controller.Panel != null) return;   // the outfit panel owns focus
+            if (!preparing && Controller.Current != BattleController.Phase.Commanding && Controller.Current != BattleController.Phase.Finished) return;
             var es = EventSystem.current;
             if (es != null && es.currentSelectedGameObject != null && root.panel?.focusController.focusedElement != null) return;
-            var target = resultPanel.style.display == DisplayStyle.Flex ? (VisualElement)resultPanel : menu;
+            var target = preparing ? prepPanel : resultPanel.style.display == DisplayStyle.Flex ? (VisualElement)resultPanel : menu;
             var button = target.Query<Button>().Where(b => b.enabledSelf).First();
             if (button == null) return;
             button.Blur();     // a focus that happened before the handler existed must be re-sent

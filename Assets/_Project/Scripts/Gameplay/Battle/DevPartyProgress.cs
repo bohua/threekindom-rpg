@@ -41,6 +41,10 @@ namespace ThreeKingdoms.Gameplay.Battle
 
         public int Exp(GeneralSpec g) => exp.TryGetValue(g.Id, out int e) ? e : 0;
         public int Level(GeneralSpec g) => BattleRules.LevelForExp(Exp(g), data.Config);
+        // A chosen line-up, in slot order (pre-battle preparation).
+        public IReadOnlyList<CombatantInput> Lineup(IEnumerable<GeneralSpec> ordered) =>
+            ordered.Select(g => CombatantInput.AtLevel(g, Level(g), Inventory.Bonus(g.Id))).ToList();
+
         // The roster is whoever the story says has joined (ADR-0006: StoryState join flags), in party order, with
         // what each one wears.
         public IReadOnlyList<CombatantInput> Lineup(System.Func<string, bool> hasJoined) =>

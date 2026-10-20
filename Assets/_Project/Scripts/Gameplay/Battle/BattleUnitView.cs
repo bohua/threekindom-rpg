@@ -29,6 +29,9 @@ namespace ThreeKingdoms.Gameplay.Battle
 
         public Vector3 Home => home;
 
+        // The line-up slot this general stands in for this battle (any of the three generals can take any slot).
+        public void SetHome(Vector3 localPosition) { home = localPosition; transform.localPosition = home; }
+
         void Awake()
         {
             home = transform.localPosition;
