@@ -39,6 +39,13 @@ namespace ThreeKingdoms.Gameplay.Battle
                 if (exp.ContainsKey(id)) exp[id] = System.Math.Max(0, e);
         }
 
+        // Cumulative exp the next level needs; null at the level cap (general page).
+        public int? ExpForNextLevel(GeneralSpec g)
+        {
+            int level = Level(g);
+            return level < data.Config.MaxLevel ? data.Config.ExpTable[level] : (int?)null;
+        }
+
         public int Exp(GeneralSpec g) => exp.TryGetValue(g.Id, out int e) ? e : 0;
         public int Level(GeneralSpec g) => BattleRules.LevelForExp(Exp(g), data.Config);
         // A chosen line-up, in slot order (pre-battle preparation).

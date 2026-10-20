@@ -131,6 +131,11 @@ namespace ThreeKingdoms.EditorTools
             saveDoc.panelSettings = doc.panelSettings;
             saveDoc.sortingOrder = 10;
             saveGo.AddComponent<SaveHud>().Controller = c;
+            var menuGo = new GameObject("Main Menu HUD");
+            var menuDoc = menuGo.AddComponent<UIDocument>();
+            menuDoc.panelSettings = doc.panelSettings;
+            menuDoc.sortingOrder = 10;
+            menuGo.AddComponent<ThreeKingdoms.UI.Menu.MainMenuHud>().Controller = c;
             if (!Object.FindFirstObjectByType<EventSystem>())
             {
                 var es = new GameObject("EventSystem");

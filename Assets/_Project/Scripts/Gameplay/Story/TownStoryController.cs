@@ -51,7 +51,7 @@ namespace ThreeKingdoms.Gameplay.Story
         public string Prompt { get; private set; }
         public float Fade { get; private set; }
         public bool InGatePassage { get; private set; }
-        public const string ShopPanel = "shop", SavePanel = "save", OutfitPanel = "outfit";
+        public const string ShopPanel = "shop", SavePanel = "save", OutfitPanel = "outfit", MenuPanel = "menu";
         // The full-screen panel that owns input right now (shop or save), or null.
         public string Panel { get; private set; }
         public bool ShopOpen => Panel == ShopPanel;
@@ -61,7 +61,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         bool advance;
         string pendingGateScene;
-        int closedShopFrame = -1;
+        int closedShopFrame = -1, openedPanelFrame = -1;
         bool warnedNoWeapon;
 
         static readonly DialogueLine[] GuanYuMeeting =
@@ -116,10 +116,14 @@ namespace ThreeKingdoms.Gameplay.Story
 
         void Update()
         {
-            if (Panel != null) return;   // the shop / save UI owns input until it closes
-            // The press that closed the shop (Cancel / confirm) must not quit or reopen it.
+            bool menuPressed = MenuAction && MenuAction.action.WasPressedThisFrame();
+            // The menu key also closes the main menu; other panels own input until they close.
+            if (Panel == MenuPanel && menuPressed && Time.frameCount > openedPanelFrame) { ClosePanel(); return; }
+            if (Panel != null) return;
+            // The press that closed a panel (Cancel / confirm / menu) must not reopen one.
             if (Time.frameCount <= closedShopFrame + 1) return;
-            if (MenuAction && MenuAction.action.WasPressedThisFrame()) Application.Quit();   // system menu stand-in (GDD answer 9)
+            // Main menu: 武将, 物品, 设置 (game-ui answer 10); not during the oath or dialogue.
+            if (menuPressed && !Busy) { OpenPanel(MenuPanel); return; }
             bool pressed = InteractAction && InteractAction.action.WasPressedThisFrame();
             if (Busy) { if (pressed) Advance(); return; }
             UpdatePrompt();
@@ -158,6 +162,7 @@ namespace ThreeKingdoms.Gameplay.Story
             if (Busy) return;
             Busy = true;
             Panel = panel;
+            openedPanelFrame = Time.frameCount;
             SetControl(false);
             Prompt = null;
             PanelOpened?.Invoke(panel);
@@ -178,6 +183,20 @@ namespace ThreeKingdoms.Gameplay.Story
         }
 
         public void OpenShop() => OpenPanel(ShopPanel);
+
+        // From the main menu: one panel at a time, so the menu closes before the outfit panel opens.
+        public void SwitchPanel(string panel)
+        {
+            ClosePanel();
+            closedShopFrame = -1;
+            OpenPanel(panel);
+        }
+
+        public void ReturnToTitle()
+        {
+            GameRun.Clear();
+            SceneManager.LoadScene(GameRun.TitleScene);
+        }
         public void CloseShop() => ClosePanel();
 
         // ---------- prompts ----------
