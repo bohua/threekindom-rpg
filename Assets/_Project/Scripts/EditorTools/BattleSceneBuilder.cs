@@ -60,6 +60,7 @@ namespace ThreeKingdoms.EditorTools
             // Base scenes first: building them switches scenes, which unloads assets loaded before (panel settings, icons).
             BattleBackdropBaker.BuildOutskirts();
             var catalog = BattleDataBuilder.Build();
+            BattleUiSkinBuilder.Build();   // BATTLE_UI_SKIN.md pixel frames
             var icons = BuildTroopIcons();
             var panel = BuildPanelSettings();
             ConvertEnemySheets();
@@ -145,6 +146,7 @@ namespace ThreeKingdoms.EditorTools
             hud.BattleCamera = Camera.main;
             hud.TroopIcons = icons;
             hud.LocationName = battle.Location;
+            hud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
 
             var tutor = controller.gameObject.AddComponent<ThreeKingdoms.Gameplay.Battle.BattleTutor>();
             tutor.Controller = controller;

@@ -18,6 +18,10 @@ namespace ThreeKingdoms.UI.Battle
     {
         public BattleController Controller;
         [Tooltip("Teaching hints; optional")] public BattleTutor Tutor;
+        [Tooltip("Pixel frames (BATTLE_UI_SKIN.md); without it the HUD uses flat colours")] public BattleUiSkin Skin;
+
+        // The skin the static widget helpers draw with (one battle HUD at a time).
+        static BattleUiSkin skin;
         public Camera BattleCamera;
         public string LocationName = "涿郡 · 街市";
         [Tooltip("Infantry, Cavalry, Archer, YellowTurban, Strategist")] public Texture2D[] TroopIcons = Array.Empty<Texture2D>();
@@ -55,13 +59,14 @@ namespace ThreeKingdoms.UI.Battle
         CommandKind pendingKind;
         SkillSpec pendingSkill;
 
-        sealed class Card { public VisualElement Root, TroopFill, TechFill; public Label Name, TroopText, TechText, Status; }
+        sealed class Card { public VisualElement Root, TroopFill, TechFill, Glow, Frame, Seal; public Label Name, TroopText, TechText, Status; }
         sealed class Plate { public VisualElement Root, Fill; public Label Name; }
 
         void OnEnable()
         {
             root = GetComponent<UIDocument>().rootVisualElement;
             root.Clear();
+            skin = Skin;
             BattleFont.ApplyTo(root);
             root.style.flexGrow = 1;
             BuildLayout();
@@ -91,10 +96,10 @@ namespace ThreeKingdoms.UI.Battle
         {
             var top = Row(root); Absolute(top, 24, 20, 24, -1);
             top.style.justifyContent = Justify.SpaceBetween;
-            var location = Framed(top); location.Add(Text(LocationName, 30, Color.white));
+            var location = Framed(top, plaque: true); location.Add(Text(LocationName, 30, Color.white));
             var right = Row(top);
             fastButton = MenuButton(right, BattleText.Fast, () => { Controller.Fast = !Controller.Fast; Refresh(); }, 22, 120);
-            var roundBox = Framed(right); roundBox.style.marginLeft = 12;
+            var roundBox = Framed(right, plaque: true); roundBox.style.marginLeft = 12;
             roundLabel = Text("", 28, Color.white); roundBox.Add(roundLabel);
 
             orderLabel = Text("", 20, new Color(0.95f, 0.92f, 0.85f));
@@ -136,6 +141,7 @@ namespace ThreeKingdoms.UI.Battle
             hintLabel.style.backgroundColor = new Color(0.10f, 0.08f, 0.03f, 0.92f);
             hintLabel.style.borderLeftWidth = 6; hintLabel.style.borderLeftColor = Gold;
             hintLabel.style.paddingLeft = hintLabel.style.paddingRight = 16; hintLabel.style.paddingTop = hintLabel.style.paddingBottom = 10;
+            if (skin) { skin.Hint(hintLabel); hintLabel.style.paddingLeft = hintLabel.style.paddingRight = 28; hintLabel.style.paddingTop = hintLabel.style.paddingBottom = 18; }
             hintLabel.pickingMode = PickingMode.Ignore;
             hintLabel.style.display = DisplayStyle.None;
             root.Add(hintLabel);
@@ -233,14 +239,28 @@ namespace ThreeKingdoms.UI.Battle
         {
             var c = new Card { Root = Framed(cards) };
             c.Root.style.width = new Length(32, LengthUnit.Percent);
-            c.Root.style.height = 150;
+            c.Root.style.height = skin ? 72 * BattleUiSkin.Scale : 150;   // the 292×72 card at 2×
             c.Root.style.flexDirection = FlexDirection.Row;
-            c.Root.style.paddingLeft = 14;
+            c.Root.style.paddingLeft = skin ? 16 : 14;
+            if (skin)
+            {
+                c.Root.style.paddingTop = c.Root.style.paddingBottom = 12;
+                // Selected card: the outer glow frame breathes (LateUpdate), no blur filter (BATTLE_UI_SKIN.md).
+                c.Glow = new VisualElement { pickingMode = PickingMode.Ignore };
+                Absolute(c.Glow, 0, 0, 0, 0);
+                skin.Card(c.Glow, skin.CardActiveGlow);
+                c.Glow.style.display = DisplayStyle.None;
+                c.Root.Add(c.Glow);
+            }
             var view = Controller.ViewOf(u);
             var portrait = new VisualElement();
-            portrait.style.width = 120; portrait.style.height = 120; portrait.style.marginRight = 16;
-            portrait.style.borderTopWidth = portrait.style.borderBottomWidth = portrait.style.borderLeftWidth = portrait.style.borderRightWidth = 2;
-            portrait.style.borderTopColor = portrait.style.borderBottomColor = portrait.style.borderLeftColor = portrait.style.borderRightColor = PanelEdge;
+            float side = skin ? 56 * BattleUiSkin.Scale : 120;
+            portrait.style.width = side; portrait.style.height = side; portrait.style.marginRight = 16; portrait.style.flexShrink = 0;
+            if (!skin)
+            {
+                portrait.style.borderTopWidth = portrait.style.borderBottomWidth = portrait.style.borderLeftWidth = portrait.style.borderRightWidth = 2;
+                portrait.style.borderTopColor = portrait.style.borderBottomColor = portrait.style.borderLeftColor = portrait.style.borderRightColor = PanelEdge;
+            }
             if (view && view.Portrait)
             {
                 var r = view.PortraitCrop;
@@ -248,15 +268,41 @@ namespace ThreeKingdoms.UI.Battle
                 portrait.style.backgroundImage = new StyleBackground(sprite);
             }
             c.Root.Add(portrait);
+            if (skin)
+            {
+                c.Frame = new VisualElement { pickingMode = PickingMode.Ignore };
+                Absolute(c.Frame, 0, 0, 0, 0);
+                skin.Portrait(c.Frame, false);
+                portrait.Add(c.Frame);
+                // Routed seal over the portrait, clear of the name and numbers.
+                c.Seal = new VisualElement { pickingMode = PickingMode.Ignore };
+                BattleUiSkin.Image(c.Seal, skin.RoutedSeal);
+                Absolute(c.Seal, 70 - 16, 54 - 12, -1, -1);
+                c.Seal.style.display = DisplayStyle.None;
+                c.Root.Add(c.Seal);
+            }
             var info = new VisualElement(); info.style.flexGrow = 1; c.Root.Add(info);
             var head = Row(info);
             c.Name = Text($"{u.Name}   {BattleText.Level(u.Level)}", 26, Color.white); head.Add(c.Name);
             var icon = new VisualElement();
-            Absolute(icon, -1, -6, 4, -1); icon.style.width = 44; icon.style.height = 44;
             int t = (int)u.Troop;
+            if (skin)
+            {
+                // Troop icon on its 20×20 badge at the card's top right (266, 6) at 2×.
+                var badge = new VisualElement { pickingMode = PickingMode.Ignore };
+                BattleUiSkin.Image(badge, skin.UnitBadge);
+                Absolute(badge, -1, 12, 12, -1);
+                Absolute(icon, 4, 4, -1, -1); icon.style.width = icon.style.height = 32;
+                badge.Add(icon);
+                c.Root.Add(badge);
+            }
+            else
+            {
+                Absolute(icon, -1, -6, 4, -1); icon.style.width = 44; icon.style.height = 44;
+                c.Root.Add(icon);
+            }
             if (t < TroopIcons.Length && TroopIcons[t]) icon.style.backgroundImage = new StyleBackground(TroopIcons[t]);
             icon.tooltip = BattleText.Troop(u.Troop);
-            c.Root.Add(icon);
             (c.TroopText, c.TroopFill) = Bar(info, BattleText.Troops, new Color(0.35f, 0.78f, 0.36f));
             (c.TechText, c.TechFill) = Bar(info, BattleText.Tech, new Color(0.25f, 0.55f, 0.95f));
             c.Status = Text("", 16, new Color(1f, 0.8f, 0.6f)); info.Add(c.Status);
@@ -286,6 +332,17 @@ namespace ThreeKingdoms.UI.Battle
             var track = new VisualElement(); track.style.flexGrow = 1; track.style.height = 14; track.style.marginRight = 20;
             track.style.backgroundColor = new Color(0.05f, 0.05f, 0.08f);
             var fill = new VisualElement(); fill.style.height = 14; fill.style.backgroundColor = fillColor;
+            if (skin)
+            {
+                // Bar frame 48×8 (slices 4/4/2/2) at 2×; the fill tiles inside its 2 px border.
+                skin.Bar(track);
+                track.style.height = 8 * BattleUiSkin.Scale; track.style.marginRight = 28;
+                var inner = new VisualElement(); Absolute(inner, 4, 4, 4, 4);
+                fill.style.height = new Length(100, LengthUnit.Percent);
+                BattleUiSkin.Fill(fill, caption == BattleText.Tech ? skin.BarSkill : skin.BarTroops);
+                inner.Add(fill); track.Add(inner); row.Add(track);
+                return (value, fill);
+            }
             track.Add(fill); row.Add(track);
             return (value, fill);
         }
@@ -301,7 +358,8 @@ namespace ThreeKingdoms.UI.Battle
             var state = Controller.Session.State;
             if (Controller.Current != BattleController.Phase.Playback) SyncShown();
             roundLabel.text = BattleText.Round(state.Round);
-            fastButton.style.backgroundColor = Controller.Fast ? new Color(0.5f, 0.38f, 0.12f) : Panel;
+            if (skin) skin.Item(fastButton, Controller.Fast ? skin.ItemSelected : skin.ItemNormal);
+            else fastButton.style.backgroundColor = Controller.Fast ? new Color(0.5f, 0.38f, 0.12f) : Panel;
             orderLabel.text = BattleText.Order(string.Join(" → ", state.ActionOrder().Select(u => u.Name)));
             foreach (var pair in cardOf) UpdateCard(pair.Key, pair.Value);
             bool commanding = Controller.Current == BattleController.Phase.Commanding;
@@ -327,6 +385,18 @@ namespace ThreeKingdoms.UI.Battle
             var commanded = Controller.Current == BattleController.Phase.Commanding && Controller.Commands.TryGetValue(u, out var cmd) ? $"  已选：{BattleText.Command(cmd.Kind)}" : "";
             c.Status.text = string.Join("  ", u.Modifiers.Select(BattleText.Remaining)) + commanded;
             bool selected = Controller.Actor == u;
+            if (skin)
+            {
+                // Four states with different frames, not colour alone: active > wounded > normal > routed.
+                bool routed = troops <= 0, wounded = troops * 2 < u.Stats.MaxTroops;
+                skin.Card(c.Root, routed ? skin.CardRouted : selected ? skin.CardActive : wounded ? skin.CardWounded : skin.CardNormal);
+                BattleUiSkin.Fill(c.TroopFill, wounded ? skin.BarTroopsLow : skin.BarTroops);
+                if (c.Frame != null) skin.Portrait(c.Frame, selected);
+                if (c.Seal != null) c.Seal.style.display = routed ? DisplayStyle.Flex : DisplayStyle.None;
+                if (c.Glow != null) c.Glow.style.display = selected && !routed ? DisplayStyle.Flex : DisplayStyle.None;
+                c.Root.style.opacity = 1f;
+                return;
+            }
             var edge = selected ? Gold : PanelEdge;
             c.Root.style.borderTopColor = c.Root.style.borderBottomColor = c.Root.style.borderLeftColor = c.Root.style.borderRightColor = edge;
             c.Root.style.borderTopWidth = c.Root.style.borderBottomWidth = c.Root.style.borderLeftWidth = c.Root.style.borderRightWidth = selected ? 4 : 2;
@@ -560,6 +630,11 @@ namespace ThreeKingdoms.UI.Battle
 
         void LateUpdate()
         {
+            if (skin)
+            {
+                float breathe = 0.55f + 0.45f * Mathf.Sin(Time.unscaledTime * 3f);
+                foreach (var c in cardOf.Values) if (c.Glow != null) c.Glow.style.opacity = breathe;
+            }
             if (hintLabel != null && hintLabel.style.display == DisplayStyle.Flex && Time.unscaledTime > hintUntil) hintLabel.style.display = DisplayStyle.None;
             if (Controller == null || Controller.Session == null || root?.panel == null || !BattleCamera) return;
             foreach (var pair in plateOf)
@@ -600,7 +675,7 @@ namespace ThreeKingdoms.UI.Battle
             return e;
         }
 
-        static VisualElement Framed(VisualElement parent)
+        static VisualElement Framed(VisualElement parent, bool plaque = false)
         {
             var e = new VisualElement();
             e.style.backgroundColor = Panel;
@@ -608,6 +683,11 @@ namespace ThreeKingdoms.UI.Battle
             e.style.borderTopColor = e.style.borderBottomColor = e.style.borderLeftColor = e.style.borderRightColor = PanelEdge;
             e.style.borderTopLeftRadius = e.style.borderTopRightRadius = e.style.borderBottomLeftRadius = e.style.borderBottomRightRadius = 4;
             e.style.paddingLeft = e.style.paddingRight = 18; e.style.paddingTop = e.style.paddingBottom = 10;
+            if (skin)
+            {
+                if (plaque) { skin.Plaque(e); e.style.paddingLeft = e.style.paddingRight = 28; e.style.paddingTop = e.style.paddingBottom = 14; }
+                else { skin.Panel(e); e.style.paddingLeft = e.style.paddingRight = 26; e.style.paddingTop = e.style.paddingBottom = 22; }
+            }
             parent.Add(e);
             return e;
         }
@@ -635,18 +715,30 @@ namespace ThreeKingdoms.UI.Battle
             // Visible focus for keyboard / gamepad; the mouse moves focus on hover so both stay in sync.
             var idle = new Color(0.12f, 0.15f, 0.22f, 0.95f);
             var dim = new Color(0.35f, 0.3f, 0.2f);
-            b.RegisterCallback<FocusInEvent>(_ =>
+            if (skin)
             {
-                b.style.backgroundColor = new Color(0.45f, 0.33f, 0.10f, 0.98f);
-                b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = Gold;
-                b.style.borderLeftWidth = 6;
-            });
-            b.RegisterCallback<FocusOutEvent>(_ =>
+                // Command item frames (64×24, slices 14/6/6/6) at 2×; the selected frame carries its own small cursor.
+                var shown = skin;
+                shown.Item(b, enabled ? shown.ItemNormal : shown.ItemDisabled);
+                b.style.paddingLeft = 34; b.style.height = Mathf.Max(48, size + 22);
+                b.RegisterCallback<FocusInEvent>(_ => shown.Item(b, shown.ItemSelected));
+                b.RegisterCallback<FocusOutEvent>(_ => shown.Item(b, b.enabledSelf ? shown.ItemNormal : shown.ItemDisabled));
+            }
+            else
             {
-                b.style.backgroundColor = idle;
-                b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = dim;
-                b.style.borderLeftWidth = 1;
-            });
+                b.RegisterCallback<FocusInEvent>(_ =>
+                {
+                    b.style.backgroundColor = new Color(0.45f, 0.33f, 0.10f, 0.98f);
+                    b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = Gold;
+                    b.style.borderLeftWidth = 6;
+                });
+                b.RegisterCallback<FocusOutEvent>(_ =>
+                {
+                    b.style.backgroundColor = idle;
+                    b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = dim;
+                    b.style.borderLeftWidth = 1;
+                });
+            }
             b.RegisterCallback<PointerEnterEvent>(_ => { if (b.enabledSelf) b.Focus(); });
             parent.Add(b);
             return b;

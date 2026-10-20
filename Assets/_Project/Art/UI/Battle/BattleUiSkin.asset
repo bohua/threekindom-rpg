@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3f689ea35222d348b925c8a856df418, type: 3}
+  m_Name: BattleUiSkin
+  m_EditorClassIdentifier: ThreeKingdoms.UI::ThreeKingdoms.UI.Battle.BattleUiSkin
+  CommandPanel: {fileID: 2800000, guid: 5c3a72796af2d9847a380abdd30bcae1, type: 3}
+  PlaquePanel: {fileID: 2800000, guid: 53fc1fbb192cb2a4a9f997985dee696e, type: 3}
+  HintPanel: {fileID: 2800000, guid: 66c2a9b782d3f0049a608a9ea888cd55, type: 3}
+  ItemNormal: {fileID: 2800000, guid: 29cb6dd76e1c79a41abf6acaf4919661, type: 3}
+  ItemSelected: {fileID: 2800000, guid: 612b85bf9af931d49bd143ea55cd60a5, type: 3}
+  ItemDisabled: {fileID: 2800000, guid: 85ef0e65e5fe1cc45b1a3d4f1144bce6, type: 3}
+  CardNormal: {fileID: 2800000, guid: 49c64cdd59af19e4cb8af98846e912d3, type: 3}
+  CardActive: {fileID: 2800000, guid: 3607ab367d36c394faf3ccb787cad844, type: 3}
+  CardActiveGlow: {fileID: 2800000, guid: b2611bdf39653624287189987c413509, type: 3}
+  CardWounded: {fileID: 2800000, guid: aeeb0203666d66c4c904dc5517ef369b, type: 3}
+  CardRouted: {fileID: 2800000, guid: 37481112835b34844824e7ce138346ed, type: 3}
+  RoutedSeal: {fileID: 2800000, guid: ac76d4ea86d195148a7b9b99bcc0afdb, type: 3}
+  PortraitFrame: {fileID: 2800000, guid: 5fc103127a3d7b1408ab447839ea4b6c, type: 3}
+  PortraitFrameActive: {fileID: 2800000, guid: 37da721d8ce21354697b143d21b8b099, type: 3}
+  UnitBadge: {fileID: 2800000, guid: f31a727c0734aa34ea28d0f91c17c153, type: 3}
+  BarFrame: {fileID: 2800000, guid: 12bc31d2c80f4484a8ebe00f7bdc7371, type: 3}
+  BarTroops: {fileID: 2800000, guid: 440144b66c37c864daf13be7935fe6f7, type: 3}
+  BarTroopsLow: {fileID: 2800000, guid: 23860836dc176734fbbf436a5b24d07f, type: 3}
+  BarSkill: {fileID: 2800000, guid: 98e08526e5f7aa642b67ddb245b85984, type: 3}
