@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using ThreeKingdoms.Core.Battle;
@@ -117,5 +118,37 @@ public sealed class BattleTutorialTests
         Assert.IsTrue(c.Session.State.Players.All(p => p.Level == 3), "opened directly: battle 3 starts at level 3");
         Assert.IsTrue(c.Session.State.Players.All(p => p.Skills.Count == 2), "level-3 skills available in battle 3");
         Assert.IsFalse(string.IsNullOrEmpty(c.EnemyViews[0].name) || c.EnemyViews[0].name == "Yellow Turban 1", "Zhang Jiao has his own sprite");
+    }
+
+    // Gamepad works from the first frame: the command menu holds the EventSystem selection without a mouse.
+    [UnityTest] public IEnumerator CommandMenuIsSelectedForGamepadOnStart()
+    {
+        yield return SceneManager.LoadSceneAsync("Battle_Tutorial01");
+        for (int i = 0; i < 5; i++) yield return null;
+        var root = Object.FindFirstObjectByType<BattleHud>().GetComponent<UIDocument>().rootVisualElement;
+        Assert.IsNotNull(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject, "EventSystem has the HUD panel selected");
+        var focused = root.panel.focusController.focusedElement as Button;
+        Assert.IsNotNull(focused, "a menu button has focus");
+        Assert.AreEqual("攻击", focused.text);
+    }
+
+    // Bars follow the playback hit by hit instead of jumping to the round's final values.
+    [UnityTest] public IEnumerator CardsShowEachHitAsItIsPlayed()
+    {
+        yield return SceneManager.LoadSceneAsync("Battle_Tutorial01");
+        yield return null;
+        var c = Object.FindFirstObjectByType<BattleController>();
+        var root = Object.FindFirstObjectByType<BattleHud>().GetComponent<UIDocument>().rootVisualElement;
+        var hits = new List<BattleEvent>();
+        c.EventPlayed += e => { if (e.Kind == BattleEventKind.Damage && e.Target.Side == Side.Player) hits.Add(e); };
+        foreach (var p in c.Session.State.Players.ToList()) c.Choose(BattleCommand.Defend(p));
+        while (hits.Count == 0) yield return null;
+        var first = hits[0];
+        yield return null;
+        string shown = $"{first.TargetTroopsAfter}/{first.Target.Stats.MaxTroops}";
+        Assert.IsTrue(root.Query<Label>().ToList().Any(l => l.text == shown), "card shows " + shown + " right after the first hit");
+        Assert.Less(first.Target.Troops, first.TargetTroopsAfter, "the round's later hits are already resolved in the core");
+        Assert.IsFalse(root.Query<Label>().ToList().Any(l => l.text == $"{first.Target.Troops}/{first.Target.Stats.MaxTroops}"),
+            "the final value is not shown before its hit is played");
     }
 }

@@ -1,7 +1,7 @@
 {
   "name": "ThreeKingdoms.Tests.PlayMode",
   "rootNamespace": "",
-  "references": ["UnityEngine.TestRunner", "UnityEditor.TestRunner", "ThreeKingdoms.Core", "ThreeKingdoms.Gameplay", "ThreeKingdoms.UI", "Unity.InputSystem", "ThreeKingdoms.Narrative", "ThreeKingdoms.App", "ThreeKingdoms.Data", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
+  "references": ["UnityEngine.TestRunner", "UnityEditor.TestRunner", "ThreeKingdoms.Core", "ThreeKingdoms.Gameplay", "ThreeKingdoms.UI", "Unity.InputSystem", "UnityEngine.UI", "ThreeKingdoms.Narrative", "ThreeKingdoms.App", "ThreeKingdoms.Data", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

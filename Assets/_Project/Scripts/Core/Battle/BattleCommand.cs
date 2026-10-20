@@ -37,8 +37,10 @@ namespace ThreeKingdoms.Core.Battle
         public SkillSpec Skill { get; }
         public CommandKind Command { get; }
         public int Amount { get; }
-        // Target troops right after this event, so playback never has to recompute state.
+        // Target troops / actor tech right after this event, so playback shows bars changing hit by hit
+        // without recomputing state.
         public int TargetTroopsAfter { get; }
+        public int ActorTechAfter { get; }
         public bool Advantage { get; }
         public bool Guarded { get; }
         public CancelReason Reason { get; }
@@ -53,6 +55,7 @@ namespace ThreeKingdoms.Core.Battle
             Kind = kind; Actor = actor; Target = target; Skill = skill; Amount = amount; Advantage = advantage; Reason = reason;
             Modifier = modifier; Guarded = guarded; Command = command;
             TargetTroopsAfter = target?.Troops ?? 0;
+            ActorTechAfter = actor?.Tech ?? 0;
             ModifierPercent = modifier?.Percent ?? 0;
             ModifierTurns = modifier?.RemainingTurns ?? 0;
         }

@@ -4,6 +4,7 @@ using System.Linq;
 using ThreeKingdoms.Core.Battle;
 using ThreeKingdoms.Gameplay.Battle;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UIElements;
 
 namespace ThreeKingdoms.UI.Battle
@@ -30,6 +31,20 @@ namespace ThreeKingdoms.UI.Battle
         readonly Dictionary<BattleUnit, Card> cardOf = new Dictionary<BattleUnit, Card>();
         readonly Dictionary<BattleUnit, Plate> plateOf = new Dictionary<BattleUnit, Plate>();
         readonly List<(Label label, float until, Vector3 world)> floating = new List<(Label, float, Vector3)>();
+        // What the bars show. The core resolves a whole round at once; during playback these follow the events
+        // (each hit, heal or skill cost as it is played), and they snap to the live state otherwise.
+        readonly Dictionary<BattleUnit, int> shownTroops = new Dictionary<BattleUnit, int>();
+        readonly Dictionary<BattleUnit, int> shownTech = new Dictionary<BattleUnit, int>();
+
+        int Troops(BattleUnit u) => shownTroops.TryGetValue(u, out int t) ? t : u.Troops;
+        int Tech(BattleUnit u) => shownTech.TryGetValue(u, out int t) ? t : u.Tech;
+
+        void SyncShown()
+        {
+            shownTroops.Clear(); shownTech.Clear();
+            if (Controller?.Session == null) return;
+            foreach (var u in Controller.Session.State.AllUnits) { shownTroops[u] = u.Troops; shownTech[u] = u.Tech; }
+        }
 
         // Command entry state for the current actor.
         enum Step { Command, Skill, Item, Target }
@@ -112,6 +127,7 @@ namespace ThreeKingdoms.UI.Battle
         {
             cards.Clear(); plates.Clear(); popups.Clear(); floating.Clear();
             cardOf.Clear(); plateOf.Clear();
+            SyncShown();
             resultPanel.style.display = DisplayStyle.None;
             messageLabel.text = Controller.Session.Encounter.DisplayName;
             foreach (var u in Controller.Session.State.Players) cardOf[u] = MakeCard(u);
@@ -193,6 +209,7 @@ namespace ThreeKingdoms.UI.Battle
         {
             if (Controller.Session == null) return;
             var state = Controller.Session.State;
+            if (Controller.Current != BattleController.Phase.Playback) SyncShown();
             roundLabel.text = BattleText.Round(state.Round);
             fastButton.style.backgroundColor = Controller.Fast ? new Color(0.5f, 0.38f, 0.12f) : Panel;
             orderLabel.text = BattleText.Order(string.Join(" → ", state.ActionOrder().Select(u => u.Name)));
@@ -212,17 +229,18 @@ namespace ThreeKingdoms.UI.Battle
         void UpdateCard(BattleUnit u, Card c)
         {
             c.Name.text = $"{u.Name}   {BattleText.Level(u.Level)}";
-            c.TroopText.text = $"{u.Troops}/{u.Stats.MaxTroops}";
-            c.TechText.text = $"{u.Tech}/{u.Stats.MaxTech}";
-            c.TroopFill.style.width = new Length(100f * u.Troops / u.Stats.MaxTroops, LengthUnit.Percent);
-            c.TechFill.style.width = new Length(100f * u.Tech / Mathf.Max(1, u.Stats.MaxTech), LengthUnit.Percent);
+            int troops = Troops(u), tech = Tech(u);
+            c.TroopText.text = $"{troops}/{u.Stats.MaxTroops}";
+            c.TechText.text = $"{tech}/{u.Stats.MaxTech}";
+            c.TroopFill.style.width = new Length(100f * troops / u.Stats.MaxTroops, LengthUnit.Percent);
+            c.TechFill.style.width = new Length(100f * tech / Mathf.Max(1, u.Stats.MaxTech), LengthUnit.Percent);
             var commanded = Controller.Current == BattleController.Phase.Commanding && Controller.Commands.TryGetValue(u, out var cmd) ? $"  已选：{BattleText.Command(cmd.Kind)}" : "";
             c.Status.text = string.Join("  ", u.Modifiers.Select(BattleText.Remaining)) + commanded;
             bool selected = Controller.Actor == u;
             var edge = selected ? Gold : PanelEdge;
             c.Root.style.borderTopColor = c.Root.style.borderBottomColor = c.Root.style.borderLeftColor = c.Root.style.borderRightColor = edge;
             c.Root.style.borderTopWidth = c.Root.style.borderBottomWidth = c.Root.style.borderLeftWidth = c.Root.style.borderRightWidth = selected ? 4 : 2;
-            c.Root.style.opacity = u.Active ? 1f : 0.45f;
+            c.Root.style.opacity = troops > 0 ? 1f : 0.45f;
         }
 
         void BuildMenu()
@@ -348,6 +366,9 @@ namespace ThreeKingdoms.UI.Battle
 
         void OnEvent(BattleEvent e)
         {
+            if (e.Actor != null) shownTech[e.Actor] = e.ActorTechAfter;
+            if (e.Target != null && e.Kind != BattleEventKind.ActionStarted && e.Kind != BattleEventKind.Cancelled)
+                shownTroops[e.Target] = e.TargetTroopsAfter;
             bool quiet = e.Kind == BattleEventKind.RoundEnded || (e.Kind == BattleEventKind.ActionStarted && e.Command == CommandKind.Attack);
             if (!quiet) messageLabel.text = BattleText.Describe(e);
             switch (e.Kind)
@@ -373,18 +394,32 @@ namespace ThreeKingdoms.UI.Battle
             floating.Add((label, Time.time + 1.1f, view.transform.position + Vector3.up * 1.9f));
         }
 
+        // Gamepad / keyboard navigation goes through the EventSystem's selection. Focusing a button before the
+        // panel's event handler exists (first frames) leaves nothing selected, so keep the menu focused until it is.
+        void Update()
+        {
+            if (Controller == null || Controller.Current != BattleController.Phase.Commanding && Controller.Current != BattleController.Phase.Finished) return;
+            var es = EventSystem.current;
+            if (es != null && es.currentSelectedGameObject != null && root.panel?.focusController.focusedElement != null) return;
+            var target = resultPanel.style.display == DisplayStyle.Flex ? (VisualElement)resultPanel : menu;
+            var button = target.Query<Button>().Where(b => b.enabledSelf).First();
+            if (button == null) return;
+            button.Blur();     // a focus that happened before the handler existed must be re-sent
+            button.Focus();
+        }
+
         void LateUpdate()
         {
             if (Controller == null || Controller.Session == null || root?.panel == null || !BattleCamera) return;
             foreach (var pair in plateOf)
             {
                 var view = Controller.ViewOf(pair.Key);
-                bool show = view && view.gameObject.activeInHierarchy && pair.Key.Active;
+                bool show = view && view.gameObject.activeInHierarchy && Troops(pair.Key) > 0;
                 pair.Value.Root.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
                 if (!show) continue;
                 var p = RuntimePanelUtils.CameraTransformWorldToPanel(root.panel, view.transform.position + Vector3.up * 1.75f, BattleCamera);
                 pair.Value.Root.style.left = p.x - 75; pair.Value.Root.style.top = p.y - 34;
-                pair.Value.Fill.style.width = new Length(100f * pair.Key.Troops / pair.Key.Stats.MaxTroops, LengthUnit.Percent);
+                pair.Value.Fill.style.width = new Length(100f * Troops(pair.Key) / pair.Key.Stats.MaxTroops, LengthUnit.Percent);
             }
             for (int i = floating.Count - 1; i >= 0; i--)
             {

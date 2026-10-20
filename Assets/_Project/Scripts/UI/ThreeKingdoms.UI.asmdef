@@ -1,6 +1,6 @@
 {
   "name": "ThreeKingdoms.UI",
   "rootNamespace": "ThreeKingdoms.UI",
-  "references": ["ThreeKingdoms.Gameplay", "ThreeKingdoms.Core"],
+  "references": ["ThreeKingdoms.Gameplay", "ThreeKingdoms.Core", "UnityEngine.UI"],
   "autoReferenced": true
 }
