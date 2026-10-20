@@ -89,4 +89,33 @@ public sealed class BattleTutorialTests
         Assert.IsFalse(c.ViewOf(target).TargetMarker.activeSelf);
         Assert.IsNotNull(c.QuitAction, "Start quits the battle scene");
     }
+
+    [UnityTest] public IEnumerator ThreeBattlesChainWithProgressCarriedOver()
+    {
+        DevPartyProgress.Carried = null;
+        yield return SceneManager.LoadSceneAsync("Battle_Tutorial01");
+        yield return null;
+        var c = Object.FindFirstObjectByType<BattleController>();
+        c.PlaybackSpeed = 4f; c.Fast = true;
+        yield return PlayToEnd(c);
+        Assert.IsTrue(c.HasNextBattle);
+        c.GoToNextBattle();
+        yield return null; yield return null;
+
+        c = Object.FindFirstObjectByType<BattleController>();
+        Assert.AreEqual("battle_2", c.Session.Encounter.Id);
+        Assert.That(c.Session.State.Enemies.Select(u => u.Id), Is.EqualTo(new[] { "zhang_liang", "yt_officer", "yt_officer", "yt_officer" }));
+        Assert.IsTrue(c.Session.State.Players.All(p => p.Level == 2), "levels carried from battle 1");
+        Assert.AreEqual(150, c.Progress.Copper);
+        Assert.IsTrue(c.EnemyViews.All(v => v.gameObject.activeSelf), "4 enemies shown");
+
+        yield return SceneManager.LoadSceneAsync("Battle_Tutorial03");
+        yield return null;
+        c = Object.FindFirstObjectByType<BattleController>();
+        Assert.AreEqual("battle_3", c.Session.Encounter.Id);
+        Assert.That(c.Session.State.Enemies.Select(u => u.Id), Is.EqualTo(new[] { "zhang_jiao", "zhang_bao", "zhang_liang" }));
+        Assert.IsTrue(c.Session.State.Players.All(p => p.Level == 3), "opened directly: battle 3 starts at level 3");
+        Assert.IsTrue(c.Session.State.Players.All(p => p.Skills.Count == 2), "level-3 skills available in battle 3");
+        Assert.IsFalse(string.IsNullOrEmpty(c.EnemyViews[0].name) || c.EnemyViews[0].name == "Yellow Turban 1", "Zhang Jiao has his own sprite");
+    }
 }

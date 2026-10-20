@@ -18,12 +18,17 @@ namespace ThreeKingdoms.Gameplay.Battle
         public int Rations { get; private set; }
         public int Copper { get; private set; }
 
-        public DevPartyProgress(BattleData data, int rations, int copper)
+        public DevPartyProgress(BattleData data, int rations, int copper, int startExp = 0, IEnumerable<string> clearedEncounters = null)
         {
             this.data = data;
             Rations = rations; Copper = copper;
-            foreach (var g in data.Party) exp[g.Id] = 0;
+            foreach (var g in data.Party) exp[g.Id] = startExp;
+            if (clearedEncounters != null) cleared.UnionWith(clearedEncounters);
         }
+
+        // Carried between the three battle scenes when played in order ("next battle"), so levels, copper and
+        // rations continue. Opening a later scene directly starts from that battle's expected state instead.
+        public static DevPartyProgress Carried;
 
         public int Exp(GeneralSpec g) => exp.TryGetValue(g.Id, out int e) ? e : 0;
         public int Level(GeneralSpec g) => BattleRules.LevelForExp(Exp(g), data.Config);

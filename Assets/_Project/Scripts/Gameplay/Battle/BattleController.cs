@@ -20,7 +20,9 @@ namespace ThreeKingdoms.Gameplay.Battle
         public string EncounterId = "battle_1";
         [Tooltip("Our units by line-up slot (Liu Bei, Guan Yu, Zhang Fei)")] public BattleUnitView[] PlayerViews = Array.Empty<BattleUnitView>();
         [Tooltip("Enemy units by slot; extra views are hidden")] public BattleUnitView[] EnemyViews = Array.Empty<BattleUnitView>();
-        [Tooltip("Starting rations and copper for the stand-in party (V1_SPEC §8)")] public int StartRations = 2, StartCopper = 120;
+        [Tooltip("Stand-in party when this scene is opened directly: battle 1 = 0 exp / 120 copper, battle 2 = 10 / 150, battle 3 = 30 / 200 (V1_SPEC §7–8)")]
+        public int StartRations = 2, StartCopper = 120, StartExp;
+        [Tooltip("Scene loaded by the HUD's next-battle button after a victory; empty after the last battle")] public string NextScene;
         [Tooltip("Gamepad Start quits the battle scene (keyboard Esc is the UI cancel here)")] public InputActionReference QuitAction;
         [Range(0.5f, 4f)] public float PlaybackSpeed = 1f;
         public bool Fast;
@@ -67,7 +69,8 @@ namespace ThreeKingdoms.Gameplay.Battle
         void Start()
         {
             Data = Catalog.ToRuntime();
-            Progress = new DevPartyProgress(Data, StartRations, StartCopper);
+            Progress = DevPartyProgress.Carried ?? new DevPartyProgress(Data, StartRations, StartCopper, StartExp);
+            DevPartyProgress.Carried = null;
             StartBattle();
         }
 
@@ -185,6 +188,15 @@ namespace ThreeKingdoms.Gameplay.Battle
                 }
             }
             yield return Wait(0.2f);
+        }
+
+        public bool HasNextBattle => !string.IsNullOrEmpty(NextScene) && Session?.Result?.Outcome == BattleOutcome.Victory;
+
+        public void GoToNextBattle()
+        {
+            if (!HasNextBattle) return;
+            DevPartyProgress.Carried = Progress;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(NextScene);
         }
 
         IEnumerator Wait(float seconds) { yield return new WaitForSeconds(seconds / Speed); }

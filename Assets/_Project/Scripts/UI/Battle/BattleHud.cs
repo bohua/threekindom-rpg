@@ -334,9 +334,14 @@ namespace ThreeKingdoms.UI.Battle
             }
             else lines.Add(BattleText.NoRewardAgain);
             foreach (var l in lines) { var t = Text(l, 22, Color.white); t.style.marginTop = 6; resultPanel.Add(t); }
-            var again = MenuButton(resultPanel, won ? BattleText.Again : BattleText.Retry, () => Controller.StartBattle(), 24, 220);
-            again.style.marginTop = 18;
-            again.Focus();
+            var buttons = new VisualElement(); buttons.style.flexDirection = FlexDirection.Row; buttons.style.marginTop = 18;
+            resultPanel.Add(buttons);
+            Button first = null;
+            if (Controller.HasNextBattle) first = MenuButton(buttons, BattleText.NextBattle, Controller.GoToNextBattle, 24, 220);
+            else if (won) { var t = Text(BattleText.AllBattlesDone, 22, Gold); t.style.marginTop = 10; resultPanel.Insert(resultPanel.childCount - 1, t); }
+            var again = MenuButton(buttons, won ? BattleText.Again : BattleText.Retry, () => Controller.StartBattle(), 24, 220);
+            again.style.marginLeft = first != null ? 16 : 0;
+            (first ?? again).Focus();
         }
 
         // ---------- events & per-frame ----------

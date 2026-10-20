@@ -26,14 +26,75 @@ namespace ThreeKingdoms.EditorTools
         static readonly Vector2[] PlayerFeet = { new Vector2(-5.4f, -0.4f), new Vector2(-3.9f, -1.8f), new Vector2(-5.6f, -3.2f) };
         static readonly Vector2[] EnemyFeet = { new Vector2(4.2f, -0.4f), new Vector2(5.8f, -1.3f), new Vector2(4.2f, -2.3f), new Vector2(5.8f, -3.2f) };
 
-        [MenuItem("JRPG/Build Battle Tutorial 01 (playable)")]
+        // One playable scene per V1 battle (V1_SPEC §2.2). Battles 2–3 reuse the market backdrop until an outside-the-walls
+        // backdrop is painted (V1_SPEC §2.3 allows two), so their location label stays generic. Enemy sprite keys follow INITIAL_SCENARIO_ART: generic
+        // Yellow Turban officers share one sheet; the three brothers each have their own.
+        sealed class BattleSpec
+        {
+            public string Path, EncounterId, Next, Location;
+            public string[] EnemySprites;
+            public int StartExp, StartCopper;
+        }
+
+        static readonly BattleSpec[] Battles =
+        {
+            new BattleSpec { Path = ScenePath, EncounterId = "battle_1", Next = "Battle_Tutorial02", Location = "涿郡 · 街市",
+                EnemySprites = new[] { "YellowTurban", "YellowTurban", "YellowTurban" }, StartExp = 0, StartCopper = 120 },
+            new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Tutorial02.unity", EncounterId = "battle_2", Next = "Battle_Tutorial03", Location = "涿郡",
+                EnemySprites = new[] { "ZhangLiang", "YellowTurban", "YellowTurban", "YellowTurban" }, StartExp = 10, StartCopper = 150 },
+            new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Tutorial03.unity", EncounterId = "battle_3", Next = "", Location = "涿郡",
+                EnemySprites = new[] { "ZhangJiao", "ZhangBao", "ZhangLiang" }, StartExp = 30, StartCopper = 200 },
+        };
+
+        // The three brothers' 3×3 sheets (INITIAL_SCENARIO_ART.md); the generic Yellow Turban atlas already exists.
+        static readonly (string Key, string Sheet, int FigureHeight)[] EnemySheets =
+        {
+            ("ZhangJiao", @"initial-scenario-enemy-art-20261018-v1\ZHANG_JIAO_HD2D_3X3.png", 45),
+            ("ZhangBao", @"initial-scenario-enemy-art-20261018-v1\ZHANG_BAO_HD2D_3X3.png", 45),
+            ("ZhangLiang", @"initial-scenario-enemy-art-20261018-v1\ZHANG_LIANG_HD2D_3X3.png", 45),
+        };
+
+        [MenuItem("JRPG/Build Battle Tutorials 01-03 (playable)")]
         public static void Build()
         {
             var catalog = BattleDataBuilder.Build();
             var icons = BuildTroopIcons();
             var panel = BuildPanelSettings();
-
+            ConvertEnemySheets();
             if (!File.Exists(BattleBackdropBaker.ScenePath)) BattleBackdropBaker.Build();
+            foreach (var battle in Battles) BuildScene(battle, catalog, icons, panel);
+
+            // Battle 1 first = what a player build opens without arguments (user 2026-10-19); 2 and 3 follow.
+            var paths = Battles.Select(b => b.Path).ToArray();
+            var scenes = EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path)).ToList();
+            scenes.InsertRange(0, paths.Select(p => new EditorBuildSettingsScene(p, true)));
+            EditorBuildSettings.scenes = scenes.ToArray();
+            AssetDatabase.SaveAssets();
+            Debug.Log("BATTLE_TUTORIAL_BUILT");
+        }
+
+        static void ConvertEnemySheets()
+        {
+            string root = System.Environment.GetEnvironmentVariable("HD2D_ART_SOURCE");
+            if (string.IsNullOrEmpty(root)) root = @"D:\BuildArtifacts\Codex\hd2d-jrpg";
+            foreach (var (key, sheet, figureHeight) in EnemySheets)
+            {
+                string source = Path.Combine(root, sheet);
+                if (!File.Exists(source))
+                {
+                    if (!File.Exists(HD2DSampleBuilder.AtlasPath(key))) throw new FileNotFoundException("Missing source sheet and atlas for " + key, source);
+                    continue;   // keep the committed atlas
+                }
+                Directory.CreateDirectory(Path.GetDirectoryName(HD2DSampleBuilder.AtlasPath(key)));
+                var settings = PixelSpriteConverter.Settings.Default;
+                settings.FrameSize = HD2DSampleBuilder.FrameSize;
+                settings.FigureHeight = figureHeight;
+                PixelSpriteConverter.ConvertSheet(source, HD2DSampleBuilder.AtlasPath(key), settings);
+            }
+        }
+
+        static void BuildScene(BattleSpec battle, Data.Battle.BattleCatalog catalog, Texture2D[] icons, PanelSettings panel)
+        {
             var scene = EditorSceneManager.OpenScene(BattleBackdropBaker.ScenePath, OpenSceneMode.Single);
             var units = GameObject.Find("Units").transform;
             var ringMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Battle/ZhuojunMarket/ActiveRing.mat");
@@ -50,11 +111,25 @@ namespace ThreeKingdoms.EditorTools
                 v.PortraitCrop = new RectInt(0, 0, 256, 256);
                 return v;
             }).ToArray();
-            var enemyViews = Enumerable.Range(1, 4).Select(i => View(units.Find("Yellow Turban " + i), EnemyFeet[i - 1], ringMat, targetMat, idle: 1, flipAttack: false)).ToArray();
+            var enemyViews = Enumerable.Range(1, 4).Select(i =>
+            {
+                var unit = units.Find("Yellow Turban " + i);
+                if (i <= battle.EnemySprites.Length && battle.EnemySprites[i - 1] != "YellowTurban")
+                {
+                    string key = battle.EnemySprites[i - 1];
+                    unit.name = key;
+                    var atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(HD2DSampleBuilder.AtlasPath(key));
+                    unit.GetComponentInChildren<SpriteFrameAnimator>(true).Target.sharedMaterial = HD2DSampleBuilder.PixelMaterial(key, atlas);
+                }
+                return View(unit, EnemyFeet[i - 1], ringMat, targetMat, idle: 1, flipAttack: false);
+            }).ToArray();
 
             var controller = new GameObject("Battle Controller").AddComponent<BattleController>();
             controller.Catalog = catalog;
-            controller.EncounterId = "battle_1";
+            controller.EncounterId = battle.EncounterId;
+            controller.NextScene = battle.Next;
+            controller.StartExp = battle.StartExp;
+            controller.StartCopper = battle.StartCopper;
             controller.PlayerViews = playerViews;
             controller.EnemyViews = enemyViews;
             controller.QuitAction = ProjectSetup.Action("Menu");
@@ -66,18 +141,13 @@ namespace ThreeKingdoms.EditorTools
             hud.Controller = controller;
             hud.BattleCamera = Camera.main;
             hud.TroopIcons = icons;
+            hud.LocationName = battle.Location;
 
             var es = new GameObject("EventSystem");
             es.AddComponent<EventSystem>();
             es.AddComponent<InputSystemUIInputModule>();
 
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            // First in the list = what a player build opens without arguments (user 2026-10-19: start in battle 1).
-            var scenes = EditorBuildSettings.scenes.Where(s => s.path != ScenePath).ToList();
-            scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
-            EditorBuildSettings.scenes = scenes.ToArray();
-            AssetDatabase.SaveAssets();
-            Debug.Log("BATTLE_TUTORIAL_BUILT");
+            EditorSceneManager.SaveScene(scene, battle.Path);
         }
 
         public static void BuildFromCommandLine()

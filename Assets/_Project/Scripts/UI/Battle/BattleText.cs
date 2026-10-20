@@ -42,6 +42,8 @@ namespace ThreeKingdoms.UI.Battle
         public const string Defeat = "战败";
         public const string Retry = "重新挑战";
         public const string Again = "再战一次";
+        public const string NextBattle = "下一战";
+        public const string AllBattlesDone = "三场黄巾教学战全部完成";
         public const string Fast = "加速";
         public static string Level(int level) => $"Lv.{level}";
         public static string Round(int round) => $"第{round}回合";
