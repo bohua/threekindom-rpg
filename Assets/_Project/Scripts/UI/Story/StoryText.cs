@@ -50,6 +50,7 @@ namespace ThreeKingdoms.UI.Story
             if (key.StartsWith("talk:")) return $"[确认] 与{Speaker(key.Substring(5))}交谈";
             if (key.StartsWith("gate:battle_")) return $"[确认] 出城迎敌：{BattleNames[key.Substring(5)]}";
             if (key == "shop") return "[确认] 与铁匠交谈（武器装备店）";
+            if (key == "save") return "[确认] 与酒馆掌柜交谈（存档）";
             if (key == "gate:locked") return "[确认] 南门";
             return "[确认] 南门";
         }

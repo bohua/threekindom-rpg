@@ -39,6 +39,31 @@ namespace ThreeKingdoms.Core.Economy
 
         public Inventory Clone() => new Inventory(this);
 
+        // A saved inventory (ADR-0004). Unknown item ids or impossible slots throw: the save is treated as damaged.
+        public static Inventory Restore(EconomyData data, int copper, int rations,
+            IEnumerable<(string itemId, int count)> bagItems, IEnumerable<(string generalId, string itemId)> wornItems)
+        {
+            if (copper < 0 || rations < 0) throw new ArgumentException("铜钱或军粮为负。");
+            var inv = new Inventory(data, copper, rations);
+            inv.worn.Clear();
+            foreach (var (id, count) in bagItems)
+            {
+                if (count <= 0) throw new ArgumentException($"背包数量无效：{id}");
+                var item = data.Find(id);
+                inv.bag[item.Id] = inv.Count(item) + count;
+            }
+            foreach (var (general, id) in wornItems)
+            {
+                var item = data.Find(id);
+                if (inv.worn.ContainsKey((general, item.Slot))) throw new ArgumentException($"{general} 的{item.Slot}槽重复。");
+                inv.worn[(general, item.Slot)] = item;
+            }
+            return inv;
+        }
+
+        // Every equipped item, for saving.
+        public IEnumerable<(string generalId, EquipmentSpec item)> WornItems => worn.Select(kv => (kv.Key.general, kv.Value));
+
         // ---------- queries ----------
 
         public int Count(EquipmentSpec item) => item != null && bag.TryGetValue(item.Id, out int n) ? n : 0;

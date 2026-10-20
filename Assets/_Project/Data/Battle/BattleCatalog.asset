@@ -16,6 +16,7 @@ MonoBehaviour:
   Troops: {fileID: 11400000, guid: 77bb05adb89ee774cac9d8ac1a1efd9d, type: 2}
   Ration: {fileID: 11400000, guid: 0cbd0d1db7b2bf84db5c5a9b0e5b572d, type: 2}
   Economy: {fileID: 11400000, guid: d208ec782f92f8e45a71ccbfedaca585, type: 2}
+  ManualSaveSlots: 3
   Party:
   - {fileID: 11400000, guid: 5e29858fabf05534791eb726680d1824, type: 2}
   - {fileID: 11400000, guid: 09555b2a125b4454982e3436fe6663ed, type: 2}

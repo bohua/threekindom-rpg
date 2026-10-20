@@ -45,7 +45,7 @@ namespace ThreeKingdoms.UI.Battle
         public const string NextBattle = "下一战";
         public const string ReturnToTown = "回到涿郡";
         public const string Continue = "继续";
-        public const string Restart = "重新开始";
+        public const string ToTitle = "返回标题";
         public const string TestVersionEnd = "测试版结束";
         public const string ThanksForPlaying = "感谢试玩";
         // Alpha 0.1 ending narration (story-events answer 5). 暂定 — final wording to be written.

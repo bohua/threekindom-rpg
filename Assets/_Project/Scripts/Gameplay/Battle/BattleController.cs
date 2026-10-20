@@ -74,7 +74,19 @@ namespace ThreeKingdoms.Gameplay.Battle
             Run = GameRun.Current ?? GameRun.ForBattle(Catalog, GameRun.BattleIndex(EncounterId), StartExp, StartCopper, StartRations);
             Data = Run.Data;
             Progress = Run.Progress;
+            AutoSave();
             StartBattle();
+        }
+
+        public bool AutoSaved { get; private set; }
+
+        // The rolling pre-battle save (save-system rule 2): the state the battle starts from, which is also what a
+        // retry restores (nothing is applied on defeat). Development runs never touch the player's saves.
+        void AutoSave()
+        {
+            if (Run.IsDevelopment || Run.Story.NextBattleId != EncounterId) return;
+            try { Run.SaveTo(ThreeKingdoms.Save.SaveSlots.Auto, EncounterId); AutoSaved = true; }
+            catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Debug.LogWarning("Autosave failed: " + e.Message); }
         }
 
         public BattleUnitView ViewOf(BattleUnit unit) => unit != null && views.TryGetValue(unit, out var v) ? v : null;
@@ -221,10 +233,11 @@ namespace ThreeKingdoms.Gameplay.Battle
             if (Run.Story.Ending == ThreeKingdoms.Core.Story.SequenceState.Playing) Run.Story.CompleteEnding();
         }
 
-        public void RestartGame()
+        // After the test-version end or a defeat (save-system answer 5): back to the title, where any save can be loaded.
+        public void ReturnToTitle()
         {
             GameRun.Clear();
-            UnityEngine.SceneManagement.SceneManager.LoadScene(GameRun.TownScene);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(GameRun.TitleScene);
         }
 
         IEnumerator Wait(float seconds) { yield return new WaitForSeconds(seconds / Speed); }

@@ -109,11 +109,22 @@ state_ownership:
     status: active
     owner_system: save-system
     adr: docs/architecture/adr-0002-battle-core.md
-    interface: "Format and persistence decided by ADR-0004; combat never writes out-of-battle state, so defeat discards the session"
+    interface: "Rolling auto slot written when a play-through battle starts (ADR-0004); combat never writes out-of-battle state, so defeat discards the session and retry starts from the same state"
     write_access: save-system-only
     referenced_by:
       - docs/architecture/adr-0002-battle-core.md
+      - docs/architecture/adr-0004-save-system.md
     added: 2026-10-19
+    revised: "2026-10-20"
+  - state: save_files
+    status: active
+    owner_system: save-system
+    adr: docs/architecture/adr-0004-save-system.md
+    interface: "SaveSlots (Save): manual_1..N and auto JSON files under persistentDataPath/saves; Write is temp-then-replace, Read never modifies a file; SaveCodec copies Core state, owners rebuild through StoryState.Restore / Inventory.Restore"
+    write_access: save-system-only
+    referenced_by:
+      - docs/architecture/adr-0004-save-system.md
+    added: 2026-10-20
     revised: ""
 
 # Example:
@@ -344,4 +355,10 @@ forbidden_patterns:
     description: "Copper, rations, bag counts and equipped slots change only through Inventory's methods; UI and scene scripts never keep their own copies."
     why: "Every trade rule (prices, sell-half, worn items, troop limits) lives in one testable place; the retry snapshot is one Clone."
     adr: docs/architecture/adr-0008-party-inventory-shop.md
+    added: 2026-10-20
+  - pattern: save_file_mutated_on_read
+    status: active
+    description: "Reading a save must never rewrite, repair or delete the file, even when it is damaged or from another format version."
+    why: "save-system GDD rule 7: report and keep the original file."
+    adr: docs/architecture/adr-0004-save-system.md
     added: 2026-10-20

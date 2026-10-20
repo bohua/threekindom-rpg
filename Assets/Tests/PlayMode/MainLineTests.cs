@@ -16,8 +16,21 @@ using UnityEngine.UIElements;
 // automatic peach-garden oath, the south gate, three battles with a return to town in between, and the ending.
 public sealed class MainLineTests
 {
-    [SetUp] public void Fresh() => GameRun.Clear();
-    [TearDown] public void Clean() => GameRun.Clear();
+    string saveDir;
+
+    [SetUp] public void Fresh()
+    {
+        GameRun.Clear();
+        saveDir = System.IO.Path.Combine(Application.temporaryCachePath, "main-line-" + System.Guid.NewGuid().ToString("N"));
+        GameRun.SaveDirectoryOverride = saveDir;   // never touch the player's saves
+    }
+
+    [TearDown] public void Clean()
+    {
+        GameRun.Clear();
+        GameRun.SaveDirectoryOverride = null;
+        if (System.IO.Directory.Exists(saveDir)) System.IO.Directory.Delete(saveDir, true);
+    }
 
     static void Teleport(PlayerMover p, Vector3 at)
     {
@@ -145,6 +158,11 @@ public sealed class MainLineTests
             float deadline = Time.realtimeSinceStartup + 20f;
             while (SceneManager.GetActiveScene().name == "Zhuojun_Town") { Assert.Less(Time.realtimeSinceStartup, deadline); yield return null; }
             Assert.AreEqual(GameRun.BattleScenes[battle - 1], SceneManager.GetActiveScene().name);
+            yield return null;
+            // The rolling pre-battle save is written as the battle starts (save-system rule 2), one slot overwritten.
+            Assert.AreEqual(ThreeKingdoms.Save.SaveReadStatus.Ok, GameRun.Current.Slots().Read(ThreeKingdoms.Save.SaveSlots.Auto, out var auto));
+            Assert.AreEqual($"battle_{battle}", auto.location);
+            Assert.AreEqual(battle - 1, auto.battlesDone);
             yield return FightAndWin();
             var b = Object.FindFirstObjectByType<BattleController>();
             Assert.AreEqual(battle, GameRun.Current.Story.BattlesDone);
@@ -175,7 +193,7 @@ public sealed class MainLineTests
                 }
                 Assert.AreEqual(SequenceState.Done, GameRun.Current.Story.Ending);
                 Assert.IsTrue(HudRoot().Query<Label>().ToList().Any(l => l.text == "测试版结束"));
-                Assert.IsNotNull(ButtonText("重新开始"));
+                Assert.IsNotNull(ButtonText("返回标题"));
             }
         }
         var levels = GameRun.Current.Data.Party.Select(g => GameRun.Current.Progress.Level(g)).ToArray();

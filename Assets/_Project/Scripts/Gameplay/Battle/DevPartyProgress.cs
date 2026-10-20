@@ -30,6 +30,15 @@ namespace ThreeKingdoms.Gameplay.Battle
         // Derived stats out of battle (shop preview, general page): the same formulas the battle uses.
         public UnitStats Stats(GeneralSpec g, StatBonus bonus) => BattleRules.Compute(g, Level(g), bonus, data.Troops, data.Config);
 
+        public IReadOnlyDictionary<string, int> ExpByGeneral => exp;
+
+        // A saved play-through (ADR-0004); unknown generals are ignored, missing ones keep 0.
+        public void RestoreExp(IEnumerable<(string generalId, int exp)> saved)
+        {
+            foreach (var (id, e) in saved)
+                if (exp.ContainsKey(id)) exp[id] = System.Math.Max(0, e);
+        }
+
         public int Exp(GeneralSpec g) => exp.TryGetValue(g.Id, out int e) ? e : 0;
         public int Level(GeneralSpec g) => BattleRules.LevelForExp(Exp(g), data.Config);
         // The roster is whoever the story says has joined (ADR-0006: StoryState join flags), in party order, with

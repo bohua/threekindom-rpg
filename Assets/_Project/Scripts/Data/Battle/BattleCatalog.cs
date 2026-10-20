@@ -17,6 +17,7 @@ namespace ThreeKingdoms.Data.Battle
         public ItemDefinition Ration;
         [Tooltip("装备目录、价格与初始装备（装备道具与商店）")]
         public Economy.EconomyCatalog Economy;
+        [Tooltip("涿郡手动存档位数量（save-system GDD：3）")] [Min(1)] public int ManualSaveSlots = 3;
         [Tooltip("我方可操作武将（首版：刘备、关羽、张飞）")]
         public GeneralDefinition[] Party = Array.Empty<GeneralDefinition>();
         public EncounterDefinition[] Encounters = Array.Empty<EncounterDefinition>();
@@ -67,7 +68,7 @@ namespace ThreeKingdoms.Data.Battle
             var economy = Economy ? Economy.ToRuntime() : new EconomyData(new EconomyConfig(120, 2, 10, 50), Array.Empty<EquipmentSpec>(), null);
             foreach (var id in economy.StartingGear.Keys)
                 if (party.All(g => g.Id != id)) throw new InvalidOperationException($"{name}: 初始装备的武将 {id} 不在我方名单中。");
-            return new BattleData(config, troops, new ItemSpec(Ration.Id, Ration.DisplayName, Ration.HealPercent), party, encounters, economy);
+            return new BattleData(config, troops, new ItemSpec(Ration.Id, Ration.DisplayName, Ration.HealPercent), party, encounters, economy, ManualSaveSlots);
         }
 
         void Unique(IEnumerable<string> ids, string kind)
@@ -85,11 +86,13 @@ namespace ThreeKingdoms.Data.Battle
         public IReadOnlyList<GeneralSpec> Party { get; }
         public IReadOnlyList<EncounterSpec> Encounters { get; }
         public EconomyData Economy { get; }
+        public int ManualSaveSlots { get; }
 
         public BattleData(BattleConfig config, TroopTable troops, ItemSpec ration, IReadOnlyList<GeneralSpec> party, IReadOnlyList<EncounterSpec> encounters,
-            EconomyData economy)
+            EconomyData economy, int manualSaveSlots = 3)
         {
             Config = config; Troops = troops; Ration = ration; Party = party; Encounters = encounters; Economy = economy;
+            ManualSaveSlots = manualSaveSlots;
         }
 
         public EncounterSpec Encounter(string id) =>

@@ -33,8 +33,10 @@ namespace ThreeKingdoms.Gameplay.Story
         public InputActionReference InteractAction, MenuAction;
         [Tooltip("N04 铁匠兼装备商：在此对话打开武器装备店（equipment-items GDD）")]
         public Transform Smith;
+        [Tooltip("N05 酒馆掌柜：在此对话打开手动存档（save-system GDD answer 1）")]
+        public Transform Innkeeper;
         [Header("Spots")]
-        public Transform NewGameSpot, ReturnSpot, OathEndSpot, GroveFocus;
+        public Transform NewGameSpot, ReturnSpot, OathEndSpot, GroveFocus, TavernSpot;
         public Transform[] GroveSpots = Array.Empty<Transform>();   // Liu, Guan, Zhang
         [Header("South gate passage")]
         public Vector3 GateCenter = new Vector3(0, 1, -36f);
@@ -49,8 +51,11 @@ namespace ThreeKingdoms.Gameplay.Story
         public string Prompt { get; private set; }
         public float Fade { get; private set; }
         public bool InGatePassage { get; private set; }
-        public bool ShopOpen { get; private set; }
-        public event Action ShopOpened, ShopClosed;
+        public const string ShopPanel = "shop", SavePanel = "save";
+        // The full-screen panel that owns input right now (shop or save), or null.
+        public string Panel { get; private set; }
+        public bool ShopOpen => Panel == ShopPanel;
+        public event Action<string> PanelOpened, PanelClosed;
 
         public event Action Changed;
 
@@ -92,7 +97,12 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             Run = GameRun.Current ?? GameRun.NewGame(Catalog);
             var story = Run.Story;
-            Place(Player.transform, Run.NextArrival == GameRun.Arrival.ReturnFromBattle ? ReturnSpot : NewGameSpot);
+            Place(Player.transform, Run.NextArrival switch
+            {
+                GameRun.Arrival.ReturnFromBattle => ReturnSpot,
+                GameRun.Arrival.AtTavern => TavernSpot ? TavernSpot : ReturnSpot,
+                _ => NewGameSpot,
+            });
             Run.NextArrival = GameRun.Arrival.ReturnFromBattle;   // any later town load is a return
             if (GuanYu) GuanYu.gameObject.SetActive(!story.GuanYuJoined);
             if (ZhangFei) ZhangFei.gameObject.SetActive(!story.ZhangFeiJoined);
@@ -106,7 +116,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         void Update()
         {
-            if (ShopOpen) return;   // the shop UI owns input until it closes
+            if (Panel != null) return;   // the shop / save UI owns input until it closes
             // The press that closed the shop (Cancel / confirm) must not quit or reopen it.
             if (Time.frameCount <= closedShopFrame + 1) return;
             if (MenuAction && MenuAction.action.WasPressedThisFrame()) Application.Quit();   // system menu stand-in (GDD answer 9)
@@ -128,7 +138,7 @@ namespace ThreeKingdoms.Gameplay.Story
             if (Prompt == "talk:" + StoryState.GuanYu) StartCoroutine(Meet(StoryState.GuanYu, GuanYu, GuanYuMeeting));
             else if (Prompt == "talk:" + StoryState.ZhangFei) StartCoroutine(Meet(StoryState.ZhangFei, ZhangFei, ZhangFeiMeeting));
             else if (Prompt == "gate:locked" || Prompt == "gate:done") StartCoroutine(Say(new[] { new DialogueLine("system", Prompt) }));
-            else if (Prompt == "shop") OpenShop();
+            else if (Prompt == ShopPanel || Prompt == SavePanel) OpenPanel(Prompt);
             else if (Prompt.StartsWith("gate:battle_"))
             {
                 // A general without a weapon may still fight; warn once per visit (equipment-items GDD answer 2).
@@ -142,28 +152,33 @@ namespace ThreeKingdoms.Gameplay.Story
             }
         }
 
-        public void OpenShop()
+        // Shop (N04) or manual save (N05): movement pauses while the panel is open (town-exploration GDD).
+        public void OpenPanel(string panel)
         {
             if (Busy) return;
             Busy = true;
-            ShopOpen = true;
+            Panel = panel;
             SetControl(false);
             Prompt = null;
-            ShopOpened?.Invoke();
+            PanelOpened?.Invoke(panel);
             Changed?.Invoke();
         }
 
-        public void CloseShop()
+        public void ClosePanel()
         {
-            if (!ShopOpen) return;
-            ShopOpen = false;
+            if (Panel == null) return;
+            string closed = Panel;
+            Panel = null;
             Busy = false;
             warnedNoWeapon = false;   // gear may have changed: warn again if still unarmed
             closedShopFrame = Time.frameCount;
             SetControl(true);
-            ShopClosed?.Invoke();
+            PanelClosed?.Invoke(closed);
             Changed?.Invoke();
         }
+
+        public void OpenShop() => OpenPanel(ShopPanel);
+        public void CloseShop() => ClosePanel();
 
         // ---------- prompts ----------
 
@@ -178,7 +193,8 @@ namespace ThreeKingdoms.Gameplay.Story
                     : reason == StoryState.ReasonAllDone ? "gate:done" : "gate:locked";
             else if (Near(GuanYu, p) && !story.GuanYuJoined) prompt = "talk:" + StoryState.GuanYu;
             else if (Near(ZhangFei, p) && !story.ZhangFeiJoined) prompt = "talk:" + StoryState.ZhangFei;
-            else if (Near(Smith, p)) prompt = "shop";
+            else if (Near(Smith, p)) prompt = ShopPanel;
+            else if (Near(Innkeeper, p)) prompt = SavePanel;
             if (prompt == Prompt) return;
             Prompt = prompt;
             Changed?.Invoke();

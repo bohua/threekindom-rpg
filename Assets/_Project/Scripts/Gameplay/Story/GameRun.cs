@@ -1,19 +1,25 @@
+using System;
+using System.IO;
 using ThreeKingdoms.Core.Economy;
 using ThreeKingdoms.Core.Story;
 using ThreeKingdoms.Data.Battle;
 using ThreeKingdoms.Gameplay.Battle;
+using ThreeKingdoms.Save;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace ThreeKingdoms.Gameplay.Story
 {
-    // One play-through held across scene loads (ADR-0006 §2): story flags plus the stand-in party progress. The save
-    // system (ADR-0004) will read and write these; until then they live only in memory.
+    // One play-through held across scene loads (ADR-0006 §2): story flags, progression and the inventory. The save
+    // system (ADR-0004) captures it into a SaveData and rebuilds it from one.
     public sealed class GameRun
     {
+        public const string TitleScene = "Title";
         public const string TownScene = "Zhuojun_Town";
         public static readonly string[] BattleScenes = { "Battle_Tutorial01", "Battle_Tutorial02", "Battle_Tutorial03" };
+        public const string Chapter = "第一章　涿郡起兵";
 
-        public enum Arrival { NewGame, ReturnFromBattle }
+        public enum Arrival { NewGame, ReturnFromBattle, AtTavern }
 
         public static GameRun Current { get; private set; }
 
@@ -24,7 +30,7 @@ namespace ThreeKingdoms.Gameplay.Story
         public Arrival NextArrival { get; set; } = Arrival.NewGame;
 
         // True for a run made by opening a battle scene directly (development); victory then offers the next battle
-        // instead of returning to town.
+        // instead of returning to town, and nothing is autosaved.
         public bool IsDevelopment { get; }
 
         GameRun(BattleData data, StoryState story, DevPartyProgress progress, bool development)
@@ -49,9 +55,9 @@ namespace ThreeKingdoms.Gameplay.Story
 
         // Static state survives "enter play mode" without a domain reload; start every run clean.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => Current = null;
+        static void ResetStatics() { Current = null; SaveDirectoryOverride = null; }
 
-        public static int BattleIndex(string encounterId) => System.Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3" }, encounterId);
+        public static int BattleIndex(string encounterId) => Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3" }, encounterId);
 
         public static string SceneFor(string encounterId) => encounterId switch
         {
@@ -60,5 +66,42 @@ namespace ThreeKingdoms.Gameplay.Story
             "battle_3" => BattleScenes[2],
             _ => null,
         };
+
+        // ---------- saving (ADR-0004) ----------
+
+        // Tests point this at a temporary folder so they never touch the player's saves.
+        public static string SaveDirectoryOverride { get; set; }
+
+        public static SaveSlots Slots(int manualCount) =>
+            new SaveSlots(SaveDirectoryOverride ?? Path.Combine(Application.persistentDataPath, "saves"), manualCount);
+
+        public SaveSlots Slots() => Slots(Data.ManualSaveSlots);
+
+        // location: SaveData.TownLocation (the tavern) or the battle id whose pre-battle state this is.
+        public SaveData Capture(string location)
+        {
+            var leader = Progress.Party.Count > 0 ? Progress.Party[0] : null;
+            return SaveCodec.Capture(Story, Progress.Inventory, Progress.ExpByGeneral, location, leader != null ? Progress.Level(leader) : 1,
+                Chapter, Application.version, DateTime.Now);
+        }
+
+        public void SaveTo(string slot, string location) => Slots().Write(slot, Capture(location));
+
+        // Rebuilds a play-through from a save and loads its scene: the tavern, or the saved battle's pre-battle state.
+        public static bool TryLoad(BattleCatalog catalog, SaveData save, out string error)
+        {
+            var data = catalog.ToRuntime();
+            if (!SaveCodec.TryRestore(save, data.Economy, out var restored, out error)) return false;
+            var progress = new DevPartyProgress(data, restored.Inventory);
+            progress.RestoreExp(restored.Exp);
+            Current = new GameRun(data, restored.Story, progress, false);
+            if (restored.Location == SaveData.TownLocation)
+            {
+                Current.NextArrival = Arrival.AtTavern;
+                SceneManager.LoadScene(TownScene);
+            }
+            else SceneManager.LoadScene(SceneFor(restored.Location));
+            return true;
+        }
     }
 }

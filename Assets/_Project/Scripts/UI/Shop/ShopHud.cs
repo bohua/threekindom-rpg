@@ -56,13 +56,13 @@ namespace ThreeKingdoms.UI.Shop
             root.style.flexGrow = 1;
             BuildLayout();
             root.RegisterCallback<NavigationCancelEvent>(e => { e.StopPropagation(); Back(); }, TrickleDown.TrickleDown);
-            if (Controller) { Controller.ShopOpened += Open; Controller.ShopClosed += Hide; }
+            if (Controller) { Controller.PanelOpened += OnOpened; Controller.PanelClosed += OnClosed; }
             Hide();
         }
 
         void OnDisable()
         {
-            if (Controller) { Controller.ShopOpened -= Open; Controller.ShopClosed -= Hide; }
+            if (Controller) { Controller.PanelOpened -= OnOpened; Controller.PanelClosed -= OnClosed; }
         }
 
         void BuildLayout()
@@ -96,6 +96,9 @@ namespace ThreeKingdoms.UI.Shop
         }
 
         // ---------- open / close ----------
+
+        void OnOpened(string panel) { if (panel == TownStoryController.ShopPanel) Open(); }
+        void OnClosed(string panel) { if (panel == TownStoryController.ShopPanel) Hide(); }
 
         void Open()
         {

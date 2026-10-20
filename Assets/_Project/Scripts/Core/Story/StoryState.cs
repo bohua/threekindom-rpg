@@ -33,6 +33,19 @@ namespace ThreeKingdoms.Core.Story
             BattlesDone = System.Math.Clamp(battlesDone, 0, BattleCount),
         };
 
+        // A saved play-through (ADR-0004). Sequences cut off mid-play come back as not started (rule 11).
+        public static StoryState Restore(bool guanYuJoined, bool zhangFeiJoined, SequenceState oath, int battlesDone, SequenceState ending)
+        {
+            var s = new StoryState
+            {
+                GuanYuJoined = guanYuJoined, ZhangFeiJoined = zhangFeiJoined, Oath = oath,
+                BattlesDone = System.Math.Clamp(battlesDone, 0, BattleCount), Ending = ending,
+            };
+            if (s.Oath != SequenceState.NotStarted && !(guanYuJoined && zhangFeiJoined)) throw new ArgumentException("桃园结义需要关张都已入队。");
+            s.ToSafeState();
+            return s;
+        }
+
         // Encounter IDs match the battle data (ADR-0002); null once all three are won.
         public string NextBattleId => BattlesDone < BattleCount ? $"battle_{BattlesDone + 1}" : null;
 

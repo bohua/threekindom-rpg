@@ -364,6 +364,8 @@ namespace ThreeKingdoms.UI.Battle
                 again.style.marginLeft = first != null ? 16 : 0;
                 first ??= again;
             }
+            if (!won && !Controller.Run.IsDevelopment)
+                MenuButton(buttons, BattleText.ToTitle, Controller.ReturnToTitle, 24, 220).style.marginLeft = 16;
             first.Focus();
         }
 
@@ -399,7 +401,7 @@ namespace ThreeKingdoms.UI.Battle
             Controller.FinishEnding();
             resultPanel.Add(Text(BattleText.TestVersionEnd, 48, Gold));
             var thanks = Text(BattleText.ThanksForPlaying, 24, Color.white); thanks.style.marginTop = 16; resultPanel.Add(thanks);
-            var restart = MenuButton(resultPanel, BattleText.Restart, Controller.RestartGame, 24, 220);
+            var restart = MenuButton(resultPanel, BattleText.ToTitle, Controller.ReturnToTitle, 24, 220);
             restart.style.marginTop = 40;
             restart.Focus();
         }

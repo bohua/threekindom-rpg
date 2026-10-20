@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/Title.unity
+    guid: 5670b46f5584a1c458e5ef2823db6202
+  - enabled: 1
     path: Assets/_Project/Scenes/Zhuojun_Town.unity
     guid: 7344f504e2edc9547b11cc243211d70f
   - enabled: 1

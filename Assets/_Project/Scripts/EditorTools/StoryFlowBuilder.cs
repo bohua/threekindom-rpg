@@ -2,6 +2,7 @@ using System.Linq;
 using Jrpg;
 using ThreeKingdoms.Data.Battle;
 using ThreeKingdoms.Gameplay.Story;
+using ThreeKingdoms.UI.Save;
 using ThreeKingdoms.UI.Shop;
 using ThreeKingdoms.UI.Story;
 using UnityEngine.EventSystems;
@@ -27,10 +28,11 @@ namespace ThreeKingdoms.EditorTools
             BattleSceneBuilder.Build();
             ZhuojunTownBuilder.Build();
             WireTown();
+            BuildTitle();
 
             string town = ZhuojunTownBuilder.ScenePath;
             var battles = new[] { BattleSceneBuilder.ScenePath, "Assets/_Project/Scenes/Battle_Tutorial02.unity", "Assets/_Project/Scenes/Battle_Tutorial03.unity" };
-            var first = new[] { town }.Concat(battles).ToArray();
+            var first = new[] { TitlePath, town }.Concat(battles).ToArray();
             var scenes = EditorBuildSettings.scenes.Where(s => !first.Contains(s.path)).ToList();
             scenes.InsertRange(0, first.Select(p => new EditorBuildSettingsScene(p, true)));
             EditorBuildSettings.scenes = scenes.ToArray();
@@ -56,6 +58,28 @@ namespace ThreeKingdoms.EditorTools
             return f;
         }
 
+        public const string TitlePath = "Assets/_Project/Scenes/Title.unity";
+
+        // Title screen (game-ui GDD): new game, load, quit. A plain dark backdrop until key art exists.
+        static void BuildTitle()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var cam = new GameObject("Main Camera") { tag = "MainCamera" }.AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.04f, 0.05f, 0.08f);
+            var go = new GameObject("Title");
+            var controller = go.AddComponent<TitleController>();
+            controller.Catalog = AssetDatabase.LoadAssetAtPath<BattleCatalog>(BattleDataBuilder.CatalogPath);
+            var doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);
+            if (!doc.panelSettings) throw new System.InvalidOperationException("Title has no PanelSettings");
+            go.AddComponent<TitleHud>().Controller = controller;
+            var es = new GameObject("EventSystem");
+            es.AddComponent<EventSystem>();
+            es.AddComponent<InputSystemUIInputModule>();
+            EditorSceneManager.SaveScene(scene, TitlePath);
+        }
+
         static void WireTown()
         {
             var scene = EditorSceneManager.OpenScene(ZhuojunTownBuilder.ScenePath, OpenSceneMode.Single);
@@ -74,11 +98,14 @@ namespace ThreeKingdoms.EditorTools
             c.ZhangFeiFollower = Follower("Zhang Fei (follower)", "ZhangFei");
             c.Smith = GameObject.Find("N04 铁匠兼装备商")?.transform;
             if (!c.Smith) throw new System.InvalidOperationException("Town has no N04 smith post");
+            c.Innkeeper = GameObject.Find("N05 酒馆掌柜")?.transform;
+            if (!c.Innkeeper) throw new System.InvalidOperationException("Town has no N05 innkeeper post");
             c.InteractAction = ProjectSetup.Action("Interact");
             c.MenuAction = ProjectSetup.Action("Menu");
             c.NewGameSpot = Spot("New game (outside the south gate)", ZhuojunTownBuilder.PlayerStart);
             c.ReturnSpot = Spot("Return from battle (inside the south gate)", new Vector3(0, 0, -29f));      // GDD answer 3
             c.OathEndSpot = Spot("After the oath (inside the west gate)", new Vector3(-43.5f, 0, 0f));      // GDD answer 7
+            c.TavernSpot = Spot("Loaded save (before the tavern keeper)", c.Innkeeper.position + new Vector3(0, 0, -1.4f));
             c.GroveFocus = Spot("Peach grove focus", new Vector3(-66f, 0, 0f));
             c.GroveSpots = new[]
             {
@@ -99,6 +126,11 @@ namespace ThreeKingdoms.EditorTools
             shopDoc.panelSettings = doc.panelSettings;
             shopDoc.sortingOrder = 10;
             shopGo.AddComponent<ShopHud>().Controller = c;
+            var saveGo = new GameObject("Save HUD");
+            var saveDoc = saveGo.AddComponent<UIDocument>();
+            saveDoc.panelSettings = doc.panelSettings;
+            saveDoc.sortingOrder = 10;
+            saveGo.AddComponent<SaveHud>().Controller = c;
             if (!Object.FindFirstObjectByType<EventSystem>())
             {
                 var es = new GameObject("EventSystem");
