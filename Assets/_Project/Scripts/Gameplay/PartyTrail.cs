@@ -8,7 +8,7 @@ namespace ThreeKingdoms.Gameplay
     public sealed class PartyTrail : MonoBehaviour
     {
         [Tooltip("Metres between recorded points")] public float Spacing = 0.12f;
-        [Tooltip("Trail length kept, in metres")] public float Length = 6f;
+        [Tooltip("Trail length kept, in metres")] public float Length = 12f;
 
         readonly List<Vector3> points = new List<Vector3>();
 

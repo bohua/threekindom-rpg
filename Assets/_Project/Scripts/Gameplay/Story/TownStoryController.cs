@@ -255,14 +255,13 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             var trail = Player ? Player.GetComponent<PartyTrail>() : null;
             if (trail) trail.Reset(behind);
-            float d = 0f;
+            int slot = 0;
             void Show(PartyFollower f, bool joined)
             {
                 if (!f) return;
                 f.gameObject.SetActive(joined);
                 if (!joined) return;
-                d += 1.2f;
-                f.Distance = d;
+                f.Slot = ++slot;
                 f.Trail = trail;
                 f.Snap();
             }

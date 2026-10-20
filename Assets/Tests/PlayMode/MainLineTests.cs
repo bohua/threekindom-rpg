@@ -110,17 +110,29 @@ public sealed class MainLineTests
         Assert.IsNull(zf.GetComponent<Collider>(), "a follower never blocks the player");
         var zfWalk = zf.GetComponent<ThreeKingdoms.Gameplay.PixelWalkFrames>();
         Assert.IsTrue(zfWalk.HasWalkCycle);
+        // It runs after Liu Bei: the gap stretches when he sets off, then closes in after he stops (user 2026-10-20).
         bool followerWalked = false;
-        for (int i = 0; i < 20; i++) { c.Player.Move(Vector2.right, 0.02f); yield return null; followerWalked |= zfWalk.Walking; }
+        float widest = 0f;
+        for (float t = 0f; t < 0.4f; t += Time.deltaTime)
+        {
+            c.Player.Move(Vector2.right, Time.deltaTime);
+            yield return null;
+            followerWalked |= zfWalk.Walking;
+            widest = Mathf.Max(widest, zf.Distance);
+        }
         Assert.IsTrue(followerWalked, "the follower plays the walk cycle");
+        Assert.Greater(widest, zf.StopGap + 0.4f, "the line stretches as Liu Bei sets off");
+        for (float t = 0f; t < 2f && (zf.Speed > 0.01f || zfWalk.Walking); t += Time.deltaTime) yield return null;
+        Assert.AreEqual(zf.StopGap, zf.Distance, 0.3f, "and closes in to the resting gap after he stops");
         Vector3 gap = c.Player.transform.position - zf.transform.position; gap.y = 0f;
-        Assert.That(gap.magnitude, Is.InRange(0.9f, 1.3f), "about 1.2 m behind");
         Assert.Greater(gap.x, 0.5f, "behind, on the side Liu Bei came from");
         yield return Talk(c, c.GuanYu.position + new Vector3(0, 0, -1.2f), "talk:guan_yu");
         Assert.AreEqual(SequenceState.Done, story.Oath);
         Assert.AreEqual(StoryPhase.LeaveTown, story.Phase);
         Assert.Less(Vector3.Distance(c.Player.transform.position, c.OathEndSpot.position), 0.5f, "control resumes inside the west gate");
         Assert.IsTrue(c.GuanYuFollower.gameObject.activeSelf && c.ZhangFeiFollower.gameObject.activeSelf, "both brothers follow after the oath");
+        Assert.AreEqual(1, c.GuanYuFollower.Slot, "Guan Yu walks right behind Liu Bei");
+        Assert.AreEqual(2, c.ZhangFeiFollower.Slot, "Zhang Fei behind him");
         Assert.Less(c.GuanYuFollower.Distance, c.ZhangFeiFollower.Distance, "one behind the other");
 
         for (int battle = 1; battle <= 3; battle++)
