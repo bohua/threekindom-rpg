@@ -95,6 +95,16 @@ state_ownership:
       - docs/architecture/adr-0006-scene-flow-story-flags.md
     added: 2026-10-20
     revised: ""
+  - state: party_inventory
+    status: active
+    owner_system: equipment-items
+    adr: docs/architecture/adr-0008-party-inventory-shop.md
+    interface: "Inventory (Core.Economy): Copper, Rations, Bag, Worn(general, slot), Bonus(general); written only through Buy/Sell/BuyRation/SellRation/Equip/Unequip, and by the battle result owner through SpendRations/AddCopper; Clone is the retry snapshot"
+    write_access: equipment-items-only
+    referenced_by:
+      - docs/architecture/adr-0008-party-inventory-shop.md
+    added: 2026-10-20
+    revised: ""
   - state: pre_battle_snapshot
     status: active
     owner_system: save-system
@@ -328,4 +338,10 @@ forbidden_patterns:
     description: "ThreeKingdoms.Core must not read the static GameRun; only Gameplay and App layers may."
     why: "Core stays engine- and scene-free; the static is a runtime container until the save system (ADR-0004)."
     adr: docs/architecture/adr-0006-scene-flow-story-flags.md
+    added: 2026-10-20
+  - pattern: inventory_written_outside_owner
+    status: active
+    description: "Copper, rations, bag counts and equipped slots change only through Inventory's methods; UI and scene scripts never keep their own copies."
+    why: "Every trade rule (prices, sell-half, worn items, troop limits) lives in one testable place; the retry snapshot is one Clone."
+    adr: docs/architecture/adr-0008-party-inventory-shop.md
     added: 2026-10-20

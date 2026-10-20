@@ -33,7 +33,11 @@ namespace ThreeKingdoms.UI.Story
         };
 
         public static string Speaker(string key) => key != null && Speakers.TryGetValue(key, out var s) ? s : "";
-        public static string Line(string key) => key != null && Lines.TryGetValue(key, out var s) ? s : key;
+        public static string Line(string key)
+        {
+            if (key != null && key.StartsWith("warn:no_weapon:")) return $"{key.Substring(15)}没有装备武器，仍可出战。再次在南门确认即出城。";
+            return key != null && Lines.TryGetValue(key, out var s) ? s : key;
+        }
 
         static readonly Dictionary<string, string> BattleNames = new Dictionary<string, string>
         {
@@ -45,6 +49,7 @@ namespace ThreeKingdoms.UI.Story
             if (key == null) return "";
             if (key.StartsWith("talk:")) return $"[确认] 与{Speaker(key.Substring(5))}交谈";
             if (key.StartsWith("gate:battle_")) return $"[确认] 出城迎敌：{BattleNames[key.Substring(5)]}";
+            if (key == "shop") return "[确认] 与铁匠交谈（武器装备店）";
             if (key == "gate:locked") return "[确认] 南门";
             return "[确认] 南门";
         }

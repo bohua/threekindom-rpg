@@ -1,3 +1,4 @@
+using ThreeKingdoms.Core.Economy;
 using ThreeKingdoms.Core.Story;
 using ThreeKingdoms.Data.Battle;
 using ThreeKingdoms.Gameplay.Battle;
@@ -34,14 +35,14 @@ namespace ThreeKingdoms.Gameplay.Story
         public static GameRun NewGame(BattleCatalog catalog)
         {
             var data = catalog.ToRuntime();
-            return Current = new GameRun(data, new StoryState(), new DevPartyProgress(data, rations: 2, copper: 120), false);   // V1_SPEC §8
+            return Current = new GameRun(data, new StoryState(), new DevPartyProgress(data, new Inventory(data.Economy)), false);   // 120 copper, 2 rations, starting gear (V1_SPEC §8)
         }
 
         // A battle scene opened on its own: the expected state before that battle (lv 1/2/3, copper 120/150/200).
         public static GameRun ForBattle(BattleCatalog catalog, int battleIndex, int startExp, int startCopper, int rations)
         {
             var data = catalog.ToRuntime();
-            return Current = new GameRun(data, StoryState.AtBattle(battleIndex), new DevPartyProgress(data, rations, startCopper, startExp), true);
+            return Current = new GameRun(data, StoryState.AtBattle(battleIndex), new DevPartyProgress(data, new Inventory(data.Economy, startCopper, rations), startExp), true);
         }
 
         public static void Clear() => Current = null;

@@ -2,7 +2,10 @@ using System.Linq;
 using Jrpg;
 using ThreeKingdoms.Data.Battle;
 using ThreeKingdoms.Gameplay.Story;
+using ThreeKingdoms.UI.Shop;
 using ThreeKingdoms.UI.Story;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -69,6 +72,8 @@ namespace ThreeKingdoms.EditorTools
             c.Player.gameObject.AddComponent<ThreeKingdoms.Gameplay.PartyTrail>();
             c.GuanYuFollower = Follower("Guan Yu (follower)", "GuanYu");
             c.ZhangFeiFollower = Follower("Zhang Fei (follower)", "ZhangFei");
+            c.Smith = GameObject.Find("N04 铁匠兼装备商")?.transform;
+            if (!c.Smith) throw new System.InvalidOperationException("Town has no N04 smith post");
             c.InteractAction = ProjectSetup.Action("Interact");
             c.MenuAction = ProjectSetup.Action("Menu");
             c.NewGameSpot = Spot("New game (outside the south gate)", ZhuojunTownBuilder.PlayerStart);
@@ -87,6 +92,19 @@ namespace ThreeKingdoms.EditorTools
             doc.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);
             if (!doc.panelSettings) throw new System.InvalidOperationException("Town HUD has no PanelSettings");
             hudGo.AddComponent<TownHud>().Controller = c;
+
+            // The shop sits above the town HUD; menus need an EventSystem for gamepad and keyboard navigation.
+            var shopGo = new GameObject("Shop HUD");
+            var shopDoc = shopGo.AddComponent<UIDocument>();
+            shopDoc.panelSettings = doc.panelSettings;
+            shopDoc.sortingOrder = 10;
+            shopGo.AddComponent<ShopHud>().Controller = c;
+            if (!Object.FindFirstObjectByType<EventSystem>())
+            {
+                var es = new GameObject("EventSystem");
+                es.AddComponent<EventSystem>();
+                es.AddComponent<InputSystemUIInputModule>();
+            }
 
             EditorSceneManager.SaveScene(scene);
         }

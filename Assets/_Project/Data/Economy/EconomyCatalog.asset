@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4efee1b275c653344856a9763e962f7c, type: 3}
+  m_Name: EconomyCatalog
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Economy.EconomyCatalog
+  StartCopper: 120
+  StartRations: 2
+  RationPrice: 10
+  SellPercent: 50
+  Equipment:
+  - {fileID: 11400000, guid: 9a6e5686c93cab447ac14416b1d54c17, type: 2}
+  - {fileID: 11400000, guid: f89d11364cc9d60458663417281b54a6, type: 2}
+  - {fileID: 11400000, guid: cc40c96e6c1947b4aaf6f689d6484f8a, type: 2}
+  - {fileID: 11400000, guid: afb3f5b0e9b02f44d9ff188acf154ab8, type: 2}
+  - {fileID: 11400000, guid: 8e153501f54dbf04ab977fff4bf4d514, type: 2}
+  - {fileID: 11400000, guid: 07615197fdaddb14f91627014e0d610c, type: 2}
+  - {fileID: 11400000, guid: 02e58fe46155d444183e51ccfa4b2017, type: 2}
+  - {fileID: 11400000, guid: 23239042cdd095344923adf0794153de, type: 2}
+  - {fileID: 11400000, guid: 3207c6b3f5bff194c871666f495d1403, type: 2}
+  - {fileID: 11400000, guid: 67ed65bbe0ba9fb409a75a2686a33651, type: 2}
+  - {fileID: 11400000, guid: 72eedcc359fa6de4a956cff1fe138781, type: 2}
+  - {fileID: 11400000, guid: b94a6e852d81fbf47aa682efc32588f7, type: 2}
+  StartingGear:
+  - General: {fileID: 11400000, guid: 5e29858fabf05534791eb726680d1824, type: 2}
+    Items:
+    - {fileID: 11400000, guid: cc40c96e6c1947b4aaf6f689d6484f8a, type: 2}
+    - {fileID: 11400000, guid: afb3f5b0e9b02f44d9ff188acf154ab8, type: 2}
+  - General: {fileID: 11400000, guid: 09555b2a125b4454982e3436fe6663ed, type: 2}
+    Items:
+    - {fileID: 11400000, guid: f89d11364cc9d60458663417281b54a6, type: 2}
+    - {fileID: 11400000, guid: afb3f5b0e9b02f44d9ff188acf154ab8, type: 2}
+  - General: {fileID: 11400000, guid: 01247940dcbcb48498212dd691b3785d, type: 2}
+    Items:
+    - {fileID: 11400000, guid: 9a6e5686c93cab447ac14416b1d54c17, type: 2}
+    - {fileID: 11400000, guid: afb3f5b0e9b02f44d9ff188acf154ab8, type: 2}

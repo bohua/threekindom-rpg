@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Jrpg;
+using ThreeKingdoms.Core.Economy;
 using ThreeKingdoms.Core.Story;
 using ThreeKingdoms.Data.Battle;
 using UnityEngine;
@@ -29,6 +31,8 @@ namespace ThreeKingdoms.Gameplay.Story
         [Tooltip("Companions walking behind Liu Bei once they have joined (user 2026-10-20)")]
         public PartyFollower GuanYuFollower, ZhangFeiFollower;
         public InputActionReference InteractAction, MenuAction;
+        [Tooltip("N04 铁匠兼装备商：在此对话打开武器装备店（equipment-items GDD）")]
+        public Transform Smith;
         [Header("Spots")]
         public Transform NewGameSpot, ReturnSpot, OathEndSpot, GroveFocus;
         public Transform[] GroveSpots = Array.Empty<Transform>();   // Liu, Guan, Zhang
@@ -45,11 +49,15 @@ namespace ThreeKingdoms.Gameplay.Story
         public string Prompt { get; private set; }
         public float Fade { get; private set; }
         public bool InGatePassage { get; private set; }
+        public bool ShopOpen { get; private set; }
+        public event Action ShopOpened, ShopClosed;
 
         public event Action Changed;
 
         bool advance;
         string pendingGateScene;
+        int closedShopFrame = -1;
+        bool warnedNoWeapon;
 
         static readonly DialogueLine[] GuanYuMeeting =
         {
@@ -98,6 +106,9 @@ namespace ThreeKingdoms.Gameplay.Story
 
         void Update()
         {
+            if (ShopOpen) return;   // the shop UI owns input until it closes
+            // The press that closed the shop (Cancel / confirm) must not quit or reopen it.
+            if (Time.frameCount <= closedShopFrame + 1) return;
             if (MenuAction && MenuAction.action.WasPressedThisFrame()) Application.Quit();   // system menu stand-in (GDD answer 9)
             bool pressed = InteractAction && InteractAction.action.WasPressedThisFrame();
             if (Busy) { if (pressed) Advance(); return; }
@@ -117,7 +128,41 @@ namespace ThreeKingdoms.Gameplay.Story
             if (Prompt == "talk:" + StoryState.GuanYu) StartCoroutine(Meet(StoryState.GuanYu, GuanYu, GuanYuMeeting));
             else if (Prompt == "talk:" + StoryState.ZhangFei) StartCoroutine(Meet(StoryState.ZhangFei, ZhangFei, ZhangFeiMeeting));
             else if (Prompt == "gate:locked" || Prompt == "gate:done") StartCoroutine(Say(new[] { new DialogueLine("system", Prompt) }));
-            else if (Prompt.StartsWith("gate:battle_")) StartCoroutine(LeaveTown());
+            else if (Prompt == "shop") OpenShop();
+            else if (Prompt.StartsWith("gate:battle_"))
+            {
+                // A general without a weapon may still fight; warn once per visit (equipment-items GDD answer 2).
+                var bare = Run.Data.Party.Where(g => Run.Story.HasJoined(g.Id) && Run.Progress.Inventory.Worn(g.Id, EquipSlot.Weapon) == null).ToList();
+                if (bare.Count > 0 && !warnedNoWeapon)
+                {
+                    warnedNoWeapon = true;
+                    StartCoroutine(Say(new[] { new DialogueLine("system", "warn:no_weapon:" + string.Join("、", bare.Select(g => g.DisplayName))) }));
+                }
+                else StartCoroutine(LeaveTown());
+            }
+        }
+
+        public void OpenShop()
+        {
+            if (Busy) return;
+            Busy = true;
+            ShopOpen = true;
+            SetControl(false);
+            Prompt = null;
+            ShopOpened?.Invoke();
+            Changed?.Invoke();
+        }
+
+        public void CloseShop()
+        {
+            if (!ShopOpen) return;
+            ShopOpen = false;
+            Busy = false;
+            warnedNoWeapon = false;   // gear may have changed: warn again if still unarmed
+            closedShopFrame = Time.frameCount;
+            SetControl(true);
+            ShopClosed?.Invoke();
+            Changed?.Invoke();
         }
 
         // ---------- prompts ----------
@@ -133,6 +178,7 @@ namespace ThreeKingdoms.Gameplay.Story
                     : reason == StoryState.ReasonAllDone ? "gate:done" : "gate:locked";
             else if (Near(GuanYu, p) && !story.GuanYuJoined) prompt = "talk:" + StoryState.GuanYu;
             else if (Near(ZhangFei, p) && !story.ZhangFeiJoined) prompt = "talk:" + StoryState.ZhangFei;
+            else if (Near(Smith, p)) prompt = "shop";
             if (prompt == Prompt) return;
             Prompt = prompt;
             Changed?.Invoke();
