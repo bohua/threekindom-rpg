@@ -87,7 +87,7 @@ public sealed class ZhuojunTownTests
         yield return null;
         var mover = Object.FindFirstObjectByType<PlayerMover>();
         var walk = mover.GetComponent<PixelWalkFrames>();
-        Assert.AreEqual(7f, mover.Speed, 0.01f);
+        Assert.AreEqual(9f, mover.Speed, 0.01f);
         Assert.IsTrue(walk.HasWalkCycle, "Liu Bei's atlas carries the 16 walk frames");
         float z0 = mover.transform.position.z;
         var seen = new System.Collections.Generic.HashSet<int>();
@@ -97,7 +97,7 @@ public sealed class ZhuojunTownTests
             yield return null;
             if (walk.Walking) seen.Add(walk.CurrentFrame);
         }
-        Assert.Greater(mover.transform.position.z - z0, 6f, "about 7 m in a second");
+        Assert.Greater(mover.transform.position.z - z0, 8f, "about 9 m in a second");
         int upRow = PixelWalkFrames.WalkStart + 3 * PixelWalkFrames.WalkFramesPerRow;
         Assert.That(seen, Is.EquivalentTo(new[] { upRow, upRow + 1, upRow + 2, upRow + 3 }), "all four back-view frames play");
         Assert.IsFalse(walk.Mirrored, "the drawn cycle needs no mirroring");

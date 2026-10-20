@@ -103,10 +103,25 @@ public sealed class MainLineTests
         yield return Talk(c, c.ZhangFei.position + new Vector3(0, 0, -1.2f), "talk:zhang_fei");
         Assert.IsTrue(story.ZhangFeiJoined);
         Assert.IsFalse(c.ZhangFei.gameObject.activeSelf, "a joined companion leaves their post");
+        // …and walks behind Liu Bei from then on (user 2026-10-20).
+        var zf = c.ZhangFeiFollower;
+        Assert.IsTrue(zf.gameObject.activeSelf, "Zhang Fei follows once he joins");
+        Assert.IsFalse(c.GuanYuFollower.gameObject.activeSelf, "Guan Yu does not follow before joining");
+        Assert.IsNull(zf.GetComponent<Collider>(), "a follower never blocks the player");
+        var zfWalk = zf.GetComponent<ThreeKingdoms.Gameplay.PixelWalkFrames>();
+        Assert.IsTrue(zfWalk.HasWalkCycle);
+        bool followerWalked = false;
+        for (int i = 0; i < 20; i++) { c.Player.Move(Vector2.right, 0.02f); yield return null; followerWalked |= zfWalk.Walking; }
+        Assert.IsTrue(followerWalked, "the follower plays the walk cycle");
+        Vector3 gap = c.Player.transform.position - zf.transform.position; gap.y = 0f;
+        Assert.That(gap.magnitude, Is.InRange(0.9f, 1.3f), "about 1.2 m behind");
+        Assert.Greater(gap.x, 0.5f, "behind, on the side Liu Bei came from");
         yield return Talk(c, c.GuanYu.position + new Vector3(0, 0, -1.2f), "talk:guan_yu");
         Assert.AreEqual(SequenceState.Done, story.Oath);
         Assert.AreEqual(StoryPhase.LeaveTown, story.Phase);
         Assert.Less(Vector3.Distance(c.Player.transform.position, c.OathEndSpot.position), 0.5f, "control resumes inside the west gate");
+        Assert.IsTrue(c.GuanYuFollower.gameObject.activeSelf && c.ZhangFeiFollower.gameObject.activeSelf, "both brothers follow after the oath");
+        Assert.Less(c.GuanYuFollower.Distance, c.ZhangFeiFollower.Distance, "one behind the other");
 
         for (int battle = 1; battle <= 3; battle++)
         {
@@ -134,6 +149,7 @@ public sealed class MainLineTests
                 c = Object.FindFirstObjectByType<TownStoryController>();
                 Assert.Less(Vector3.Distance(c.Player.transform.position, c.ReturnSpot.position), 0.5f, "back inside the south gate");
                 Assert.IsFalse(c.GuanYu.gameObject.activeSelf || c.ZhangFei.gameObject.activeSelf, "companions stay in the party");
+                Assert.IsTrue(c.GuanYuFollower.gameObject.activeSelf && c.ZhangFeiFollower.gameObject.activeSelf, "and follow Liu Bei back in town");
             }
             else
             {

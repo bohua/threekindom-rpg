@@ -26,6 +26,8 @@ namespace ThreeKingdoms.Gameplay.Story
         public PlayerMover Player;
         public FollowCamera Camera;
         public Transform GuanYu, ZhangFei;
+        [Tooltip("Companions walking behind Liu Bei once they have joined (user 2026-10-20)")]
+        public PartyFollower GuanYuFollower, ZhangFeiFollower;
         public InputActionReference InteractAction, MenuAction;
         [Header("Spots")]
         public Transform NewGameSpot, ReturnSpot, OathEndSpot, GroveFocus;
@@ -86,6 +88,7 @@ namespace ThreeKingdoms.Gameplay.Story
             Run.NextArrival = GameRun.Arrival.ReturnFromBattle;   // any later town load is a return
             if (GuanYu) GuanYu.gameObject.SetActive(!story.GuanYuJoined);
             if (ZhangFei) ZhangFei.gameObject.SetActive(!story.ZhangFeiJoined);
+            ShowFollowers(Vector3.back);   // arriving through the south gate: the party trails into the passage
             SetControl(true);
             // An oath interrupted by a reload replays from the start (GDD rule 11).
             story.ToSafeState();
@@ -170,6 +173,8 @@ namespace ThreeKingdoms.Gameplay.Story
             // Joined only once the dialogue has ended (GDD edge case); the companion leaves their post.
             bool startOath = Run.Story.Join(id);
             if (npc) npc.gameObject.SetActive(false);
+            // The new companion steps in from where they stood.
+            ShowFollowers(npc ? npc.position - Player.transform.position : Vector3.back);
             Changed?.Invoke();
             if (startOath) yield return PlayOath();
         }
@@ -186,6 +191,7 @@ namespace ThreeKingdoms.Gameplay.Story
             try
             {
                 yield return FadeTo(1f);
+                SetFollowers(false);
                 Place(Player.transform, GroveSpots.Length > 0 ? GroveSpots[0] : GroveFocus);
                 if (GuanYu && GroveSpots.Length > 1) { Place(GuanYu, GroveSpots[1]); GuanYu.gameObject.SetActive(true); }
                 if (ZhangFei && GroveSpots.Length > 2) { Place(ZhangFei, GroveSpots[2]); ZhangFei.gameObject.SetActive(true); }
@@ -204,6 +210,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 if (ZhangFei) ZhangFei.gameObject.SetActive(false);
                 Place(Player.transform, OathEndSpot);
                 if (Camera) Camera.Target = Player.transform;
+                ShowFollowers(Vector3.left);   // control resumes inside the west gate, the brothers behind
                 Run.Story.CompleteOath();
                 yield return FadeTo(0f);
             }
@@ -241,6 +248,32 @@ namespace ThreeKingdoms.Gameplay.Story
             }
             Fade = target;
             Changed?.Invoke();
+        }
+
+        // Joined companions follow in join order (V1_SPEC §3), Guan Yu ahead of Zhang Fei when both are in.
+        void ShowFollowers(Vector3 behind)
+        {
+            var trail = Player ? Player.GetComponent<PartyTrail>() : null;
+            if (trail) trail.Reset(behind);
+            float d = 0f;
+            void Show(PartyFollower f, bool joined)
+            {
+                if (!f) return;
+                f.gameObject.SetActive(joined);
+                if (!joined) return;
+                d += 1.2f;
+                f.Distance = d;
+                f.Trail = trail;
+                f.Snap();
+            }
+            Show(GuanYuFollower, Run.Story.GuanYuJoined);
+            Show(ZhangFeiFollower, Run.Story.ZhangFeiJoined);
+        }
+
+        void SetFollowers(bool on)
+        {
+            if (GuanYuFollower) GuanYuFollower.gameObject.SetActive(on);
+            if (ZhangFeiFollower) ZhangFeiFollower.gameObject.SetActive(on);
         }
 
         void SetControl(bool on) { if (Player) Player.InputEnabled = on; }

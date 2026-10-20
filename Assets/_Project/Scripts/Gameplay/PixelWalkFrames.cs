@@ -12,7 +12,7 @@ namespace ThreeKingdoms.Gameplay
 
         public SpriteFrameAnimator Animator;
         public int Front = 0, Left = 1, Right = 2, Back = 3;
-        [Tooltip("Metres walked per drawn frame (walk-cycle atlas)")] public float FrameLength = 0.55f;
+        [Tooltip("Metres walked per drawn frame (walk-cycle atlas)")] public float FrameLength = 0.6f;
         [Tooltip("Metres per step for the mirrored fallback")] public float StepLength = 0.5f;
         [Tooltip("Fallback bounce height per step in world units (about two art pixels)")] public float Bounce = 0.06f;
 
@@ -26,17 +26,20 @@ namespace ThreeKingdoms.Gameplay
         public bool HasWalkCycle => Animator && Animator.Columns >= WalkStart + 4 * WalkFramesPerRow;
         public int CurrentFrame => Animator ? Animator.Frame : -1;
 
-        void Start()
+        // Awake, not Start: a follower switched on mid-frame must already know its atlas has walk frames.
+        void Awake()
         {
-            last = transform.position;
             if (Animator) { billboard = Animator.GetComponent<PixelBillboard>(); Animator.Apply(); }
         }
+
+        void OnEnable() => last = transform.position;
 
         void LateUpdate()
         {
             Vector3 delta = transform.position - last;
             last = transform.position;
             delta.y = 0f;
+            if (delta.sqrMagnitude > 4f) delta = Vector3.zero;   // a teleport (fade, spawn, follower snap) is not a step
             if (!Animator) return;
             float speed = Time.deltaTime > 0f ? delta.magnitude / Time.deltaTime : 0f;
             Walking = speed > 0.3f;

@@ -6,7 +6,7 @@ namespace Jrpg
     [RequireComponent(typeof(CharacterController))]
     public sealed class PlayerMover : MonoBehaviour
     {
-        public float Speed = 7f;   // user 2026-10-20: twice the original 3.5 m/s
+        public float Speed = 9f;   // user 2026-10-20: twice the original 3.5 m/s, then "a bit faster"
         public bool InputEnabled = true;
         public InputActionReference MoveAction;
         CharacterController controller;

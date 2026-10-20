@@ -41,6 +41,18 @@ namespace ThreeKingdoms.EditorTools
             catch (System.Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
         }
 
+        // A walking copy of a companion without a collider (it must never block Liu Bei); hidden until they join.
+        static ThreeKingdoms.Gameplay.PartyFollower Follower(string name, string key)
+        {
+            var go = HD2DSampleBuilder.Character(name, key, Vector3.zero, 9, isPlayer: false);
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            var animator = go.GetComponentInChildren<ThreeKingdoms.Gameplay.SpriteFrameAnimator>();
+            go.AddComponent<ThreeKingdoms.Gameplay.PixelWalkFrames>().Animator = animator;
+            var f = go.AddComponent<ThreeKingdoms.Gameplay.PartyFollower>();
+            go.SetActive(false);
+            return f;
+        }
+
         static void WireTown()
         {
             var scene = EditorSceneManager.OpenScene(ZhuojunTownBuilder.ScenePath, OpenSceneMode.Single);
@@ -54,6 +66,9 @@ namespace ThreeKingdoms.EditorTools
             c.Camera = Object.FindFirstObjectByType<FollowCamera>();
             c.GuanYu = GameObject.Find("Guan Yu").transform;
             c.ZhangFei = GameObject.Find("Zhang Fei").transform;
+            c.Player.gameObject.AddComponent<ThreeKingdoms.Gameplay.PartyTrail>();
+            c.GuanYuFollower = Follower("Guan Yu (follower)", "GuanYu");
+            c.ZhangFeiFollower = Follower("Zhang Fei (follower)", "ZhangFei");
             c.InteractAction = ProjectSetup.Action("Interact");
             c.MenuAction = ProjectSetup.Action("Menu");
             c.NewGameSpot = Spot("New game (outside the south gate)", ZhuojunTownBuilder.PlayerStart);
