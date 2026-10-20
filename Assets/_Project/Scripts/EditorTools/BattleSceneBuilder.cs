@@ -26,12 +26,12 @@ namespace ThreeKingdoms.EditorTools
         static readonly Vector2[] PlayerFeet = { new Vector2(-5.4f, -0.4f), new Vector2(-3.9f, -1.8f), new Vector2(-5.6f, -3.2f) };
         static readonly Vector2[] EnemyFeet = { new Vector2(4.2f, -0.4f), new Vector2(5.8f, -1.3f), new Vector2(4.2f, -2.3f), new Vector2(5.8f, -3.2f) };
 
-        // One playable scene per V1 battle (V1_SPEC §2.2). Battles 2–3 reuse the market backdrop until an outside-the-walls
-        // backdrop is painted (V1_SPEC §2.3 allows two), so their location label stays generic. Enemy sprite keys follow INITIAL_SCENARIO_ART: generic
+        // One playable scene per V1 battle (V1_SPEC §2.2). Battle 1 is fought in the market; battles 2–3 in front of the
+        // Yellow Turban camp outside the walls (the second of the two backdrops V1_SPEC §2.3 allows). Enemy sprite keys follow INITIAL_SCENARIO_ART: generic
         // Yellow Turban officers share one sheet; the three brothers each have their own.
         sealed class BattleSpec
         {
-            public string Path, EncounterId, Next, Location;
+            public string Path, EncounterId, Next, Location, BaseScene = BattleBackdropBaker.ScenePath;
             public string[] EnemySprites;
             public int StartExp, StartCopper;
         }
@@ -40,9 +40,9 @@ namespace ThreeKingdoms.EditorTools
         {
             new BattleSpec { Path = ScenePath, EncounterId = "battle_1", Next = "Battle_Tutorial02", Location = "涿郡 · 街市",
                 EnemySprites = new[] { "YellowTurban", "YellowTurban", "YellowTurban" }, StartExp = 0, StartCopper = 120 },
-            new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Tutorial02.unity", EncounterId = "battle_2", Next = "Battle_Tutorial03", Location = "涿郡",
+            new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Tutorial02.unity", EncounterId = "battle_2", Next = "Battle_Tutorial03", Location = "涿郡 · 城外", BaseScene = BattleBackdropBaker.OutskirtsScenePath,
                 EnemySprites = new[] { "ZhangLiang", "YellowTurban", "YellowTurban", "YellowTurban" }, StartExp = 10, StartCopper = 150 },
-            new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Tutorial03.unity", EncounterId = "battle_3", Next = "", Location = "涿郡",
+            new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Tutorial03.unity", EncounterId = "battle_3", Next = "", Location = "涿郡 · 城外", BaseScene = BattleBackdropBaker.OutskirtsScenePath,
                 EnemySprites = new[] { "ZhangJiao", "ZhangBao", "ZhangLiang" }, StartExp = 30, StartCopper = 200 },
         };
 
@@ -57,6 +57,8 @@ namespace ThreeKingdoms.EditorTools
         [MenuItem("JRPG/Build Battle Tutorials 01-03 (playable)")]
         public static void Build()
         {
+            // Base scenes first: building them switches scenes, which unloads assets loaded before (panel settings, icons).
+            BattleBackdropBaker.BuildOutskirts();
             var catalog = BattleDataBuilder.Build();
             var icons = BuildTroopIcons();
             var panel = BuildPanelSettings();
@@ -95,7 +97,7 @@ namespace ThreeKingdoms.EditorTools
 
         static void BuildScene(BattleSpec battle, Data.Battle.BattleCatalog catalog, Texture2D[] icons, PanelSettings panel)
         {
-            var scene = EditorSceneManager.OpenScene(BattleBackdropBaker.ScenePath, OpenSceneMode.Single);
+            var scene = EditorSceneManager.OpenScene(battle.BaseScene, OpenSceneMode.Single);
             var units = GameObject.Find("Units").transform;
             var ringMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Battle/ZhuojunMarket/ActiveRing.mat");
             var targetMat = TargetRingMaterial(ringMat);
@@ -136,7 +138,8 @@ namespace ThreeKingdoms.EditorTools
 
             var hudGo = new GameObject("Battle HUD");
             var doc = hudGo.AddComponent<UIDocument>();
-            doc.panelSettings = panel;
+            doc.panelSettings = panel ? panel : AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);
+            if (!doc.panelSettings) throw new System.InvalidOperationException("Battle HUD has no PanelSettings");
             var hud = hudGo.AddComponent<BattleHud>();
             hud.Controller = controller;
             hud.BattleCamera = Camera.main;

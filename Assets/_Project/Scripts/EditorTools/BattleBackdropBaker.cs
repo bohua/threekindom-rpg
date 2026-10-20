@@ -44,8 +44,49 @@ namespace ThreeKingdoms.EditorTools
             backdrop.LightIntensity = SunIntensity;
             EditorUtility.SetDirty(backdrop);
             AssetDatabase.SaveAssets();
-            BuildBattleScene(backdrop);
+            BuildBattleScene(backdrop, ScenePath, Root);
             Debug.Log("BATTLE_BACKDROP_BUILT");
+        }
+
+        // ---------- painted backdrops ----------
+
+        const string OutskirtsRoot = "Assets/_Project/Art/Battle/ZhuojunOutskirts";
+        public const string OutskirtsBackdropPath = OutskirtsRoot + "/ZhuojunOutskirts.asset";
+        public const string OutskirtsScenePath = "Assets/_Project/Scenes/Battle_ZhuojunOutskirts.unity";
+
+        // Battles 2 and 3 (BATTLE_OUTSKIRTS_ASSETS.md): the Codex five-layer painting of the Yellow Turban camp outside
+        // Zhuojun — sky, far hills and wall, camp, ground, edge foreground — used as delivered, not baked.
+        [MenuItem("JRPG/Build Zhuojun Outskirts Battle Scene (painted layers)")]
+        public static void BuildOutskirts()
+        {
+            string[] layers = { "bg_outskirts_sky", "bg_outskirts_far", "bg_outskirts_mid", "bg_outskirts_ground", "bg_outskirts_front" };
+            foreach (string path in Directory.GetFiles(OutskirtsRoot, "*.png"))
+            {
+                var importer = (TextureImporter)AssetImporter.GetAtPath(path.Replace('\\', '/'));
+                string key = Path.GetFileNameWithoutExtension(path);
+                bool tiled = key.StartsWith("ground_");
+                importer.textureType = TextureImporterType.Default;
+                importer.filterMode = FilterMode.Point;
+                importer.mipmapEnabled = false;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.npotScale = TextureImporterNPOTScale.None;
+                importer.wrapMode = tiled ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                importer.alphaIsTransparency = key != "bg_outskirts_sky" && !tiled;
+                importer.sRGBTexture = true;
+                importer.SaveAndReimport();
+            }
+            var backdrop = AssetDatabase.LoadAssetAtPath<BattleBackdrop>(OutskirtsBackdropPath);
+            if (!backdrop) { backdrop = ScriptableObject.CreateInstance<BattleBackdrop>(); AssetDatabase.CreateAsset(backdrop, OutskirtsBackdropPath); }
+            backdrop.DisplayName = "涿郡 · 城外";
+            backdrop.Layers = layers.Select(k => AssetDatabase.LoadAssetAtPath<Texture2D>($"{OutskirtsRoot}/{k}.png")).ToArray();
+            // Afternoon light from the front-left, as painted (warm highlights on the left of trees and tents).
+            backdrop.LightPitchYaw = new Vector2(35f, 45f);
+            backdrop.LightColor = new Color(1f, 0.93f, 0.82f);
+            backdrop.LightIntensity = 2.4f;
+            EditorUtility.SetDirty(backdrop);
+            AssetDatabase.SaveAssets();
+            BuildBattleScene(backdrop, OutskirtsScenePath, OutskirtsRoot);
+            Debug.Log("OUTSKIRTS_BATTLE_SCENE_BUILT");
         }
 
         public static void BuildFromCommandLine()
@@ -286,7 +327,7 @@ namespace ThreeKingdoms.EditorTools
 
         // ---------- battle scene ----------
 
-        static void BuildBattleScene(BattleBackdrop backdrop)
+        static void BuildBattleScene(BattleBackdrop backdrop, string scenePath, string materialFolder)
         {
             var lut = AssetDatabase.LoadAssetAtPath<Texture2D>(HD2DLutBuilder.LutPath) ?? HD2DLutBuilder.Build();
             // No depth of field (orthographic, ADR-0005 §8.1); bloom threshold above 1 so painted highlights never glow (§8.2).
@@ -313,11 +354,13 @@ namespace ThreeKingdoms.EditorTools
 
             float width = BattleBackdrop.Width / HD2DSampleBuilder.PixelsPerUnit, height = BattleBackdrop.Height / HD2DSampleBuilder.PixelsPerUnit;
             var layerRoot = new GameObject("Backdrop").transform;
-            float[] depth = { 40f, 30f, 1f };
+            // Far → near behind the units (z 10); the last layer is the foreground in front of them.
             for (int i = 0; i < backdrop.Layers.Length; i++)
             {
-                var mode = i == 0 ? UnlitMode.Opaque : i == backdrop.Layers.Length - 1 ? UnlitMode.Blend : UnlitMode.Cutout;
-                Quad(layerRoot, "Layer " + backdrop.Layers[i].name, new Vector3(0, 0, depth[i]), new Vector2(width, height), UnlitMaterial(backdrop.Layers[i], mode));
+                bool last = i == backdrop.Layers.Length - 1;
+                var mode = i == 0 ? UnlitMode.Opaque : last ? UnlitMode.Blend : UnlitMode.Cutout;
+                float depth = last ? 1f : 40f - i * 7.5f;
+                Quad(layerRoot, "Layer " + backdrop.Layers[i].name, new Vector3(0, 0, depth), new Vector2(width, height), UnlitMaterial(backdrop.Layers[i], mode, folder: materialFolder));
             }
 
             var sun = new GameObject("Battle key light").AddComponent<Light>();
@@ -349,9 +392,9 @@ namespace ThreeKingdoms.EditorTools
             var tier = volumeGo.AddComponent<HD2DQualityTier>();
             tier.Volume = volume; tier.High = profile; tier.Low = profile;
 
-            EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ScenePath);
+            EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), scenePath);
             var scenes = EditorBuildSettings.scenes.ToList();
-            if (!scenes.Any(s => s.path == ScenePath)) scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
+            if (!scenes.Any(s => s.path == scenePath)) scenes.Add(new EditorBuildSettingsScene(scenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
         }
@@ -387,7 +430,7 @@ namespace ThreeKingdoms.EditorTools
 
         enum UnlitMode { Opaque, Cutout, Blend }
 
-        static Material UnlitMaterial(Texture2D texture, UnlitMode mode, string saveAs = null, float hdr = 1f)
+        static Material UnlitMaterial(Texture2D texture, UnlitMode mode, string saveAs = null, float hdr = 1f, string folder = Root)
         {
             var m = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { name = saveAs ?? texture.name };
             m.SetTexture("_BaseMap", texture);
@@ -407,7 +450,7 @@ namespace ThreeKingdoms.EditorTools
                 m.SetOverrideTag("RenderType", "Transparent");
                 m.renderQueue = (int)RenderQueue.Transparent;
             }
-            string path = $"{Root}/{m.name}.mat";
+            string path = $"{folder}/{m.name}.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (existing) AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(m, path);

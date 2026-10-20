@@ -29,5 +29,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Zhuojun_Town.unity
     guid: 7344f504e2edc9547b11cc243211d70f
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_ZhuojunOutskirts.unity
+    guid: 49658ca5b5b2ff447a92427f0537191a
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

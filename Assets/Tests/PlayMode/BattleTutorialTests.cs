@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using ThreeKingdoms.Core.Battle;
+using ThreeKingdoms.Gameplay;
 using ThreeKingdoms.Gameplay.Battle;
 using ThreeKingdoms.UI.Battle;
 using UnityEngine;
@@ -109,6 +110,10 @@ public sealed class BattleTutorialTests
         Assert.IsTrue(c.Session.State.Players.All(p => p.Level == 2), "levels carried from battle 1");
         Assert.AreEqual(150, c.Progress.Copper);
         Assert.IsTrue(c.EnemyViews.All(v => v.gameObject.activeSelf), "4 enemies shown");
+        var stage = Object.FindFirstObjectByType<BattleStage>();
+        Assert.AreEqual("ZhuojunOutskirts", stage.Backdrop.name, "battles 2-3 are fought outside the walls");
+        Assert.AreEqual(5, stage.Backdrop.Layers.Length);
+        Assert.IsNotNull(Object.FindFirstObjectByType<UIDocument>().panelSettings, "battle 2 has its HUD");
 
         yield return SceneManager.LoadSceneAsync("Battle_Tutorial03");
         yield return null;
