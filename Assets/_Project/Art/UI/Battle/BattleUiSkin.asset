@@ -38,3 +38,24 @@ MonoBehaviour:
   EnemyBarFill: {fileID: 2800000, guid: afbda1dee77915547bd472f975dbfc35, type: 3}
   EnemyBarFillLow: {fileID: 2800000, guid: 7c70c2d3cc95bb84cb4dfd64200ef63f, type: 3}
   EnemyRouted: {fileID: 2800000, guid: f18a1957486c48549a2dc80b91aa7ca0, type: 3}
+  CommandNormal:
+  - {fileID: 2800000, guid: 068cebf13d52acb4580ef1a53b7237cb, type: 3}
+  - {fileID: 2800000, guid: 804cc1ef2a7b6784e9ac3e42120583ac, type: 3}
+  - {fileID: 2800000, guid: 600f8db9abcacf54fac923f48b929227, type: 3}
+  - {fileID: 2800000, guid: 3f7dc7ab60d67174580e2f38c42972ab, type: 3}
+  - {fileID: 2800000, guid: 325665fe16e10114b9a09ea57040336e, type: 3}
+  - {fileID: 2800000, guid: 8633e3b8929355c4d9559f00a9bbcdcf, type: 3}
+  CommandSelected:
+  - {fileID: 2800000, guid: 527a1219b8f4c6e4b8fc67d8b114c6e2, type: 3}
+  - {fileID: 2800000, guid: 7ea6659914ac1b4469736992560b303d, type: 3}
+  - {fileID: 2800000, guid: 15e46a7e6963f14459deac14348c7e5d, type: 3}
+  - {fileID: 2800000, guid: 5e4d3ea1012f07d41a30fbccac4d4d2e, type: 3}
+  - {fileID: 2800000, guid: 02b47af86f3d42848a38fdaa36333a65, type: 3}
+  - {fileID: 2800000, guid: ea53e42e3f7b29742b588017e7362136, type: 3}
+  CommandDisabled:
+  - {fileID: 2800000, guid: 10874800b716a9b4ca0c36a580d991db, type: 3}
+  - {fileID: 2800000, guid: a109feffd6e148d47b303ad0eab24da8, type: 3}
+  - {fileID: 2800000, guid: 3926a3b1058f1af4582e2724a84042cc, type: 3}
+  - {fileID: 2800000, guid: 78889868f76915043adbe140406c81fa, type: 3}
+  - {fileID: 2800000, guid: 6281a1bb5e7b0e841b3dc839d4d1edb8, type: 3}
+  - {fileID: 2800000, guid: 68bbdcf708c36514a8855a43f298e751, type: 3}

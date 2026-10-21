@@ -11,6 +11,7 @@ namespace ThreeKingdoms.EditorTools
     {
         const string DefaultSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-ui";
         const string EnemySource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-ui-enemy";
+        const string CommandSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-ui-commands";
         public const string Dir = "Assets/_Project/Art/UI/Battle";
         public const string SkinPath = Dir + "/BattleUiSkin.asset";
 
@@ -40,6 +41,10 @@ namespace ThreeKingdoms.EditorTools
             foreach (var f in EnemyFiles)
                 if (!Import(Path.Combine(EnemySource, f + ".png"), f)) Debug.Log($"Enemy plate texture {f} not found; enemy plates keep their flat style.");
 
+            foreach (var key in BattleUiSkin.CommandKeys)
+                foreach (var state in new[] { "normal", "selected", "disabled" })
+                    if (!Import(Path.Combine(CommandSource, $"cmd_{key}_{state}.png"), $"cmd_{key}_{state}")) Debug.Log($"Command card cmd_{key}_{state} not found; that command keeps its framed text.");
+
             Texture2D T(string f) => AssetDatabase.LoadAssetAtPath<Texture2D>($"{Dir}/{f}.png");
 
             var skin = AssetDatabase.LoadAssetAtPath<BattleUiSkin>(SkinPath);
@@ -54,6 +59,10 @@ namespace ThreeKingdoms.EditorTools
             skin.EnemyPlate = T("ui_enemy_nameplate"); skin.EnemyPlateBoss = T("ui_enemy_nameplate_boss"); skin.EnemyPlateTarget = T("ui_enemy_nameplate_target");
             skin.EnemyBarFrame = T("ui_enemy_bar_frame"); skin.EnemyBarFill = T("ui_enemy_bar_fill"); skin.EnemyBarFillLow = T("ui_enemy_bar_fill_low");
             skin.EnemyRouted = T("ui_enemy_routed_mark");
+            var keys = BattleUiSkin.CommandKeys;
+            skin.CommandNormal = System.Array.ConvertAll(keys, k => T($"cmd_{k}_normal"));
+            skin.CommandSelected = System.Array.ConvertAll(keys, k => T($"cmd_{k}_selected"));
+            skin.CommandDisabled = System.Array.ConvertAll(keys, k => T($"cmd_{k}_disabled"));
             if (created) AssetDatabase.CreateAsset(skin, SkinPath);
             EditorUtility.SetDirty(skin);
             AssetDatabase.SaveAssets();

@@ -118,7 +118,8 @@ namespace ThreeKingdoms.UI.Battle
             popups = new VisualElement { pickingMode = PickingMode.Ignore }; Absolute(popups, 0, 0, 0, 0); root.Add(popups);
 
             menu = Framed(root); Absolute(menu, 40, 330, -1, -1);
-            menu.style.width = skin ? 340 : 300; menu.style.flexDirection = FlexDirection.Column;
+            menu.style.width = skin ? 320 : 300; menu.style.flexDirection = FlexDirection.Column;
+            if (skin) menu.style.alignItems = Align.Center;   // 224-px options centred inside the panel's 40-px border
 
             promptLabel = Text(BattleText.ChooseCommand, 20, Gold);
             Absolute(promptLabel, 40, 290, -1, -1);
@@ -446,13 +447,13 @@ namespace ThreeKingdoms.UI.Battle
             {
                 case Step.Command:
                     promptLabel.text = $"{actor.Name}：{BattleText.ChooseCommand}";
-                    MenuButton(menu, BattleText.Command(CommandKind.Attack), () => PickTarget(CommandKind.Attack, null));
-                    MenuButton(menu, BattleText.Command(CommandKind.Skill), () => { step = Step.Skill; BuildMenu(); }, enabled: actor.Skills.Count > 0);
-                    var defend = MenuButton(menu, BattleText.Command(CommandKind.Defend), () => Controller.Choose(BattleCommand.Defend(actor)));
+                    MenuButton(menu, BattleText.Command(CommandKind.Attack), () => PickTarget(CommandKind.Attack, null), card: "attack");
+                    MenuButton(menu, BattleText.Command(CommandKind.Skill), () => { step = Step.Skill; BuildMenu(); }, enabled: actor.Skills.Count > 0, card: "skill");
+                    var defend = MenuButton(menu, BattleText.Command(CommandKind.Defend), () => Controller.Choose(BattleCommand.Defend(actor)), card: "defend");
                     defend.tooltip = BattleText.DefendHelp;
-                    MenuButton(menu, BattleText.Command(CommandKind.Item), () => { step = Step.Item; BuildMenu(); }, enabled: state.CanUseRation(actor));
-                    if (Tutor && Tutor.Seen.Count > 0) MenuButton(menu, BattleText.Hints, () => { step = Step.Hints; BuildMenu(); }, 20);
-                    if (Controller.Commands.Count > 0) MenuButton(menu, BattleText.Back, () => { step = Step.Command; Controller.Undo(); }, 20);
+                    MenuButton(menu, BattleText.Command(CommandKind.Item), () => { step = Step.Item; BuildMenu(); }, enabled: state.CanUseRation(actor), card: "item");
+                    if (Tutor && Tutor.Seen.Count > 0) MenuButton(menu, BattleText.Hints, () => { step = Step.Hints; BuildMenu(); }, 20, card: "hints");
+                    if (Controller.Commands.Count > 0) MenuButton(menu, BattleText.Back, () => { step = Step.Command; Controller.Undo(); }, 20, card: "back");
                     break;
                 case Step.Hints:
                     // Every hint seen so far can be read again (game-ui answer 5).
@@ -498,6 +499,8 @@ namespace ThreeKingdoms.UI.Battle
                     MenuButton(menu, BattleText.Back, () => { step = Step.Command; BuildMenu(); }, 20);
                     break;
             }
+            // Text options (skills, targets, hints) take the command cards' width, centred inside the panel's border.
+            if (skin) foreach (var item in menu.Query<Button>().ToList()) item.style.width = 112 * BattleUiSkin.Scale;
             menu.Query<Button>().Where(b => b.enabledSelf).First()?.Focus();
         }
 
@@ -753,8 +756,26 @@ namespace ThreeKingdoms.UI.Battle
             if (bottom >= 0) e.style.bottom = bottom;
         }
 
-        static Button MenuButton(VisualElement parent, string text, Action onClick, int size = 26, float width = -1, bool enabled = true)
+        static Button MenuButton(VisualElement parent, string text, Action onClick, int size = 26, float width = -1, bool enabled = true, string card = null)
         {
+            // Fixed commands are whole cards with the label drawn in (user 2026-10-21): swap normal / selected /
+            // disabled images; the text stays on the button (for lookups and accessibility) but is not drawn.
+            if (skin && card != null && skin.TryCommand(card, out var normal, out var selected, out var disabled))
+            {
+                var c = new Button(onClick) { text = text };
+                c.style.width = 112 * BattleUiSkin.Scale; c.style.height = 24 * BattleUiSkin.Scale;
+                c.style.marginTop = 4; c.style.marginLeft = c.style.marginRight = 0;
+                c.style.paddingLeft = c.style.paddingRight = c.style.paddingTop = c.style.paddingBottom = 0;
+                c.style.borderTopWidth = c.style.borderBottomWidth = c.style.borderLeftWidth = c.style.borderRightWidth = 0;
+                c.style.color = Color.clear; c.style.fontSize = 1;
+                c.SetEnabled(enabled);
+                BattleUiSkin.CommandCard(c, enabled ? normal : disabled);
+                c.RegisterCallback<FocusInEvent>(_ => BattleUiSkin.CommandCard(c, selected));
+                c.RegisterCallback<FocusOutEvent>(_ => BattleUiSkin.CommandCard(c, c.enabledSelf ? normal : disabled));
+                c.RegisterCallback<PointerEnterEvent>(_ => { if (c.enabledSelf) c.Focus(); });
+                parent.Add(c);
+                return c;
+            }
             var b = new Button(onClick) { text = text };
             b.style.fontSize = size;
             b.style.color = enabled ? Color.white : new Color(0.5f, 0.5f, 0.5f);

@@ -21,6 +21,28 @@ namespace ThreeKingdoms.UI.Battle
 
         public bool HasEnemyPlates => EnemyPlate && EnemyBarFrame && EnemyBarFill;
 
+        // Whole command cards with the label drawn in (user 2026-10-21, art/battle-ui-commands), 112×24 native.
+        // Order: attack, skill, defend, item, hints, back.
+        public static readonly string[] CommandKeys = { "attack", "skill", "defend", "item", "hints", "back" };
+        public Texture2D[] CommandNormal = new Texture2D[6], CommandSelected = new Texture2D[6], CommandDisabled = new Texture2D[6];
+
+        public bool TryCommand(string key, out Texture2D normal, out Texture2D selected, out Texture2D disabled)
+        {
+            int i = System.Array.IndexOf(CommandKeys, key);
+            normal = i >= 0 && i < CommandNormal.Length ? CommandNormal[i] : null;
+            selected = i >= 0 && i < CommandSelected.Length ? CommandSelected[i] : null;
+            disabled = i >= 0 && i < CommandDisabled.Length ? CommandDisabled[i] : null;
+            return normal && selected && disabled;
+        }
+
+        public static void CommandCard(VisualElement e, Texture2D tex)
+        {
+            if (!tex) return;
+            e.style.backgroundImage = new StyleBackground(tex);
+            e.style.unitySliceLeft = e.style.unitySliceRight = e.style.unitySliceTop = e.style.unitySliceBottom = 0;
+            e.style.backgroundColor = Color.clear;
+        }
+
         // Nine-slice a texture onto an element: corners fixed, edges and centre tiled, drawn at Scale.
         public static void Apply(VisualElement e, Texture2D tex, int left, int right, int top, int bottom)
         {

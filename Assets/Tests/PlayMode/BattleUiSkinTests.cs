@@ -28,7 +28,11 @@ public sealed class BattleUiSkinTests
         var all = hud.GetComponent<UIDocument>().rootVisualElement.Query<VisualElement>().ToList();
         Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.CardActive)), "the acting general's card has the active frame");
         Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.CardNormal)), "the others have the normal frame");
-        Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.ItemSelected)), "the focused command uses the selected item frame");
+        // Fixed commands are whole cards with the label drawn in (user 2026-10-21): the focused one shows its selected card.
+        Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.CommandSelected[0])), "攻击 is focused and shows its selected card");
+        Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.CommandNormal[2])), "防御 shows its normal card");
+        Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.CommandDisabled[3]) || Uses(e, hud.Skin.CommandNormal[3])), "道具 is a card too (disabled while no one needs rations)");
+        Assert.IsFalse(all.OfType<Button>().Any(x => x.text == "攻击" && x.style.width.value.value != 224f), "cards are drawn at exactly 2× (224 px)");
         Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.EnemyPlateBoss)), "Cheng Yuanzhi has the boss nameplate");
         Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.EnemyPlate)), "the headmen have the normal nameplate");
         var panel = all.First(e => Uses(e, hud.Skin.CommandPanel));
