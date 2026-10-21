@@ -44,6 +44,8 @@ namespace ThreeKingdoms.Gameplay.Story
         public Vector3 GateCenter = new Vector3(0, 1, -36f);
         public Vector3 GateSize = new Vector3(4f, 3f, 5f);
         public float TalkRange = 2.2f;
+        [Tooltip("Residents within this distance say their line in a bubble, no button needed (user 2026-10-21)")]
+        public float BubbleRange = 3f;
         [Tooltip("Seconds for a fade to black / back")] public float FadeTime = 0.4f;
 
         public GameRun Run { get; private set; }
@@ -60,6 +62,30 @@ namespace ThreeKingdoms.Gameplay.Story
         public event Action<string> PanelOpened, PanelClosed;
 
         public event Action Changed;
+
+        // ---------- bubbles (user 2026-10-21) ----------
+        // Residents near Liu Bei speak in a bubble over their heads; it disappears when he walks away.
+        readonly List<Transform> speaking = new List<Transform>();
+        public IReadOnlyList<Transform> Speaking => speaking;
+        // Story characters whose event is still pending wear a "!" until it is done (Guan Yu, Zhang Fei before joining).
+        public IEnumerable<Transform> StoryMarks
+        {
+            get
+            {
+                if (Run == null || Busy) yield break;
+                if (GuanYu && GuanYu.gameObject.activeInHierarchy && !Run.Story.GuanYuJoined) yield return GuanYu;
+                if (ZhangFei && ZhangFei.gameObject.activeInHierarchy && !Run.Story.ZhangFeiJoined) yield return ZhangFei;
+            }
+        }
+        // Liu Bei stands where something happens (an event spot such as the south gate): "!" over his head.
+        public bool PlayerAlert => !Busy && InGatePassage;
+
+        public string ResidentLineKey(string id)
+        {
+            var story = Run.Story;
+            string stage = story.BattlesDone > 0 ? ".won" : story.Oath == SequenceState.Done ? ".after" : "";
+            return "npc." + id + stage;
+        }
 
         bool advance;
         string pendingGateScene;
@@ -118,8 +144,10 @@ namespace ThreeKingdoms.Gameplay.Story
 
         void Update()
         {
+            UpdateBubbles();
+            // Residents stop while a conversation or panel holds the town, and while they speak to Liu Bei.
             foreach (var r in Residents)
-                if (r && r.TryGetComponent<NpcPatrol>(out var patrol)) patrol.Paused = Busy;   // residents stop while a conversation or panel holds the town
+                if (r && r.TryGetComponent<NpcPatrol>(out var patrol)) patrol.Paused = Busy || speaking.Contains(r);
             bool menuPressed = MenuAction && MenuAction.action.WasPressedThisFrame();
             // The menu key also closes the main menu; other panels own input until they close.
             if (Panel == MenuPanel && menuPressed && Time.frameCount > openedPanelFrame) { ClosePanel(); return; }
@@ -249,21 +277,30 @@ namespace ThreeKingdoms.Gameplay.Story
             else if (Near(ZhangFei, p) && !story.ZhangFeiJoined) prompt = "talk:" + StoryState.ZhangFei;
             else if (Near(Smith, p)) prompt = ShopPanel;
             else if (Near(Innkeeper, p)) prompt = SavePanel;
-            else
-            {
-                // The nearest other resident within reach (design §4: prompts appear only up close).
-                Transform best = null;
-                foreach (var r in Residents)
-                    if (r && r != Smith && r != Innkeeper && Near(r, p) && (!best || Vector3.Distance(Flat(r.position), Flat(p)) < Vector3.Distance(Flat(best.position), Flat(p))))
-                        best = r;
-                if (best) prompt = "npc:" + ResidentId(best);
-            }
+            // Other residents need no button: they speak in their bubble (UpdateBubbles).
             if (prompt == Prompt) return;
             Prompt = prompt;
             Changed?.Invoke();
         }
 
         bool Near(Transform t, Vector3 p) => t && t.gameObject.activeInHierarchy && Vector3.Distance(Flat(t.position), Flat(p)) <= TalkRange;
+
+        void UpdateBubbles()
+        {
+            if (Run == null || !Player) return;
+            var p = Player.transform.position;
+            bool changed = false;
+            foreach (var r in Residents)
+            {
+                if (!r) continue;
+                bool near = !Busy && r.gameObject.activeInHierarchy && Vector3.Distance(Flat(r.position), Flat(p)) <= BubbleRange;
+                if (near == speaking.Contains(r)) continue;
+                if (near) { speaking.Add(r); Face(r); }
+                else speaking.Remove(r);
+                changed = true;
+            }
+            if (changed) Changed?.Invoke();
+        }
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0, v.z);
 
         // ---------- sequences ----------

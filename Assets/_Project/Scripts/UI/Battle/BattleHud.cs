@@ -118,7 +118,7 @@ namespace ThreeKingdoms.UI.Battle
             popups = new VisualElement { pickingMode = PickingMode.Ignore }; Absolute(popups, 0, 0, 0, 0); root.Add(popups);
 
             menu = Framed(root); Absolute(menu, 40, 330, -1, -1);
-            menu.style.width = 300; menu.style.flexDirection = FlexDirection.Column;
+            menu.style.width = skin ? 340 : 300; menu.style.flexDirection = FlexDirection.Column;
 
             promptLabel = Text(BattleText.ChooseCommand, 20, Gold);
             Absolute(promptLabel, 40, 290, -1, -1);
@@ -737,7 +737,8 @@ namespace ThreeKingdoms.UI.Battle
             if (skin)
             {
                 if (plaque) { skin.Plaque(e); e.style.paddingLeft = e.style.paddingRight = 28; e.style.paddingTop = e.style.paddingBottom = 14; }
-                else { skin.Panel(e); e.style.paddingLeft = e.style.paddingRight = 26; e.style.paddingTop = e.style.paddingBottom = 22; }
+                // Content starts inside the 20-px (40 at 2×) border art so option frames are never covered by it.
+                else { skin.Panel(e); e.style.paddingLeft = e.style.paddingRight = 40; e.style.paddingTop = e.style.paddingBottom = 36; }
             }
             parent.Add(e);
             return e;
