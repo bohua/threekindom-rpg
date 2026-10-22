@@ -19,7 +19,12 @@ namespace ThreeKingdoms.UI.Battle
         [Header("Enemy plates (BATTLE_UI_ENEMY_SKIN.md)")]
         public Texture2D EnemyPlate, EnemyPlateBoss, EnemyPlateTarget, EnemyBarFrame, EnemyBarFill, EnemyBarFillLow, EnemyRouted;
 
+        [Header("Bubbles and blank option bars (art/ui-bubbles-bars)")]
+        public Texture2D BubbleSpeech, BubbleTail, BubbleAlert, BubbleAlertGlint;
+        public Texture2D OptionNormal, OptionSelected, OptionDisabled;
+
         public bool HasEnemyPlates => EnemyPlate && EnemyBarFrame && EnemyBarFill;
+        public bool HasBubbles => BubbleSpeech && BubbleTail && BubbleAlert;
 
         // Whole command cards with the label drawn in (user 2026-10-21, art/battle-ui-commands), 112×24 native.
         // Order: attack, skill, defend, item, hints, back.
@@ -60,7 +65,16 @@ namespace ThreeKingdoms.UI.Battle
         public void Panel(VisualElement e) => Apply(e, CommandPanel, 20, 20, 20, 20);
         public void Plaque(VisualElement e) => Apply(e, PlaquePanel, 10, 10, 10, 10);
         public void Hint(VisualElement e) => Apply(e, HintPanel, 10, 10, 10, 10);
-        public void Item(VisualElement e, Texture2D state) => Apply(e, state, 14, 6, 6, 6);
+        // One-line text options draw on the blank option bars when present (same 14/6/6/6 slices; their left motif
+        // would repeat on a taller entry), multi-line entries and missing bars on the item frames.
+        public void Item(VisualElement e, Texture2D state, bool tall = false) => Apply(e, (tall ? null : OptionFor(state)) ?? state, 14, 6, 6, 6);
+        public void Speech(VisualElement e) => Apply(e, BubbleSpeech, 8, 8, 8, 8);
+
+        Texture2D OptionFor(Texture2D state)
+        {
+            var bar = state == ItemNormal ? OptionNormal : state == ItemSelected ? OptionSelected : state == ItemDisabled ? OptionDisabled : null;
+            return bar ? bar : null;
+        }
         public void Card(VisualElement e, Texture2D state) => Apply(e, state, 24, 24, 24, 24);
         public void Portrait(VisualElement e, bool active) => Apply(e, active ? PortraitFrameActive : PortraitFrame, 8, 8, 8, 8);
         public void Bar(VisualElement e) => Apply(e, BarFrame, 4, 4, 2, 2);

@@ -38,6 +38,13 @@ MonoBehaviour:
   EnemyBarFill: {fileID: 2800000, guid: afbda1dee77915547bd472f975dbfc35, type: 3}
   EnemyBarFillLow: {fileID: 2800000, guid: 7c70c2d3cc95bb84cb4dfd64200ef63f, type: 3}
   EnemyRouted: {fileID: 2800000, guid: f18a1957486c48549a2dc80b91aa7ca0, type: 3}
+  BubbleSpeech: {fileID: 2800000, guid: 318c97765217ce7428c2d128524fd582, type: 3}
+  BubbleTail: {fileID: 2800000, guid: b6ee3db9130f34f4f8ca208cfa189fa5, type: 3}
+  BubbleAlert: {fileID: 2800000, guid: 53585d7677d57a945b11122d7afa1493, type: 3}
+  BubbleAlertGlint: {fileID: 2800000, guid: 920943ad6e1b0e64bae73a249be94621, type: 3}
+  OptionNormal: {fileID: 2800000, guid: cc58bd9bbc354b9468d33e618ccfae52, type: 3}
+  OptionSelected: {fileID: 2800000, guid: ddab7dd1bb6af034b9b3a239b773e3ed, type: 3}
+  OptionDisabled: {fileID: 2800000, guid: 1d9ca6a185588a64ebb3681b4fd0100a, type: 3}
   CommandNormal:
   - {fileID: 2800000, guid: 068cebf13d52acb4580ef1a53b7237cb, type: 3}
   - {fileID: 2800000, guid: 804cc1ef2a7b6784e9ac3e42120583ac, type: 3}

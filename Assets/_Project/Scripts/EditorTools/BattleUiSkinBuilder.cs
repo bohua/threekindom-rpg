@@ -12,6 +12,7 @@ namespace ThreeKingdoms.EditorTools
         const string DefaultSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-ui";
         const string EnemySource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-ui-enemy";
         const string CommandSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-ui-commands";
+        const string BubbleSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\ui-bubbles-bars";
         public const string Dir = "Assets/_Project/Art/UI/Battle";
         public const string SkinPath = Dir + "/BattleUiSkin.asset";
 
@@ -30,6 +31,12 @@ namespace ThreeKingdoms.EditorTools
             "ui_enemy_bar_frame", "ui_enemy_bar_fill", "ui_enemy_bar_fill_low", "ui_enemy_routed_mark",
         };
 
+        static readonly string[] BubbleFiles =
+        {
+            "bubble_speech", "bubble_tail", "bubble_alert", "bubble_alert_glint",
+            "bar_option_normal", "bar_option_selected", "bar_option_disabled",
+        };
+
         [MenuItem("JRPG/Build Battle UI Skin")]
         public static BattleUiSkin Build()
         {
@@ -44,6 +51,9 @@ namespace ThreeKingdoms.EditorTools
             foreach (var key in BattleUiSkin.CommandKeys)
                 foreach (var state in new[] { "normal", "selected", "disabled" })
                     if (!Import(Path.Combine(CommandSource, $"cmd_{key}_{state}.png"), $"cmd_{key}_{state}")) Debug.Log($"Command card cmd_{key}_{state} not found; that command keeps its framed text.");
+
+            foreach (var f in BubbleFiles)
+                if (!Import(Path.Combine(BubbleSource, f + ".png"), f)) Debug.Log($"Bubble / option bar {f} not found; that element keeps its fallback.");
 
             Texture2D T(string f) => AssetDatabase.LoadAssetAtPath<Texture2D>($"{Dir}/{f}.png");
 
@@ -63,6 +73,9 @@ namespace ThreeKingdoms.EditorTools
             skin.CommandNormal = System.Array.ConvertAll(keys, k => T($"cmd_{k}_normal"));
             skin.CommandSelected = System.Array.ConvertAll(keys, k => T($"cmd_{k}_selected"));
             skin.CommandDisabled = System.Array.ConvertAll(keys, k => T($"cmd_{k}_disabled"));
+            skin.BubbleSpeech = T("bubble_speech"); skin.BubbleTail = T("bubble_tail");
+            skin.BubbleAlert = T("bubble_alert"); skin.BubbleAlertGlint = T("bubble_alert_glint");
+            skin.OptionNormal = T("bar_option_normal"); skin.OptionSelected = T("bar_option_selected"); skin.OptionDisabled = T("bar_option_disabled");
             if (created) AssetDatabase.CreateAsset(skin, SkinPath);
             EditorUtility.SetDirty(skin);
             AssetDatabase.SaveAssets();

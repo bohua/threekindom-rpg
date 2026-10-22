@@ -25,6 +25,8 @@ public sealed class BattleUiSkinTests
         yield return null; yield return null;
         var hud = Object.FindFirstObjectByType<BattleHud>();
         Assert.IsNotNull(hud.Skin, "battle scenes carry the skin");
+        Assert.IsTrue(hud.Skin.OptionNormal && hud.Skin.OptionSelected && hud.Skin.OptionDisabled, "blank option bars imported (art/ui-bubbles-bars)");
+        Assert.IsTrue(hud.Skin.HasBubbles && hud.Skin.BubbleAlertGlint, "pixel bubbles imported");
         var all = hud.GetComponent<UIDocument>().rootVisualElement.Query<VisualElement>().ToList();
         Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.CardActive)), "the acting general's card has the active frame");
         Assert.IsTrue(all.Any(e => Uses(e, hud.Skin.CardNormal)), "the others have the normal frame");

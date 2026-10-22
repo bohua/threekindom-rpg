@@ -32,13 +32,14 @@ namespace ThreeKingdoms.UI.Common
             b.style.paddingLeft = 16; b.style.minHeight = height; b.style.marginTop = 4;
             b.SetEnabled(enabled);
             var skin = Skin;
+            bool tall = height > 48;
             if (skin)
             {
                 // Pixel option frames (normal / selected / disabled), same as the battle menu's text options.
-                skin.Item(b, enabled ? skin.ItemNormal : skin.ItemDisabled);
+                skin.Item(b, enabled ? skin.ItemNormal : skin.ItemDisabled, tall);
                 b.style.paddingLeft = 34; b.style.minHeight = Mathf.Max(48, height);
-                b.RegisterCallback<FocusInEvent>(_ => { skin.Item(b, skin.ItemSelected); onFocus?.Invoke(); });
-                b.RegisterCallback<FocusOutEvent>(_ => skin.Item(b, b.enabledSelf ? skin.ItemNormal : skin.ItemDisabled));
+                b.RegisterCallback<FocusInEvent>(_ => { skin.Item(b, skin.ItemSelected, tall); onFocus?.Invoke(); });
+                b.RegisterCallback<FocusOutEvent>(_ => skin.Item(b, b.enabledSelf ? skin.ItemNormal : skin.ItemDisabled, tall));
             }
             else
             {

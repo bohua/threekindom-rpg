@@ -20,7 +20,7 @@ namespace ThreeKingdoms.UI.Story
         static readonly Color Panel = new Color(0.07f, 0.09f, 0.14f, 0.9f);
         static readonly Color Edge = new Color(0.62f, 0.50f, 0.28f);
 
-        VisualElement root, dialogue, fade, bubbleLayer;
+        VisualElement root, dialogue, fade, bubbleLayer, markLayer;
         readonly Dictionary<Transform, VisualElement> speech = new Dictionary<Transform, VisualElement>();
         readonly Dictionary<Transform, VisualElement> marks = new Dictionary<Transform, VisualElement>();
 
@@ -41,6 +41,10 @@ namespace ThreeKingdoms.UI.Story
             bubbleLayer = new VisualElement { pickingMode = PickingMode.Ignore };
             Place(bubbleLayer, 0, 0, 0, 0);
             root.Add(bubbleLayer);
+            // "!" marks draw above speech bubbles so a nearby line never hides one.
+            markLayer = new VisualElement { pickingMode = PickingMode.Ignore };
+            Place(markLayer, 0, 0, 0, 0);
+            root.Add(markLayer);
 
             objective = Label(root, 24, Color.white);
             Place(objective, 24, 20, -1, -1);
@@ -103,21 +107,24 @@ namespace ThreeKingdoms.UI.Story
             var cam = Camera.main;
             if (!Controller || Controller.Run == null || root?.panel == null || !cam) return;
             bool visible = Controller.Fade < 0.01f;
-            Sync(speech, visible ? Controller.Speaking : Enumerable.Empty<Transform>(), t => SpeechBubble(StoryText.Line(Controller.ResidentLineKey(TownStoryController.ResidentId(t)))));
+            Sync(speech, bubbleLayer, visible ? Controller.Speaking : Enumerable.Empty<Transform>(), t => SpeechBubble(StoryText.Line(Controller.ResidentLineKey(TownStoryController.ResidentId(t)))));
             var alerts = Controller.StoryMarks.ToList();
             if (Controller.PlayerAlert) alerts.Add(Controller.Player.transform);
-            Sync(marks, visible ? alerts : Enumerable.Empty<Transform>(), _ => MarkBubble());
+            Sync(marks, markLayer, visible ? alerts : Enumerable.Empty<Transform>(), _ => MarkBubble());
             float bob = Mathf.Sin(Time.unscaledTime * 4f) * 4f;
+            // The pixel "!" glints for a moment once per second.
+            var alertFrame = Skin && Skin.BubbleAlertGlint && Mathf.Repeat(Time.unscaledTime, 1f) < 0.18f ? Skin.BubbleAlertGlint : Skin ? Skin.BubbleAlert : null;
+            if (alertFrame) foreach (var e in marks.Values) if (e.Q(className: "alert-frame") is VisualElement f) f.style.backgroundImage = new StyleBackground(alertFrame);
             foreach (var pair in speech) Anchor(pair.Value, pair.Key, cam, 0f);
             foreach (var pair in marks) Anchor(pair.Value, pair.Key, cam, bob);
         }
 
-        void Sync(Dictionary<Transform, VisualElement> shown, IEnumerable<Transform> wanted, System.Func<Transform, VisualElement> make)
+        void Sync(Dictionary<Transform, VisualElement> shown, VisualElement layer, IEnumerable<Transform> wanted, System.Func<Transform, VisualElement> make)
         {
             var want = new HashSet<Transform>(wanted.Where(t => t));
             foreach (var gone in shown.Keys.Where(t => !want.Contains(t)).ToList()) { shown[gone].RemoveFromHierarchy(); shown.Remove(gone); }
             foreach (var t in want)
-                if (!shown.ContainsKey(t)) { var e = make(t); bubbleLayer.Add(e); shown[t] = e; }
+                if (!shown.ContainsKey(t)) { var e = make(t); layer.Add(e); shown[t] = e; }
         }
 
         // Bottom-centre of the bubble sits just above the head.
@@ -127,12 +134,40 @@ namespace ThreeKingdoms.UI.Story
             e.style.left = p.x; e.style.top = p.y - lift;
         }
 
-        static VisualElement Bubble(VisualElement content, float radius)
+        // Bubble root: positioned by its bottom-centre, children stacked and centred.
+        static VisualElement Anchored()
         {
             var b = new VisualElement { pickingMode = PickingMode.Ignore };
             b.style.position = Position.Absolute;
             b.style.alignItems = Align.Center;
             b.style.translate = new Translate(new Length(-50, LengthUnit.Percent), new Length(-100, LengthUnit.Percent));
+            return b;
+        }
+
+        // Codex pixel speech bubble: nine-sliced cream board plus the separate tail, which overlaps the board's
+        // bottom 2 native px (manifest: joins at h-2).
+        VisualElement PixelSpeech(string text)
+        {
+            var b = Anchored();
+            var box = new VisualElement { pickingMode = PickingMode.Ignore };
+            Skin.Speech(box);
+            box.style.paddingLeft = box.style.paddingRight = 18; box.style.paddingTop = box.style.paddingBottom = 12;
+            var l = new Label(text) { pickingMode = PickingMode.Ignore };
+            l.style.fontSize = 20; l.style.color = BubbleInk; l.style.whiteSpace = WhiteSpace.Normal; l.style.maxWidth = 380;
+            l.style.marginLeft = l.style.marginRight = l.style.marginTop = l.style.marginBottom = 0;
+            l.style.paddingLeft = l.style.paddingRight = l.style.paddingTop = l.style.paddingBottom = 0;
+            box.Add(l);
+            b.Add(box);
+            var tail = new VisualElement { pickingMode = PickingMode.Ignore };
+            ThreeKingdoms.UI.Battle.BattleUiSkin.Image(tail, Skin.BubbleTail);
+            tail.style.marginTop = -2 * ThreeKingdoms.UI.Battle.BattleUiSkin.Scale;
+            b.Add(tail);
+            return b;
+        }
+
+        static VisualElement Bubble(VisualElement content, float radius)
+        {
+            var b = Anchored();
             var box = new VisualElement { pickingMode = PickingMode.Ignore };
             box.style.backgroundColor = BubbleFill;
             box.style.borderTopWidth = box.style.borderBottomWidth = box.style.borderLeftWidth = box.style.borderRightWidth = 2;
@@ -151,8 +186,9 @@ namespace ThreeKingdoms.UI.Story
             return b;
         }
 
-        static VisualElement SpeechBubble(string text)
+        VisualElement SpeechBubble(string text)
         {
+            if (Skin && Skin.HasBubbles) return PixelSpeech(text);
             var l = new Label(text) { pickingMode = PickingMode.Ignore };
             l.style.fontSize = 20; l.style.color = BubbleInk; l.style.whiteSpace = WhiteSpace.Normal; l.style.maxWidth = 380;
             l.style.paddingLeft = l.style.paddingRight = 14; l.style.paddingTop = l.style.paddingBottom = 8;
@@ -160,8 +196,17 @@ namespace ThreeKingdoms.UI.Story
             return Bubble(l, 10);
         }
 
-        static VisualElement MarkBubble()
+        VisualElement MarkBubble()
         {
+            if (Skin && Skin.HasBubbles)
+            {
+                var m = Anchored();
+                var img = new VisualElement { pickingMode = PickingMode.Ignore };
+                img.AddToClassList("alert-frame");
+                ThreeKingdoms.UI.Battle.BattleUiSkin.Image(img, Skin.BubbleAlert);
+                m.Add(img);
+                return m;
+            }
             var l = new Label("!") { pickingMode = PickingMode.Ignore };
             l.style.fontSize = 30; l.style.color = Alert; l.style.unityFontStyleAndWeight = FontStyle.Bold;
             l.style.width = 40; l.style.height = 40; l.style.unityTextAlign = TextAnchor.MiddleCenter;
