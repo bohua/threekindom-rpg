@@ -193,8 +193,10 @@ namespace ThreeKingdoms.EditorTools
             Person("Liu Bei", "LiuBei", new Vector3(-3.0f, 0, 3.3f));
             Person("Zhang Fei", "ZhangFei", new Vector3(-0.2f, 0, 3.3f));
             Person("Guan Yu", "GuanYu", new Vector3(-5f, 0, -2.5f));
-            // The waiter: a stand-in sprite (the grain porter's walk sheet) until his own art is drawn.
-            Person("酒保", ResidentImporter.Residents.First(r => r.Id == "N12").Key, new Vector3(2.6f, 0, 5.6f));
+            // The waiter (Codex art/tavern-waiter); the grain porter's sheet stands in if his atlas is missing.
+            string waiterKey = File.Exists(HD2DSampleBuilder.AtlasPath(ResidentImporter.WaiterKey))
+                ? ResidentImporter.WaiterKey : ResidentImporter.Residents.First(r => r.Id == "N12").Key;
+            Person("酒保", waiterKey, new Vector3(2.6f, 0, 5.6f));
 
             var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camGo.AddComponent<Camera>();

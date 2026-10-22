@@ -1,3 +1,4 @@
+using System.Linq;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -31,6 +32,10 @@ namespace ThreeKingdoms.EditorTools
             ("N12", "NpcGrainPorter", "NPC_GRAIN_PORTER", true),
         };
 
+        // The tavern waiter (user 2026-10-22, Codex art/tavern-waiter): same sheet format, his own folder.
+        public const string WaiterKey = "NpcTavernWaiter";
+        const string WaiterSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\tavern-waiter";
+
         [MenuItem("JRPG/Import Zhuojun Residents")]
         public static void Import()
         {
@@ -42,16 +47,18 @@ namespace ThreeKingdoms.EditorTools
             using (var liu = new Sheet(LiuBeiWalk, 4)) { liuWalk0 = liu.FigureHeight(0); liuStanding = liu.FigureHeight(1); }
             int size = HD2DSampleBuilder.FrameSize;
 
-            foreach (var (_, key, prefix, walks) in Residents)
+            var sheets = Residents.Select(r => (r.Key, r.Prefix, r.Walks, Dir: root))
+                .Append((WaiterKey, "NPC_TAVERN_WAITER", true, WaiterSource));
+            foreach (var (key, prefix, walks, dir) in sheets)
             {
-                string poses = Path.Combine(root, prefix + "_3X3.png");
+                string poses = Path.Combine(dir, prefix + "_3X3.png");
                 if (!File.Exists(poses)) { Debug.Log($"Resident sheet {prefix} not found; keeping the committed atlas."); continue; }
                 Directory.CreateDirectory(Path.GetDirectoryName(HD2DSampleBuilder.AtlasPath(key)));
                 Color32[] posePixels, walkPixels = null;
                 int poseWidth, walkWidth = 0;
                 using (var sheet = new Sheet(poses, 3))
                     posePixels = sheet.Convert(Mathf.RoundToInt(LiuBeiFigure * sheet.FigureHeight(0) / liuStanding), size, out poseWidth);
-                string walkPath = Path.Combine(root, prefix + "_WALK_4X4.png");
+                string walkPath = Path.Combine(dir, prefix + "_WALK_4X4.png");
                 if (walks && File.Exists(walkPath))
                     using (var sheet = new Sheet(walkPath, 4))
                         walkPixels = sheet.Convert(Mathf.RoundToInt(LiuBeiFigure * sheet.FigureHeight(0) / liuWalk0), size, out walkWidth);
