@@ -26,8 +26,7 @@ namespace ThreeKingdoms.EditorTools
         static readonly Vector2[] PlayerFeet = { new Vector2(-5.4f, -0.4f), new Vector2(-3.9f, -1.8f), new Vector2(-5.6f, -3.2f) };
         static readonly Vector2[] EnemyFeet = { new Vector2(4.2f, -0.4f), new Vector2(5.8f, -1.3f), new Vector2(4.2f, -2.3f), new Vector2(5.8f, -3.2f) };
 
-        // One playable scene per V1 battle (V1_SPEC §2.2). Battle 1 is fought in the market; battles 2–3 in front of the
-        // Yellow Turban camp outside the walls (the second of the two backdrops V1_SPEC §2.3 allows). Enemy sprite keys follow INITIAL_SCENARIO_ART: generic
+        // One playable scene per V1 battle (V1_SPEC §2.2), all three in front of the Yellow Turban camp outside the walls. Enemy sprite keys follow INITIAL_SCENARIO_ART: generic
         // Yellow Turban officers share one sheet; the three brothers each have their own.
         sealed class BattleSpec
         {
@@ -38,7 +37,8 @@ namespace ThreeKingdoms.EditorTools
 
         static readonly BattleSpec[] Battles =
         {
-            new BattleSpec { Path = ScenePath, EncounterId = "battle_1", Next = "Battle_Tutorial02", Location = "涿郡 · 街市",
+            // Battle 1 too is fought outside the south gate, where Cheng Yuanzhi blocks it (user 2026-10-22).
+            new BattleSpec { Path = ScenePath, EncounterId = "battle_1", Next = "Battle_Tutorial02", Location = "涿郡 · 城外", BaseScene = BattleBackdropBaker.OutskirtsScenePath,
                 EnemySprites = new[] { "YellowTurban", "YellowTurban", "YellowTurban" }, StartExp = 0, StartCopper = 120 },
             new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Tutorial02.unity", EncounterId = "battle_2", Next = "Battle_Tutorial03", Location = "涿郡 · 城外", BaseScene = BattleBackdropBaker.OutskirtsScenePath,
                 EnemySprites = new[] { "ZhangLiang", "YellowTurban", "YellowTurban", "YellowTurban" }, StartExp = 10, StartCopper = 150 },
