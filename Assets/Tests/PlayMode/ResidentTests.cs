@@ -62,11 +62,10 @@ public sealed class ResidentTests
         Assert.IsFalse(c.Speaking.Contains(elder));
         Assert.IsFalse(hud.SpeechBubbles.Contains(elder), "the bubble goes when he walks away");
 
-        // Story characters with a pending event wear "!"; the south gate puts "!" over Liu Bei.
-        Assert.Contains(c.GuanYu, c.StoryMarks.ToList());
-        Assert.Contains(c.ZhangFei, c.StoryMarks.ToList());
+        // The next story spot wears "!" (the notice board first, user 2026-10-22); the south gate puts "!" over Liu Bei.
+        Assert.Contains(c.NoticeBoard, c.StoryMarks.ToList());
         yield return null;
-        Assert.Contains(c.GuanYu, hud.MarkBubbles.ToList());
+        Assert.Contains(c.NoticeBoard, hud.MarkBubbles.ToList());
         // Coming in from outside (the guards only stop the way out, user 2026-10-22), the gate passage is an event spot.
         cc.enabled = false; c.Player.transform.position = new Vector3(0, 0, -46f); cc.enabled = true;
         yield return null;

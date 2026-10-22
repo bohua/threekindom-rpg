@@ -46,7 +46,10 @@ namespace ThreeKingdoms.UI.Battle
         Label hintLabel;
         float hintUntil;
         Label roundLabel, orderLabel, messageLabel, promptLabel;
-        Button fastButton;
+        Button fastButton, autoButton, prepGo;
+        // "End preparation and sortie?" (user 2026-10-22), opened by Start during preparation.
+        VisualElement sortieConfirm;
+        public bool SortieConfirmOpen => sortieConfirm != null && sortieConfirm.style.display == DisplayStyle.Flex;
         readonly Dictionary<BattleUnit, Card> cardOf = new Dictionary<BattleUnit, Card>();
         readonly Dictionary<BattleUnit, Plate> plateOf = new Dictionary<BattleUnit, Plate>();
         readonly List<(Label label, float until, Vector3 world)> floating = new List<(Label, float, Vector3)>();
@@ -89,6 +92,7 @@ namespace ThreeKingdoms.UI.Battle
             Controller.Changed += Refresh;
             if (Tutor) Tutor.HintShown += ShowHint;
             Controller.EventPlayed += OnEvent;
+            Controller.SortieRequested += AskSortie;
             if (Controller.Session != null) Rebuild();
         }
 
@@ -100,6 +104,34 @@ namespace ThreeKingdoms.UI.Battle
             Controller.Changed -= Refresh;
             if (Tutor) Tutor.HintShown -= ShowHint;
             Controller.EventPlayed -= OnEvent;
+            Controller.SortieRequested -= AskSortie;
+        }
+
+        // Auto battle on / off (user 2026-10-22); the command menu stays hidden while it is on.
+        public void ToggleAuto()
+        {
+            Controller.Auto = !Controller.Auto;
+            if (!Controller.Auto) step = Step.Command;
+            Refresh();
+        }
+
+        public void AskSortie()
+        {
+            if (!Controller.CanConfirm || SortieConfirmOpen) return;
+            sortieConfirm.Clear();
+            sortieConfirm.Add(Text(BattleText.SortieQuestion, 28, Color.white));
+            var row = Row(sortieConfirm); row.style.marginTop = 20; row.style.justifyContent = Justify.Center;
+            var yes = MenuButton(row, BattleText.ConfirmSortie, () => { CloseSortie(); Controller.ConfirmPreparation(); }, 24, 220);
+            var no = MenuButton(row, BattleText.KeepPreparing, CloseSortie, 24, 220);
+            no.style.marginLeft = 16;
+            sortieConfirm.style.display = DisplayStyle.Flex;
+            yes.Focus();
+        }
+
+        void CloseSortie()
+        {
+            sortieConfirm.style.display = DisplayStyle.None;
+            prepGo?.Focus();
         }
 
         // ---------- layout ----------
@@ -110,6 +142,8 @@ namespace ThreeKingdoms.UI.Battle
             top.style.justifyContent = Justify.SpaceBetween;
             var location = Framed(top, plaque: true); location.Add(Text(LocationName, 30, Color.white));
             var right = Row(top);
+            autoButton = MenuButton(right, BattleText.Auto, ToggleAuto, 22, 120);
+            autoButton.style.marginRight = 12;
             fastButton = MenuButton(right, BattleText.Fast, () => { Controller.Fast = !Controller.Fast; Refresh(); }, 22, 120);
             var roundBox = Framed(right, plaque: true); roundBox.style.marginLeft = 12;
             roundLabel = Text("", 28, Color.white); roundBox.Add(roundLabel);
@@ -172,6 +206,11 @@ namespace ThreeKingdoms.UI.Battle
             prepPanel.style.flexDirection = FlexDirection.Column;
             prepPanel.style.backgroundColor = new Color(0.05f, 0.06f, 0.10f, 0.96f);
             prepPanel.style.display = DisplayStyle.None;
+            sortieConfirm = Framed(root); Absolute(sortieConfirm, 620, 400, 620, -1);
+            sortieConfirm.style.flexDirection = FlexDirection.Column; sortieConfirm.style.alignItems = Align.Center;
+            sortieConfirm.style.backgroundColor = new Color(0.05f, 0.06f, 0.10f, 0.98f);
+            sortieConfirm.style.paddingTop = sortieConfirm.style.paddingBottom = 28;
+            sortieConfirm.style.display = DisplayStyle.None;
         }
 
         // ---------- teaching hints ----------
@@ -235,7 +274,9 @@ namespace ThreeKingdoms.UI.Battle
             var outfit = MenuButton(actions, BattleText.Outfit, () => { prepFocus = -1; Controller.OpenPanel("outfit"); }, 24, 220);
             var go = MenuButton(actions, BattleText.ConfirmSortie, Controller.ConfirmPreparation, 24, 260, enabled: Controller.CanConfirm);
             go.style.marginLeft = 16;
-            (prepFocus >= 0 && prepFocus < buttons.Count ? buttons[prepFocus] : Controller.CanConfirm ? go : outfit).Focus();
+            prepGo = Controller.CanConfirm ? go : outfit;
+            // The cursor starts on 「确认出战」; the player moves off it to adjust (user 2026-10-22).
+            (prepFocus >= 0 && prepFocus < buttons.Count ? buttons[prepFocus] : prepGo).Focus();
         }
 
         void Rebuild()
@@ -420,7 +461,9 @@ namespace ThreeKingdoms.UI.Battle
             bool commanding = Controller.Current == BattleController.Phase.Commanding;
             if (commanding && step != Step.Command && pendingActor != Controller.Actor) step = Step.Command;
             pendingActor = Controller.Actor;
-            menu.style.display = commanding ? DisplayStyle.Flex : DisplayStyle.None;
+            menu.style.display = commanding && !Controller.Auto ? DisplayStyle.Flex : DisplayStyle.None;
+            if (skin) skin.Item(autoButton, Controller.Auto ? skin.ItemSelected : skin.ItemNormal);
+            else autoButton.style.backgroundColor = Controller.Auto ? new Color(0.5f, 0.38f, 0.12f) : Panel;
             promptLabel.style.display = menu.style.display;
             if (commanding) BuildMenu();
             if (Controller.Current == BattleController.Phase.Finished && Controller.Session.Result != null)
@@ -532,6 +575,7 @@ namespace ThreeKingdoms.UI.Battle
         // Cancel (gamepad B / Esc): sub-menu → command menu → previous general's command.
         void Cancel()
         {
+            if (SortieConfirmOpen) { CloseSortie(); return; }
             if (Controller == null || Controller.Current != BattleController.Phase.Commanding) return;
             Controller.PreviewTarget(null); HighlightPlate(null);
             if (step != Step.Command) { step = Step.Command; BuildMenu(); }
@@ -720,11 +764,12 @@ namespace ThreeKingdoms.UI.Battle
             }
             bool preparing = Controller.Current == BattleController.Phase.Preparing;
             if (preparing && Controller.Panel != null) return;   // the outfit panel owns focus
+            if (!preparing && Controller.Current == BattleController.Phase.Commanding && Controller.Auto) return;
             if (!preparing && Controller.Current != BattleController.Phase.Commanding && Controller.Current != BattleController.Phase.Finished) return;
             var es = EventSystem.current;
             if (es != null && es.currentSelectedGameObject != null && root.panel?.focusController.focusedElement != null) return;
-            var target = preparing ? prepPanel : resultPanel.style.display == DisplayStyle.Flex ? (VisualElement)resultPanel : menu;
-            var button = target.Query<Button>().Where(b => b.enabledSelf).First();
+            var target = preparing ? (SortieConfirmOpen ? sortieConfirm : prepPanel) : resultPanel.style.display == DisplayStyle.Flex ? (VisualElement)resultPanel : menu;
+            var button = preparing && !SortieConfirmOpen && prepGo != null && prepFocus < 0 ? prepGo : target.Query<Button>().Where(b => b.enabledSelf).First();
             if (button == null) return;
             button.Blur();     // a focus that happened before the handler existed must be re-sent
             button.Focus();

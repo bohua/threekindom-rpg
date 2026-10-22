@@ -93,8 +93,8 @@ public sealed class ZhuojunTownTests
         Assert.Greater(mover.transform.position.y, 0.9f, "standing on the landing, not inside the steps");
         Assert.Greater(mover.transform.position.z, 20.4f, "up at the door");
         Assert.Less(mover.transform.position.z, 22f, "the hall wall still stops the player");
-        // And back down again.
-        for (float t = 0; t < 1f; t += 0.02f) { mover.Move(Vector2.down, 0.02f); yield return null; }
+        // And back down again, into the courtyard (short of the new gate steps further south).
+        for (float t = 0; t < 0.5f; t += 0.02f) { mover.Move(Vector2.down, 0.02f); yield return null; }
         Assert.Less(mover.transform.position.y, 0.1f);
     }
 

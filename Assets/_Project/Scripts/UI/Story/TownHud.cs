@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ThreeKingdoms.Gameplay.Story;
 using ThreeKingdoms.UI.Battle;
+using ThreeKingdoms.UI.Common;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -18,6 +19,9 @@ namespace ThreeKingdoms.UI.Story
         [Tooltip("Illustrations shown beside the dialogue box for speakers that have one")] public DialoguePortraitSet Portraits;
 
         DialogueView dialogue;
+        // Liu Bei's answer to Zhang Fei (user 2026-10-22): the options stand above the dialogue box.
+        VisualElement choiceList;
+        public IReadOnlyList<Button> ChoiceButtons => choiceList.Query<Button>().ToList();
         // The speaker whose illustration is up, or null.
         public string PortraitSpeaker => dialogue?.PortraitSpeaker;
         public Texture2D PortraitTexture => dialogue?.PortraitTexture;
@@ -62,6 +66,11 @@ namespace ThreeKingdoms.UI.Story
             prompt.style.unityTextAlign = TextAnchor.MiddleCenter;
 
             dialogue = new DialogueView(root, Skin, Portraits);
+            choiceList = new VisualElement();
+            Place(choiceList, -1, -1, 300, 230);
+            choiceList.style.width = 520;
+            choiceList.style.display = DisplayStyle.None;
+            root.Add(choiceList);
 
             fade = new VisualElement { pickingMode = PickingMode.Ignore };
             Place(fade, 0, 0, 0, 0);
@@ -83,10 +92,38 @@ namespace ThreeKingdoms.UI.Story
             var l = Controller.Line;
             if (l.HasValue) dialogue.Show(l.Value.Speaker, l.Value.Line);
             else dialogue.Hide();
+            ShowChoices(Controller.Choices);
             fade.style.opacity = Controller.Fade;
         }
 
-        void Update() => dialogue?.Tick();
+        void ShowChoices(IReadOnlyList<string> keys)
+        {
+            if (keys == null) { choiceList.Clear(); choiceList.style.display = DisplayStyle.None; return; }
+            if (choiceList.childCount == keys.Count) return;
+            choiceList.Clear();
+            MenuKit.Skin = Skin;
+            for (int i = 0; i < keys.Count; i++)
+            {
+                int index = i;
+                MenuKit.Button(choiceList, StoryText.Line(keys[i]), () => Controller.Choose(index), size: 26);   // one line: the pixel option bar with its cursor
+            }
+            choiceList.style.display = DisplayStyle.Flex;
+            MenuKit.FocusFirst(choiceList);
+        }
+
+        void Update()
+        {
+            dialogue?.Tick();
+            // The town's panels share one UI panel: keep the focus on an answer, not on a hidden menu's button.
+            if (choiceList != null && choiceList.style.display == DisplayStyle.Flex && root.panel != null
+                && !(root.panel.focusController.focusedElement is Button b && b.parent == choiceList))
+            {
+                // Re-sent like MenuKit.KeepFocus: a focus given before the panel's handler takes it is lost.
+                var first = choiceList.Query<Button>().First();
+                first?.Blur();
+                first?.Focus();
+            }
+        }
 
         // ---------- bubbles ----------
 

@@ -74,6 +74,9 @@ namespace ThreeKingdoms.UI.Battle
         public const string IntelHeader = "敌方情报";
         public const string Outfit = "配装";
         public const string ConfirmSortie = "确认出战";
+        public const string SortieQuestion = "结束整备并出战？";
+        public const string KeepPreparing = "继续整备";
+        public const string Auto = "自动";
         public const string Standby = "待命";
         public const string PrepHint = "确认出战后自动存档；战败可还原到此时的状态重新准备。";
         public const string NeedOne = "至少选择一名武将出战。";

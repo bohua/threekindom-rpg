@@ -29,6 +29,7 @@ namespace ThreeKingdoms.EditorTools
             BattleSceneBuilder.Build();
             ZhuojunTownBuilder.Build();
             WireTown();
+            BuildTavern();
             BuildTitle();
 
             string town = ZhuojunTownBuilder.ScenePath;
@@ -112,6 +113,37 @@ namespace ThreeKingdoms.EditorTools
             };
         }
 
+        // The tavern's main room (user 2026-10-22): Liu Bei and Zhang Fei at the table, the waiter by the counter, Guan
+        // Yu coming in from the street door at the front left.
+        static void BuildTavern()
+        {
+            ZhuojunTownBuilder.BuildTavernInterior();
+            var spots = new GameObject("Stage spots").transform;
+            Transform Spot(string name, Vector3 at) { var t = new GameObject(name).transform; t.SetParent(spots, false); t.position = at; return t; }
+            var stage = new GameObject("Tavern Stage").AddComponent<TavernStage>();
+            stage.Catalog = AssetDatabase.LoadAssetAtPath<BattleCatalog>(BattleDataBuilder.CatalogPath);
+            stage.LiuBei = GameObject.Find("Liu Bei").transform;
+            stage.ZhangFei = GameObject.Find("Zhang Fei").transform;
+            stage.GuanYu = GameObject.Find("Guan Yu").transform;
+            stage.Waiter = GameObject.Find("酒保").transform;
+            stage.LiuSeat = Spot("Liu Bei's seat", new Vector3(-3.0f, 0, 3.3f));
+            stage.ZhangSeat = Spot("Zhang Fei's seat", new Vector3(-0.2f, 0, 3.3f));
+            stage.GuanSeat = Spot("Guan Yu's seat", new Vector3(-1.6f, 0, 2.3f));
+            stage.WaiterPost = Spot("Waiter by the counter", new Vector3(2.8f, 0, 5.4f));
+            stage.WaiterAtTable = Spot("Waiter at the table", new Vector3(-1.6f, 0, 4.7f));
+            stage.GuanYuEntrance = new[] { new Vector3(-4.8f, 0, -3f), new Vector3(-4.8f, 0, 1.2f), new Vector3(2.4f, 0, 1.5f) };
+            stage.InteractAction = ProjectSetup.Action("Interact");
+
+            var hudGo = new GameObject("Tavern HUD");
+            var doc = hudGo.AddComponent<UIDocument>();
+            doc.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);
+            var hud = hudGo.AddComponent<TavernHud>();
+            hud.Stage = stage;
+            hud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
+            hud.Portraits = AssetDatabase.LoadAssetAtPath<DialoguePortraitSet>(DialoguePortraitImporter.SetPath);
+            EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ZhuojunTownBuilder.TavernScenePath);
+        }
+
         // A walking copy of a companion without a collider (it must never block Liu Bei); hidden until they join.
         static ThreeKingdoms.Gameplay.PartyFollower Follower(string name, string key)
         {
@@ -159,6 +191,9 @@ namespace ThreeKingdoms.EditorTools
             c.Camera = Object.FindFirstObjectByType<FollowCamera>();
             c.GuanYu = GameObject.Find("Guan Yu").transform;
             c.ZhangFei = GameObject.Find("Zhang Fei").transform;
+            // Zhang Fei walks up to the notice board (user 2026-10-22): a walk cycle, and no collider to snag on.
+            Object.DestroyImmediate(c.ZhangFei.GetComponent<Collider>());
+            c.ZhangFei.gameObject.AddComponent<ThreeKingdoms.Gameplay.PixelWalkFrames>().Animator = c.ZhangFei.GetComponentInChildren<ThreeKingdoms.Gameplay.SpriteFrameAnimator>();
             c.Player.gameObject.AddComponent<ThreeKingdoms.Gameplay.PartyTrail>();
             c.GuanYuFollower = Follower("Guan Yu (follower)", "GuanYu");
             c.ZhangFeiFollower = Follower("Zhang Fei (follower)", "ZhangFei");
@@ -177,6 +212,12 @@ namespace ThreeKingdoms.EditorTools
             c.OathEndSpot = Spot("After the oath (inside the west gate)", new Vector3(-43.5f, 0, 0f));      // GDD answer 7
             c.TavernSpot = Spot("Loaded save (before the tavern keeper)", c.Innkeeper.position + new Vector3(0, 0, -1.4f));
             c.GroveFocus = Spot("Peach grove focus", new Vector3(-66f, 0, 0f));
+            // The notice board on the market square and the tavern door (user 2026-10-22).
+            c.NoticeBoard = GameObject.Find("05 Market")?.transform.Find("prop_notice_board");
+            if (!c.NoticeBoard) throw new System.InvalidOperationException("Town has no notice board on the market square");
+            c.NoticeSpot = Spot("Read the notice", c.NoticeBoard.position + new Vector3(0, 0, -1.4f));
+            c.ZhangFeiEntrance = new[] { new Vector3(17f, 0, -8f), new Vector3(2.2f, 0, -8f), new Vector3(2.2f, 0, -5.4f) };
+            c.TavernDoor = Spot("Tavern door", new Vector3(-14f, 0, -4.4f));
             c.GroveSpots = new[]
             {
                 Spot("Grove Liu Bei", new Vector3(-66f, 0, -1.2f)),

@@ -34,6 +34,14 @@ namespace ThreeKingdoms.Gameplay
 
         void OnEnable() => last = transform.position;
 
+        // Turn to face a direction while standing (story scenes): the next frame shows that row's standing pose.
+        public void Face(Vector3 direction)
+        {
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f) return;
+            row = Mathf.Abs(direction.x) > Mathf.Abs(direction.z) ? (direction.x < 0f ? 1 : 2) : (direction.z > 0f ? 3 : 0);
+        }
+
         void LateUpdate()
         {
             Vector3 delta = transform.position - last;

@@ -38,7 +38,7 @@ public sealed class MainLineTests
         cc.enabled = false; p.transform.position = at; cc.enabled = true;
     }
 
-    static IEnumerator Talk(TownStoryController c, Vector3 at, string expectedPrompt)
+    static IEnumerator Talk(TownStoryController c, Vector3 at, string expectedPrompt, int choice = 0)
     {
         Teleport(c.Player, at);
         yield return null;
@@ -50,7 +50,8 @@ public sealed class MainLineTests
         {
             Assert.Less(Time.realtimeSinceStartup, deadline);
             yield return null;
-            c.Advance();
+            if (c.Choices != null) c.Choose(choice);
+            else c.Advance();
         }
         Assert.IsTrue(c.Player.InputEnabled, "control returns after the sequence");
     }
@@ -118,8 +119,10 @@ public sealed class MainLineTests
         Assert.IsNull(c.BlockerLeader, "no Yellow Turbans at the gate before the oath");
         while (c.Busy) { yield return null; c.Advance(); }
 
-        // Zhang Fei first, then Guan Yu (order is free); the oath starts by itself and ends inside the west gate.
-        yield return Talk(c, c.ZhangFei.position + new Vector3(0, 0, -1.2f), "talk:zhang_fei");
+        // The notice board on the square (user 2026-10-22): Liu Bei sighs, Zhang Fei walks up and scolds him, Liu Bei
+        // answers (either answer works) and Zhang Fei joins.
+        Assert.That(c.StoryMarks, Has.Member(c.NoticeBoard), "the notice board wears the \"!\"");
+        yield return Talk(c, c.NoticeSpot.position, "notice", choice: 1);
         Assert.IsTrue(story.ZhangFeiJoined);
         Assert.IsFalse(c.ZhangFei.gameObject.activeSelf, "a joined companion leaves their post");
         // …and walks behind Liu Bei from then on (user 2026-10-20).
@@ -145,7 +148,30 @@ public sealed class MainLineTests
         Assert.AreEqual(zf.StopGap, zf.Distance, 0.3f, "and closes in to the resting gap after he stops");
         Vector3 gap = c.Player.transform.position - zf.transform.position; gap.y = 0f;
         Assert.Greater(gap.x, 0.5f, "behind, on the side Liu Bei came from");
-        yield return Talk(c, c.GuanYu.position + new Vector3(0, 0, -1.2f), "talk:guan_yu");
+        // Then into the tavern with him: the indoor scene, where Guan Yu comes in and joins; back in town the oath
+        // plays by itself and ends inside the west gate.
+        Assert.IsFalse(story.GuanYuJoined);
+        Assert.That(c.StoryMarks, Has.Member(c.TavernDoor), "the tavern door wears the \"!\" now");
+        Teleport(c.Player, c.TavernDoor.position + new Vector3(1.2f, 0, -1.0f));   // beside the tavern keeper
+        yield return null;
+        c.Interact();
+        float tavernDeadline = Time.realtimeSinceStartup + 60f;
+        while (SceneManager.GetActiveScene().name != "Zhuojun_Tavern") { Assert.Less(Time.realtimeSinceStartup, tavernDeadline); yield return null; }
+        var tavern = Object.FindFirstObjectByType<TavernStage>();
+        tavern.FadeTime = 0.02f;
+        bool guanSpoke = false;
+        while (SceneManager.GetActiveScene().name == "Zhuojun_Tavern")
+        {
+            Assert.Less(Time.realtimeSinceStartup, tavernDeadline);
+            if (tavern && tavern.Line.HasValue) { guanSpoke |= tavern.Line.Value.Speaker == "guan_yu"; tavern.Advance(); }
+            yield return null;
+        }
+        Assert.IsTrue(guanSpoke, "Guan Yu speaks in the tavern");
+        Assert.IsTrue(story.GuanYuJoined);
+        yield return null;
+        c = Object.FindFirstObjectByType<TownStoryController>();
+        c.FadeTime = 0.02f;
+        while (c.Busy) { Assert.Less(Time.realtimeSinceStartup, tavernDeadline); yield return null; c.Advance(); }
         Assert.AreEqual(SequenceState.Done, story.Oath);
         Assert.AreEqual(StoryPhase.LeaveTown, story.Phase);
         Assert.Less(Vector3.Distance(c.Player.transform.position, c.OathEndSpot.position), 0.5f, "control resumes inside the west gate");
@@ -179,6 +205,18 @@ public sealed class MainLineTests
             yield return null;
             var prep = Object.FindFirstObjectByType<BattleController>();
             Assert.AreEqual(BattleController.Phase.Preparing, prep.Current, "a play-through battle opens on preparation");
+            if (battle == 1)
+            {
+                // The cursor starts on 「确认出战」; Start asks before ending the preparation (user 2026-10-22).
+                yield return null; yield return null;
+                Assert.AreEqual("确认出战", (HudRoot().panel.focusController.focusedElement as Button)?.text);
+                var prepHud = Object.FindFirstObjectByType<BattleHud>();
+                prepHud.AskSortie();
+                Assert.IsTrue(prepHud.SortieConfirmOpen);
+                Press(ButtonText("继续整备"));
+                Assert.IsFalse(prepHud.SortieConfirmOpen, "keep preparing closes the question");
+                Assert.AreEqual(BattleController.Phase.Preparing, prep.Current);
+            }
             prep.ConfirmPreparation();
             // Confirming writes the rolling pre-battle save (save-system rule 2): one slot, overwritten each battle.
             Assert.AreEqual(ThreeKingdoms.Save.SaveReadStatus.Ok, GameRun.Current.Slots().Read(ThreeKingdoms.Save.SaveSlots.Auto, out var auto));

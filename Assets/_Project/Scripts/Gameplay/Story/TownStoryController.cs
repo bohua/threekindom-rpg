@@ -37,6 +37,11 @@ namespace ThreeKingdoms.Gameplay.Story
         public Transform Innkeeper;
         [Tooltip("The town residents N01–N12 (ZHUOJUN_TOWN_DESIGN.md §4); N04 and N05 open the shop and the save panel")]
         public Transform[] Residents = Array.Empty<Transform>();
+        [Header("Meeting Zhang Fei and Guan Yu (user 2026-10-22)")]
+        [Tooltip("The notice board on the market square: reading it starts the meeting with Zhang Fei")] public Transform NoticeBoard;
+        [Tooltip("Where Liu Bei stands to read it")] public Transform NoticeSpot;
+        [Tooltip("Zhang Fei's walk in from off screen: the first point is where he appears")] public Vector3[] ZhangFeiEntrance = Array.Empty<Vector3>();
+        [Tooltip("The tavern door: with Zhang Fei in the party, entering leads to the tavern scene where Guan Yu joins")] public Transform TavernDoor;
         [Header("Spots")]
         public Transform NewGameSpot, ReturnSpot, OathEndSpot, GroveFocus, TavernSpot;
         public Transform[] GroveSpots = Array.Empty<Transform>();   // Liu, Guan, Zhang
@@ -78,6 +83,11 @@ namespace ThreeKingdoms.Gameplay.Story
         public string Prompt { get; private set; }
         public float Fade { get; private set; }
         public bool InGatePassage { get; private set; }
+        // The options of a choice on screen (StoryText keys), or null; Choose(i) answers it.
+        public IReadOnlyList<string> Choices { get; private set; }
+        int? chosen;
+        public void Choose(int index) { if (Choices != null && index >= 0 && index < Choices.Count) chosen = index; }
+
         public const string ShopPanel = "shop", SavePanel = "save", OutfitPanel = "outfit", MenuPanel = "menu";
         // The full-screen panel that owns input right now (shop or save), or null.
         public string Panel { get; private set; }
@@ -96,8 +106,9 @@ namespace ThreeKingdoms.Gameplay.Story
             get
             {
                 if (Run == null || Busy) yield break;
-                if (GuanYu && GuanYu.gameObject.activeInHierarchy && !Run.Story.GuanYuJoined) yield return GuanYu;
-                if (ZhangFei && ZhangFei.gameObject.activeInHierarchy && !Run.Story.ZhangFeiJoined) yield return ZhangFei;
+                // The notice board until Zhang Fei has joined, then the tavern door until Guan Yu has (user 2026-10-22).
+                if (NoticeBoard && !Run.Story.ZhangFeiJoined) yield return NoticeBoard;
+                else if (TavernDoor && Run.Story.ZhangFeiJoined && !Run.Story.GuanYuJoined) yield return TavernDoor;
                 if (BlockerLeader) yield return BlockerLeader;
             }
         }
@@ -127,15 +138,25 @@ namespace ThreeKingdoms.Gameplay.Story
         int closedShopFrame = -1, openedPanelFrame = -1;
         bool warnedNoWeapon;
 
-        static readonly DialogueLine[] GuanYuMeeting =
+        // 演义 第1回: Liu Bei sighs before the recruiting notice and Zhang Fei calls out to him (user 2026-10-22).
+        static readonly DialogueLine[] NoticeRead =
         {
-            new DialogueLine("guan_yu", "guan.1"), new DialogueLine("liu_bei", "guan.2"),
-            new DialogueLine("guan_yu", "guan.3"), new DialogueLine("system", "guan.joined"),
+            new DialogueLine("narrator", "notice.1"), new DialogueLine("liu_bei", "notice.2"),
         };
-        static readonly DialogueLine[] ZhangFeiMeeting =
+        static readonly DialogueLine[] ZhangFeiCallsOut =
         {
             new DialogueLine("zhang_fei", "zhang.1"), new DialogueLine("liu_bei", "zhang.2"),
-            new DialogueLine("zhang_fei", "zhang.3"), new DialogueLine("system", "zhang.joined"),
+            new DialogueLine("zhang_fei", "zhang.3"),
+        };
+        public static readonly string[] ZhangFeiChoices = { "choice.serve", "choice.wait" };
+        static readonly DialogueLine[][] ZhangFeiAnswers =
+        {
+            new[] { new DialogueLine("liu_bei", "zhang.serve.1"), new DialogueLine("zhang_fei", "zhang.serve.2") },
+            new[] { new DialogueLine("liu_bei", "zhang.wait.1"), new DialogueLine("zhang_fei", "zhang.wait.2"), new DialogueLine("liu_bei", "zhang.wait.3") },
+        };
+        static readonly DialogueLine[] ZhangFeiJoins =
+        {
+            new DialogueLine("system", "zhang.joined"), new DialogueLine("zhang_fei", "zhang.tavern"),
         };
         static readonly DialogueLine[] OathScene =
         {
@@ -164,11 +185,13 @@ namespace ThreeKingdoms.Gameplay.Story
             {
                 GameRun.Arrival.ReturnFromBattle => ReturnSpot,
                 GameRun.Arrival.AtTavern => TavernSpot ? TavernSpot : ReturnSpot,
+                GameRun.Arrival.FromTavernInside => TavernSpot ? TavernSpot : ReturnSpot,
                 _ => NewGameSpot,
             });
             Run.NextArrival = GameRun.Arrival.ReturnFromBattle;   // any later town load is a return
-            if (GuanYu) GuanYu.gameObject.SetActive(!story.GuanYuJoined);
-            if (ZhangFei) ZhangFei.gameObject.SetActive(!story.ZhangFeiJoined);
+            // Neither stands in town any more: Zhang Fei walks up at the notice board, Guan Yu is met in the tavern.
+            if (GuanYu) GuanYu.gameObject.SetActive(false);
+            if (ZhangFei) ZhangFei.gameObject.SetActive(false);
             ShowFollowers(Vector3.back);   // arriving through the south gate: the party trails into the passage
             ShowBlockers();
             wasInside = TownInside.Contains(Player.transform.position);
@@ -209,8 +232,8 @@ namespace ThreeKingdoms.Gameplay.Story
             if (Busy) return;
             UpdatePrompt();
             if (Prompt == null) return;
-            if (Prompt == "talk:" + StoryState.GuanYu) StartCoroutine(Meet(StoryState.GuanYu, GuanYu, GuanYuMeeting));
-            else if (Prompt == "talk:" + StoryState.ZhangFei) StartCoroutine(Meet(StoryState.ZhangFei, ZhangFei, ZhangFeiMeeting));
+            if (Prompt == "notice") StartCoroutine(Run.Story.ZhangFeiJoined ? Say(NoticeRead) : MeetZhangFei());
+            else if (Prompt == "tavern") StartCoroutine(EnterTavern());
             else if (Prompt == "gate:locked" || Prompt == "gate:done") StartCoroutine(Say(new[] { new DialogueLine("system", Prompt) }));
             else if (Prompt == ShopPanel || Prompt == SavePanel) { Face(Prompt == ShopPanel ? Smith : Innkeeper); OpenPanel(Prompt); }
             else if (Prompt.StartsWith("npc:")) TalkToResident(Prompt.Substring(4));
@@ -325,8 +348,8 @@ namespace ThreeKingdoms.Gameplay.Story
             if (InGatePassage || (Near(BlockerLeader, p) && story.CanLeaveTown(out _)))
                 prompt = story.CanLeaveTown(out string reason) ? "gate:" + story.NextBattleId
                     : reason == StoryState.ReasonAllDone ? "gate:done" : "gate:locked";
-            else if (Near(GuanYu, p) && !story.GuanYuJoined) prompt = "talk:" + StoryState.GuanYu;
-            else if (Near(ZhangFei, p) && !story.ZhangFeiJoined) prompt = "talk:" + StoryState.ZhangFei;
+            else if (Near(NoticeBoard, p)) prompt = "notice";
+            else if (Near(TavernDoor, p) && story.ZhangFeiJoined && !story.GuanYuJoined) prompt = "tavern";
             else if (Near(Smith, p)) prompt = ShopPanel;
             else if (Near(Innkeeper, p)) prompt = SavePanel;
             // Other residents need no button: they speak in their bubble (UpdateBubbles).
@@ -381,17 +404,77 @@ namespace ThreeKingdoms.Gameplay.Story
             }
         }
 
-        IEnumerator Meet(string id, Transform npc, DialogueLine[] lines)
+        // At the notice board: Liu Bei reads and sighs, Zhang Fei strides in from off screen and scolds him, Liu Bei
+        // answers one of two ways, and Zhang Fei joins either way, then proposes the tavern (user 2026-10-22).
+        IEnumerator MeetZhangFei()
         {
-            yield return Say(lines);
-            // Joined only once the dialogue has ended (GDD edge case); the companion leaves their post.
-            bool startOath = Run.Story.Join(id);
-            ShowBlockers();
-            if (npc) npc.gameObject.SetActive(false);
-            // The new companion steps in from where they stood.
-            ShowFollowers(npc ? npc.position - Player.transform.position : Vector3.back);
+            Busy = true;
+            SetControl(false);
+            Prompt = null;
             Changed?.Invoke();
-            if (startOath) yield return PlayOath();
+            try
+            {
+                if (NoticeSpot) Place(Player.transform, NoticeSpot);
+                if (NoticeBoard) StageMoves.Face(Player.transform, NoticeBoard.position);
+                yield return Lines(NoticeRead);
+                if (ZhangFei && ZhangFeiEntrance.Length > 0)
+                {
+                    StageMoves.Place(ZhangFei, ZhangFeiEntrance[0]);
+                    ZhangFei.gameObject.SetActive(true);
+                    yield return StageMoves.Walk(ZhangFei, ZhangFeiEntrance);
+                    StageMoves.Face(ZhangFei, Player.transform.position);
+                    StageMoves.Face(Player.transform, ZhangFei.position);
+                }
+                yield return Lines(ZhangFeiCallsOut);
+                Line = new DialogueLine("liu_bei", "choice.prompt");
+                Choices = ZhangFeiChoices;
+                chosen = null;
+                Changed?.Invoke();
+                while (chosen == null) yield return null;
+                int answer = chosen.Value;
+                Choices = null;
+                yield return Lines(ZhangFeiAnswers[answer]);
+                // Joined only once the talk is over (GDD edge case); he falls in behind Liu Bei.
+                Run.Story.Join(StoryState.ZhangFei);
+                Vector3 from = ZhangFei ? ZhangFei.position - Player.transform.position : Vector3.back;
+                if (ZhangFei) ZhangFei.gameObject.SetActive(false);
+                ShowFollowers(from);
+                ShowBlockers();
+                yield return Lines(ZhangFeiJoins);
+            }
+            finally
+            {
+                Line = null;
+                Choices = null;
+                Busy = false;
+                SetControl(true);
+                Changed?.Invoke();
+            }
+        }
+
+        // Lines inside a sequence that already holds the town.
+        IEnumerator Lines(IReadOnlyList<DialogueLine> lines)
+        {
+            foreach (var line in lines)
+            {
+                Line = line; advance = false;
+                Changed?.Invoke();
+                yield return null;
+                while (!advance) yield return null;
+            }
+            Line = null;
+        }
+
+        // Into the tavern with Zhang Fei: the indoor scene plays the meeting with Guan Yu (TavernStage).
+        IEnumerator EnterTavern()
+        {
+            Busy = true;
+            SetControl(false);
+            Prompt = null;
+            Changed?.Invoke();
+            yield return FadeTo(1f);
+            Run.NextArrival = GameRun.Arrival.FromTavernInside;
+            SceneManager.LoadScene(GameRun.TavernScene);
         }
 
         // Simplified peach-garden oath (V1_SPEC §2.1): the game moves the three to the grove outside the west gate,

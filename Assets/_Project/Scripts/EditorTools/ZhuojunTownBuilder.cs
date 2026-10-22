@@ -121,6 +121,110 @@ namespace ThreeKingdoms.EditorTools
             Debug.Log("ZHUOJUN_TOWN_BUILT");
         }
 
+        // ---------- tavern interior (user 2026-10-22) ----------
+
+        public const string TavernScenePath = "Assets/_Project/Scenes/Zhuojun_Tavern.unity";
+        const string TavernMaterialDir = TownDir + "/TavernMaterials";
+        const string TavernMeshPath = TownDir + "/Tavern_Meshes.asset";
+
+        // The tavern's main room as an open-fronted diorama seen by a fixed camera (the C-batch interior textures:
+        // back wall with its altar and jars, plank floor, counter, jar shelf, stove, low tables, mats, lamp stands).
+        // Room x -6..6, z 0..8, the street door at the front left. Characters stand where TavernStage places them.
+        public static void BuildTavernInterior()
+        {
+            BeginSession(TavernMaterialDir, TavernMeshPath);
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            RenderSettings.ambientMode = AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.46f, 0.40f, 0.36f);
+            RenderSettings.ambientEquatorColor = new Color(0.40f, 0.32f, 0.24f);
+            RenderSettings.ambientGroundColor = new Color(0.20f, 0.15f, 0.11f);
+            RenderSettings.fog = false;
+
+            var room = new GameObject("Tavern room").transform;
+            var wallSize = Metres("interior_tavern_back_wall");   // 12 × 3.5
+            Quad(room, "Back wall", new Vector3(0, wallSize.y / 2f, 8f), Vector3.zero, wallSize, Mat("interior_tavern_back_wall"));
+            var side = new Vector2(8f, wallSize.y);
+            Quad(room, "Wall W", new Vector3(-6f, side.y / 2f, 4f), new Vector3(0, -90f, 0), side, Mat("wall_plaster_white"), Repeat("wall_plaster_white", side));
+            Quad(room, "Wall E", new Vector3(6f, side.y / 2f, 4f), new Vector3(0, 90f, 0), side, Mat("wall_plaster_white"), Repeat("wall_plaster_white", side));
+            var floor = new Vector2(12f, 9.5f);
+            Quad(room, "Floor", new Vector3(0, 0, 3.25f), new Vector3(90f, 0, 0), floor, Mat("floor_wood_planks"), Repeat("floor_wood_planks", floor), castShadows: false);
+            var mats = new Vector2(4.4f, 3f);
+            Quad(room, "Mats under the guests' table", new Vector3(-1.6f, 0.005f, 3.6f), new Vector3(90f, 0, 0), mats, Mat("floor_mats"), Repeat("floor_mats", mats), castShadows: false);
+            // A dark band outside the open front so the room reads as an interior.
+            var outside = new GameObject("Outside dark").transform; outside.SetParent(room, false);
+            Quad(outside, "Ground beyond the door", new Vector3(0, -0.01f, -5f), new Vector3(90f, 0, 0), new Vector2(40f, 10f), Mat("ground_packed_earth"), Repeat("ground_packed_earth", new Vector2(40f, 10f)), castShadows: false);
+
+            var props = Group(room, "Tavern furnishings");
+            Prop(props, "prop_tavern_counter", 3.6f, 6.4f, solid: true);
+            Prop(props, "prop_jar_shelf", 4.4f, 7.7f);
+            Prop(props, "prop_cooking_stove", -4.4f, 7.3f, glowMask: "prop_cooking_stove_glow_mask");
+            Prop(props, "prop_wine_jars", 1.6f, 7.5f);
+            Prop(props, "Guests' table", -1.6f, 3.6f, key: "prop_low_table");
+            Prop(props, "Seat W", -3.0f, 3.5f, key: "prop_seat_mat");
+            Prop(props, "Seat E", -0.2f, 3.5f, key: "prop_seat_mat");
+            Prop(props, "Seat S", -1.6f, 2.4f, key: "prop_seat_mat");
+            Prop(props, "Side table", 2.4f, 2.4f, key: "prop_low_table");
+            Prop(props, "Side seat", 2.4f, 1.4f, key: "prop_seat_mat");
+            Prop(props, "Lamp W", -5.3f, 4.6f, key: "prop_lamp_stand", glowMask: "prop_lamp_stand_glow_mask");
+            Prop(props, "Lamp E", 5.3f, 3.2f, key: "prop_lamp_stand", glowMask: "prop_lamp_stand_glow_mask");
+            PointLight(props, "Lamp W light", new Vector3(-5.3f, 1.3f, 4.4f), new Color(1f, 0.62f, 0.32f), 2.6f, 7f);
+            PointLight(props, "Lamp E light", new Vector3(5.3f, 1.3f, 3.0f), new Color(1f, 0.62f, 0.32f), 2.6f, 7f);
+            PointLight(props, "Stove glow", new Vector3(-4.4f, 0.8f, 7.0f), new Color(1f, 0.45f, 0.18f), 2.2f, 5f);
+            PointLight(props, "Room fill", new Vector3(0f, 3.2f, 3.5f), new Color(1f, 0.82f, 0.62f), 1.6f, 12f);
+
+            var window = new GameObject("Window light").AddComponent<Light>();
+            window.type = LightType.Directional;
+            window.color = new Color(1f, 0.86f, 0.70f);
+            window.intensity = 0.9f;
+            window.shadows = LightShadows.Soft;
+            window.shadowStrength = 0.6f;
+            window.transform.rotation = Quaternion.Euler(48f, 28f, 0f);
+            EndSession();
+
+            var people = new GameObject("People").transform;
+            Transform Person(string name, string key, Vector3 at)
+            {
+                var go = HD2DSampleBuilder.Character(name, key, at, 0, isPlayer: false);
+                go.transform.SetParent(people, true);
+                Object.DestroyImmediate(go.GetComponent<Collider>());   // staged: nobody pushes anybody
+                go.AddComponent<PixelWalkFrames>().Animator = go.GetComponentInChildren<SpriteFrameAnimator>();
+                return go.transform;
+            }
+            Person("Liu Bei", "LiuBei", new Vector3(-3.0f, 0, 3.3f));
+            Person("Zhang Fei", "ZhangFei", new Vector3(-0.2f, 0, 3.3f));
+            Person("Guan Yu", "GuanYu", new Vector3(-5f, 0, -2.5f));
+            // The waiter: a stand-in sprite (the grain porter's walk sheet) until his own art is drawn.
+            Person("酒保", ResidentImporter.Residents.First(r => r.Id == "N12").Key, new Vector3(2.6f, 0, 5.6f));
+
+            var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
+            var cam = camGo.AddComponent<Camera>();
+            cam.fieldOfView = HD2DSampleBuilder.CameraFov;
+            cam.nearClipPlane = 1f; cam.farClipPlane = 120f;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.06f, 0.05f, 0.05f);
+            var camData = camGo.AddComponent<UniversalAdditionalCameraData>();
+            camData.renderPostProcessing = true;
+            camData.antialiasing = AntialiasingMode.None;
+            Quaternion pitch = Quaternion.Euler(HD2DSampleBuilder.CameraPitch, 0f, 0f);
+            camGo.transform.rotation = pitch;
+            camGo.transform.position = new Vector3(0f, 0.8f, 3.4f) + pitch * new Vector3(0, 0, -HD2DSampleBuilder.CameraDistance);
+
+            var high = AssetDatabase.LoadAssetAtPath<VolumeProfile>(HD2DSampleBuilder.HighProfilePath);
+            var low = AssetDatabase.LoadAssetAtPath<VolumeProfile>(HD2DSampleBuilder.LowProfilePath);
+            var volumeGo = new GameObject("Global Volume");
+            var volume = volumeGo.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = high;
+            var tier = volumeGo.AddComponent<HD2DQualityTier>();
+            tier.Volume = volume; tier.High = high; tier.Low = low;
+
+            EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), TavernScenePath);
+            var scenes = EditorBuildSettings.scenes.ToList();
+            if (!scenes.Any(sc => sc.path == TavernScenePath)) scenes.Add(new EditorBuildSettingsScene(TavernScenePath, true));
+            EditorBuildSettings.scenes = scenes.ToArray();
+            AssetDatabase.SaveAssets();
+        }
+
         public static void BuildFromCommandLine()
         {
             try { Build(); EditorApplication.Exit(0); }
@@ -551,6 +655,9 @@ namespace ThreeKingdoms.EditorTools
             var gate = Building(office, "Office gate", new Vector3(0, 0, 13f), 0f, "yamen_gate_front", "yamen_gate_side", null, collide: false);
             foreach (int s in new[] { -1, 1 }) Solid(gate, new Vector3(s * 2.1f, 2.25f, 2f), new Vector3(1.8f, 4.5f, 4f));
             EaveSign(gate, "plaque_yamen", "yamen_gate_front", "yamen_gate_side");
+            // Two low stone steps before the office gate, where the castle steward stands to be seen from the street
+            // (user 2026-10-22).
+            Stairs(office, "Gate steps", new Vector3(0, 0, 13f), 4.4f, 2, 0.175f, 0.4f, 0.6f);
             var hall = Building(office, "Office hall", new Vector3(0, 0, 22f), 0f, "yamen_hall_front", "yamen_hall_side", null);
             var op = Group(office, "Office props");
             Prop(op, "prop_banner_han", -4.2f, 12.2f);
@@ -633,7 +740,6 @@ namespace ThreeKingdoms.EditorTools
             Building(st, "House 北横街 W1", new Vector3(-14f, 0, 8f), 180f, "house_front", "house_side", "house_back");
             Building(st, "House 北横街 W2", new Vector3(-24f, 0, 8f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
             Building(st, "House 北横街 E1", new Vector3(14f, 0, 8f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
-            Building(st, "House 北横街 E2", new Vector3(24f, 0, 8f), 180f, "house_front", "house_side", "house_back");
             Building(st, "House axis NW", new Vector3(-4f, 0, 5f), -90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
             Building(st, "House axis NE", new Vector3(4f, 0, 5f), 90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
         }
@@ -649,8 +755,8 @@ namespace ThreeKingdoms.EditorTools
             Building(row, "09 Post station", new Vector3(26f, 0, -20f), 0f, "post_station_front", "post_station_side", null);
             Building(row, "09 Stable", new Vector3(36f, 0, -20f), 0f, "stable_front", "stable_side", null, roofKey: "thatch");
             // Backs facing 中街 (fronts at z -11, 4 m deep: z -15..-11).
-            Building(row, "House 中街 S W", new Vector3(-14f, 0, -11f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(row, "House 中街 S E1", new Vector3(14f, 0, -11f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
+            // Nothing directly across 中街 from the tavern and the smithy, nor before the barracks gate: landmark doors
+            // keep open ground in front (user 2026-10-22).
             Building(row, "House 中街 S E2", new Vector3(24f, 0, -11f), 180f, "clinic_front", "clinic_side", "house_c_back");
             // The south band of houses by the gate and the axis gable ends were taken out (user 2026-10-22): the way
             // from the south gate to the market stays open and the landmark buildings are easy to pick out.
@@ -736,7 +842,7 @@ namespace ThreeKingdoms.EditorTools
             {
                 ("N01", "N01 南门守卫", new Vector3(3.6f, 0, -32.5f), null),
                 ("N02", "N02 巡城兵", new Vector3(1.8f, 0, -27f), new[] { new Vector3(1.8f, 0, -27f), new Vector3(1.8f, 0, -17f) }),
-                ("N03", "N03 城主府掌士", new Vector3(-3f, 0, 18f), null),
+                ("N03", "N03 城主府掌士", new Vector3(-1.5f, 0.35f, 12.7f), null),   // on the office gate steps (user 2026-10-22)
                 ("N04", "N04 铁匠兼装备商", new Vector3(14f, 0, -5.4f), null),
                 ("N05", "N05 酒馆掌柜", new Vector3(-14f, 0, -5.2f), null),
                 ("N06", "N06 医者", new Vector3(16f, 0, -21.2f), null),

@@ -51,7 +51,7 @@ namespace ThreeKingdoms.App
                 Object.DontDestroyOnLoad(go);
             }
 
-            // -talk guan:1 / zhang:2 — walk up to Guan Yu or Zhang Fei, start the talk and advance that many lines.
+            // -talk notice:3 / tavern:5 / gate2:0 — play a story scene and advance that many lines (screenshots).
             string talk = LaunchArgs.Get("-talk");
             if (talk != null)
             {
@@ -165,14 +165,27 @@ namespace ThreeKingdoms.App
                 for (int i = 0; i < Advances; i++) { yield return new WaitForSecondsRealtime(0.4f); town.Advance(); }
                 yield break;
             }
-            var target = Who == "zhang" ? town.ZhangFei : town.GuanYu;
-            var controller = town.Player.GetComponent<CharacterController>();
-            if (controller) controller.enabled = false;
-            town.Player.transform.position = target.position + new Vector3(0, 0, -1.2f);
-            if (controller) controller.enabled = true;
+            // tavern: Zhang Fei already in the party, straight into the tavern scene where Guan Yu joins.
+            if (Who == "tavern")
+            {
+                town.Run.Story.Join(ThreeKingdoms.Core.Story.StoryState.ZhangFei);
+                UnityEngine.SceneManagement.SceneManager.LoadScene(ThreeKingdoms.Gameplay.Story.GameRun.TavernScene);
+                yield return null; yield return null;
+                var stage = Object.FindFirstObjectByType<ThreeKingdoms.Gameplay.Story.TavernStage>();
+                for (int i = 0; i < Advances; i++)
+                {
+                    while (stage && !stage.Line.HasValue) yield return null;
+                    yield return new WaitForSecondsRealtime(0.4f);
+                    if (stage) stage.Advance();
+                    yield return null;
+                }
+                yield break;
+            }
+            // notice (default): read the recruiting notice; Zhang Fei walks up and the talk runs that many lines.
+            Teleport(town, town.NoticeSpot.position);
             yield return null;
             town.Interact();
-            for (int i = 0; i < Advances; i++) { yield return new WaitForSecondsRealtime(0.4f); town.Advance(); }
+            for (int i = 0; i < Advances; i++) { while (town.Busy && !town.Line.HasValue) yield return null; yield return new WaitForSecondsRealtime(0.4f); town.Advance(); yield return null; }
         }
 
         static void Teleport(ThreeKingdoms.Gameplay.Story.TownStoryController town, Vector3 at)

@@ -16,10 +16,11 @@ namespace ThreeKingdoms.Gameplay.Story
     {
         public const string TitleScene = "Title";
         public const string TownScene = "Zhuojun_Town";
+        public const string TavernScene = "Zhuojun_Tavern";   // indoor scene where Guan Yu joins (user 2026-10-22)
         public static readonly string[] BattleScenes = { "Battle_Tutorial01", "Battle_Tutorial02", "Battle_Tutorial03" };
         public const string Chapter = "第一章　涿郡起兵";
 
-        public enum Arrival { NewGame, ReturnFromBattle, AtTavern }
+        public enum Arrival { NewGame, ReturnFromBattle, AtTavern, FromTavernInside }
 
         public static GameRun Current { get; private set; }
 

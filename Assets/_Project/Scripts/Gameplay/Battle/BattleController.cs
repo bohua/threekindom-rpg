@@ -24,9 +24,12 @@ namespace ThreeKingdoms.Gameplay.Battle
         [Tooltip("Stand-in party when this scene is opened directly: battle 1 = 0 exp / 120 copper, battle 2 = 10 / 150, battle 3 = 30 / 200 (V1_SPEC §7–8)")]
         public int StartRations = 2, StartCopper = 120, StartExp;
         [Tooltip("Development run only: scene the next-battle button loads after a victory; empty after the last battle")] public string NextScene;
-        [Tooltip("Gamepad Start quits the battle scene (keyboard Esc is the UI cancel here)")] public InputActionReference QuitAction;
+        [Tooltip("Start / menu key: during preparation, asks to end it and sortie (user 2026-10-22)")] public InputActionReference QuitAction;
         [Range(0.5f, 4f)] public float PlaybackSpeed = 1f;
         public bool Fast;
+        [Tooltip("Auto battle (user 2026-10-22): the party's commands are chosen by PartyAutoPilot")] public bool Auto;
+        // Raised when Start is pressed while preparing; the HUD asks before sortieing.
+        public event Action SortieRequested;
 
         public BattleData Data { get; private set; }
         public DevPartyProgress Progress { get; private set; }
@@ -57,8 +60,9 @@ namespace ThreeKingdoms.Gameplay.Battle
 
         void Update()
         {
-            if (QuitAction && QuitAction.action.WasPressedThisFrame() && QuitAction.action.activeControl?.device is Gamepad)
-                Application.Quit();
+            if (QuitAction && QuitAction.action.WasPressedThisFrame() && Current == Phase.Preparing && Panel == null && CanConfirm)
+                SortieRequested?.Invoke();
+            if (Auto && Current == Phase.Commanding && Actor != null) Choose(PartyAutoPilot.Choose(Session.State, Actor));
         }
 
         BattleUnit previewTarget;

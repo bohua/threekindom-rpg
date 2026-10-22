@@ -14,19 +14,40 @@ namespace ThreeKingdoms.UI.Story
             ["npc.N01"] = "南门守卫", ["npc.N02"] = "巡城兵", ["npc.N03"] = "城主府掌士", ["npc.N04"] = "铁匠", ["npc.N05"] = "酒馆掌柜",
             ["npc.N06"] = "医者", ["npc.N07"] = "驿卒", ["npc.N08"] = "织席妇人", ["npc.N09"] = "街坊老者", ["npc.N10"] = "孩童",
             ["npc.N11"] = "粮贩", ["npc.N12"] = "运粮脚夫",
-            ["guard"] = "守城卫兵", ["cheng_yuanzhi"] = "程远志", ["zhang_liang"] = "张梁", ["zhang_jiao"] = "张角", ["zhang_bao"] = "张宝",
+            ["guard"] = "守城卫兵", ["waiter"] = "酒保", ["cheng_yuanzhi"] = "程远志", ["zhang_liang"] = "张梁", ["zhang_jiao"] = "张角", ["zhang_bao"] = "张宝",
         };
 
         static readonly Dictionary<string, string> Lines = new Dictionary<string, string>
         {
-            ["guan.1"] = "此地黄巾将至，官府张榜募兵。阁下也是来投军的吗？",
-            ["guan.2"] = "在下刘备，字玄德。愿聚义兵，保境安民。",
-            ["guan.3"] = "某姓关名羽，字云长。若蒙不弃，愿随兄长同行。",
-            ["guan.joined"] = "关羽加入了队伍。",
-            ["zhang.1"] = "大丈夫不为国家出力，在榜前叹什么气？",
-            ["zhang.2"] = "我有心破贼安民，只恨力量不足。",
-            ["zhang.3"] = "俺张飞，字翼德，颇有些家财。愿与你共举大事！",
+            // The notice board and Zhang Fei (user 2026-10-22, after 演义 第1回; lines are this game's adaptation).
+            ["notice.1"] = "榜文：黄巾作乱，幽州太守刘焉出榜招募义兵，以保乡里。",
+            ["notice.2"] = "黄巾猖獗，百姓流离……我空有此心，却无力破贼。唉——",
+            ["zhang.1"] = "大丈夫不与国家出力，何故在榜前长叹？",
+            ["zhang.2"] = "我本汉室宗亲，姓刘名备，字玄德。今闻黄巾倡乱，有志破贼安民，只恨力不能及。",
+            ["zhang.3"] = "俺姓张名飞，字翼德，颇有些庄田。你既有此心，可愿与俺同招乡勇、报效朝廷？",
+            ["choice.prompt"] = "（如何回答张飞？）",
+            ["choice.serve"] = "愿报效朝廷，共举义兵",
+            ["choice.wait"] = "时机尚未成熟……",
+            ["zhang.serve.1"] = "正合我意！愿与翼德同招乡勇，共破黄巾。",
+            ["zhang.serve.2"] = "痛快！俺这就散些家财，招募乡勇！",
+            ["zhang.wait.1"] = "黄巾势大，我等兵微将寡，只怕时机尚未成熟。",
+            ["zhang.wait.2"] = "哎呀，还等什么时机！贼兵都快到城下了。俺出钱，你出力，还怕大事不成？",
+            ["zhang.wait.3"] = "……翼德说得是。好，便依你！",
             ["zhang.joined"] = "张飞加入了队伍。",
+            ["zhang.tavern"] = "走！前面酒店喝上几碗，细细商议！",
+            // In the tavern: Guan Yu arrives (演义 第1回).
+            ["tavern.1"] = "二位客官，酒来了！慢用。",
+            ["tavern.2"] = "哥哥，招募乡勇的事，俺明日便去张罗。",
+            ["tavern.3"] = "有劳翼德。只是兵马易募，良将难求啊。",
+            ["tavern.4"] = "店家，快斟酒来吃！我待赶入城去投军。",
+            ["tavern.5"] = "好嘞，客官稍候！",
+            ["tavern.6"] = "此人身长九尺，相貌堂堂，威风凛凛……必非常人。",
+            ["tavern.7"] = "那汉子！俺哥哥请你过来同坐！",
+            ["tavern.8"] = "壮士请了。方才听闻壮士要去投军，可否告知姓名？",
+            ["tavern.9"] = "某姓关名羽，字云长，河东解良人。闻此处招军破贼，特来应募。",
+            ["tavern.10"] = "在下刘备，与这位张翼德正要聚义破贼。壮士何不与我等同举大事？",
+            ["tavern.11"] = "若蒙不弃，关某愿随兄长同行！",
+            ["tavern.12"] = "好！俺庄后有一桃园，花开正盛。明日便在园中祭告天地，结为兄弟！",
             ["oath.1"] = "城西桃园，桃花正盛。三人备下香案。",
             ["oath.2"] = "今日在此结为兄弟，同心协力！",
             ["oath.3"] = "上报国家，下安黎庶。",
@@ -102,6 +123,8 @@ namespace ThreeKingdoms.UI.Story
         {
             if (key == null) return "";
             if (key.StartsWith("talk:")) return $"[确认] 与{Speaker(key.Substring(5))}交谈";
+            if (key == "notice") return "[确认] 查看告示";
+            if (key == "tavern") return "[确认] 进入酒馆";
             if (key.StartsWith("gate:battle_")) return $"[确认] 出城迎敌：{BattleNames[key.Substring(5)]}";
             if (key.StartsWith("npc:")) return $"[确认] 与{Speaker("npc." + key.Substring(4))}交谈";
             if (key == "shop") return "[确认] 与铁匠交谈（武器装备店）";
@@ -112,7 +135,7 @@ namespace ThreeKingdoms.UI.Story
 
         public static string Objective(StoryState s) => s.Phase switch
         {
-            StoryPhase.FindCompanions => $"目标：在城中寻找志同道合的豪杰（{(s.GuanYuJoined ? 1 : 0) + (s.ZhangFeiJoined ? 1 : 0)}/2）",
+            StoryPhase.FindCompanions => s.ZhangFeiJoined ? "目标：与张飞到酒馆商议" : "目标：到市集广场查看告示",
             StoryPhase.Oath => "目标：桃园结义",
             StoryPhase.LeaveTown => $"目标：从南门出城迎敌（{BattleNames[s.NextBattleId]}）",
             _ => "目标：黄巾已退",
