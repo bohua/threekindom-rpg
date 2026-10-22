@@ -1,0 +1,14 @@
+{
+  "name": "Prototype.BingshuTactics.Editor",
+  "rootNamespace": "Prototype.BingshuTactics.EditorTools",
+  "references": ["Prototype.BingshuTactics"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

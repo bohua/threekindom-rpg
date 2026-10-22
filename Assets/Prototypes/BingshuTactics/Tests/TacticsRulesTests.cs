@@ -1,0 +1,147 @@
+// PROTOTYPE - NOT FOR PRODUCTION
+// Question: 空轨式 AT 行动条＋小范围格子战斗，配合“学派回路镶嵌兵书→策略”，是否好玩、是否看得懂？
+// Date: 2026-10-22
+using System.Linq;
+using NUnit.Framework;
+using Prototype.BingshuTactics;
+using UnityEngine;
+using Grid = Prototype.BingshuTactics.Grid;
+
+public class TacticsRulesTests
+{
+    static Book B(Element e, int g) => new Book("测试", e, g);
+    static bool Has(System.Collections.Generic.List<LitStrategy> l, string n) => l.Any(x => x.Def.Name == n);
+
+    [Test]
+    public void FiveSchools_HaveDistinctAffinityAndLayouts()
+    {
+        Assert.AreEqual(5, Circuits.All.Length);
+        CollectionAssert.AreEquivalent(Wuxing.All, Circuits.All.Select(c => c.Affinity));
+        Assert.AreEqual(Element.Water, Circuits.Of(School.Ru).Affinity);
+        Assert.AreEqual(Element.Fire, Circuits.Of(School.Bing).Affinity);
+        Assert.AreEqual(Element.Wood, Circuits.Of(School.Dao).Affinity);
+        Assert.AreEqual(Element.Metal, Circuits.Of(School.Mo).Affinity);
+        Assert.AreEqual(Element.Earth, Circuits.Of(School.Fa).Affinity);
+        // 包容性：道家全自由，法家自由位最少
+        Assert.AreEqual(Circuits.Of(School.Dao).Slots.Length, Circuits.Of(School.Dao).FreeSlots);
+        Assert.AreEqual(Circuits.All.Min(c => c.FreeSlots), Circuits.Of(School.Fa).FreeSlots);
+        foreach (var c in Circuits.All)
+            foreach (var line in c.Lines) Assert.IsTrue(line.All(i => i >= 0 && i < c.Slots.Length), c.Name);
+    }
+
+    [Test]
+    public void LockedSlot_RejectsOtherElements()
+    {
+        var bing = Circuits.Of(School.Bing);
+        Assert.IsTrue(CircuitMath.Fits(bing, 0, B(Element.Fire, 1)));
+        Assert.IsFalse(CircuitMath.Fits(bing, 0, B(Element.Water, 3)));
+        Assert.IsTrue(CircuitMath.Fits(bing, 1, B(Element.Water, 3)));
+    }
+
+    [Test]
+    public void AffinityBook_GetsPlusOne()
+    {
+        Assert.AreEqual(4, CircuitMath.Value(Circuits.Of(School.Ru), B(Element.Water, 3)));
+        Assert.AreEqual(3, CircuitMath.Value(Circuits.Of(School.Bing), B(Element.Water, 3)));
+    }
+
+    [Test]
+    public void Strategy_NeedsTotalsOnOneLine_NotAcrossLines()
+    {
+        var dao = Circuits.Of(School.Dao);   // 三条三位短线：0-1-2, 0-3-4, 0-5-6
+        var slots = new Book[7];
+        slots[1] = B(Element.Fire, 2); slots[3] = B(Element.Fire, 2);   // 火分在两条线上，各 2
+        var lit = CircuitMath.Lit(dao, slots);
+        Assert.IsTrue(Has(lit, "引火"));
+        Assert.IsFalse(Has(lit, "火烧营寨"));    // 合计 4 但不在同一条线
+        slots[0] = B(Element.Fire, 2); slots[2] = B(Element.Wood, 1);   // 中枢计入每条线
+        lit = CircuitMath.Lit(dao, slots);
+        Assert.IsTrue(Has(lit, "火烧营寨"));
+    }
+
+    [Test]
+    public void Overflow_RaisesPower_AndIsCapped()
+    {
+        var bing = Circuits.Of(School.Bing);
+        var slots = new Book[6];
+        slots[0] = B(Element.Fire, 1);        // 火 2
+        var l1 = CircuitMath.Lit(bing, slots).First(x => x.Def.Name == "引火");
+        Assert.AreEqual(1f, l1.PowerMul, 1e-4);
+        slots[2] = B(Element.Fire, 3); slots[4] = B(Element.Fire, 3); slots[1] = B(Element.Fire, 3);   // 火 2+4+4+4=14
+        var l2 = CircuitMath.Lit(bing, slots).First(x => x.Def.Name == "引火");
+        Assert.AreEqual(1f + CircuitMath.OverflowStep * CircuitMath.OverflowCap, l2.PowerMul, 1e-4);
+    }
+
+    [Test]
+    public void Damage_TroopAndElementAdvantage_Add_AndCap()
+    {
+        var cav = new Unit { Troop = Troop.Cavalry, Atk = 60, Mat = 60 };
+        var rebel = new Unit { Troop = Troop.Rebel, Element = Element.Earth, Def = 20, Mdef = 20 };
+        Assert.AreEqual(50, Combat.Damage(cav, rebel, 1f, true, Element.None) / 1.4f, 1f);
+        Assert.AreEqual(1.6f, Combat.AdvMul(cav, rebel, Element.Wood), 1e-4);   // 骑克黄巾＋木克土
+        Assert.AreEqual(1.0f, Combat.AdvMul(new Unit { Troop = Troop.Infantry }, rebel, Element.Fire), 1e-4);
+    }
+
+    [Test]
+    public void Defend_HalvesDamage_GuardTakesStrongest_MinFloor()
+    {
+        var a = new Unit { Troop = Troop.Archer, Atk = 50 };
+        var t = new Unit { Troop = Troop.Archer, Def = 0 };
+        int normal = Combat.Damage(a, t, 1f, true, Element.None);
+        t.Defending = true;
+        Assert.AreEqual(normal / 2, Combat.Damage(a, t, 1f, true, Element.None));
+        t.AddStatus(new Status { Name = "阵", Guard = 0.35f, Turns = 2 });
+        Assert.AreEqual(0.5f, Combat.TakenMul(t), 1e-4);   // 只取最强，不叠加
+        t.Defending = false;
+        Assert.AreEqual(0.65f, Combat.TakenMul(t), 1e-4);
+    }
+
+    [Test]
+    public void Reachable_IsBlockedByRocksAndUnits()
+    {
+        var g = new Grid(5, 5);
+        g.Blocked[1, 0] = true;
+        var r = g.Reachable(Vector2Int.zero, 2, p => p == new Vector2Int(0, 1));
+        Assert.AreEqual(1, r.Count);   // 右边石头、上边有人
+        r = g.Reachable(Vector2Int.zero, 3, p => false);
+        Assert.IsTrue(r.ContainsKey(new Vector2Int(1, 1)));
+        Assert.AreEqual(3, Grid.Path(r, new Vector2Int(1, 1)).Count);
+    }
+
+    [Test]
+    public void Areas_HaveExpectedSizes()
+    {
+        var g = new Grid(20, 20);
+        var c = new Vector2Int(10, 10);
+        Assert.AreEqual(5, g.Diamond(c, 1).Count());
+        Assert.AreEqual(13, g.Diamond(c, 2).Count());
+        Assert.AreEqual(21, g.LineArea(c, Vector2Int.right, 7, 3).Count());
+        Assert.IsTrue(g.LineArea(c, Vector2Int.up, 5, 1).All(p => p.x == 10 && p.y > 10));
+    }
+
+    [Test]
+    public void AtClock_FasterAndLighterActsSooner()
+    {
+        Assert.Less(AtClock.Delay(100, 10), AtClock.Delay(100, 6));
+        Assert.Less(AtClock.Delay(40, 8), AtClock.Delay(110, 8));
+        var a = new Unit { Team = Team.Enemy, Hp = 1, At = 50 };
+        var b = new Unit { Team = Team.Player, Hp = 1, At = 50 };
+        var dead = new Unit { Team = Team.Player, Hp = 0, At = 1 };
+        Assert.AreSame(b, AtClock.Next(new[] { a, b, dead }));   // 同刻我方先；撤退者不排
+    }
+
+    [Test]
+    public void Statuses_SameNameRefreshes_AndExpire()
+    {
+        var u = new Unit();
+        u.AddStatus(new Status { Name = "威慑", AtkMul = 0.8f, Turns = 2 });
+        u.AddStatus(new Status { Name = "威慑", AtkMul = 0.8f, Turns = 2 });
+        Assert.AreEqual(1, u.Statuses.Count);
+        u.AddStatus(new Status { Name = "鼓舞", AtkMul = 1.2f, Turns = 1 });
+        Assert.AreEqual(0.96f, u.AtkMul, 1e-4);
+        u.TickStatuses();
+        Assert.AreEqual(0.8f, u.AtkMul, 1e-4);
+        u.TickStatuses();
+        Assert.AreEqual(1f, u.AtkMul, 1e-4);
+    }
+}
