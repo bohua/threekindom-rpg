@@ -123,6 +123,7 @@ namespace ThreeKingdoms.EditorTools
             doc.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);
             if (!doc.panelSettings) throw new System.InvalidOperationException("Town HUD has no PanelSettings");
             var townHud = hudGo.AddComponent<TownHud>(); townHud.Controller = c; townHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
+            townHud.Portraits = DialoguePortraitImporter.Import();
 
             // The shop sits above the town HUD; menus need an EventSystem for gamepad and keyboard navigation.
             var shopGo = new GameObject("Shop HUD");

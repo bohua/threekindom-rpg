@@ -51,6 +51,18 @@ namespace ThreeKingdoms.App
                 Object.DontDestroyOnLoad(go);
             }
 
+            // -talk guan:1 / zhang:2 — walk up to Guan Yu or Zhang Fei, start the talk and advance that many lines.
+            string talk = LaunchArgs.Get("-talk");
+            if (talk != null)
+            {
+                var go = new GameObject(nameof(TalkProbe));
+                var talker = go.AddComponent<TalkProbe>();
+                var parts = talk.Split(':');
+                talker.Who = parts[0];
+                if (parts.Length > 1) int.TryParse(parts[1], out talker.Advances);
+                Object.DontDestroyOnLoad(go);
+            }
+
             string panel = LaunchArgs.Get("-panel");
             if (panel != null)
             {
@@ -120,6 +132,28 @@ namespace ThreeKingdoms.App
             var town = Object.FindFirstObjectByType<ThreeKingdoms.Gameplay.Story.TownStoryController>();
             if (town) town.OpenPanel(Panel);
             else Debug.LogWarning("No town to open a panel in.");
+        }
+    }
+
+    public sealed class TalkProbe : MonoBehaviour
+    {
+        public string Who;
+        public int Advances;
+
+        IEnumerator Start()
+        {
+            yield return LaunchArgs.WaitForRequestedScene();
+            yield return new WaitForSecondsRealtime(0.5f);
+            var town = Object.FindFirstObjectByType<ThreeKingdoms.Gameplay.Story.TownStoryController>();
+            if (!town) { Debug.LogWarning("No town to talk in."); yield break; }
+            var target = Who == "zhang" ? town.ZhangFei : town.GuanYu;
+            var controller = town.Player.GetComponent<CharacterController>();
+            if (controller) controller.enabled = false;
+            town.Player.transform.position = target.position + new Vector3(0, 0, -1.2f);
+            if (controller) controller.enabled = true;
+            yield return null;
+            town.Interact();
+            for (int i = 0; i < Advances; i++) { yield return new WaitForSecondsRealtime(0.4f); town.Advance(); }
         }
     }
 
