@@ -63,6 +63,15 @@ namespace ThreeKingdoms.App
                 Object.DontDestroyOnLoad(go);
             }
 
+            // -vfx sweep: loop one battle effect for screenshots.
+            string vfx = LaunchArgs.Get("-vfx");
+            if (vfx != null)
+            {
+                var go = new GameObject(nameof(VfxProbe));
+                go.AddComponent<VfxProbe>().Effect = vfx;
+                Object.DontDestroyOnLoad(go);
+            }
+
             string panel = LaunchArgs.Get("-panel");
             if (panel != null)
             {
@@ -130,8 +139,35 @@ namespace ThreeKingdoms.App
             yield return LaunchArgs.WaitForRequestedScene();
             yield return new WaitForSecondsRealtime(0.5f);
             var town = Object.FindFirstObjectByType<ThreeKingdoms.Gameplay.Story.TownStoryController>();
-            if (town) town.OpenPanel(Panel);
+            // menu-equip / menu-info: the pause menu on a tab, or a general's page (screenshots).
+            if (town && Panel.StartsWith("menu-"))
+            {
+                town.Run.Story.Join(ThreeKingdoms.Core.Story.StoryState.ZhangFei);
+                town.Run.Story.Join(ThreeKingdoms.Core.Story.StoryState.GuanYu);
+                town.OpenPanel(ThreeKingdoms.Gameplay.Story.TownStoryController.MenuPanel);
+                yield return null;
+                var menu = Object.FindFirstObjectByType<ThreeKingdoms.UI.Menu.MainMenuHud>();
+                if (Panel == "menu-info") menu.ShowInfo(menu.General);
+                else if (Panel == "menu-equip") { menu.Show(ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Equip); menu.PickFor(ThreeKingdoms.Core.Economy.EquipSlot.Weapon); }
+                yield break;
+            }
+            if (town && Panel == ThreeKingdoms.Gameplay.Story.TownStoryController.ArcheryPanel) town.OpenArchery();
+            else if (town) town.OpenPanel(Panel);
             else Debug.LogWarning("No town to open a panel in.");
+        }
+    }
+
+    public sealed class VfxProbe : MonoBehaviour
+    {
+        public string Effect;
+
+        IEnumerator Start()
+        {
+            yield return LaunchArgs.WaitForRequestedScene();
+            ThreeKingdoms.Gameplay.Battle.BattleController b = null;
+            while (!(b = Object.FindFirstObjectByType<ThreeKingdoms.Gameplay.Battle.BattleController>()) || b.Session == null) yield return null;
+            var vfx = Object.FindFirstObjectByType<ThreeKingdoms.Gameplay.Battle.BattleVfx>();
+            while (vfx) { vfx.Preview(Effect); yield return new WaitForSecondsRealtime(0.3f); }
         }
     }
 

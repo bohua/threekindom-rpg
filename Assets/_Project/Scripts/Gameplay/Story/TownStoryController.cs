@@ -22,7 +22,7 @@ namespace ThreeKingdoms.Gameplay.Story
     // Drives the Zhuojun main line (ADR-0006 §3, story-events GDD): talk to Guan Yu and Zhang Fei to recruit them,
     // the automatic peach-garden oath once both have joined, and leaving by the south gate for the next battle.
     // Rules come from StoryState; this component only stages them.
-    public sealed class TownStoryController : MonoBehaviour, IPanelHost
+    public sealed partial class TownStoryController : MonoBehaviour, IPanelHost
     {
         public BattleCatalog Catalog;
         public PlayerMover Player;
@@ -208,6 +208,8 @@ namespace ThreeKingdoms.Gameplay.Story
             // Residents stop while a conversation or panel holds the town, and while they speak to Liu Bei.
             foreach (var r in Residents)
                 if (r && r.TryGetComponent<NpcPatrol>(out var patrol)) patrol.Paused = Busy || speaking.Contains(r);
+            foreach (var r in Ambient)
+                if (r && r.TryGetComponent<NpcPatrol>(out var patrol)) patrol.Paused = Busy || speaking.Contains(r);
             bool menuPressed = MenuAction && MenuAction.action.WasPressedThisFrame();
             // The menu key also closes the main menu; other panels own input until they close.
             if (Panel == MenuPanel && menuPressed && Time.frameCount > openedPanelFrame) { ClosePanel(); return; }
@@ -237,6 +239,7 @@ namespace ThreeKingdoms.Gameplay.Story
             else if (Prompt == "gate:locked" || Prompt == "gate:done") StartCoroutine(Say(new[] { new DialogueLine("system", Prompt) }));
             else if (Prompt == ShopPanel || Prompt == SavePanel) { Face(Prompt == ShopPanel ? Smith : Innkeeper); OpenPanel(Prompt); }
             else if (Prompt.StartsWith("npc:")) TalkToResident(Prompt.Substring(4));
+            else if (StartLife(Prompt)) { }
             else if (Prompt.StartsWith("gate:battle_")) ChallengeAtGate();
         }
 
@@ -297,7 +300,7 @@ namespace ThreeKingdoms.Gameplay.Story
         // "N03 城主府掌士" → "N03".
         public static string ResidentId(Transform resident) => resident.name.Split(' ')[0];
 
-        public Transform Resident(string id) => Residents.FirstOrDefault(r => r && ResidentId(r) == id);
+        public Transform Resident(string id) => Residents.Concat(Ambient).FirstOrDefault(r => r && ResidentId(r) == id);
 
         // One useful line, switching after the oath and again after the first victory (design §4); the UI falls back
         // to the earlier line when a resident has nothing new to say.
@@ -350,6 +353,7 @@ namespace ThreeKingdoms.Gameplay.Story
                     : reason == StoryState.ReasonAllDone ? "gate:done" : "gate:locked";
             else if (Near(NoticeBoard, p)) prompt = "notice";
             else if (Near(TavernDoor, p) && story.ZhangFeiJoined && !story.GuanYuJoined) prompt = "tavern";
+            else if (LifePrompt(p) is string life) prompt = life;
             else if (Near(Smith, p)) prompt = ShopPanel;
             else if (Near(Innkeeper, p)) prompt = SavePanel;
             // Other residents need no button: they speak in their bubble (UpdateBubbles).
@@ -365,7 +369,7 @@ namespace ThreeKingdoms.Gameplay.Story
             if (Run == null || !Player) return;
             var p = Player.transform.position;
             bool changed = false;
-            foreach (var r in Residents)
+            foreach (var r in Residents.Concat(Ambient))
             {
                 if (!r) continue;
                 bool near = !Busy && r.gameObject.activeInHierarchy && Vector3.Distance(Flat(r.position), Flat(p)) <= BubbleRange;

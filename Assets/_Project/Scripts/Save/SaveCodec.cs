@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ThreeKingdoms.Core.Economy;
 using ThreeKingdoms.Core.Story;
+using ThreeKingdoms.Core.Town;
 
 namespace ThreeKingdoms.Save
 {
@@ -11,7 +12,7 @@ namespace ThreeKingdoms.Save
     public static class SaveCodec
     {
         public static SaveData Capture(StoryState story, Inventory inventory, IReadOnlyDictionary<string, int> exp,
-            string location, int leaderLevel, string chapter, string gameVersion, DateTime now)
+            string location, int leaderLevel, string chapter, string gameVersion, DateTime now, TownLife life = null)
         {
             story.ToSafeState();   // never save the middle of a sequence (rule 5)
             return new SaveData
@@ -31,6 +32,9 @@ namespace ThreeKingdoms.Save
                 bag = inventory.Bag.Select(b => new BagEntry { item = b.item.Id, count = b.count }).ToArray(),
                 worn = inventory.WornItems.Select(w => new WornEntry { general = w.generalId, item = w.item.Id }).ToArray(),
                 leaderLevel = leaderLevel,
+                reputation = life?.Reputation ?? 0,
+                quizTakenAt = life?.QuizTakenAt ?? -1,
+                archeryRewardedAt = life?.ArcheryRewardedAt ?? -1,
             };
         }
 
@@ -40,6 +44,7 @@ namespace ThreeKingdoms.Save
             public Inventory Inventory;
             public IReadOnlyList<(string general, int exp)> Exp;
             public string Location;
+            public TownLife Life;
         }
 
         // False (with a reason) for anything the current game cannot use; the file itself is never touched.
@@ -63,6 +68,7 @@ namespace ThreeKingdoms.Save
                     Inventory = inventory,
                     Exp = (data.exp ?? Array.Empty<ExpEntry>()).Select(e => (e.general, e.exp)).ToList(),
                     Location = data.location,
+                    Life = new TownLife(data.reputation, data.quizTakenAt, data.archeryRewardedAt),
                 };
                 return true;
             }

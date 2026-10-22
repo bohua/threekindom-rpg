@@ -205,6 +205,14 @@ namespace ThreeKingdoms.EditorTools
                 .Where(t => t.parent && t.parent.name == "Residents").OrderBy(t => t.name).ToArray();
             if (c.Residents.Length != 12) throw new System.InvalidOperationException($"Town has {c.Residents.Length} residents, expected 12");
             GateBlockers(c);
+            // The second batch of townsfolk (user 2026-10-22) and the four who do more than talk.
+            c.Ambient = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Where(t => t.parent && t.parent.name == "Townsfolk").OrderBy(t => t.name).ToArray();
+            Transform Folk(string name) => GameObject.Find(name)?.transform ?? throw new System.InvalidOperationException("Town has no " + name);
+            c.Beggar = Folk("N30 乞丐");
+            c.Scholar = Folk("N24 读书人");
+            c.Ruffian = Folk("N31 地痞");
+            c.Archer = Folk("N14 练射的弓手");
             c.InteractAction = ProjectSetup.Action("Interact");
             c.MenuAction = ProjectSetup.Action("Menu");
             c.NewGameSpot = Spot("New game (outside the south gate)", ZhuojunTownBuilder.PlayerStart);
@@ -243,11 +251,18 @@ namespace ThreeKingdoms.EditorTools
             saveDoc.panelSettings = doc.panelSettings;
             saveDoc.sortingOrder = 10;
             var saveHud = saveGo.AddComponent<SaveHud>(); saveHud.Controller = c; saveHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
+            var archeryGo = new GameObject("Archery HUD");
+            var archeryDoc = archeryGo.AddComponent<UIDocument>();
+            archeryDoc.panelSettings = doc.panelSettings;
+            archeryDoc.sortingOrder = 10;
+            var archeryHud = archeryGo.AddComponent<ThreeKingdoms.UI.Town.ArcheryHud>(); archeryHud.Controller = c; archeryHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             var menuGo = new GameObject("Main Menu HUD");
             var menuDoc = menuGo.AddComponent<UIDocument>();
             menuDoc.panelSettings = doc.panelSettings;
             menuDoc.sortingOrder = 10;
             var mainMenu = menuGo.AddComponent<ThreeKingdoms.UI.Menu.MainMenuHud>(); mainMenu.Controller = c; mainMenu.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
+            mainMenu.Portraits = townHud.Portraits;
+            mainMenu.Busts = new[] { "LiuBei", "GuanYu", "ZhangFei" }.Select(k => AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/_Project/Art/Portraits/{k}_Bust.png")).ToArray();
             if (!Object.FindFirstObjectByType<EventSystem>())
             {
                 var es = new GameObject("EventSystem");

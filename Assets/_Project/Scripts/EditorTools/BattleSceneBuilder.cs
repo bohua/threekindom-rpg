@@ -150,6 +150,12 @@ namespace ThreeKingdoms.EditorTools
             hud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             hud.Portraits = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Story.DialoguePortraitSet>(DialoguePortraitImporter.SetPath);
 
+            // Attack and skill effects (user 2026-10-22).
+            var vfx = new GameObject("Battle VFX").AddComponent<ThreeKingdoms.Gameplay.Battle.BattleVfx>();
+            vfx.Controller = controller;
+            vfx.Additive = VfxMaterial();
+            vfx.ShakeTarget = Camera.main ? Camera.main.transform : null;
+
             var tutor = controller.gameObject.AddComponent<ThreeKingdoms.Gameplay.Battle.BattleTutor>();
             tutor.Controller = controller;
             hud.Tutor = tutor;
@@ -210,6 +216,27 @@ namespace ThreeKingdoms.EditorTools
             view.SelectionRing = Ring(unit, "Selection ring", ringMat, 1f);
             view.TargetMarker = Ring(unit, "Target marker", targetMat, 1.25f);
             return view;
+        }
+
+        const string VfxMaterialPath = "Assets/_Project/Art/Battle/Vfx/VfxAdditive.mat";
+
+        // Additive URP particle material for the effect strokes and sparks (vertex colour, no texture: square pixels).
+        static Material VfxMaterial()
+        {
+            // Alpha-blended (not additive): strokes must read against the bright daylight backdrop.
+            if (AssetDatabase.LoadAssetAtPath<Material>(VfxMaterialPath)) AssetDatabase.DeleteAsset(VfxMaterialPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(VfxMaterialPath));
+            var m = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit")) { name = "VfxAdditive" };
+            m.SetFloat("_Surface", 1f);
+            m.SetFloat("_Blend", 0f);
+            m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            m.SetFloat("_ZWrite", 0f);
+            m.SetColor("_BaseColor", Color.white);
+            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            AssetDatabase.CreateAsset(m, VfxMaterialPath);
+            return m;
         }
 
         static Texture2D LoadPortrait(string key)

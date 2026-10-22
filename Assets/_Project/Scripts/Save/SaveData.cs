@@ -31,6 +31,10 @@ namespace ThreeKingdoms.Save
         public int copper;
         public int rations;
         public BagEntry[] bag = Array.Empty<BagEntry>();
+        // Town life (user 2026-10-22); older saves read 0.
+        public int reputation;
+        public int quizTakenAt = -1;
+        public int archeryRewardedAt = -1;
         public WornEntry[] worn = Array.Empty<WornEntry>();
 
         // Slot summary only (answer 4: chapter, place, Liu Bei's level, copper, time); not read back into the game.

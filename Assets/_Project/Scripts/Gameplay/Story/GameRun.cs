@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using ThreeKingdoms.Core.Economy;
 using ThreeKingdoms.Core.Story;
+using ThreeKingdoms.Core.Town;
 using ThreeKingdoms.Data.Battle;
 using ThreeKingdoms.Gameplay.Battle;
 using ThreeKingdoms.Save;
@@ -27,6 +28,10 @@ namespace ThreeKingdoms.Gameplay.Story
         public StoryState Story { get; }
         public BattleData Data { get; }
         public DevPartyProgress Progress { get; }
+        // Reputation and the like (user 2026-10-22).
+        public TownLife Life { get; private set; } = new TownLife();
+        // One random source for town games, so tests can seed it.
+        public System.Random Random { get; set; } = new System.Random();
         // Teaching hints already shown this play-through (each appears once; story-events answer 8).
         public System.Collections.Generic.List<string> SeenHints { get; } = new System.Collections.Generic.List<string>();
         // Where the next town load puts the player.
@@ -85,7 +90,7 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             var leader = Progress.Party.Count > 0 ? Progress.Party[0] : null;
             return SaveCodec.Capture(Story, Progress.Inventory, Progress.ExpByGeneral, location, leader != null ? Progress.Level(leader) : 1,
-                Chapter, Application.version, DateTime.Now);
+                Chapter, Application.version, DateTime.Now, Life);
         }
 
         public void SaveTo(string slot, string location) => Slots().Write(slot, Capture(location));
@@ -97,7 +102,7 @@ namespace ThreeKingdoms.Gameplay.Story
             if (!SaveCodec.TryRestore(save, data.Economy, out var restored, out error)) return false;
             var progress = new DevPartyProgress(data, restored.Inventory);
             progress.RestoreExp(restored.Exp);
-            Current = new GameRun(data, restored.Story, progress, false);
+            Current = new GameRun(data, restored.Story, progress, false) { Life = restored.Life };
             if (restored.Location == SaveData.TownLocation)
             {
                 Current.NextArrival = Arrival.AtTavern;

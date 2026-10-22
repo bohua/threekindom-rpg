@@ -32,5 +32,9 @@ public sealed class AutoBattleTests
             yield return null;
         }
         Assert.AreEqual(BattleOutcome.Victory, b.Session.Result.Outcome, "the auto commands win the tutorial battle");
+        // Effects played on the way (user 2026-10-22): each general's attack or skill had one.
+        var vfx = Object.FindFirstObjectByType<BattleVfx>();
+        Assert.IsNotNull(vfx);
+        Assert.IsNotEmpty(vfx.Played, "attacks and skills show effects");
     }
 }

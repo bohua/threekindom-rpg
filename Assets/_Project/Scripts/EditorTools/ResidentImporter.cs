@@ -32,6 +32,42 @@ namespace ThreeKingdoms.EditorTools
             ("N12", "NpcGrainPorter", "NPC_GRAIN_PORTER", true),
         };
 
+        // The second batch of townsfolk (user 2026-10-22, Codex art/zhuojun-npcs-2), same sheet format. Until a sheet
+        // is delivered the town uses the stand-in resident's atlas (StandIn).
+        public static readonly (string Id, string Key, string Prefix, bool Walks, string StandIn)[] Townsfolk =
+        {
+            ("N13", "NpcDrillSoldier", "NPC_DRILL_SOLDIER", true, "N02"),
+            ("N14", "NpcArcherSoldier", "NPC_ARCHER_SOLDIER", false, "N02"),
+            ("N15", "NpcDrillOfficer", "NPC_DRILL_OFFICER", false, "N01"),
+            ("N16", "NpcNoticeMan", "NPC_NOTICE_MAN", false, "N11"),
+            ("N17", "NpcNoticeWoman", "NPC_NOTICE_WOMAN", false, "N08"),
+            ("N18", "NpcJuggler", "NPC_JUGGLER", false, "N07"),
+            ("N19", "NpcSpearPerformer", "NPC_SPEAR_PERFORMER", false, "N12"),
+            ("N20", "NpcStallMerchant", "NPC_STALL_MERCHANT", false, "N11"),
+            ("N21", "NpcWasherwoman", "NPC_WASHERWOMAN", false, "N08"),
+            ("N22", "NpcChildBoy", "NPC_CHILD_BOY", true, "N10"),
+            ("N23", "NpcChildGirl", "NPC_CHILD_GIRL", true, "N10"),
+            ("N24", "NpcScholar", "NPC_SCHOLAR", false, "N06"),
+            ("N25", "NpcGossipMan", "NPC_GOSSIP_MAN", false, "N07"),
+            ("N26", "NpcGossipWoman", "NPC_GOSSIP_WOMAN", false, "N08"),
+            ("N27", "NpcFarmer", "NPC_FARMER", true, "N12"),
+            ("N28", "NpcRecruitClerk", "NPC_RECRUIT_CLERK", false, "N03"),
+            ("N29", "NpcRecruitYouth", "NPC_RECRUIT_YOUTH", true, "N12"),
+            ("N30", "NpcBeggar", "NPC_BEGGAR", false, "N09"),
+            ("N31", "NpcRuffian", "NPC_RUFFIAN", false, "N12"),
+            ("N32", "NpcCasinoDealer", "NPC_CASINO_DEALER", false, "N05"),
+        };
+        const string TownsfolkSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\zhuojun-npcs-2";
+
+        // The atlas a townsperson uses now: their own once imported, else their stand-in's.
+        public static string KeyFor(string id)
+        {
+            var r = Residents.FirstOrDefault(x => x.Id == id);
+            if (r.Key != null) return r.Key;
+            var t = Townsfolk.First(x => x.Id == id);
+            return File.Exists(HD2DSampleBuilder.AtlasPath(t.Key)) ? t.Key : Residents.First(x => x.Id == t.StandIn).Key;
+        }
+
         // The tavern waiter (user 2026-10-22, Codex art/tavern-waiter): same sheet format, his own folder.
         public const string WaiterKey = "NpcTavernWaiter";
         const string WaiterSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\tavern-waiter";
@@ -48,7 +84,8 @@ namespace ThreeKingdoms.EditorTools
             int size = HD2DSampleBuilder.FrameSize;
 
             var sheets = Residents.Select(r => (r.Key, r.Prefix, r.Walks, Dir: root))
-                .Append((WaiterKey, "NPC_TAVERN_WAITER", true, WaiterSource));
+                .Append((WaiterKey, "NPC_TAVERN_WAITER", true, WaiterSource))
+                .Concat(Townsfolk.Select(t => (t.Key, t.Prefix, t.Walks, Dir: TownsfolkSource)));
             foreach (var (key, prefix, walks, dir) in sheets)
             {
                 string poses = Path.Combine(dir, prefix + "_3X3.png");

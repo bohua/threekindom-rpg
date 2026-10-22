@@ -14,6 +14,11 @@ namespace ThreeKingdoms.UI.Story
             ["npc.N01"] = "南门守卫", ["npc.N02"] = "巡城兵", ["npc.N03"] = "城主府掌士", ["npc.N04"] = "铁匠", ["npc.N05"] = "酒馆掌柜",
             ["npc.N06"] = "医者", ["npc.N07"] = "驿卒", ["npc.N08"] = "织席妇人", ["npc.N09"] = "街坊老者", ["npc.N10"] = "孩童",
             ["npc.N11"] = "粮贩", ["npc.N12"] = "运粮脚夫",
+            // More townsfolk (user 2026-10-22).
+            ["npc.N13"] = "操练的兵卒", ["npc.N14"] = "练射的弓手", ["npc.N15"] = "教头", ["npc.N16"] = "看榜的汉子", ["npc.N17"] = "看榜的妇人",
+            ["npc.N18"] = "杂耍艺人", ["npc.N19"] = "卖艺汉子", ["npc.N20"] = "卖饼小贩", ["npc.N21"] = "洗衣妇人", ["npc.N22"] = "顽童",
+            ["npc.N23"] = "小姑娘", ["npc.N24"] = "读书人", ["npc.N25"] = "闲聊的汉子", ["npc.N26"] = "闲聊的妇人", ["npc.N27"] = "农夫",
+            ["npc.N28"] = "征兵小吏", ["npc.N29"] = "应募青年", ["npc.N30"] = "乞丐", ["npc.N31"] = "地痞", ["npc.N32"] = "赌坊庄家",
             ["guard"] = "守城卫兵", ["waiter"] = "酒保", ["cheng_yuanzhi"] = "程远志", ["zhang_liang"] = "张梁", ["zhang_jiao"] = "张角", ["zhang_bao"] = "张宝",
         };
 
@@ -79,6 +84,70 @@ namespace ThreeKingdoms.UI.Story
             ["npc.N12"] = "嘿哟……这一袋袋粮食要送到市集去。兵荒马乱的，有口饭吃就不错了。",
             ["gate:locked"] = "黄巾军就在城外。先在城里找到可以共事的豪杰，再出城迎敌。",
             ["gate:done"] = "城外的黄巾军已经退去。",
+            // Townsfolk bubbles (user 2026-10-22).
+            ["npc.N13"] = "喝！哈！——教头说了，枪要扎得又快又稳。",
+            ["npc.N14"] = "三十步外的靶子还好，再远就难说喽。",
+            ["npc.N15"] = "都给我站直了！黄巾贼可不会等你们练好！",
+            ["npc.N16"] = "太守出榜招募义兵……这年头，不去也不成啊。",
+            ["npc.N17"] = "黄巾贼要打过来了？哎哟，可怎么好。",
+            ["npc.N18"] = "走过路过不要错过！顶碗抛球，看好了——",
+            ["npc.N19"] = "一套枪法献给诸位！有钱的捧个钱场，没钱的捧个人场！",
+            ["npc.N20"] = "胡饼！刚出炉的胡饼！两文钱一个！",
+            ["npc.N21"] = "趁着日头好，把这些衣裳洗了晾上。",
+            ["npc.N22"] = "看我的毽子！一、二、三……",
+            ["npc.N23"] = "哥哥，等等我！",
+            ["npc.N24"] = "「天下大势，分久必合，合久必分」……妙哉。",
+            ["npc.N25"] = "听说城外黄巾来了好几万人？",
+            ["npc.N26"] = "我家那口子也说要去投军呢。",
+            ["npc.N27"] = "这季的菜再不收，就要被兵荒耽误了。",
+            ["npc.N28"] = "应募的报上姓名籍贯，一个一个来，莫要挤。",
+            ["npc.N29"] = "俺也要去当兵，好歹能吃上一口饱饭。",
+            ["npc.N30"] = "行行好吧，给口饭吃……",
+            ["npc.N31"] = "哟，这位爷，进来玩两把？",
+            ["npc.N32"] = "买定离手！",
+            ["npc.N13.won"] = "听说城外打了胜仗！咱们练得更起劲了。",
+            ["npc.N16.won"] = "榜上说黄巾贼被打退了一阵，好！",
+            ["npc.N25.won"] = "那刘玄德三兄弟可真了不得！",
+            ["npc.N29.won"] = "俺也要像刘玄德那样杀贼立功！",
+            // The beggar.
+            ["beggar.ask"] = "这位大爷，行行好，赏几个钱吧……",
+            ["alms.5"] = "施舍五文",
+            ["alms.20"] = "施舍二十文",
+            ["alms.50"] = "施舍五十文",
+            ["alms.none"] = "（不给）",
+            ["beggar.thanks.0"] = "多谢大爷！够买个饼了。",
+            ["beggar.thanks.1"] = "大爷心善！小的给您磕头了！",
+            ["beggar.thanks.2"] = "这、这么多……恩公大名，小的一辈子记着！",
+            ["beggar.poor"] = "（囊中羞涩，一时拿不出这许多。）",
+            ["beggar.declined"] = "唉……",
+            // The scholar.
+            ["scholar.ask"] = "这位兄台气度不凡。在下近来读史有得，出三道题考考兄台，可愿一试？",
+            ["scholar.yes"] = "愿闻其详",
+            ["scholar.no"] = "改日再说",
+            ["scholar.bye"] = "也罢，改日再请教。",
+            ["scholar.later"] = "今日已讨教过了。他日兄台再来，在下另备新题。",
+            ["scholar.right"] = "正是！兄台好见识。",
+            ["scholar.result.0"] = "三题皆错……兄台还需多读些书啊。",
+            ["scholar.result.1"] = "答对一题，尚可。",
+            ["scholar.result.2"] = "答对两题，兄台胸中颇有丘壑。",
+            ["scholar.result.3"] = "三题全对！兄台博古通今，在下佩服！",
+            // The gambling house.
+            ["casino.greet"] = "嘿，赌坊里头三颗骰子，押大押小，一赔一。豹子通杀，敢不敢来？",
+            ["casino.ask"] = "押大还是押小？",
+            ["casino.big"] = "押大（11～17）",
+            ["casino.small"] = "押小（4～10）",
+            ["casino.leave"] = "不赌了",
+            ["casino.stake"] = "押多少？",
+            ["casino.back"] = "再想想",
+            ["casino.broke"] = "钱不够还想下注？去去去！",
+            ["casino.bye"] = "下回再来啊，爷！",
+            // The archery range.
+            ["archery.ask"] = "这位壮士，可要试试弓箭？三支箭，看你能射中几个靶子。",
+            ["archery.try"] = "试试身手",
+            ["archery.no"] = "改日吧",
+            ["archery.bye"] = "随时恭候。",
+            ["archery.quit"] = "怎么，不射了？",
+            ["archery.no_reward"] = "好箭法！不过今日的彩头已经给过了。",
             ["guard.stop"] = "站住！城外黄巾贼横行，太守有令：只许进城，不许出城。",
             ["guard.stop.south"] = "西门不开。要出城迎敌，请走南门。",
             // Before and after each battle (user 2026-10-22). The leaders' titles follow 演义 第1回; the meetings are
@@ -108,6 +177,22 @@ namespace ThreeKingdoms.UI.Story
         {
             if (key != null && key.StartsWith("warn:no_weapon:")) return $"{key.Substring(15)}没有装备武器，仍可出战。可先回城整备，再走近黄巾军便开战。";
             if (key == null) return null;
+            if (key.StartsWith("raw:")) return key.Substring(4);
+            var part = key.Split(':');
+            switch (part[0])
+            {
+                case "rep.up": return $"声望提高了{part[1]}点（现在{part[2]}）。";
+                case "rep.down": return $"声望降低了{part[1]}点（现在{part[2]}）。";
+                case "stake": return $"押{part[1]}文";
+                case "scholar.wrong": return $"错了，应是「{part[1]}」。";
+                case "casino.result":
+                    string what = part[1] == "triple" ? "豹子！庄家通杀" : part[1] == "big" ? "大" : "小";
+                    return $"开——{part[2]}，{what}！";
+                case "casino.won": return $"赢了{part[1]}文（现有铜钱{part[2]}）。";
+                case "casino.lost": return $"输了{part[1]}文（现有铜钱{part[2]}）。";
+                case "archery.score": return $"一共射中{part[1]}个靶子！" + (int.Parse(part[1]) >= 5 ? "好箭法！" : "");
+                case "archery.reward": return $"得到彩头{part[1]}文（现有铜钱{part[2]}）。";
+            }
             // A resident with nothing new to say repeats the earlier line (.won → .after → base).
             for (string k = key; k != null; k = k.EndsWith(".won") ? k.Substring(0, k.Length - 4) + ".after" : k.EndsWith(".after") ? k.Substring(0, k.Length - 6) : null)
                 if (Lines.TryGetValue(k, out var s)) return s;
@@ -124,6 +209,10 @@ namespace ThreeKingdoms.UI.Story
             if (key == null) return "";
             if (key.StartsWith("talk:")) return $"[确认] 与{Speaker(key.Substring(5))}交谈";
             if (key == "notice") return "[确认] 查看告示";
+            if (key == "beggar") return "[确认] 与乞丐交谈";
+            if (key == "scholar") return "[确认] 与读书人交谈";
+            if (key == "casino") return "[确认] 与地痞交谈（赌大小）";
+            if (key == "archery") return "[确认] 与弓手交谈（射箭）";
             if (key == "tavern") return "[确认] 进入酒馆";
             if (key.StartsWith("gate:battle_")) return $"[确认] 出城迎敌：{BattleNames[key.Substring(5)]}";
             if (key.StartsWith("npc:")) return $"[确认] 与{Speaker("npc." + key.Substring(4))}交谈";

@@ -21,6 +21,10 @@ namespace ThreeKingdoms.UI.Story
         DialogueView dialogue;
         // Liu Bei's answer to Zhang Fei (user 2026-10-22): the options stand above the dialogue box.
         VisualElement choiceList;
+        // Three dice on a mat while a bet is on (user 2026-10-22); pips drawn in code until the Codex dice art lands.
+        VisualElement diceMat;
+        readonly VisualElement[] dieFaces = new VisualElement[3];
+        public int[] ShownDice { get; private set; }
         public IReadOnlyList<Button> ChoiceButtons => choiceList.Query<Button>().ToList();
         // The speaker whose illustration is up, or null.
         public string PortraitSpeaker => dialogue?.PortraitSpeaker;
@@ -66,6 +70,28 @@ namespace ThreeKingdoms.UI.Story
             prompt.style.unityTextAlign = TextAnchor.MiddleCenter;
 
             dialogue = new DialogueView(root, Skin, Portraits);
+            diceMat = new VisualElement { pickingMode = PickingMode.Ignore };
+            Place(diceMat, -1, 300, -1, -1);
+            diceMat.style.left = new Length(50, LengthUnit.Percent);
+            diceMat.style.translate = new Translate(new Length(-50, LengthUnit.Percent), 0);
+            diceMat.style.flexDirection = FlexDirection.Row;
+            diceMat.style.paddingLeft = diceMat.style.paddingRight = 36; diceMat.style.paddingTop = diceMat.style.paddingBottom = 28;
+            diceMat.style.backgroundColor = new Color(0.12f, 0.26f, 0.18f, 0.96f);
+            diceMat.style.borderTopWidth = diceMat.style.borderBottomWidth = diceMat.style.borderLeftWidth = diceMat.style.borderRightWidth = 6;
+            diceMat.style.borderTopColor = diceMat.style.borderBottomColor = diceMat.style.borderLeftColor = diceMat.style.borderRightColor = new Color(0.36f, 0.22f, 0.12f);
+            for (int i = 0; i < 3; i++)
+            {
+                var die = new VisualElement { pickingMode = PickingMode.Ignore };
+                die.style.width = die.style.height = 96;
+                die.style.marginLeft = die.style.marginRight = 14;
+                die.style.backgroundColor = new Color(0.96f, 0.93f, 0.85f);
+                die.style.borderTopLeftRadius = die.style.borderTopRightRadius = die.style.borderBottomLeftRadius = die.style.borderBottomRightRadius = 12;
+                diceMat.Add(die);
+                dieFaces[i] = die;
+            }
+            diceMat.style.display = DisplayStyle.None;
+            root.Add(diceMat);
+
             choiceList = new VisualElement();
             Place(choiceList, -1, -1, 300, 230);
             choiceList.style.width = 520;
@@ -93,7 +119,43 @@ namespace ThreeKingdoms.UI.Story
             if (l.HasValue) dialogue.Show(l.Value.Speaker, l.Value.Line);
             else dialogue.Hide();
             ShowChoices(Controller.Choices);
+            ShowDice(Controller.Dice);
             fade.style.opacity = Controller.Fade;
+        }
+
+        static readonly (float x, float y)[][] Pips =
+        {
+            new[] { (0.5f, 0.5f) },
+            new[] { (0.25f, 0.25f), (0.75f, 0.75f) },
+            new[] { (0.25f, 0.25f), (0.5f, 0.5f), (0.75f, 0.75f) },
+            new[] { (0.25f, 0.25f), (0.75f, 0.25f), (0.25f, 0.75f), (0.75f, 0.75f) },
+            new[] { (0.25f, 0.25f), (0.75f, 0.25f), (0.5f, 0.5f), (0.25f, 0.75f), (0.75f, 0.75f) },
+            new[] { (0.25f, 0.22f), (0.75f, 0.22f), (0.25f, 0.5f), (0.75f, 0.5f), (0.25f, 0.78f), (0.75f, 0.78f) },
+        };
+
+        void ShowDice(int[] dice)
+        {
+            ShownDice = dice;
+            diceMat.style.display = dice == null ? DisplayStyle.None : DisplayStyle.Flex;
+            if (dice == null) return;
+            for (int i = 0; i < 3; i++)
+            {
+                var die = dieFaces[i];
+                die.Clear();
+                int v = Mathf.Clamp(dice[i], 1, 6);
+                foreach (var (x, y) in Pips[v - 1])
+                {
+                    var pip = new VisualElement { pickingMode = PickingMode.Ignore };
+                    float size = v == 1 ? 26 : 18;
+                    pip.style.position = Position.Absolute;
+                    pip.style.width = pip.style.height = size;
+                    pip.style.left = x * 96 - size / 2; pip.style.top = y * 96 - size / 2;
+                    pip.style.borderTopLeftRadius = pip.style.borderTopRightRadius = pip.style.borderBottomLeftRadius = pip.style.borderBottomRightRadius = size / 2;
+                    // One and four are red, as on Chinese dice.
+                    pip.style.backgroundColor = v == 1 || v == 4 ? new Color(0.78f, 0.12f, 0.10f) : new Color(0.12f, 0.10f, 0.08f);
+                    die.Add(pip);
+                }
+            }
         }
 
         void ShowChoices(IReadOnlyList<string> keys)

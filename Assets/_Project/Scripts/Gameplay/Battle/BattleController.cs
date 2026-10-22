@@ -54,6 +54,7 @@ namespace ThreeKingdoms.Gameplay.Battle
         int actorIndex;
 
         float Speed => PlaybackSpeed * (Fast ? 3f : 1f);
+        public float PlaybackRate => Speed;
 
         void OnEnable() { if (QuitAction) QuitAction.action.Enable(); }
         void OnDisable() { if (QuitAction) QuitAction.action.Disable(); }

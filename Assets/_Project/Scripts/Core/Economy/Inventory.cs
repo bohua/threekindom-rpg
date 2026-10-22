@@ -163,6 +163,14 @@ namespace ThreeKingdoms.Core.Economy
 
         public void AddCopper(int amount) => Copper += Math.Max(0, amount);
 
+        // Copper paid out in town (alms, a bet); false and nothing taken when there is not enough.
+        public bool SpendCopper(int amount)
+        {
+            if (amount < 0 || amount > Copper) return false;
+            Copper -= amount;
+            return true;
+        }
+
         void Take(EquipmentSpec item)
         {
             if (--bag[item.Id] == 0) bag.Remove(item.Id);

@@ -76,6 +76,7 @@ namespace ThreeKingdoms.EditorTools
             HD2DSampleBuilder.Character("Guan Yu", "GuanYu", new Vector3(-11.6f, 0, -5.4f), 0, isPlayer: false).transform.SetParent(people, true);
             HD2DSampleBuilder.Character("Zhang Fei", "ZhangFei", new Vector3(-9.6f, 0, -10.5f), 0, isPlayer: false).transform.SetParent(people, true);
             Residents(people, player.transform);
+            Townsfolk(people, player.transform);
 
             var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camGo.AddComponent<Camera>();
@@ -292,6 +293,11 @@ namespace ThreeKingdoms.EditorTools
         static Texture2D Tex(string key) =>
             AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png")
             ?? throw new FileNotFoundException("Missing town texture " + key);
+
+        // Null when a not-yet-delivered texture is missing (art still with Codex).
+        static Texture2D Tex(string key, bool optional) =>
+            AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png")
+            ?? (optional ? null : throw new FileNotFoundException("Missing town texture " + key));
 
         static Material Mat(string key, bool clip = false, bool twoSided = false, string emissionMask = null, Color? glow = null)
         {
@@ -720,6 +726,19 @@ namespace ThreeKingdoms.EditorTools
             Prop(sp, "prop_water_vat", 11.4f, -5.2f);
             PointLight(sp, "Forge light", new Vector3(15.3f, 1.0f, -4.4f), new Color(1f, 0.48f, 0.18f), 3.5f, 4.5f);
 
+            // 13 Gambling house east of the smithy (user 2026-10-22), fronting 中街. Stand-in house textures until the
+            // Codex casino delivery (art/zhuojun-casino); its ruffian and dealer stand at the door.
+            bool casinoArt = Tex("casino_front", optional: true);
+            var casino = Building(row, "13 Gambling house", new Vector3(31f, 0, -4f), 0f,
+                casinoArt ? "casino_front" : "house_b_front", casinoArt ? "casino_side" : "house_b_side", casinoArt ? "casino_back" : "house_b_back");
+            if (casinoArt && Tex("plaque_casino", optional: true)) EaveSign(casino, "plaque_casino", "casino_front", "casino_side");
+            var cg = Group(row, "Gambling house props");
+            Prop(cg, "prop_lantern_red", 27.4f, -4.4f, y: 2.2f);
+            Prop(cg, "prop_lantern_red", 34.6f, -4.4f, y: 2.2f);
+            if (Tex("prop_banner_casino", optional: true)) Prop(cg, "prop_banner_casino", 35.6f, -4.3f, y: 0.9f);
+            if (Tex("prop_dice_table", optional: true)) Prop(cg, "prop_dice_table", 31f, -6.2f, solid: true);
+            PointLight(cg, "Gambling house light", new Vector3(31f, 2.4f, -4.8f), new Color(1f, 0.55f, 0.3f), 1.8f, 5f);
+
             // 05 Market & notice board on the square (x -9..9, z -14..-2), stalls either side of the main axis.
             var mk = Group(row, "05 Market");
             Prop(mk, "prop_stall_cloth", -5.6f, -5.2f, solid: true);
@@ -866,6 +885,65 @@ namespace ThreeKingdoms.EditorTools
                 var patrol = npc.AddComponent<NpcPatrol>();
                 patrol.Waypoints = route;
                 patrol.Player = player;
+            }
+        }
+
+        // The second batch of townsfolk (user 2026-10-22): soldiers drilling and an archer at the barracks, a recruiting
+        // clerk with young men queueing at its gate, readers at the notice board, performers and a cake seller on the
+        // square, laundry, children, a scholar, gossip and a farmer by the houses, a beggar, and the gambling house's
+        // ruffian and dealer. Root names keep the "N1x 职务" form. Frames: 0 front, 1 facing left, 2 facing right;
+        // busy ones cycle their action poses (PoseCycle). Landmark doors stay clear (memory: open space).
+        static void Townsfolk(Transform people, Transform player)
+        {
+            var g = Group(people, "Townsfolk");
+            (string id, string name, Vector3 at, int frame, int[] poses, Vector3[] route)[] posts =
+            {
+                ("N13", "N13 操练的兵卒 甲", new Vector3(28.6f, 0, 20.8f), 0, new[] { 5, 6, 7 }, null),
+                ("N13", "N13 操练的兵卒 乙", new Vector3(30.4f, 0, 20.8f), 0, new[] { 5, 6, 7 }, null),
+                ("N13", "N13 操练的兵卒 丙", new Vector3(32.2f, 0, 20.8f), 0, new[] { 5, 6, 7 }, null),
+                ("N15", "N15 教头", new Vector3(30.4f, 0, 23.4f), 0, new[] { 0, 6, 8 }, null),
+                ("N14", "N14 练射的弓手", new Vector3(35.2f, 0, 19.4f), 2, new[] { 2, 5, 6, 7 }, null),
+                ("N28", "N28 征兵小吏", new Vector3(33.6f, 0, 12.0f), 0, new[] { 0, 6 }, null),
+                ("N29", "N29 应募青年 甲", new Vector3(35.0f, 0, 11.8f), 1, null, null),
+                ("N29", "N29 应募青年 乙", new Vector3(36.4f, 0, 11.8f), 1, null, null),
+                ("N29", "N29 应募青年 丙", new Vector3(37.8f, 0, 11.8f), 1, null, null),
+                ("N16", "N16 看榜的汉子", new Vector3(2.0f, 0, -3.4f), 3, new[] { 3, 3, 8 }, null),
+                ("N17", "N17 看榜的妇人", new Vector3(5.2f, 0, -3.4f), 3, new[] { 3, 3, 6 }, null),
+                ("N18", "N18 杂耍艺人", new Vector3(-7.8f, 0, -8.4f), 0, new[] { 5, 6, 7, 6 }, null),
+                ("N19", "N19 卖艺汉子", new Vector3(7.8f, 0, -8.4f), 0, new[] { 5, 6, 7, 8 }, null),
+                ("N20", "N20 卖饼小贩", new Vector3(-6.8f, 0, -12.4f), 0, new[] { 0, 6 }, null),
+                ("N21", "N21 洗衣妇人", new Vector3(-27.2f, 0, -21.8f), 0, new[] { 5, 6, 7 }, null),
+                ("N22", "N22 顽童", new Vector3(-31f, 0, -23.4f), 0, null, new[] { new Vector3(-31f, 0, -23.4f), new Vector3(-28.6f, 0, -24.6f), new Vector3(-30.2f, 0, -25.4f) }),
+                ("N23", "N23 小姑娘", new Vector3(-20f, 0, -22.6f), 0, null, new[] { new Vector3(-20f, 0, -22.6f), new Vector3(-17.6f, 0, -23.8f) }),
+                ("N24", "N24 读书人", new Vector3(-14.2f, 0, -21.6f), 0, new[] { 0, 5 }, null),
+                ("N25", "N25 闲聊的汉子", new Vector3(-23.3f, 0, -24.6f), 2, new[] { 2, 6, 2, 7 }, null),
+                ("N26", "N26 闲聊的妇人", new Vector3(-21.9f, 0, -24.6f), 1, new[] { 1, 1, 6 }, null),
+                ("N27", "N27 农夫", new Vector3(-42.5f, 0, -29f), 0, null, new[] { new Vector3(-42.5f, 0, -29f), new Vector3(-39.8f, 0, -30.6f) }),
+                ("N30", "N30 乞丐", new Vector3(-4.6f, 0, -16.2f), 0, new[] { 0, 5 }, null),
+                ("N31", "N31 地痞", new Vector3(28.8f, 0, -5.2f), 0, new[] { 0, 6 }, null),
+                ("N32", "N32 赌坊庄家", new Vector3(33.2f, 0, -5.2f), 0, new[] { 5, 6, 7 }, null),
+            };
+            for (int i = 0; i < posts.Length; i++)
+            {
+                var (id, name, at, frame, poses, route) = posts[i];
+                var npc = HD2DSampleBuilder.Character(name, ResidentImporter.KeyFor(id), at, frame, isPlayer: false);
+                npc.transform.SetParent(g, true);
+                var animator = npc.GetComponentInChildren<SpriteFrameAnimator>();
+                if (route != null)
+                {
+                    npc.AddComponent<PixelWalkFrames>().Animator = animator;
+                    var patrol = npc.AddComponent<NpcPatrol>();
+                    patrol.Waypoints = route;
+                    patrol.Player = player;
+                }
+                else if (poses != null)
+                {
+                    var cycle = npc.AddComponent<PoseCycle>();
+                    cycle.Animator = animator;
+                    cycle.Frames = poses;
+                    cycle.Interval = id == "N13" ? 0.45f : 0.9f;
+                    cycle.Phase = i * 0.37f;
+                }
             }
         }
 
