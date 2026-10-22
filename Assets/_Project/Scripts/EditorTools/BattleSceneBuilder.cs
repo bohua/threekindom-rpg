@@ -157,7 +157,7 @@ namespace ThreeKingdoms.EditorTools
             var outfitDoc = outfitGo.AddComponent<UIDocument>();
             outfitDoc.panelSettings = doc.panelSettings;
             outfitDoc.sortingOrder = 10;
-            outfitGo.AddComponent<ThreeKingdoms.UI.Shop.ShopHud>().Host = controller;
+            var outfitHud = outfitGo.AddComponent<ThreeKingdoms.UI.Shop.ShopHud>(); outfitHud.Host = controller; outfitHud.Skin = hud.Skin;
 
             var es = new GameObject("EventSystem");
             es.AddComponent<EventSystem>();

@@ -9,6 +9,9 @@ namespace ThreeKingdoms.UI.Common
     // visible focus that the mouse also moves, and the focus re-send the EventSystem needs on the first frames.
     public static class MenuKit
     {
+        // The pixel skin out-of-battle menus draw with (BATTLE_UI_SKIN.md); null keeps the flat colours. Each menu HUD
+        // sets it from its own Skin field when it is enabled.
+        public static ThreeKingdoms.UI.Battle.BattleUiSkin Skin { get; set; }
         public static readonly Color Gold = new Color(0.93f, 0.76f, 0.36f);
         public static readonly Color PanelColor = new Color(0.07f, 0.09f, 0.14f, 0.94f);
         public static readonly Color Edge = new Color(0.62f, 0.50f, 0.28f);
@@ -28,19 +31,31 @@ namespace ThreeKingdoms.UI.Common
             b.style.whiteSpace = WhiteSpace.Normal;
             b.style.paddingLeft = 16; b.style.minHeight = height; b.style.marginTop = 4;
             b.SetEnabled(enabled);
-            b.RegisterCallback<FocusInEvent>(_ =>
+            var skin = Skin;
+            if (skin)
             {
-                b.style.backgroundColor = new Color(0.45f, 0.33f, 0.10f, 0.98f);
-                b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = Gold;
-                b.style.borderLeftWidth = 6;
-                onFocus?.Invoke();
-            });
-            b.RegisterCallback<FocusOutEvent>(_ =>
+                // Pixel option frames (normal / selected / disabled), same as the battle menu's text options.
+                skin.Item(b, enabled ? skin.ItemNormal : skin.ItemDisabled);
+                b.style.paddingLeft = 34; b.style.minHeight = Mathf.Max(48, height);
+                b.RegisterCallback<FocusInEvent>(_ => { skin.Item(b, skin.ItemSelected); onFocus?.Invoke(); });
+                b.RegisterCallback<FocusOutEvent>(_ => skin.Item(b, b.enabledSelf ? skin.ItemNormal : skin.ItemDisabled));
+            }
+            else
             {
-                b.style.backgroundColor = Idle;
-                b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = Dim;
-                b.style.borderLeftWidth = 1;
-            });
+                b.RegisterCallback<FocusInEvent>(_ =>
+                {
+                    b.style.backgroundColor = new Color(0.45f, 0.33f, 0.10f, 0.98f);
+                    b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = Gold;
+                    b.style.borderLeftWidth = 6;
+                    onFocus?.Invoke();
+                });
+                b.RegisterCallback<FocusOutEvent>(_ =>
+                {
+                    b.style.backgroundColor = Idle;
+                    b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = Dim;
+                    b.style.borderLeftWidth = 1;
+                });
+            }
             b.RegisterCallback<PointerEnterEvent>(_ => { if (b.enabledSelf) b.Focus(); });
             parent.Add(b);
             return b;
@@ -63,6 +78,12 @@ namespace ThreeKingdoms.UI.Common
             e.style.borderTopColor = e.style.borderBottomColor = e.style.borderLeftColor = e.style.borderRightColor = Edge;
             e.style.borderTopLeftRadius = e.style.borderTopRightRadius = e.style.borderBottomLeftRadius = e.style.borderBottomRightRadius = 4;
             e.style.paddingLeft = e.style.paddingRight = 22; e.style.paddingTop = e.style.paddingBottom = 14;
+            if (Skin)
+            {
+                // Content starts inside the 40-px border art so options are never covered by it.
+                Skin.Panel(e);
+                e.style.paddingLeft = e.style.paddingRight = 40; e.style.paddingTop = e.style.paddingBottom = 36;
+            }
         }
 
         public static void FocusFirst(VisualElement list, int index = 0)

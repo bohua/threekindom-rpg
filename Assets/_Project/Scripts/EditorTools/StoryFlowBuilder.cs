@@ -74,7 +74,7 @@ namespace ThreeKingdoms.EditorTools
             var doc = go.AddComponent<UIDocument>();
             doc.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);
             if (!doc.panelSettings) throw new System.InvalidOperationException("Title has no PanelSettings");
-            go.AddComponent<TitleHud>().Controller = controller;
+            var titleHud = go.AddComponent<TitleHud>(); titleHud.Controller = controller; titleHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             var es = new GameObject("EventSystem");
             es.AddComponent<EventSystem>();
             es.AddComponent<InputSystemUIInputModule>();
@@ -122,24 +122,24 @@ namespace ThreeKingdoms.EditorTools
             var doc = hudGo.AddComponent<UIDocument>();
             doc.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);
             if (!doc.panelSettings) throw new System.InvalidOperationException("Town HUD has no PanelSettings");
-            hudGo.AddComponent<TownHud>().Controller = c;
+            var townHud = hudGo.AddComponent<TownHud>(); townHud.Controller = c; townHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
 
             // The shop sits above the town HUD; menus need an EventSystem for gamepad and keyboard navigation.
             var shopGo = new GameObject("Shop HUD");
             var shopDoc = shopGo.AddComponent<UIDocument>();
             shopDoc.panelSettings = doc.panelSettings;
             shopDoc.sortingOrder = 10;
-            shopGo.AddComponent<ShopHud>().Host = c;
+            var shopHud = shopGo.AddComponent<ShopHud>(); shopHud.Host = c; shopHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             var saveGo = new GameObject("Save HUD");
             var saveDoc = saveGo.AddComponent<UIDocument>();
             saveDoc.panelSettings = doc.panelSettings;
             saveDoc.sortingOrder = 10;
-            saveGo.AddComponent<SaveHud>().Controller = c;
+            var saveHud = saveGo.AddComponent<SaveHud>(); saveHud.Controller = c; saveHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             var menuGo = new GameObject("Main Menu HUD");
             var menuDoc = menuGo.AddComponent<UIDocument>();
             menuDoc.panelSettings = doc.panelSettings;
             menuDoc.sortingOrder = 10;
-            menuGo.AddComponent<ThreeKingdoms.UI.Menu.MainMenuHud>().Controller = c;
+            var mainMenu = menuGo.AddComponent<ThreeKingdoms.UI.Menu.MainMenuHud>(); mainMenu.Controller = c; mainMenu.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             if (!Object.FindFirstObjectByType<EventSystem>())
             {
                 var es = new GameObject("EventSystem");

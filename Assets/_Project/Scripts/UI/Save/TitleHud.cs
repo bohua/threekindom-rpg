@@ -14,6 +14,7 @@ namespace ThreeKingdoms.UI.Save
     [RequireComponent(typeof(UIDocument))]
     public sealed class TitleHud : MonoBehaviour
     {
+        [Tooltip("Pixel skin (BATTLE_UI_SKIN.md); empty keeps the flat style")] public ThreeKingdoms.UI.Battle.BattleUiSkin Skin;
         public TitleController Controller;
 
         public enum Mode { Main, Load }
@@ -29,6 +30,7 @@ namespace ThreeKingdoms.UI.Save
         void OnEnable()
         {
             root = GetComponent<UIDocument>().rootVisualElement;
+            MenuKit.Skin = Skin;
             root.Clear();
             BattleFont.ApplyTo(root);
             root.style.flexGrow = 1;

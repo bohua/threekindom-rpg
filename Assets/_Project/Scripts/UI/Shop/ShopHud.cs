@@ -20,6 +20,8 @@ namespace ThreeKingdoms.UI.Shop
     public sealed class ShopHud : MonoBehaviour
     {
         [Tooltip("TownStoryController or BattleController")] public MonoBehaviour Host;
+        [Tooltip("Pixel skin (BATTLE_UI_SKIN.md); empty keeps the flat style")] public BattleUiSkin Skin;
+        static BattleUiSkin skin;
 
         static readonly Color Gold = new Color(0.93f, 0.76f, 0.36f);
         static readonly Color PanelColor = new Color(0.07f, 0.09f, 0.14f, 0.94f);
@@ -53,6 +55,7 @@ namespace ThreeKingdoms.UI.Shop
         {
             root = GetComponent<UIDocument>().rootVisualElement;
             root.Clear();
+            skin = Skin;
             root.pickingMode = PickingMode.Ignore;
             BattleFont.ApplyTo(root);
             root.style.flexGrow = 1;
@@ -339,6 +342,11 @@ namespace ThreeKingdoms.UI.Shop
             b.style.unityTextAlign = TextAnchor.MiddleLeft;
             b.style.paddingLeft = 16; b.style.height = 48; b.style.marginTop = 4;
             b.SetEnabled(enabled);
+            if (skin)
+            {
+                skin.Item(b, enabled ? skin.ItemNormal : skin.ItemDisabled);
+                b.style.paddingLeft = 34;
+            }
             if (right != null)
             {
                 var r = new Label(right) { pickingMode = PickingMode.Ignore };
@@ -348,6 +356,7 @@ namespace ThreeKingdoms.UI.Shop
             }
             b.RegisterCallback<FocusInEvent>(_ =>
             {
+                if (skin) { skin.Item(b, skin.ItemSelected); lastIndex[mode] = index; onFocus?.Invoke(); return; }
                 b.style.backgroundColor = new Color(0.45f, 0.33f, 0.10f, 0.98f);
                 b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = Gold;
                 b.style.borderLeftWidth = 6;
@@ -356,6 +365,7 @@ namespace ThreeKingdoms.UI.Shop
             });
             b.RegisterCallback<FocusOutEvent>(_ =>
             {
+                if (skin) { skin.Item(b, b.enabledSelf ? skin.ItemNormal : skin.ItemDisabled); return; }
                 b.style.backgroundColor = Idle;
                 b.style.borderTopColor = b.style.borderBottomColor = b.style.borderLeftColor = b.style.borderRightColor = Dim;
                 b.style.borderLeftWidth = 1;
@@ -411,6 +421,11 @@ namespace ThreeKingdoms.UI.Shop
             e.style.borderTopColor = e.style.borderBottomColor = e.style.borderLeftColor = e.style.borderRightColor = Edge;
             e.style.borderTopLeftRadius = e.style.borderTopRightRadius = e.style.borderBottomLeftRadius = e.style.borderBottomRightRadius = 4;
             e.style.paddingLeft = e.style.paddingRight = 22; e.style.paddingTop = e.style.paddingBottom = 14;
+            if (skin)
+            {
+                skin.Panel(e);
+                e.style.paddingLeft = e.style.paddingRight = 40; e.style.paddingTop = e.style.paddingBottom = 36;
+            }
         }
     }
 }

@@ -14,6 +14,7 @@ namespace ThreeKingdoms.UI.Save
     [RequireComponent(typeof(UIDocument))]
     public sealed class SaveHud : MonoBehaviour
     {
+        [Tooltip("Pixel skin (BATTLE_UI_SKIN.md); empty keeps the flat style")] public ThreeKingdoms.UI.Battle.BattleUiSkin Skin;
         public TownStoryController Controller;
 
         public enum Mode { Closed, Slots, Confirm }
@@ -29,6 +30,7 @@ namespace ThreeKingdoms.UI.Save
         void OnEnable()
         {
             root = GetComponent<UIDocument>().rootVisualElement;
+            MenuKit.Skin = Skin;
             root.Clear();
             root.pickingMode = PickingMode.Ignore;
             BattleFont.ApplyTo(root);

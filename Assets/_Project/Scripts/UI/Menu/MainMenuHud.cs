@@ -19,6 +19,7 @@ namespace ThreeKingdoms.UI.Menu
     [RequireComponent(typeof(UIDocument))]
     public sealed class MainMenuHud : MonoBehaviour
     {
+        [Tooltip("Pixel skin (BATTLE_UI_SKIN.md); empty keeps the flat style")] public ThreeKingdoms.UI.Battle.BattleUiSkin Skin;
         public TownStoryController Controller;
 
         public enum Mode { Closed, Root, Generals, Items, Settings }
@@ -38,6 +39,7 @@ namespace ThreeKingdoms.UI.Menu
         void OnEnable()
         {
             root = GetComponent<UIDocument>().rootVisualElement;
+            MenuKit.Skin = Skin;
             root.Clear();
             root.pickingMode = PickingMode.Ignore;
             BattleFont.ApplyTo(root);

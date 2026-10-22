@@ -10,6 +10,7 @@ namespace ThreeKingdoms.App
     //   -camera <object name>            move the main camera to that (disabled) camera's pose and stop following
     //   -teleport <object name>          move the player to that object (e.g. a town "Spot …" marker), camera keeps following
     //   -screenshot <file> [-screenshotDelay <seconds>]   capture one frame, then quit
+    //   -panel <shop|save|menu>          open that town panel after loading (screenshots of the menus)
     //   -storyAuto                       play the main line by itself (town, oath, gate, battles); implies -battleAuto
     //   -battleAuto [<stop round>]       let BattleAutoPilot issue commands in battle scenes (screenshots, soak runs)
     public static class DevLaunchOptions
@@ -47,6 +48,14 @@ namespace ThreeKingdoms.App
             {
                 var go = new GameObject(nameof(TeleportProbe));
                 go.AddComponent<TeleportProbe>().SpotName = spot;
+                Object.DontDestroyOnLoad(go);
+            }
+
+            string panel = LaunchArgs.Get("-panel");
+            if (panel != null)
+            {
+                var go = new GameObject(nameof(PanelProbe));
+                go.AddComponent<PanelProbe>().Panel = panel;
                 Object.DontDestroyOnLoad(go);
             }
 
@@ -97,6 +106,20 @@ namespace ThreeKingdoms.App
             System.IO.File.WriteAllBytes(Path, frame.EncodeToPNG());
             Destroy(frame);
             Application.Quit();
+        }
+    }
+
+    public sealed class PanelProbe : MonoBehaviour
+    {
+        public string Panel;
+
+        IEnumerator Start()
+        {
+            yield return LaunchArgs.WaitForRequestedScene();
+            yield return new WaitForSecondsRealtime(0.5f);
+            var town = Object.FindFirstObjectByType<ThreeKingdoms.Gameplay.Story.TownStoryController>();
+            if (town) town.OpenPanel(Panel);
+            else Debug.LogWarning("No town to open a panel in.");
         }
     }
 

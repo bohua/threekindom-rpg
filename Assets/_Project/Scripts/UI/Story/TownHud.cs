@@ -14,6 +14,7 @@ namespace ThreeKingdoms.UI.Story
     public sealed class TownHud : MonoBehaviour
     {
         public TownStoryController Controller;
+        [Tooltip("Pixel skin (BATTLE_UI_SKIN.md); empty keeps the flat style")] public ThreeKingdoms.UI.Battle.BattleUiSkin Skin;
 
         static readonly Color Gold = new Color(0.93f, 0.76f, 0.36f);
         static readonly Color Panel = new Color(0.07f, 0.09f, 0.14f, 0.9f);
@@ -44,6 +45,7 @@ namespace ThreeKingdoms.UI.Story
             objective = Label(root, 24, Color.white);
             Place(objective, 24, 20, -1, -1);
             Frame(objective);
+            if (Skin) { Skin.Plaque(objective); objective.style.paddingLeft = objective.style.paddingRight = 28; objective.style.paddingTop = objective.style.paddingBottom = 14; }
 
             prompt = Label(root, 24, Gold);
             Place(prompt, 0, -1, 0, 60);
@@ -52,6 +54,7 @@ namespace ThreeKingdoms.UI.Story
             dialogue = new VisualElement { pickingMode = PickingMode.Ignore };
             Place(dialogue, 240, -1, 240, 40);
             Frame(dialogue);
+            if (Skin) { Skin.Panel(dialogue); dialogue.style.paddingLeft = dialogue.style.paddingRight = 44; dialogue.style.paddingTop = dialogue.style.paddingBottom = 36; }
             dialogue.style.minHeight = 170;
             speaker = Label(dialogue, 26, Gold);
             line = Label(dialogue, 28, Color.white);
