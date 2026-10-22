@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e132b6c3982614844a238ce92504d315, type: 3}
+  m_Name: DialoguePortraits
+  m_EditorClassIdentifier: ThreeKingdoms.UI::ThreeKingdoms.UI.Story.DialoguePortraitSet
+  Entries:
+  - Speaker: liu_bei
+    Texture: {fileID: 2800000, guid: 87067d1c946f22a44b874505f7283352, type: 3}
+    Right: 0
+    Flip: 1
+    Crop: 0.6
+    Axis: 0.52
+  - Speaker: guan_yu
+    Texture: {fileID: 2800000, guid: c7080a537d05a8f43a6241cbfebc3254, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.42
+  - Speaker: zhang_fei
+    Texture: {fileID: 2800000, guid: 30e2d49cae0a4ea439673e68963daa7e, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: npc.N03
+    Texture: {fileID: 2800000, guid: 137c9fe093570c647aa56a6042cab705, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.62
+    Axis: 0.45
+  - Speaker: cheng_yuanzhi
+    Texture: {fileID: 2800000, guid: 1ffae5c078f154b40a157472a9263d62, type: 3}
+    Right: 1
+    Flip: 1
+    Crop: 0.6
+    Axis: 0.45
+  - Speaker: zhang_liang
+    Texture: {fileID: 2800000, guid: 1df2733f19749df44ae702ef077625eb, type: 3}
+    Right: 1
+    Flip: 1
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: zhang_bao
+    Texture: {fileID: 2800000, guid: ab5f4f1617001d943be95bd82b698d48, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: zhang_jiao
+    Texture: {fileID: 2800000, guid: 82ed9eaaeba50d542adbff27a3afa7a6, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5

@@ -14,6 +14,7 @@ namespace ThreeKingdoms.UI.Story
             ["npc.N01"] = "南门守卫", ["npc.N02"] = "巡城兵", ["npc.N03"] = "城主府掌士", ["npc.N04"] = "铁匠", ["npc.N05"] = "酒馆掌柜",
             ["npc.N06"] = "医者", ["npc.N07"] = "驿卒", ["npc.N08"] = "织席妇人", ["npc.N09"] = "街坊老者", ["npc.N10"] = "孩童",
             ["npc.N11"] = "粮贩", ["npc.N12"] = "运粮脚夫",
+            ["guard"] = "守城卫兵", ["cheng_yuanzhi"] = "程远志", ["zhang_liang"] = "张梁", ["zhang_jiao"] = "张角", ["zhang_bao"] = "张宝",
         };
 
         static readonly Dictionary<string, string> Lines = new Dictionary<string, string>
@@ -57,12 +58,34 @@ namespace ThreeKingdoms.UI.Story
             ["npc.N12"] = "嘿哟……这一袋袋粮食要送到市集去。兵荒马乱的，有口饭吃就不错了。",
             ["gate:locked"] = "黄巾军就在城外。先在城里找到可以共事的豪杰，再出城迎敌。",
             ["gate:done"] = "城外的黄巾军已经退去。",
+            ["guard.stop"] = "站住！城外黄巾贼横行，太守有令：只许进城，不许出城。",
+            ["guard.stop.south"] = "西门不开。要出城迎敌，请走南门。",
+            // Before and after each battle (user 2026-10-22). The leaders' titles follow 演义 第1回; the meetings are
+            // this game's adaptation, and the leaders only withdraw (V1_SPEC §2.2).
+            ["foe.battle_1.1"] = "俺乃大贤良师麾下程远志！涿郡的人听着，速速开城投降，饶你们不死！",
+            ["foe.battle_1.2"] = "黄巾作乱，劫掠乡里。我兄弟三人在此，休想踏进城门一步！",
+            ["foe.battle_1.3"] = "少啰嗦！吃俺一矛！",
+            ["foe.battle_2.1"] = "吾乃人公将军张梁！程远志无能，今日由我亲取涿郡！",
+            ["foe.battle_2.2"] = "败军之后又来送死，某便成全你。",
+            ["foe.battle_2.3"] = "此人带了部将同来，不可轻敌。大家同心破敌！",
+            ["foe.battle_3.1"] = "苍天已死，黄天当立！吾乃天公将军张角，何人敢挡我大军？",
+            ["foe.battle_3.2"] = "地公将军张宝在此！兄长，让我先拿下这三人！",
+            ["foe.battle_3.3"] = "张角三兄弟齐至……二弟、三弟，此战关乎涿郡存亡！",
+            ["foe.battle_3.4"] = "大哥放心，俺正要会会他们！",
+            ["won.battle_1.1"] = "可恶，这三人好生了得……撤，快撤！",
+            ["won.battle_1.2"] = "贼首已退。二弟、三弟，先回城整备，贼众必定还会再来。",
+            ["won.battle_2.1"] = "哼，今日暂且退兵！待我兄长到来，定叫你们好看！",
+            ["won.battle_2.2"] = "张梁虽退，张角、张宝必来报复。",
+            ["won.battle_2.3"] = "回城整军，备好军粮，严阵以待。",
+            ["won.battle_3.1"] = "天时未至……众军，随我撤！",
+            ["won.battle_3.2"] = "大哥快走，我来断后！",
+            ["won.battle_3.3"] = "黄巾主力已溃，涿郡总算保住了。",
         };
 
         public static string Speaker(string key) => key != null && Speakers.TryGetValue(key, out var s) ? s : "";
         public static string Line(string key)
         {
-            if (key != null && key.StartsWith("warn:no_weapon:")) return $"{key.Substring(15)}没有装备武器，仍可出战。再次在南门确认即出城。";
+            if (key != null && key.StartsWith("warn:no_weapon:")) return $"{key.Substring(15)}没有装备武器，仍可出战。可先回城整备，再走近黄巾军便开战。";
             if (key == null) return null;
             // A resident with nothing new to say repeats the earlier line (.won → .after → base).
             for (string k = key; k != null; k = k.EndsWith(".won") ? k.Substring(0, k.Length - 4) + ".after" : k.EndsWith(".after") ? k.Substring(0, k.Length - 6) : null)

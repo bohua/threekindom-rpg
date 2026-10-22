@@ -62,6 +62,10 @@ public sealed class BattleTutorialTests
         Assert.IsTrue(c.LastApplied.RewardGranted);
         Assert.AreEqual(150, c.Progress.Copper);
         Assert.IsTrue(c.Session.State.Players.All(p => c.Progress.Level(p.General) == 2), "equal exp: everyone reaches level 2");
+        // Cheng Yuanzhi's parting line comes first (user 2026-10-22), then the results.
+        var battleHud = Object.FindFirstObjectByType<BattleHud>();
+        Assert.IsTrue(battleHud.DialoguePlaying, "the leader withdraws with a line");
+        while (battleHud.DialoguePlaying) { battleHud.AdvanceDialogue(); yield return null; }
         Assert.IsTrue(root.Query<Label>().ToList().Any(l => l.text == "胜利"));
 
         c.StartBattle();   // fight again: levels carry over, reward is not granted twice

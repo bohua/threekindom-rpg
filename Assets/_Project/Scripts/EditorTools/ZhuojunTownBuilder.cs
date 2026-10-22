@@ -629,15 +629,11 @@ namespace ThreeKingdoms.EditorTools
             // and gable ends along the main axis.
             var st = Group(row, "Middle streets");
             Building(st, "House 中街 W1", new Vector3(-24f, 0, -4f), 0f, "house_front", "house_side", "house_back");
-            Building(st, "House 中街 W2", new Vector3(-33f, 0, -4f), 0f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
             Building(st, "House 中街 E1", new Vector3(22f, 0, -4f), 0f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(st, "House 中街 E2", new Vector3(30f, 0, -4f), 0f, "house_front", "house_side", "house_back");
             Building(st, "House 北横街 W1", new Vector3(-14f, 0, 8f), 180f, "house_front", "house_side", "house_back");
             Building(st, "House 北横街 W2", new Vector3(-24f, 0, 8f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
-            Building(st, "House 北横街 W3", new Vector3(-32f, 0, 8f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
             Building(st, "House 北横街 E1", new Vector3(14f, 0, 8f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
             Building(st, "House 北横街 E2", new Vector3(24f, 0, 8f), 180f, "house_front", "house_side", "house_back");
-            Building(st, "House 北横街 E3", new Vector3(32f, 0, 8f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
             Building(st, "House axis NW", new Vector3(-4f, 0, 5f), -90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
             Building(st, "House axis NE", new Vector3(4f, 0, 5f), 90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
         }
@@ -656,18 +652,8 @@ namespace ThreeKingdoms.EditorTools
             Building(row, "House 中街 S W", new Vector3(-14f, 0, -11f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
             Building(row, "House 中街 S E1", new Vector3(14f, 0, -11f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
             Building(row, "House 中街 S E2", new Vector3(24f, 0, -11f), 180f, "clinic_front", "clinic_side", "house_c_back");
-            Building(row, "House 中街 S E3", new Vector3(33f, 0, -11f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            // Gable ends along the main axis between 南回环街 and the market.
-            Building(row, "House axis SW", new Vector3(-4f, 0, -17.2f), -90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(row, "House axis SE", new Vector3(4f, 0, -17.2f), 90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            // South band: backs facing 南回环街 (fronts at z -26).
-            Building(row, "House S band W1", new Vector3(-10f, 0, -26f), 180f, "house_front", "house_side", "house_back");
-            Building(row, "House S band W2", new Vector3(-19f, 0, -26f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
-            Building(row, "House S band W3", new Vector3(-28f, 0, -26f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(row, "House S band E1", new Vector3(10f, 0, -26f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(row, "House S band E2", new Vector3(19f, 0, -26f), 180f, "house_front", "house_side", "house_back");
-            Building(row, "House S band E3", new Vector3(28f, 0, -26f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
-            Building(row, "House S band E4", new Vector3(38f, 0, -26f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
+            // The south band of houses by the gate and the axis gable ends were taken out (user 2026-10-22): the way
+            // from the south gate to the market stays open and the landmark buildings are easy to pick out.
 
             var hp = Group(row, "House props");
             Prop(hp, "prop_mat_loom", -36.2f, -21.3f);

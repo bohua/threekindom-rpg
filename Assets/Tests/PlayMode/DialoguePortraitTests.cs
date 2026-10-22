@@ -19,7 +19,7 @@ public sealed class DialoguePortraitTests
         yield return null;
         var c = Object.FindFirstObjectByType<TownStoryController>();
         var hud = Object.FindFirstObjectByType<TownHud>();
-        Assert.GreaterOrEqual(hud.Portraits.Length, 4, "the three heroes and the castle steward have illustrations");
+        Assert.GreaterOrEqual(hud.Portraits.Entries.Length, 8, "the heroes, the castle steward and the Yellow Turban leaders have illustrations");
 
         var p = c.Player; var cc = p.GetComponent<CharacterController>();
         cc.enabled = false; p.transform.position = c.GuanYu.position + new Vector3(0, 0, -1.2f); cc.enabled = true;

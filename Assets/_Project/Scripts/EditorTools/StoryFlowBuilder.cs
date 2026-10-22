@@ -47,6 +47,71 @@ namespace ThreeKingdoms.EditorTools
             catch (System.Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
         }
 
+        // The Yellow Turbans blocking the south gate (user 2026-10-22), just outside its passage: one group per battle,
+        // the leader in front and first. Sprite keys follow INITIAL_SCENARIO_ART: Cheng Yuanzhi and the unnamed officers
+        // share the generic sheet, the three brothers have their own. A wall across the passage's outer end keeps Liu
+        // Bei from walking past while a group stands there.
+        static void GateBlockers(TownStoryController c)
+        {
+            var parent = new GameObject("Gate blockers").transform;
+            // A squad with its general in front (user 2026-10-22): the battle's named units plus rank-and-file.
+            string[][] groups =
+            {
+                new[] { "YellowTurban", "YellowTurban", "YellowTurban", "YellowTurban", "YellowTurban", "YellowTurban" },
+                new[] { "ZhangLiang", "YellowTurban", "YellowTurban", "YellowTurban", "YellowTurban", "YellowTurban" },
+                new[] { "ZhangJiao", "ZhangBao", "ZhangLiang", "YellowTurban", "YellowTurban", "YellowTurban" },
+            };
+            string[][] names =
+            {
+                new[] { "程远志", "黄巾头领 甲", "黄巾头领 乙", "黄巾兵 甲", "黄巾兵 乙", "黄巾兵 丙" },
+                new[] { "张梁", "黄巾将领 甲", "黄巾将领 乙", "黄巾将领 丙", "黄巾兵 甲", "黄巾兵 乙" },
+                new[] { "张角", "张宝", "张梁", "黄巾兵 甲", "黄巾兵 乙", "黄巾兵 丙" },
+            };
+            // Leader at the centre, the rest in two ranks behind him, all facing the gate.
+            Vector3[] posts =
+            {
+                new Vector3(0f, 0, -42f), new Vector3(-1.6f, 0, -43f), new Vector3(1.6f, 0, -43f),
+                new Vector3(-3f, 0, -44f), new Vector3(0f, 0, -44.2f), new Vector3(3f, 0, -44f),
+            };
+            c.GateBlockers = new Transform[groups.Length];
+            for (int g = 0; g < groups.Length; g++)
+            {
+                var group = new GameObject($"battle_{g + 1}").transform;
+                group.SetParent(parent, false);
+                for (int i = 0; i < groups[g].Length; i++)
+                {
+                    var npc = HD2DSampleBuilder.Character(names[g][i], groups[g][i], posts[i], 0, isPlayer: false);
+                    npc.transform.SetParent(group, true);
+                }
+                group.gameObject.SetActive(false);
+                c.GateBlockers[g] = group;
+            }
+            var wall = new GameObject("Gate wall (while blocked)").AddComponent<BoxCollider>();
+            wall.transform.SetParent(parent, false);
+            wall.transform.position = new Vector3(0, 1f, -40.4f);
+            wall.size = new Vector3(c.GateSize.x + 2f, 2f, 0.4f);
+            wall.enabled = false;
+            c.GateWall = wall;
+
+            // Two guards inside each gate (user 2026-10-22), in the gate guard's look (N01).
+            string guardKey = ResidentImporter.Residents.First(r => r.Id == "N01").Key;
+            Transform Guards(string name, Vector3 a, Vector3 b)
+            {
+                var group = new GameObject(name).transform;
+                group.SetParent(parent, false);
+                HD2DSampleBuilder.Character(name + " 甲", guardKey, a, 0, isPlayer: false).transform.SetParent(group, true);
+                HD2DSampleBuilder.Character(name + " 乙", guardKey, b, 0, isPlayer: false).transform.SetParent(group, true);
+                return group;
+            }
+            c.Gates = new[]
+            {
+                new TownStoryController.CityGate { Id = "south", Center = c.GateCenter, Size = c.GateSize, Inward = Vector3.forward,
+                    Guards = Guards("南门卫兵", new Vector3(-2.5f, 0, -32.8f), new Vector3(2.5f, 0, -32.8f)) },
+                new TownStoryController.CityGate { Id = "west", Center = new Vector3(-48f, 1f, 0f), Size = new Vector3(5f, 3f, 3f), Inward = Vector3.right,
+                    Guards = Guards("西门卫兵", new Vector3(-44.8f, 0, -1.9f), new Vector3(-44.8f, 0, 1.9f)) },
+            };
+        }
+
         // A walking copy of a companion without a collider (it must never block Liu Bei); hidden until they join.
         static ThreeKingdoms.Gameplay.PartyFollower Follower(string name, string key)
         {
@@ -104,6 +169,7 @@ namespace ThreeKingdoms.EditorTools
             c.Residents = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
                 .Where(t => t.parent && t.parent.name == "Residents").OrderBy(t => t.name).ToArray();
             if (c.Residents.Length != 12) throw new System.InvalidOperationException($"Town has {c.Residents.Length} residents, expected 12");
+            GateBlockers(c);
             c.InteractAction = ProjectSetup.Action("Interact");
             c.MenuAction = ProjectSetup.Action("Menu");
             c.NewGameSpot = Spot("New game (outside the south gate)", ZhuojunTownBuilder.PlayerStart);
@@ -123,7 +189,7 @@ namespace ThreeKingdoms.EditorTools
             doc.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);
             if (!doc.panelSettings) throw new System.InvalidOperationException("Town HUD has no PanelSettings");
             var townHud = hudGo.AddComponent<TownHud>(); townHud.Controller = c; townHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
-            townHud.Portraits = DialoguePortraitImporter.Import();
+            townHud.Portraits = AssetDatabase.LoadAssetAtPath<DialoguePortraitSet>(DialoguePortraitImporter.SetPath);
 
             // The shop sits above the town HUD; menus need an EventSystem for gamepad and keyboard navigation.
             var shopGo = new GameObject("Shop HUD");

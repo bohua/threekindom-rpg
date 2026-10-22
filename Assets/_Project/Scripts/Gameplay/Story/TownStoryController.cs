@@ -43,6 +43,29 @@ namespace ThreeKingdoms.Gameplay.Story
         [Header("South gate passage")]
         public Vector3 GateCenter = new Vector3(0, 1, -36f);
         public Vector3 GateSize = new Vector3(4f, 3f, 5f);
+        [Tooltip("Yellow Turbans blocking the south gate, one group per battle (user 2026-10-22); the first child is the leader who talks")]
+        public Transform[] GateBlockers = Array.Empty<Transform>();
+        [Tooltip("Keeps Liu Bei from walking past the blockers")] public Collider GateWall;
+        [Tooltip("Within this distance of the leader at the gate the challenge starts by itself (user 2026-10-22)")]
+        public float ChallengeRange = 3.2f;
+
+        // A city gate with two guards (user 2026-10-22): Liu Bei may come in but not go out; walking into the passage
+        // from inside town, the guards stop him and send him back. The south guards stand down once Guan Yu and Zhang
+        // Fei have both joined, and the Yellow Turbans take their place outside.
+        [Serializable]
+        public struct CityGate
+        {
+            public string Id;               // "south", "west"
+            public Vector3 Center, Size;    // the passage through the wall
+            public Vector3 Inward;          // towards the town
+            public Transform Guards;
+        }
+        [Header("Gate guards")]
+        public CityGate[] Gates = Array.Empty<CityGate>();
+        [Tooltip("Inside the walls; once Liu Bei has been here, a gate passage counts as a way out")]
+        public Bounds TownInside = new Bounds(Vector3.zero, new Vector3(90f, 20f, 66f));
+        bool wasInside;
+        public bool WasInside => wasInside;
         public float TalkRange = 2.2f;
         [Tooltip("Residents within this distance say their line in a bubble, no button needed (user 2026-10-21)")]
         public float BubbleRange = 3f;
@@ -75,10 +98,22 @@ namespace ThreeKingdoms.Gameplay.Story
                 if (Run == null || Busy) yield break;
                 if (GuanYu && GuanYu.gameObject.activeInHierarchy && !Run.Story.GuanYuJoined) yield return GuanYu;
                 if (ZhangFei && ZhangFei.gameObject.activeInHierarchy && !Run.Story.ZhangFeiJoined) yield return ZhangFei;
+                if (BlockerLeader) yield return BlockerLeader;
             }
         }
+
+        // The leader of the Yellow Turbans now at the south gate, or null when none block it.
+        public Transform BlockerLeader
+        {
+            get
+            {
+                var group = ActiveBlockers;
+                return group && group.childCount > 0 ? group.GetChild(0) : null;
+            }
+        }
+        Transform ActiveBlockers => GateBlockers.FirstOrDefault(g => g && g.gameObject.activeSelf);
         // Liu Bei stands where something happens (an event spot such as the south gate): "!" over his head.
-        public bool PlayerAlert => !Busy && InGatePassage;
+        public bool PlayerAlert => !Busy && InGatePassage && !BlockerLeader;
 
         public string ResidentLineKey(string id)
         {
@@ -135,6 +170,8 @@ namespace ThreeKingdoms.Gameplay.Story
             if (GuanYu) GuanYu.gameObject.SetActive(!story.GuanYuJoined);
             if (ZhangFei) ZhangFei.gameObject.SetActive(!story.ZhangFeiJoined);
             ShowFollowers(Vector3.back);   // arriving through the south gate: the party trails into the passage
+            ShowBlockers();
+            wasInside = TownInside.Contains(Player.transform.position);
             SetControl(true);
             // An oath interrupted by a reload replays from the start (GDD rule 11).
             story.ToSafeState();
@@ -158,6 +195,7 @@ namespace ThreeKingdoms.Gameplay.Story
             if (menuPressed && !Busy) { OpenPanel(MenuPanel); return; }
             bool pressed = InteractAction && InteractAction.action.WasPressedThisFrame();
             if (Busy) { if (pressed) Advance(); return; }
+            if (CheckGates()) return;
             UpdatePrompt();
             if (pressed) Interact();
         }
@@ -176,17 +214,31 @@ namespace ThreeKingdoms.Gameplay.Story
             else if (Prompt == "gate:locked" || Prompt == "gate:done") StartCoroutine(Say(new[] { new DialogueLine("system", Prompt) }));
             else if (Prompt == ShopPanel || Prompt == SavePanel) { Face(Prompt == ShopPanel ? Smith : Innkeeper); OpenPanel(Prompt); }
             else if (Prompt.StartsWith("npc:")) TalkToResident(Prompt.Substring(4));
-            else if (Prompt.StartsWith("gate:battle_"))
+            else if (Prompt.StartsWith("gate:battle_")) ChallengeAtGate();
+        }
+
+        void ChallengeAtGate()
+        {
+            // A general without a weapon may still fight; warn once per visit (equipment-items GDD answer 2), and step
+            // back from the Yellow Turbans so there is time to go and arm him.
+            var bare = Run.Data.Party.Where(g => Run.Story.HasJoined(g.Id) && Run.Progress.Inventory.Worn(g.Id, EquipSlot.Weapon) == null).ToList();
+            if (bare.Count > 0 && !warnedNoWeapon)
             {
-                // A general without a weapon may still fight; warn once per visit (equipment-items GDD answer 2).
-                var bare = Run.Data.Party.Where(g => Run.Story.HasJoined(g.Id) && Run.Progress.Inventory.Worn(g.Id, EquipSlot.Weapon) == null).ToList();
-                if (bare.Count > 0 && !warnedNoWeapon)
-                {
-                    warnedNoWeapon = true;
-                    StartCoroutine(Say(new[] { new DialogueLine("system", "warn:no_weapon:" + string.Join("、", bare.Select(g => g.DisplayName))) }));
-                }
-                else StartCoroutine(LeaveTown());
+                warnedNoWeapon = true;
+                StartCoroutine(WarnUnarmed("warn:no_weapon:" + string.Join("、", bare.Select(g => g.DisplayName))));
             }
+            else StartCoroutine(Confront());
+        }
+
+        IEnumerator WarnUnarmed(string line)
+        {
+            yield return Say(new[] { new DialogueLine("system", line) });
+            var back = new GameObject("step back").transform;
+            back.position = new Vector3(GateCenter.x, 0, GateCenter.z + GateSize.z / 2f + 1.6f);
+            Place(Player.transform, back);
+            Destroy(back.gameObject);
+            ShowFollowers(Vector3.back);
+            Changed?.Invoke();
         }
 
         // Shop (N04) or manual save (N05): movement pauses while the panel is open (town-exploration GDD).
@@ -270,7 +322,7 @@ namespace ThreeKingdoms.Gameplay.Story
             var story = Run.Story;
             var p = Player.transform.position;
             InGatePassage = new Bounds(GateCenter, GateSize).Contains(p + Vector3.up);
-            if (InGatePassage)
+            if (InGatePassage || (Near(BlockerLeader, p) && story.CanLeaveTown(out _)))
                 prompt = story.CanLeaveTown(out string reason) ? "gate:" + story.NextBattleId
                     : reason == StoryState.ReasonAllDone ? "gate:done" : "gate:locked";
             else if (Near(GuanYu, p) && !story.GuanYuJoined) prompt = "talk:" + StoryState.GuanYu;
@@ -334,6 +386,7 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return Say(lines);
             // Joined only once the dialogue has ended (GDD edge case); the companion leaves their post.
             bool startOath = Run.Story.Join(id);
+            ShowBlockers();
             if (npc) npc.gameObject.SetActive(false);
             // The new companion steps in from where they stood.
             ShowFollowers(npc ? npc.position - Player.transform.position : Vector3.back);
@@ -374,6 +427,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 if (Camera) Camera.Target = Player.transform;
                 ShowFollowers(Vector3.left);   // control resumes inside the west gate, the brothers behind
                 Run.Story.CompleteOath();
+                ShowBlockers();
                 yield return FadeTo(0f);
             }
             finally
@@ -385,6 +439,71 @@ namespace ThreeKingdoms.Gameplay.Story
                 SetControl(true);
                 Changed?.Invoke();
             }
+        }
+
+        // ---------- gates (user 2026-10-22) ----------
+
+        // Guards turn Liu Bei back at a way out; the Yellow Turban leader at the south gate challenges him when he comes
+        // near. True when either started.
+        public bool CheckGates()
+        {
+            if (Run == null || Busy || Panel != null || !Player) return false;
+            var p = Player.transform.position;
+            if (TownInside.Contains(p)) wasInside = true;
+            else if (!Gates.Any(g => Passage(g).Contains(p + Vector3.up))) wasInside = false;
+            foreach (var gate in Gates)
+                if (wasInside && gate.Guards && gate.Guards.gameObject.activeSelf && Passage(gate).Contains(p + Vector3.up))
+                {
+                    StartCoroutine(TurnBack(gate));
+                    return true;
+                }
+            var leader = BlockerLeader;
+            if (leader && Run.Story.CanLeaveTown(out _) && Vector3.Distance(Flat(leader.position), Flat(p)) <= ChallengeRange)
+            {
+                ChallengeAtGate();
+                return Busy;
+            }
+            return false;
+        }
+
+        static Bounds Passage(CityGate g) => new Bounds(g.Center, g.Size);
+
+        IEnumerator TurnBack(CityGate gate)
+        {
+            var guard = gate.Guards.childCount > 0 ? gate.Guards.GetChild(0) : null;
+            Face(guard);
+            // The west gate stays shut once the south one is open: point the way.
+            bool southOpen = Gates.Any(g => g.Id == "south" && g.Guards && !g.Guards.gameObject.activeSelf);
+            yield return Say(new[] { new DialogueLine("guard", southOpen ? "guard.stop.south" : "guard.stop") });
+            var inward = gate.Inward.normalized;
+            float depth = Mathf.Abs(Vector3.Dot(gate.Size, new Vector3(Mathf.Abs(inward.x), 0, Mathf.Abs(inward.z))));
+            var back = new GameObject("turn back").transform;
+            back.position = new Vector3(gate.Center.x, 0, gate.Center.z) + inward * (depth / 2f + 1.6f);
+            Place(Player.transform, back);
+            Destroy(back.gameObject);
+            ShowFollowers(-inward);
+            Changed?.Invoke();
+        }
+
+        // The leader at the gate calls out, the brothers answer, then the battle (user 2026-10-22).
+        IEnumerator Confront()
+        {
+            string battle = Run.Story.NextBattleId;
+            yield return Say(BattleScenes.BeforeBattle(battle));
+            yield return LeaveTown();
+        }
+
+        // The group for the next battle stands at the gate once the brothers can leave town (after the oath).
+        void ShowBlockers()
+        {
+            int next = Run.Story.CanLeaveTown(out _) ? Run.Story.BattlesDone : -1;
+            // The south guards stand down once both brothers have joined (user 2026-10-22).
+            bool bothJoined = Run.Story.GuanYuJoined && Run.Story.ZhangFeiJoined;
+            foreach (var gate in Gates)
+                if (gate.Guards && gate.Id == "south") gate.Guards.gameObject.SetActive(!bothJoined);
+            for (int i = 0; i < GateBlockers.Length; i++)
+                if (GateBlockers[i]) GateBlockers[i].gameObject.SetActive(i == next);
+            if (GateWall) GateWall.enabled = next >= 0;
         }
 
         IEnumerator LeaveTown()

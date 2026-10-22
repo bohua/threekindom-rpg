@@ -71,7 +71,7 @@ public sealed class ZhuojunTownTests
         var boxes = Object.FindObjectsByType<BoxCollider>(FindObjectsSortMode.None)
             .Where(b => b.transform.parent != null && b.transform.parent.Find("Front") != null)
             .Select(b => (name: b.transform.parent.name, bounds: b.bounds)).ToList();
-        Assert.Greater(boxes.Count, 30, "the town is lined with buildings");
+        Assert.Greater(boxes.Count, 20, "the town is lined with buildings (thinned out, user 2026-10-22)");
         for (int i = 0; i < boxes.Count; i++)
         for (int j = i + 1; j < boxes.Count; j++)
         {

@@ -146,6 +146,25 @@ namespace ThreeKingdoms.App
             yield return new WaitForSecondsRealtime(0.5f);
             var town = Object.FindFirstObjectByType<ThreeKingdoms.Gameplay.Story.TownStoryController>();
             if (!town) { Debug.LogWarning("No town to talk in."); yield break; }
+            // gate1..gate3: skip ahead to that battle (both brothers joined, oath done, earlier battles won) and face the
+            // Yellow Turbans at the south gate.
+            if (Who.StartsWith("gate") && int.TryParse(Who.Substring(4), out int battle))
+            {
+                var story = town.Run.Story;
+                story.Join(ThreeKingdoms.Core.Story.StoryState.GuanYu);
+                story.Join(ThreeKingdoms.Core.Story.StoryState.ZhangFei);
+                if (story.BeginOath()) story.CompleteOath();
+                for (int i = 1; i < battle; i++) story.RecordVictory("battle_" + i);
+                UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+                yield return null; yield return null;
+                town = Object.FindFirstObjectByType<ThreeKingdoms.Gameplay.Story.TownStoryController>();
+                // Close enough and the leader challenges by himself; -1 stops short of that to show the squad.
+                Teleport(town, new Vector3(0, 0, Advances < 0 ? -35f : -39.6f));
+                yield return new WaitForSecondsRealtime(0.5f);
+                if (Advances < 0) yield break;
+                for (int i = 0; i < Advances; i++) { yield return new WaitForSecondsRealtime(0.4f); town.Advance(); }
+                yield break;
+            }
             var target = Who == "zhang" ? town.ZhangFei : town.GuanYu;
             var controller = town.Player.GetComponent<CharacterController>();
             if (controller) controller.enabled = false;
@@ -154,6 +173,14 @@ namespace ThreeKingdoms.App
             yield return null;
             town.Interact();
             for (int i = 0; i < Advances; i++) { yield return new WaitForSecondsRealtime(0.4f); town.Advance(); }
+        }
+
+        static void Teleport(ThreeKingdoms.Gameplay.Story.TownStoryController town, Vector3 at)
+        {
+            var controller = town.Player.GetComponent<CharacterController>();
+            if (controller) controller.enabled = false;
+            town.Player.transform.position = at;
+            if (controller) controller.enabled = true;
         }
     }
 

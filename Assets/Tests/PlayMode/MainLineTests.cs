@@ -115,6 +115,7 @@ public sealed class MainLineTests
         yield return null;
         c.Interact();
         Assert.AreEqual("gate:locked", c.Line?.Line);
+        Assert.IsNull(c.BlockerLeader, "no Yellow Turbans at the gate before the oath");
         while (c.Busy) { yield return null; c.Advance(); }
 
         // Zhang Fei first, then Guan Yu (order is free); the oath starts by itself and ends inside the west gate.
@@ -157,11 +158,23 @@ public sealed class MainLineTests
         {
             c = Object.FindFirstObjectByType<TownStoryController>();
             c.FadeTime = 0.02f;
+            // The next group of Yellow Turbans blocks the south gate (user 2026-10-22); their leader wears the "!".
+            string[] leaders = { "程远志", "张梁", "张角" }, leaderKeys = { "cheng_yuanzhi", "zhang_liang", "zhang_jiao" };
+            Assert.IsNotNull(c.BlockerLeader, "Yellow Turbans block the gate before battle " + battle);
+            Assert.AreEqual(leaders[battle - 1], c.BlockerLeader.name);
+            Assert.That(c.StoryMarks, Has.Member(c.BlockerLeader));
+            Assert.IsTrue(c.GateWall.enabled, "they cannot be walked past");
             Teleport(c.Player, new Vector3(0, 0, -36f));
             yield return null;
-            c.Interact();   // gate:battle_N → fade and load the battle
+            c.Interact();   // gate:battle_N → the leader's challenge, then fade and load the battle
+            Assert.AreEqual(leaderKeys[battle - 1], c.Line?.Speaker, "the leader speaks first");
             float deadline = Time.realtimeSinceStartup + 20f;
-            while (SceneManager.GetActiveScene().name == "Zhuojun_Town") { Assert.Less(Time.realtimeSinceStartup, deadline); yield return null; }
+            while (SceneManager.GetActiveScene().name == "Zhuojun_Town")
+            {
+                Assert.Less(Time.realtimeSinceStartup, deadline);
+                yield return null;
+                if (c != null && c.Line.HasValue) c.Advance();
+            }
             Assert.AreEqual(GameRun.BattleScenes[battle - 1], SceneManager.GetActiveScene().name);
             yield return null;
             var prep = Object.FindFirstObjectByType<BattleController>();
@@ -176,6 +189,13 @@ public sealed class MainLineTests
             Assert.AreEqual(battle, GameRun.Current.Story.BattlesDone);
             Assert.IsTrue(b.LastApplied.RewardGranted);
             yield return null;
+            // The leader withdraws with a parting line before the results (user 2026-10-22; nobody dies, V1_SPEC §2.2).
+            var hud = Object.FindFirstObjectByType<BattleHud>();
+            Assert.IsTrue(hud.DialoguePlaying, "lines after the victory");
+            Assert.AreEqual(leaderKeys[battle - 1], hud.DialogueSpeaker);
+            Assert.AreEqual(leaderKeys[battle - 1], hud.PortraitSpeaker, "with the leader's illustration");
+            Assert.IsNull(ButtonText("回到涿郡"), "results wait for the lines");
+            while (hud.DialoguePlaying) { hud.AdvanceDialogue(); yield return null; }
             if (battle < 3)
             {
                 Assert.IsTrue(b.CanReturnToTown);

@@ -19,6 +19,7 @@ namespace ThreeKingdoms.UI.Battle
         public BattleController Controller;
         [Tooltip("Teaching hints; optional")] public BattleTutor Tutor;
         [Tooltip("Pixel frames (BATTLE_UI_SKIN.md); without it the HUD uses flat colours")] public BattleUiSkin Skin;
+        [Tooltip("Speaker illustrations for the lines after a victory")] public ThreeKingdoms.UI.Story.DialoguePortraitSet Portraits;
 
         // The skin the static widget helpers draw with (one battle HUD at a time).
         static BattleUiSkin skin;
@@ -31,6 +32,17 @@ namespace ThreeKingdoms.UI.Battle
         static readonly Color PanelEdge = new Color(0.62f, 0.50f, 0.28f);
 
         VisualElement root, menu, cards, plates, popups, resultPanel, prepPanel;
+        // The retreating leader's parting words and the brothers' answer after a first victory (user 2026-10-22),
+        // played before the result panel. A transparent full-screen button takes confirm / click to advance.
+        ThreeKingdoms.UI.Story.DialogueView dialogue;
+        Button dialogueCatcher;
+        IReadOnlyList<ThreeKingdoms.Gameplay.Story.DialogueLine> aftermath;
+        int aftermathStep;
+        object aftermathFor;
+
+        public bool DialoguePlaying => dialogueCatcher != null && dialogueCatcher.style.display == DisplayStyle.Flex;
+        public string DialogueSpeaker => DialoguePlaying ? aftermath[aftermathStep].Speaker : null;
+        public string PortraitSpeaker => dialogue?.PortraitSpeaker;
         Label hintLabel;
         float hintUntil;
         Label roundLabel, orderLabel, messageLabel, promptLabel;
@@ -127,6 +139,15 @@ namespace ThreeKingdoms.UI.Battle
 
             cards = Row(root); Absolute(cards, 40, -1, 40, 24);
             cards.style.justifyContent = Justify.SpaceBetween;
+
+            dialogueCatcher = new Button(AdvanceDialogue) { text = "" };
+            Absolute(dialogueCatcher, 0, 0, 0, 0);
+            dialogueCatcher.style.backgroundColor = Color.clear;
+            dialogueCatcher.style.borderTopWidth = dialogueCatcher.style.borderBottomWidth = dialogueCatcher.style.borderLeftWidth = dialogueCatcher.style.borderRightWidth = 0;
+            dialogueCatcher.style.marginLeft = dialogueCatcher.style.marginRight = dialogueCatcher.style.marginTop = dialogueCatcher.style.marginBottom = 0;
+            dialogueCatcher.style.display = DisplayStyle.None;
+            root.Add(dialogueCatcher);
+            dialogue = new ThreeKingdoms.UI.Story.DialogueView(root, skin, Portraits);
 
             resultPanel = Framed(root); Absolute(resultPanel, 560, 250, 560, -1);
             resultPanel.style.flexDirection = FlexDirection.Column;
@@ -402,7 +423,11 @@ namespace ThreeKingdoms.UI.Battle
             menu.style.display = commanding ? DisplayStyle.Flex : DisplayStyle.None;
             promptLabel.style.display = menu.style.display;
             if (commanding) BuildMenu();
-            if (Controller.Current == BattleController.Phase.Finished && Controller.Session.Result != null) ShowResult();
+            if (Controller.Current == BattleController.Phase.Finished && Controller.Session.Result != null)
+            {
+                if (AftermathDue()) PlayAftermath();
+                else if (!DialoguePlaying) ShowResult();
+            }
             else resultPanel.style.display = DisplayStyle.None;
         }
 
@@ -542,6 +567,34 @@ namespace ThreeKingdoms.UI.Battle
             });
         }
 
+        // Only once per battle, and only for the victory that advanced the story.
+        bool AftermathDue()
+        {
+            if (aftermathFor == Controller.Session || Controller.Session.Result.Outcome != BattleOutcome.Victory) return false;
+            if (Controller.LastApplied == null || !Controller.LastApplied.RewardGranted) return false;
+            return ThreeKingdoms.Gameplay.Story.BattleScenes.AfterVictory(Controller.Session.Encounter.Id).Count > 0;
+        }
+
+        void PlayAftermath()
+        {
+            aftermathFor = Controller.Session;
+            aftermath = ThreeKingdoms.Gameplay.Story.BattleScenes.AfterVictory(Controller.Session.Encounter.Id);
+            aftermathStep = 0;
+            resultPanel.style.display = DisplayStyle.None;
+            dialogueCatcher.style.display = DisplayStyle.Flex;
+            dialogue.Show(aftermath[0].Speaker, aftermath[0].Line);
+            dialogueCatcher.Focus();
+        }
+
+        public void AdvanceDialogue()
+        {
+            if (!DialoguePlaying) return;
+            if (++aftermathStep < aftermath.Count) { dialogue.Show(aftermath[aftermathStep].Speaker, aftermath[aftermathStep].Line); return; }
+            dialogue.Hide();
+            dialogueCatcher.style.display = DisplayStyle.None;
+            ShowResult();
+        }
+
         void ShowResult()
         {
             resultPanel.Clear();
@@ -656,7 +709,15 @@ namespace ThreeKingdoms.UI.Battle
         // panel's event handler exists (first frames) leaves nothing selected, so keep the menu focused until it is.
         void Update()
         {
+            dialogue?.Tick();
             if (Controller == null) return;
+            if (DialoguePlaying)
+            {
+                var focused = root.panel?.focusController.focusedElement;
+                var current = EventSystem.current;
+                if (focused != dialogueCatcher || current == null || current.currentSelectedGameObject == null) { dialogueCatcher.Blur(); dialogueCatcher.Focus(); }
+                return;
+            }
             bool preparing = Controller.Current == BattleController.Phase.Preparing;
             if (preparing && Controller.Panel != null) return;   // the outfit panel owns focus
             if (!preparing && Controller.Current != BattleController.Phase.Commanding && Controller.Current != BattleController.Phase.Finished) return;

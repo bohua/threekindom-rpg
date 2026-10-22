@@ -67,6 +67,9 @@ public sealed class ResidentTests
         Assert.Contains(c.ZhangFei, c.StoryMarks.ToList());
         yield return null;
         Assert.Contains(c.GuanYu, hud.MarkBubbles.ToList());
+        // Coming in from outside (the guards only stop the way out, user 2026-10-22), the gate passage is an event spot.
+        cc.enabled = false; c.Player.transform.position = new Vector3(0, 0, -46f); cc.enabled = true;
+        yield return null;
         cc.enabled = false; c.Player.transform.position = new Vector3(0, 0, -36f); cc.enabled = true;
         yield return null; yield return null;
         Assert.IsTrue(c.PlayerAlert);

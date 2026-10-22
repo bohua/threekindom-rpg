@@ -64,6 +64,7 @@ namespace ThreeKingdoms.EditorTools
             var icons = BuildTroopIcons();
             var panel = BuildPanelSettings();
             ConvertEnemySheets();
+            DialoguePortraitImporter.Import();   // speakers' illustrations for the lines after a victory
             if (!File.Exists(BattleBackdropBaker.ScenePath)) BattleBackdropBaker.Build();
             foreach (var battle in Battles) BuildScene(battle, catalog, icons, panel);
 
@@ -147,6 +148,7 @@ namespace ThreeKingdoms.EditorTools
             hud.TroopIcons = icons;
             hud.LocationName = battle.Location;
             hud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
+            hud.Portraits = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Story.DialoguePortraitSet>(DialoguePortraitImporter.SetPath);
 
             var tutor = controller.gameObject.AddComponent<ThreeKingdoms.Gameplay.Battle.BattleTutor>();
             tutor.Controller = controller;

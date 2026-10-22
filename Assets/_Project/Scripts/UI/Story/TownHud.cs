@@ -15,35 +15,18 @@ namespace ThreeKingdoms.UI.Story
     {
         public TownStoryController Controller;
         [Tooltip("Pixel skin (BATTLE_UI_SKIN.md); empty keeps the flat style")] public ThreeKingdoms.UI.Battle.BattleUiSkin Skin;
-        [Tooltip("Illustrations shown beside the dialogue box for speakers that have one")] public DialoguePortrait[] Portraits = new DialoguePortrait[0];
+        [Tooltip("Illustrations shown beside the dialogue box for speakers that have one")] public DialoguePortraitSet Portraits;
 
-        // A speaker's full-body illustration (user 2026-10-22): Liu Bei stands at the left facing in, everyone he talks
-        // to at the right. Crop is the shown fraction from the top; Axis the figure's centre line (0..1 of the width).
-        [System.Serializable]
-        public struct DialoguePortrait
-        {
-            public string Speaker;
-            public Texture2D Texture;
-            public bool Right, Flip;
-            [Range(0.3f, 1f)] public float Crop;
-            [Range(0f, 1f)] public float Axis;
-        }
-
-        const float PortraitHeight = 700f, PortraitBottom = 150f, PortraitInset = 20f, PortraitIn = 0.22f;
-        WindPortrait portrait;
-        string portraitSpeaker;
-        float portraitShownAt;
-        bool portraitRight;
-
+        DialogueView dialogue;
         // The speaker whose illustration is up, or null.
-        public string PortraitSpeaker => portrait != null && portrait.style.display == DisplayStyle.Flex ? portraitSpeaker : null;
-        public Texture2D PortraitTexture => PortraitSpeaker != null ? portrait.Texture : null;
+        public string PortraitSpeaker => dialogue?.PortraitSpeaker;
+        public Texture2D PortraitTexture => dialogue?.PortraitTexture;
 
         static readonly Color Gold = new Color(0.93f, 0.76f, 0.36f);
         static readonly Color Panel = new Color(0.07f, 0.09f, 0.14f, 0.9f);
         static readonly Color Edge = new Color(0.62f, 0.50f, 0.28f);
 
-        VisualElement root, dialogue, fade, bubbleLayer, markLayer;
+        VisualElement root, fade, bubbleLayer, markLayer;
         readonly Dictionary<Transform, VisualElement> speech = new Dictionary<Transform, VisualElement>();
         readonly Dictionary<Transform, VisualElement> marks = new Dictionary<Transform, VisualElement>();
 
@@ -51,7 +34,7 @@ namespace ThreeKingdoms.UI.Story
         static readonly Color BubbleEdge = new Color(0.35f, 0.24f, 0.14f);
         static readonly Color BubbleInk = new Color(0.18f, 0.12f, 0.08f);
         static readonly Color Alert = new Color(0.78f, 0.16f, 0.10f);
-        Label objective, prompt, speaker, line, advance;
+        Label objective, prompt;
 
         void OnEnable()
         {
@@ -78,26 +61,7 @@ namespace ThreeKingdoms.UI.Story
             Place(prompt, 0, -1, 0, 60);
             prompt.style.unityTextAlign = TextAnchor.MiddleCenter;
 
-            // Under the dialogue box so the box covers the figure's waist.
-            portrait = new WindPortrait();
-            portrait.style.position = Position.Absolute;
-            portrait.style.bottom = PortraitBottom;
-            portrait.style.height = PortraitHeight;
-            portrait.style.display = DisplayStyle.None;
-            root.Add(portrait);
-
-            dialogue = new VisualElement { pickingMode = PickingMode.Ignore };
-            Place(dialogue, 240, -1, 240, 40);
-            Frame(dialogue);
-            if (Skin) { Skin.Panel(dialogue); dialogue.style.paddingLeft = dialogue.style.paddingRight = 44; dialogue.style.paddingTop = dialogue.style.paddingBottom = 36; }
-            dialogue.style.minHeight = 170;
-            speaker = Label(dialogue, 26, Gold);
-            line = Label(dialogue, 28, Color.white);
-            line.style.whiteSpace = WhiteSpace.Normal; line.style.marginTop = 10;
-            advance = Label(dialogue, 18, new Color(0.8f, 0.8f, 0.8f));
-            advance.text = StoryText.Advance;
-            Place(advance, -1, -1, 20, 10);
-            root.Add(dialogue);
+            dialogue = new DialogueView(root, Skin, Portraits);
 
             fade = new VisualElement { pickingMode = PickingMode.Ignore };
             Place(fade, 0, 0, 0, 0);
@@ -112,53 +76,17 @@ namespace ThreeKingdoms.UI.Story
 
         void Refresh()
         {
-            if (!Controller || Controller.Run == null) { fade.style.opacity = 0; dialogue.style.display = DisplayStyle.None; ShowPortrait(null); return; }
+            if (!Controller || Controller.Run == null) { fade.style.opacity = 0; dialogue.Hide(); return; }
             objective.text = StoryText.Objective(Controller.Run.Story);
             prompt.text = Controller.Busy ? "" : StoryText.Prompt(Controller.Prompt);
             prompt.style.display = string.IsNullOrEmpty(prompt.text) ? DisplayStyle.None : DisplayStyle.Flex;
             var l = Controller.Line;
-            dialogue.style.display = l.HasValue ? DisplayStyle.Flex : DisplayStyle.None;
-            if (l.HasValue)
-            {
-                string who = StoryText.Speaker(l.Value.Speaker);
-                speaker.text = who;
-                speaker.style.display = string.IsNullOrEmpty(who) ? DisplayStyle.None : DisplayStyle.Flex;
-                line.text = StoryText.Line(l.Value.Line);
-            }
-            ShowPortrait(l.HasValue ? l.Value.Speaker : null);
+            if (l.HasValue) dialogue.Show(l.Value.Speaker, l.Value.Line);
+            else dialogue.Hide();
             fade.style.opacity = Controller.Fade;
         }
 
-        // ---------- portrait ----------
-
-        void ShowPortrait(string speaker)
-        {
-            int i = speaker == null ? -1 : System.Array.FindIndex(Portraits, p => p.Speaker == speaker && p.Texture);
-            if (i < 0) { portrait.style.display = DisplayStyle.None; portraitSpeaker = null; return; }
-            if (speaker == portraitSpeaker && portrait.style.display == DisplayStyle.Flex) return;
-            var p = Portraits[i];
-            float crop = p.Crop > 0 ? p.Crop : 0.6f, axis = p.Axis > 0 ? p.Axis : 0.5f;
-            portrait.Show(p.Texture, p.Flip, crop, axis);
-            portrait.style.width = PortraitHeight * p.Texture.width / (p.Texture.height * crop);
-            portraitRight = p.Right;
-            if (p.Right) { portrait.style.left = StyleKeyword.Auto; portrait.style.right = PortraitInset; }
-            else { portrait.style.right = StyleKeyword.Auto; portrait.style.left = PortraitInset; }
-            portrait.style.display = DisplayStyle.Flex;
-            portraitSpeaker = speaker;
-            portraitShownAt = Time.unscaledTime;
-        }
-
-        // Slides in from its side on a new speaker, then sways and breathes.
-        void Update()
-        {
-            if (portrait == null || portrait.style.display != DisplayStyle.Flex) return;
-            float k = Mathf.Clamp01((Time.unscaledTime - portraitShownAt) / PortraitIn);
-            k = 1f - (1f - k) * (1f - k);
-            portrait.style.opacity = k;
-            float slide = (1f - k) * 60f * (portraitRight ? 1f : -1f);
-            portrait.style.translate = new Translate(slide, Mathf.Sin(Time.unscaledTime * 1.4f) * 4f);
-            portrait.Tick(Time.unscaledTime);
-        }
+        void Update() => dialogue?.Tick();
 
         // ---------- bubbles ----------
 
