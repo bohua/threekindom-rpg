@@ -269,8 +269,9 @@ namespace ThreeKingdoms.EditorTools
         static void ReadManifests()
         {
             axes.Clear();
-            foreach (var dir in new[] { CornerDir, TownDir })
+            foreach (var dir in new[] { CornerDir, TownDir, MapDir })
             {
+                if (!File.Exists($"{dir}/manifest.json")) continue;
                 var m = JsonUtility.FromJson<Manifest>(File.ReadAllText($"{dir}/manifest.json"));
                 foreach (var f in m.files) axes[Path.GetFileNameWithoutExtension(f.filename)] = f.tile_axes ?? "none";
             }
@@ -1006,7 +1007,6 @@ namespace ThreeKingdoms.EditorTools
                 float h = Metres("prop_hedge").y;
                 Strip(g, "Hedge west of the steps", "prop_hedge", new Vector3(-11.5f, 0, 15.6f), new Vector3(-4f, 0, 15.6f), h, solid: false);
                 Strip(g, "Hedge east of the steps", "prop_hedge", new Vector3(4f, 0, 15.6f), new Vector3(11.5f, 0, 15.6f), h, solid: false);
-                Strip(g, "Hedge by the houses", "prop_hedge", new Vector3(-38f, 0, -24.8f), new Vector3(-26f, 0, -24.8f), h, solid: false);
             }
         }
 
