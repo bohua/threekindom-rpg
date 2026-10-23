@@ -32,7 +32,7 @@ namespace ThreeKingdoms.EditorTools
         public const string ProfilePath = "Assets/_Project/Settings/HD2D_Showcase.asset";
         public const string RendererPath = "Assets/_Project/Settings/HD2D_Showcase_Renderer.asset";
 
-        public const float TerraceHeight = 1.8f, LowerStreet = -2.4f;
+        public const float TerraceHeight = 1.8f, LowerStreet = -2.0f;   // the drop equals the 2 m retaining-wall texture
         const float NormalStrength = 1.6f;
 
         [MenuItem("JRPG/Build HD-2D Showcase (polish sample)")]
@@ -423,7 +423,7 @@ namespace ThreeKingdoms.EditorTools
                 foreach (var (x, z) in new[] { (-4.5f, 1.2f), (5.5f, -1.8f), (0.8f, 4.6f) })
                     ZhuojunTownBuilder.Quad(ground, "Worn patch", new Vector3(x, 0.004f, z), new Vector3(90f, 0, 0), ZhuojunTownBuilder.Metres("decal_dirt_patch"),
                         ZhuojunTownBuilder.Mat("decal_dirt_patch", clip: true), castShadows: false);
-            ZhuojunTownBuilder.Patch(ground, "Lower street", "ground_packed_earth", -18f, 18f, -18f, -5.5f, LowerStreet);
+            ZhuojunTownBuilder.Patch(ground, "Lower street", Has("ground_dirt_worn") ? "ground_dirt_worn" : "ground_packed_earth", -18f, 18f, -18f, -5.5f, LowerStreet);
             ZhuojunTownBuilder.Solid(ground, new Vector3(0, -0.5f, 1.35f), new Vector3(36f, 1f, 13.7f));
 
             Front(env);
@@ -501,13 +501,13 @@ namespace ThreeKingdoms.EditorTools
                 {
                     var at = key switch
                     {
-                        "prop_jars_cluster" => (-11.6f, 3.0f), "prop_crates_stack" => (12.3f, 3.2f), "prop_mat_produce" => (-1.0f, -2.0f),
+                        "prop_jars_cluster" => (-11.6f, 3.0f), "prop_crates_stack" => (12.3f, 3.2f), "prop_mat_produce" => (-7.6f, -1.4f),
                         "prop_potted_plants" => (2.2f, 2.9f), _ => (13.0f, -1.0f),
                     };
                     ZhuojunTownBuilder.Prop(p, key, at.Item1, at.Item2);
                 }
             // Red lanterns under the eaves, each with a small warm light (the reference's glowing accents).
-            string lanternGlow = Has("prop_lantern_red_glow_mask") ? "prop_lantern_red_glow_mask" : null;
+            string lanternGlow = null;   // the default town glow colour blows the small lantern out to white; the point light carries it
             foreach (var x in new[] { -9.4f, -5.0f, 4.6f, 9.4f })
             {
                 ZhuojunTownBuilder.Prop(p, "prop_lantern_red", x, 3.35f, y: 2.3f, glowMask: lanternGlow);
