@@ -33,7 +33,7 @@ namespace ThreeKingdoms.EditorTools
         public const string RendererPath = "Assets/_Project/Settings/HD2D_Showcase_Renderer.asset";
 
         public const float TerraceHeight = 1.8f, LowerStreet = -2.4f;
-        const float NormalStrength = 2.5f;
+        const float NormalStrength = 1.6f;
 
         [MenuItem("JRPG/Build HD-2D Showcase (polish sample)")]
         public static void Build() => Build(baseline: false);
@@ -112,10 +112,10 @@ namespace ThreeKingdoms.EditorTools
                 RenderSettings.fogColor = new Color(0.78f, 0.74f, 0.68f);
                 return;
             }
-            // Cool and low, so the shade reads blue-grey against the warm sun (§2: ambient sky 0.78 → about 0.30).
-            RenderSettings.ambientSkyColor = new Color(0.36f, 0.40f, 0.52f);
-            RenderSettings.ambientEquatorColor = new Color(0.27f, 0.27f, 0.29f);
-            RenderSettings.ambientGroundColor = new Color(0.12f, 0.10f, 0.09f);
+            // Cooler and lower than the town, so the shade reads blue-grey against the warm sun, but bright enough that shade stays clean (user 2026-10-23: the first pass read dim and dirty).
+            RenderSettings.ambientSkyColor = new Color(0.50f, 0.54f, 0.64f);
+            RenderSettings.ambientEquatorColor = new Color(0.42f, 0.40f, 0.40f);
+            RenderSettings.ambientGroundColor = new Color(0.22f, 0.19f, 0.16f);
             RenderSettings.fogDensity = 0.005f;
             RenderSettings.fogColor = new Color(0.50f, 0.52f, 0.58f);
         }
@@ -150,7 +150,7 @@ namespace ThreeKingdoms.EditorTools
         const float CookieSize = 26f;
         const string CookiePath = ArtDir + "/Generated_SunCookie.png";
 
-        // Smooth value noise in [0.42, 1]: a few big soft blobs, tileable.
+        // Smooth value noise in [0.6, 1]: a few big soft blobs, tileable.
         static Texture2D CloudCookie()
         {
             const int size = 128, cells = 4;
@@ -166,7 +166,7 @@ namespace ThreeKingdoms.EditorTools
                 int x0 = (int)fx, y0 = (int)fy, x1 = (x0 + 1) % cells, y1 = (y0 + 1) % cells;
                 float tx = Smooth(fx - x0), ty = Smooth(fy - y0);
                 float v = Mathf.Lerp(Mathf.Lerp(lattice[x0, y0], lattice[x1, y0], tx), Mathf.Lerp(lattice[x0, y1], lattice[x1, y1], tx), ty);
-                v = Mathf.Lerp(0.42f, 1f, Mathf.SmoothStep(0.25f, 0.7f, v));
+                v = Mathf.Lerp(0.6f, 1f, Mathf.SmoothStep(0.25f, 0.7f, v));
                 byte b = (byte)(v * 255);
                 px[y * size + x] = new Color32(b, b, b, 255);
             }
@@ -222,11 +222,11 @@ namespace ThreeKingdoms.EditorTools
             profile.Remove<ColorLookup>();
             if (lookup) Object.DestroyImmediate(lookup, true);
             profile.TryGet<ColorAdjustments>(out var color);
-            color.contrast.Override(16f);
+            color.contrast.Override(10f);
             color.saturation.Override(0f);
-            color.postExposure.Override(0.3f);
+            color.postExposure.Override(0.55f);
             profile.TryGet<Vignette>(out var vignette);
-            vignette.intensity.Override(0.42f);
+            vignette.intensity.Override(0.32f);
             vignette.smoothness.Override(0.45f);
             vignette.color.Override(new Color(0.05f, 0.04f, 0.06f));
             profile.TryGet<DepthOfField>(out var dof);
@@ -235,9 +235,9 @@ namespace ThreeKingdoms.EditorTools
             var split = profile.Add<SplitToning>(true);
             split.shadows.Override(new Color(0.36f, 0.48f, 0.58f));
             split.highlights.Override(new Color(1f, 0.78f, 0.52f));
-            split.balance.Override(-10f);
+            split.balance.Override(10f);
             var smh = profile.Add<ShadowsMidtonesHighlights>(true);
-            smh.shadows.Override(new Vector4(0.92f, 0.96f, 1.06f, -0.06f));
+            smh.shadows.Override(new Vector4(0.94f, 0.98f, 1.06f, 0f));
             smh.highlights.Override(new Vector4(1.04f, 1.0f, 0.94f, 0.02f));
             foreach (var c in new VolumeComponent[] { split, smh }) AssetDatabase.AddObjectToAsset(c, profile);
             EditorUtility.SetDirty(profile);
@@ -269,7 +269,7 @@ namespace ThreeKingdoms.EditorTools
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
             var s = new SerializedObject(ssao);
-            s.FindProperty("m_Settings.Intensity").floatValue = 1.4f;
+            s.FindProperty("m_Settings.Intensity").floatValue = 0.8f;
             s.FindProperty("m_Settings.Radius").floatValue = 0.4f;
             s.FindProperty("m_Settings.DirectLightingStrength").floatValue = 0.35f;
             s.FindProperty("m_Settings.Falloff").floatValue = 60f;
