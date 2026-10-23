@@ -101,6 +101,9 @@ namespace Prototype.BingshuTactics.EditorTools
             // 可用环境变量 BINGSHU_ART_SOURCE 指向未批准的暂存修订，只用于本地预看
             var srcDir = System.Environment.GetEnvironmentVariable("BINGSHU_ART_SOURCE");
             var src = Path.Combine(string.IsNullOrEmpty(srcDir) ? ArtSource : srcDir, file);
+            // 用户 2026-10-23 要求刘备缩小头部，重画稿在单独目录，优先取
+            var rev = Path.Combine(ArtSource + "-liubei-r2", file);
+            if (string.IsNullOrEmpty(srcDir) && File.Exists(rev)) src = rev;
             if (!File.Exists(src)) return null;
             Directory.CreateDirectory(ArtDir);
             var dst = $"{ArtDir}/{file}";
