@@ -440,6 +440,14 @@ namespace Prototype.BingshuTactics
                 }
         }
 
+        // 光标的屏幕方向换算成格子方向：镜头绕 Y 轴转 yaw 度；斜 45° 时偏 1° 打破平局
+        public static Vector2Int ScreenDirToGrid(float yaw, Vector2Int d)
+        {
+            var rot = Quaternion.Euler(0, yaw + 1f, 0);
+            var v = rot * new Vector3(d.x, 0, d.y);
+            return Mathf.Abs(v.x) >= Mathf.Abs(v.z) ? new Vector2Int(Math.Sign(v.x), 0) : new Vector2Int(0, Math.Sign(v.z));
+        }
+
         public static Vector2Int DirTo(Vector2Int from, Vector2Int to)
         {
             var d = to - from;

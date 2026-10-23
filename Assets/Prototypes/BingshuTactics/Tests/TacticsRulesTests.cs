@@ -229,4 +229,20 @@ public class TacticsRulesTests
         Assert.IsFalse(r.ContainsKey(new Vector2Int(4, 12)));    // 关墙上去不了
         Assert.AreEqual(3, g.HeightAt(new Vector2Int(4, 12)));
     }
+
+    [Test]
+    public void CursorDirections_AreDistinctForEveryCameraAngle()
+    {
+        foreach (float yaw in new[] { 45f, 135f, 225f, 315f, 405f })
+        {
+            var up = Grid.ScreenDirToGrid(yaw, Vector2Int.up);
+            var down = Grid.ScreenDirToGrid(yaw, Vector2Int.down);
+            var left = Grid.ScreenDirToGrid(yaw, Vector2Int.left);
+            var right = Grid.ScreenDirToGrid(yaw, Vector2Int.right);
+            Assert.AreEqual(-up, down, $"yaw {yaw}");
+            Assert.AreEqual(-left, right, $"yaw {yaw}");
+            Assert.AreEqual(0, up.x * right.x + up.y * right.y, $"yaw {yaw} 上与右应垂直");
+            Assert.AreEqual(1, Mathf.Abs(up.x) + Mathf.Abs(up.y));
+        }
+    }
 }

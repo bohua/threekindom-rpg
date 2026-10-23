@@ -6,6 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.LowLevel;
 
 namespace Prototype.BingshuTactics
 {
@@ -117,9 +120,26 @@ namespace Prototype.BingshuTactics
                 yield return new WaitForSeconds(0.4f); yield return Shot("6-strategy-target");
                 forcedHover = null;
             }
-            pendingSkill = null; mode = Mode.Menu; ChooseRing(2);
-            var dest = reach.Keys.Where(p => p != active.Pos).OrderByDescending(p => p.y).ThenBy(p => Mathf.Abs(p.x - active.Pos.x)).First();
-            yield return MoveThenAct(Grid.Path(reach, dest));
+            // 用虚拟手柄走一遍：十字键下两次转到“移动”，A 确认，十字键移动光标，A 移动
+            pendingSkill = null; forcedHover = null; ringSel = 0; mode = Mode.Menu;
+            var vpad = InputSystem.AddDevice<Gamepad>(); vpad.MakeCurrent();
+            yield return Tap(vpad, GamepadButton.DpadDown); yield return Tap(vpad, GamepadButton.DpadDown);
+            yield return new WaitForSeconds(0.4f); yield return Shot("4c-pad-ring");
+            bool ringOk = RingItems[ringSel] == "移动";
+            yield return Tap(vpad, GamepadButton.South);
+            bool targetOk = mode == Mode.TargetMove;
+            var startPos = active.Pos;
+            yield return Tap(vpad, GamepadButton.DpadUp); yield return Tap(vpad, GamepadButton.DpadUp);
+            yield return new WaitForSeconds(0.3f); yield return Shot("4d-pad-cursor");
+            yield return Tap(vpad, GamepadButton.South);
+            float tw = Time.time; while (mode != Mode.Menu && Time.time - tw < 3f) yield return null;
+            Debug.Log($"POC_PAD_RESULT ring={ringOk} target={targetOk} moved={active.Pos != startPos} cursor={cursor} mode={mode}");
+            if (mode != Mode.Menu)
+            {
+                mode = Mode.Menu; ChooseRing(2);
+                var dest = reach.Keys.Where(p => p != active.Pos).OrderByDescending(p => p.y).First();
+                yield return MoveThenAct(Grid.Path(reach, dest));
+            }
             yield return new WaitForSeconds(0.6f); yield return Shot("4b-after-move");
             autoPlay = true; ChooseRing(4);
             float t0 = Time.time;
@@ -134,6 +154,14 @@ namespace Prototype.BingshuTactics
             Application.Quit();
         }
         bool shotCast, shotFace; Vector2Int? forcedHover;
+
+        static IEnumerator Tap(Gamepad pad, GamepadButton b)
+        {
+            InputSystem.QueueStateEvent(pad, new GamepadState().WithButton(b));
+            yield return null; yield return null;
+            InputSystem.QueueStateEvent(pad, new GamepadState());
+            yield return null; yield return null;
+        }
 
         // 虎牢关：北面关墙（三层高），吕布守在关门前；左右拒马，只有正前方一格能与他近身交锋。
         // 两侧营寨驻西凉铁骑，关墙上有弓手；中段河流只有两处浅滩和一座桥可过；东西两侧有山坡。
@@ -541,11 +569,147 @@ namespace Prototype.BingshuTactics
             var ray = cam.ScreenPointToRay(mouseScreen);
             hover = new Vector2Int(-1, -1);
             if (Physics.Raycast(ray, out var hitInfo, 300f) && tileOf.TryGetValue(hitInfo.collider, out var hp)) hover = hp;
+            HandlePadAndKeys();
+            if (padMode && grid.In(cursor)) hover = cursor;
             if (forcedHover.HasValue) hover = forcedHover.Value;
             RebuildOverlay();
         }
 
-        Vector2 mouseScreen;
+        Vector2 mouseScreen, lastMouse;
+
+        // ---------------- 键盘与手柄（Input System） ----------------
+        // 方向：方向键／WASD／十字键／左摇杆；确认：回车／空格／Z／手柄 A；取消：Esc／退格／X／手柄 B
+        // 镜头：Q/E／LB/RB；布阵：Tab／Y 开兵书回路，F／Start 出阵，T／Select 换关
+        Vector2Int cursor = new Vector2Int(-1, -1);
+        bool padMode; Vector2Int lastDir; float repeatT;
+        int circuitFocus, bookSel;
+
+        static Keyboard Kb => Keyboard.current;
+        static Gamepad Pad => Gamepad.current;
+        static bool Pressed(params ButtonControl[] bs) => bs.Any(b => b != null && b.wasPressedThisFrame);
+
+        bool ConfirmPressed => Pressed(Kb?.enterKey, Kb?.numpadEnterKey, Kb?.spaceKey, Kb?.zKey, Pad?.buttonSouth);
+        bool CancelPressed => Pressed(Kb?.escapeKey, Kb?.backspaceKey, Kb?.xKey, Pad?.buttonEast);
+
+        Vector2Int ReadDir()
+        {
+            int x = 0, y = 0;
+            if (Kb != null)
+            {
+                if (Kb.upArrowKey.isPressed || Kb.wKey.isPressed) y++;
+                if (Kb.downArrowKey.isPressed || Kb.sKey.isPressed) y--;
+                if (Kb.leftArrowKey.isPressed || Kb.aKey.isPressed) x--;
+                if (Kb.rightArrowKey.isPressed || Kb.dKey.isPressed) x++;
+            }
+            if (Pad != null)
+            {
+                var v = Pad.dpad.ReadValue() + Pad.leftStick.ReadValue();
+                if (v.y > 0.5f) y++; if (v.y < -0.5f) y--; if (v.x < -0.5f) x--; if (v.x > 0.5f) x++;
+            }
+            return new Vector2Int(Mathf.Clamp(x, -1, 1), Mathf.Clamp(y, -1, 1));
+        }
+
+        // 按住时自动连发
+        Vector2Int DirPulse()
+        {
+            var d = ReadDir();
+            if (d == Vector2Int.zero) { lastDir = d; return d; }
+            if (d != lastDir) { lastDir = d; repeatT = 0.28f; return d; }
+            repeatT -= Time.deltaTime;
+            if (repeatT <= 0f) { repeatT = 0.09f; return d; }
+            return Vector2Int.zero;
+        }
+
+        // 屏幕方向换算成格子方向（随镜头旋转）
+        Vector2Int ScreenToGrid(Vector2Int d) => Grid.ScreenDirToGrid(yawTarget, d);
+
+        void HandlePadAndKeys()
+        {
+            if ((mouseScreen - lastMouse).sqrMagnitude > 4f) padMode = false;
+            lastMouse = mouseScreen;
+            var pulse = DirPulse();
+            bool ok = ConfirmPressed, cancel = CancelPressed;
+            bool lb = Pressed(Kb?.qKey, Pad?.leftShoulder), rb = Pressed(Kb?.eKey, Pad?.rightShoulder);
+            if (pulse != Vector2Int.zero || ok || cancel) padMode = true;
+
+            if (mode == Mode.Circuit) { CircuitInput(pulse, ok, cancel, lb, rb); return; }
+            if (lb) yawTarget -= 90f;
+            if (rb) yawTarget += 90f;
+
+            switch (mode)
+            {
+                case Mode.Menu:
+                    if (pulse.y != 0) ringSel = (ringSel - pulse.y + RingItems.Length) % RingItems.Length;
+                    if (ok && RingUsable(RingItems[ringSel])) ChooseRing(ringSel);
+                    return;
+                case Mode.SkillList:
+                    var rows = SkillRows();
+                    if (pulse.y != 0 && rows.Count > 0) listSel = (listSel - pulse.y + rows.Count) % rows.Count;
+                    if (ok && rows.Count > 0) ChooseSkill(rows[Mathf.Clamp(listSel, 0, rows.Count - 1)]);
+                    if (cancel) Back();
+                    return;
+                case Mode.Victory:
+                case Mode.Defeat:
+                    if (ok || Pressed(Kb?.rKey, Pad?.startButton)) UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex);
+                    return;
+                case Mode.Busy:
+                    return;
+            }
+            // 地图光标：布阵与各种选目标
+            if (pulse != Vector2Int.zero)
+            {
+                if (!grid.In(cursor)) cursor = active != null ? active.Pos : units.First(u => u.Team == Team.Player).Pos;
+                var n = cursor + ScreenToGrid(pulse);
+                if (grid.In(n)) cursor = n;
+            }
+            if (ok && grid.In(cursor)) ClickTile(cursor);
+            if (cancel) Back();
+            if (mode == Mode.Deploy)
+            {
+                if (Pressed(Kb?.tabKey, Pad?.buttonNorth)) { mode = Mode.Circuit; circuitSlot = 0; circuitFocus = 0; }
+                else if (Pressed(Kb?.fKey, Pad?.startButton)) { mode = Mode.Busy; StartCoroutine(BattleLoop()); }
+                else if (Pressed(Kb?.tKey, Pad?.selectButton)) { stage = 1 - stage; UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex); }
+            }
+        }
+
+        List<Book> ShelfOrder() => library.OrderBy(b => b.Element).ThenByDescending(b => b.Grade).ToList();
+
+        // 兵书回路：LB/RB 换武将，Y/Tab 换学派；左栏选槽，确认进书库，书库里确认镶嵌；X 卸下；B 返回
+        void CircuitInput(Vector2Int pulse, bool ok, bool cancel, bool lb, bool rb)
+        {
+            var party = units.Where(x => x.Team == Team.Player).ToList();
+            if (lb || rb) { circuitUnit = (circuitUnit + (rb ? 1 : party.Count - 1)) % party.Count; circuitSlot = 0; circuitFocus = 0; }
+            var u = party[circuitUnit]; var c = u.Circuit;
+            if (Pressed(Kb?.tabKey, Pad?.buttonNorth))
+            {
+                int si = System.Array.FindIndex(Circuits.All, x => x.School == u.School);
+                SetSchool(u, Circuits.All[(si + 1) % Circuits.All.Length].School);
+                circuitSlot = Mathf.Clamp(circuitSlot, 0, u.Circuit.Slots.Length - 1);
+                return;
+            }
+            if (Pressed(Kb?.fKey, Pad?.startButton)) { mode = Mode.Deploy; return; }
+            if (circuitFocus == 0)
+            {
+                if (circuitSlot < 0) circuitSlot = 0;
+                int step = pulse.y != 0 ? -pulse.y : pulse.x;
+                if (step != 0) circuitSlot = (circuitSlot + step + c.Slots.Length) % c.Slots.Length;
+                if (Pressed(Kb?.deleteKey, Kb?.cKey, Pad?.buttonWest)) u.Slots[circuitSlot] = null;
+                if (ok) { circuitFocus = 1; bookSel = Mathf.Max(0, ShelfOrder().FindIndex(b => CircuitMath.Fits(c, circuitSlot, b) && Owner(b) == null)); }
+                if (cancel) { mode = Mode.Deploy; circuitSlot = -1; }
+            }
+            else
+            {
+                var shelf = ShelfOrder();
+                if (pulse.y != 0) bookSel = Mathf.Clamp(bookSel - pulse.y * 2, 0, shelf.Count - 1);
+                if (pulse.x != 0) bookSel = Mathf.Clamp(bookSel + pulse.x, 0, shelf.Count - 1);
+                if (ok)
+                {
+                    var b = shelf[bookSel];
+                    if (CircuitMath.Fits(c, circuitSlot, b) && Owner(b) == null) { u.Slots[circuitSlot] = b; circuitFocus = 0; }
+                }
+                if (cancel) circuitFocus = 0;
+            }
+        }
 
         void RebuildOverlay()
         {
@@ -588,7 +752,7 @@ namespace Prototype.BingshuTactics
             }
             if (active != null && mode != Mode.Deploy && mode != Mode.Circuit) Add(new[] { active.Pos }, new Color(1f, 0.9f, 0.3f, 0.25f + 0.2f * Mathf.Sin(Time.time * 6f)), 0.02f);
             foreach (var f in flashes) Add(f.tiles, new Color(f.color.r, f.color.g, f.color.b, 0.7f * (1f - f.t / 0.6f)), 0f);
-            if (grid.In(hover) && mode != Mode.Circuit) Add(new[] { hover }, new Color(1f, 1f, 1f, 0.25f), 0.0f);
+            if (grid.In(hover) && mode != Mode.Circuit) Add(new[] { hover }, padMode ? new Color(1f, 0.95f, 0.5f, 0.35f + 0.2f * Mathf.Sin(Time.time * 8f)) : new Color(1f, 1f, 1f, 0.25f), 0.0f);
 
             var v = new List<Vector3>(); var c = new List<Color>(); var idx = new List<int>();
             foreach (var (p, col, inset) in tiles)
@@ -675,7 +839,7 @@ namespace Prototype.BingshuTactics
                 }
                 else if (u.Team == Team.Player)
                 {
-                    actionDone = false; ringSel = 0; mode = Mode.Menu;
+                    actionDone = false; ringSel = 0; cursor = u.Pos; mode = Mode.Menu;
                     Log($"{u.Name} 的回合");
                     while (!actionDone) yield return null;
                 }
@@ -888,10 +1052,10 @@ namespace Prototype.BingshuTactics
         {
             switch (RingItems[i])
             {
-                case "移动": reach = ReachOf(active); mode = Mode.TargetMove; Log("选择移动目的地（右键返回）"); break;
-                case "攻击": reach = ReachOf(active); mode = Mode.TargetAttack; Log(moved ? "选择攻击目标：已移动，只能在原地出手" : "选择攻击目标：会先走到射程内再攻击"); break;
-                case "武技": showCraftList = true; mode = Mode.SkillList; break;
-                case "策略": showCraftList = false; mode = Mode.SkillList; break;
+                case "移动": reach = ReachOf(active); cursor = active.Pos; mode = Mode.TargetMove; Log("选择移动目的地（右键／B 返回）"); break;
+                case "攻击": reach = ReachOf(active); cursor = AttackableTargets(active, active.AtkRange).OrderBy(t => Grid.Dist(t.Pos, active.Pos)).Select(t => t.Pos).DefaultIfEmpty(active.Pos).First(); mode = Mode.TargetAttack; Log(moved ? "选择攻击目标：已移动，只能在原地出手" : "选择攻击目标：会先走到射程内再攻击"); break;
+                case "武技": showCraftList = true; listSel = 0; mode = Mode.SkillList; break;
+                case "策略": showCraftList = false; listSel = 0; mode = Mode.SkillList; break;
                 case "防御": active.Defending = true; popups.Add((views[active].position + Vector3.up * 2f, "防御", Color.white, 0f)); Log($"{active.Name} 防御"); EndTurn(50); break;
                 case "待机": Log($"{active.Name} 待机"); EndTurn(40); break;
             }
@@ -1015,31 +1179,26 @@ namespace Prototype.BingshuTactics
                 if (e.button == 0 && grid.In(hover)) { ClickTile(hover); e.Use(); }
                 else if (e.button == 1) { Back(); e.Use(); }
             }
-            if (e.type == EventType.KeyDown)
-            {
-                if (e.keyCode == KeyCode.Q) yawTarget -= 90f;
-                if (e.keyCode == KeyCode.E) yawTarget += 90f;
-                if (e.keyCode == KeyCode.Escape) Back();
-                if (e.keyCode == KeyCode.R && (mode == Mode.Victory || mode == Mode.Defeat))
-                    UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex);
-                if (mode == Mode.Menu)
-                {
-                    if (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W) ringSel = (ringSel + RingItems.Length - 1) % RingItems.Length;
-                    if (e.keyCode == KeyCode.DownArrow || e.keyCode == KeyCode.S) ringSel = (ringSel + 1) % RingItems.Length;
-                    if ((e.keyCode == KeyCode.Return || e.keyCode == KeyCode.Space) && RingUsable(RingItems[ringSel])) ChooseRing(ringSel);
-                }
-            }
         }
 
         void DrawTopBar(float sw)
         {
             Rect(new Rect(0, 0, sw, 30), new Color(0, 0, 0, 0.55f));
             GUI.Label(new Rect(110, 4, sw - 420, 24), log, text);
-            GUI.Label(new Rect(sw - 300, 6, 300, 24), "Q/E 旋转镜头 · 右键/Esc 返回", small);
+            GUI.Label(new Rect(sw - 420, 6, 420, 24), "方向键/摇杆 光标 · 回车/A 确认 · Esc/B 返回 · Q E/LB RB 转镜头", small);
         }
 
         void DrawWorldLabels()
         {
+            if (padMode && grid.In(cursor) && mode != Mode.Circuit && mode != Mode.Busy)
+            {
+                // 键盘／手柄光标：格子上方跳动的箭头
+                var cp = ToGui(Tile(cursor) + Vector3.up * (At(cursor) != null ? 2.1f : 0.6f + 0.15f * Mathf.Sin(Time.time * 6f)));
+                var st = new GUIStyle(center) { fontSize = 26 }; st.normal.textColor = new Color(1f, 0.85f, 0.25f);
+                var sh = new GUIStyle(st); sh.normal.textColor = new Color(0, 0, 0, 0.8f);
+                GUI.Label(new Rect(cp.x - 19, cp.y - 15, 40, 32), "▼", sh);
+                GUI.Label(new Rect(cp.x - 20, cp.y - 16, 40, 32), "▼", st);
+            }
             if (stage == 1)
             {
                 var gp = ToGui(Tile(new Vector2Int(7, 12)) + Vector3.up * 1.1f);
@@ -1134,7 +1293,7 @@ namespace Prototype.BingshuTactics
                 var st = new GUIStyle(center) { fontSize = sel ? 18 : 15 };
                 if (!usable) st.normal.textColor = new Color(0.55f, 0.55f, 0.55f);
                 var r = new Rect(p.x - 34, p.y - 34, 68, 68);
-                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { if (sel && usable) ChooseRing(i); else ringSel = i; }
+                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { ringSel = i; if (usable) ChooseRing(i); }   // 鼠标单击直接触发
                 GUI.Label(r, RingItems[i], st);
                 if (sel)
                 {
@@ -1142,7 +1301,7 @@ namespace Prototype.BingshuTactics
                     GUI.Label(new Rect(p.x + 44, p.y - 16, 110, 32), RingItems[i], new GUIStyle(big) { fontSize = 20 });
                 }
             }
-            GUI.Label(new Rect(c.x - 120, c.y + 120, 240, 20), "↑↓ 转动 · 回车/再点一次 确定", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+            GUI.Label(new Rect(c.x - 140, c.y + 120, 280, 20), "↑↓／摇杆 转动 · 回车／A 确定 · 鼠标单击直接选", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
         }
 
         bool RingUsable(string item) => item switch
@@ -1154,32 +1313,52 @@ namespace Prototype.BingshuTactics
             _ => true
         };
 
-        void DrawSkillList()
+        int listSel;
+
+        List<(SkillDef s, float mul, string extra, bool ok)> SkillRows()
         {
-            var c = ToGui(views[active].position);
-            var r = new Rect(Mathf.Min(c.x + 60, Screen.width / S - 380), Mathf.Clamp(c.y - 160, 40, RefH - 420), 360, 0);
             var rows = new List<(SkillDef s, float mul, string extra, bool ok)>();
             if (showCraftList)
                 foreach (var s in active.Crafts) rows.Add((s, 1f, $"气势{s.Cost}", active.Cp >= s.Cost));
             else
                 foreach (var l in StrategiesOf(active))
                     rows.Add((l.Def, l.PowerMul, $"策力{l.Def.Cost} 咏唱{l.Def.Cast}" + (l.PowerMul > 1f ? $" 威力×{l.PowerMul:0.00}" : ""), active.Ep >= l.Def.Cost));
+            return rows;
+        }
+
+        void ChooseSkill((SkillDef s, float mul, string extra, bool ok) row)
+        {
+            if (!row.ok) return;
+            var s = row.s;
+            pendingSkill = s; pendingMul = row.mul; mode = Mode.TargetSkill;
+            if (s.Range < 0) reach = ReachOf(active);
+            // 光标落在最合适的位置：自身范围技落在自己，单体落在最近的合法目标
+            cursor = s.Area == Area.SelfCircle || s.Radius >= 99 ? active.Pos
+                : SkillRange(active, s).Concat(s.Range < 0 ? AttackableTargets(active, 1).Select(t => t.Pos) : Enumerable.Empty<Vector2Int>())
+                    .Where(p => s.Range < 0 ? At(p) != null && At(p).Team != active.Team : ValidSkillTarget(active, s, p))
+                    .OrderBy(p => Grid.Dist(p, active.Pos)).DefaultIfEmpty(active.Pos).First();
+            Log(s.Area == Area.SelfCircle || s.Radius >= 99 ? $"「{s.Name}」：确认自身所在格" :
+                s.Area == Area.Line ? $"「{s.Name}」：选相邻格决定方向" :
+                s.IsStrategy ? $"「{s.Name}」：选择施放位置（橙色为范围）" : $"「{s.Name}」：选择目标");
+        }
+
+        void DrawSkillList()
+        {
+            var c = ToGui(views[active].position);
+            var r = new Rect(Mathf.Min(c.x + 60, Screen.width / S - 380), Mathf.Clamp(c.y - 160, 40, RefH - 420), 360, 0);
+            var rows = SkillRows();
+            listSel = Mathf.Clamp(listSel, 0, Mathf.Max(0, rows.Count - 1));
             r.height = 34 + rows.Count * 46;
             Rect(r, new Color(0.04f, 0.06f, 0.1f, 0.92f));
             GUI.Label(new Rect(r.x + 10, r.y + 6, 300, 22), showCraftList ? "武技（个人固有）" : "策略（兵书回路点亮）", text);
             float y = r.y + 32;
-            foreach (var (s, mul, extra, ok) in rows)
+            for (int ri = 0; ri < rows.Count; ri++)
             {
+                var (s, mul, extra, ok) = rows[ri];
                 var row = new Rect(r.x + 6, y, r.width - 12, 42);
+                if (ri == listSel) Rect(new Rect(row.x - 3, row.y - 2, row.width + 6, row.height + 4), new Color(1f, 0.85f, 0.3f, 0.9f));
                 GUI.enabled = ok;
-                if (GUI.Button(row, GUIContent.none))
-                {
-                    pendingSkill = s; pendingMul = mul; mode = Mode.TargetSkill;
-                    if (s.Range < 0) reach = ReachOf(active);
-                    Log(s.Area == Area.SelfCircle || s.Radius >= 99 ? $"「{s.Name}」：点击自身所在格确认" :
-                        s.Area == Area.Line ? $"「{s.Name}」：点击相邻格决定方向" :
-                        s.IsStrategy ? $"「{s.Name}」：选择施放位置（橙色为范围）" : $"「{s.Name}」：选择目标");
-                }
+                if (GUI.Button(row, GUIContent.none)) { listSel = ri; ChooseSkill(rows[ri]); }
                 GUI.enabled = true;
                 string el = s.IsStrategy ? $"<color=#{ColorUtility.ToHtmlStringRGB(Wuxing.Tint(s.Element))}>【{Wuxing.Name(s.Element)}】</color>" : "";
                 GUI.Label(new Rect(row.x + 8, row.y + 2, 340, 20), $"{el}{s.Name}  <size=12>{extra}</size>", ok ? text : new GUIStyle(text) { normal = { textColor = Color.gray } });
@@ -1221,13 +1400,13 @@ namespace Prototype.BingshuTactics
             var r = new Rect(sw / 2 - 260, 40, 520, 64);
             Rect(r, new Color(0.04f, 0.06f, 0.1f, 0.85f));
             GUI.Label(new Rect(r.x + 12, r.y + 6, 500, 22), $"{(stage == 1 ? "虎牢关·三英战吕布" : "黄巾旷野")} · 布阵 · 当前选中：{(deploySel != null ? deploySel.Name : "（点选我方武将）")}", text);
-            if (GUI.Button(new Rect(r.x + 12, r.y + 32, 150, 26), "兵书回路")) { mode = Mode.Circuit; circuitSlot = -1; }
-            if (GUI.Button(new Rect(r.x + 185, r.y + 32, 150, 26), stage == 1 ? "换关：黄巾旷野" : "换关：虎牢关"))
+            if (GUI.Button(new Rect(r.x + 12, r.y + 32, 150, 26), "兵书回路（Tab/Y）")) { mode = Mode.Circuit; circuitSlot = -1; circuitFocus = 0; }
+            if (GUI.Button(new Rect(r.x + 185, r.y + 32, 150, 26), stage == 1 ? "换关：黄巾旷野（T）" : "换关：虎牢关（T）"))
             {
                 stage = 1 - stage;
                 UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex);
             }
-            if (GUI.Button(new Rect(r.x + 358, r.y + 32, 150, 26), "出阵！")) { mode = Mode.Busy; StartCoroutine(BattleLoop()); }
+            if (GUI.Button(new Rect(r.x + 358, r.y + 32, 150, 26), "出阵！（F/Start）")) { mode = Mode.Busy; StartCoroutine(BattleLoop()); }
         }
 
         // ---------------- 兵书回路界面 ----------------
@@ -1343,6 +1522,7 @@ namespace Prototype.BingshuTactics
                 var owner = Owner(b);
                 bool fits = circuitSlot >= 0 && CircuitMath.Fits(c, circuitSlot, b) && owner == null;
                 var r = new Rect(bx + (row % 2) * 186, 72 + (row / 2) * 34, 180, 30);
+                if (padMode && circuitFocus == 1 && row == bookSel) Rect(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), new Color(1f, 0.85f, 0.3f, 0.95f));
                 GUI.enabled = fits;
                 if (GUI.Button(r, GUIContent.none)) { u.Slots[circuitSlot] = b; circuitSlot = -1; }
                 GUI.enabled = true;
@@ -1367,6 +1547,7 @@ namespace Prototype.BingshuTactics
             }
 
             if (GUI.Button(new Rect(20, RefH - 60, 180, 36), "完成（回到布阵）")) mode = Mode.Deploy;
+            GUI.Label(new Rect(230, RefH - 52, 720, 20), "手柄／键盘：LB RB（Q E）换武将 · Y（Tab）换学派 · 方向选槽 · A（回车）进书库/镶嵌 · X（C）卸下 · B（Esc）返回", small);
         }
     }
 }
