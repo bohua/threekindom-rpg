@@ -6,6 +6,7 @@ using NUnit.Framework;
 using Prototype.BingshuTactics;
 using UnityEngine;
 using Grid = Prototype.BingshuTactics.Grid;
+using Terrain = Prototype.BingshuTactics.Terrain;
 
 public class TacticsRulesTests
 {
@@ -187,5 +188,45 @@ public class TacticsRulesTests
         Assert.IsTrue(CircuitMath.Lit(bing, slots, 100).Any(x => x.Def.Name == "火海"));
         Assert.IsTrue(CircuitMath.Lit(bing, slots, 48).Any(x => x.Def.Name == "火海"));
         Assert.IsFalse(CircuitMath.Lit(bing, slots, 30).Any(x => x.Def.Name == "火海"));
+    }
+
+    [Test]
+    public void Terrain_CostsAndHeight()
+    {
+        var g = Grid.FromRows(new[] { "^A..", ".,=~" }, TacticsGame.Legend);   // 上行 y=1：草1层、草2层；下行 y=0：草、沙、浅滩、河
+        var o = new Vector2Int(0, 0);
+        Assert.AreEqual(2, g.StepCost(o, new Vector2Int(1, 0), Troop.Infantry));     // 沙地 2
+        Assert.AreEqual(3, g.StepCost(o, new Vector2Int(1, 0), Troop.Cavalry));      // 骑兵 3
+        Assert.AreEqual(2, g.StepCost(new Vector2Int(1, 0), new Vector2Int(2, 0), Troop.Infantry));   // 浅滩 2
+        Assert.AreEqual(-1, g.StepCost(new Vector2Int(2, 0), new Vector2Int(3, 0), Troop.Infantry));  // 河流不可过
+        Assert.AreEqual(2, g.StepCost(o, new Vector2Int(0, 1), Troop.Infantry));     // 上一层 +1
+        Assert.AreEqual(-1, g.StepCost(new Vector2Int(1, 0), new Vector2Int(1, 1), Troop.Infantry));  // 高差两层不能直接走
+        Assert.AreEqual(1, g.StepCost(new Vector2Int(1, 1), new Vector2Int(0, 1), Troop.Infantry));   // 下坡不加
+        var r = g.Reachable(o, 2, p => false);
+        Assert.IsTrue(r.ContainsKey(new Vector2Int(1, 0)));
+        Assert.IsFalse(r.ContainsKey(new Vector2Int(2, 0)));   // 沙2＋浅滩2 超出移动力
+        Assert.AreEqual(1.2f, Combat.HeightMul(3, 0), 1e-4);   // 封顶 +20%
+        Assert.AreEqual(0.9f, Combat.HeightMul(0, 1), 1e-4);
+        var t = new Unit();
+        Assert.AreEqual(0.85f, Combat.TakenMul(t, true), 1e-4);   // 营寨
+        t.Defending = true;
+        Assert.AreEqual(0.5f, Combat.TakenMul(t, true), 1e-4);    // 只取最强
+    }
+
+    [Test]
+    public void Hulao_OnlyOneTileCanFaceLuBu()
+    {
+        var g = TacticsGame.HulaoGrid();
+        var lubu = new Vector2Int(7, 11);
+        Assert.AreEqual(Terrain.Gate, g.TerrainAt(new Vector2Int(7, 12)));
+        var open = new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right }
+            .Select(d => lubu + d).Where(p => g.In(p) && !Grid.Impassable(g.TerrainAt(p))).ToList();
+        CollectionAssert.AreEqual(new[] { new Vector2Int(7, 10) }, open);
+        // 从南面出阵区能走到吕布面前（过桥或浅滩）
+        var r = g.Reachable(new Vector2Int(7, 1), 99, p => p == lubu);
+        Assert.IsTrue(r.ContainsKey(new Vector2Int(7, 10)));
+        Assert.IsTrue(r.ContainsKey(new Vector2Int(3, 5)));      // 浅滩可渡
+        Assert.IsFalse(r.ContainsKey(new Vector2Int(4, 12)));    // 关墙上去不了
+        Assert.AreEqual(3, g.HeightAt(new Vector2Int(4, 12)));
     }
 }

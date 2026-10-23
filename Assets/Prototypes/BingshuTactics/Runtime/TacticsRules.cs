@@ -14,6 +14,8 @@ namespace Prototype.BingshuTactics
     public enum Troop { Infantry, Cavalry, Archer, Rebel, Strategist }
     public enum Area { Single, Circle, Line, SelfCircle }
     public enum Effect { Damage, Heal, Guard, Buff, Debuff }
+    // 地形（用户 2026-10-23）：草地、沙地、河流、浅滩、桥、道路、营寨、关墙、关门、拒马、山石
+    public enum Terrain { Grass, Sand, River, Ford, Bridge, Road, Camp, Wall, Gate, JuMa, Rock }
 
     public static class Wuxing
     {
@@ -324,18 +326,25 @@ namespace Prototype.BingshuTactics
             return 1f + Mathf.Min(adv, AdvCap);
         }
 
-        public static float TakenMul(Unit t)
+        public const float CampGuard = 0.15f, HeightStep = 0.1f; public const int HeightCap = 2;
+
+        // 减伤只取最强一项：防御、阵法、营寨
+        public static float TakenMul(Unit t, bool inCamp = false)
         {
-            float reduce = Mathf.Max(t.Defending ? 0.5f : 0f, t.Guard);   // 主动减伤只取最强
+            float reduce = Mathf.Max(t.Defending ? 0.5f : 0f, Mathf.Max(t.Guard, inCamp ? CampGuard : 0f));
             return Mathf.Max(MinTaken, 1f - reduce);
         }
 
-        public static int Damage(Unit a, Unit t, float coef, bool might, Element skillElement)
+        // 居高临下：攻方每高一层 +10%，每低一层 −10%，最多 ±20%
+        public static float HeightMul(int attackerHeight, int targetHeight) =>
+            1f + HeightStep * Mathf.Clamp(attackerHeight - targetHeight, -HeightCap, HeightCap);
+
+        public static int Damage(Unit a, Unit t, float coef, bool might, Element skillElement, float heightMul = 1f, bool targetInCamp = false)
         {
             float atk = (might ? a.Atk : a.Mat) * a.AtkMul;
             float def = (might ? t.Def : t.Mdef) * t.DefMul;
             float baseDmg = atk * coef - def * 0.5f;
-            return Mathf.Max(1, Mathf.FloorToInt(baseDmg * AdvMul(a, t, skillElement) * TakenMul(t)));
+            return Mathf.Max(1, Mathf.FloorToInt(baseDmg * AdvMul(a, t, skillElement) * heightMul * TakenMul(t, targetInCamp)));
         }
 
         public static int Heal(Unit t, float rate) => Mathf.Min(t.MaxHp - t.Hp, Mathf.FloorToInt(t.MaxHp * rate));
@@ -343,29 +352,74 @@ namespace Prototype.BingshuTactics
 
     public sealed class Grid
     {
-        public readonly int W, H; public readonly bool[,] Blocked;
-        public Grid(int w, int h) { W = w; H = h; Blocked = new bool[w, h]; }
+        public readonly int W, H; public readonly bool[,] Blocked; public readonly Terrain[,] Ter; public readonly int[,] Height;
+        public Grid(int w, int h) { W = w; H = h; Blocked = new bool[w, h]; Ter = new Terrain[w, h]; Height = new int[w, h]; }
         public bool In(Vector2Int p) => p.x >= 0 && p.y >= 0 && p.x < W && p.y < H;
         public static int Dist(Vector2Int a, Vector2Int b) => Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
         static readonly Vector2Int[] Dirs = { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
 
-        // 可达格（含起点）及来路；所有单位都挡路，不能穿过
-        public Dictionary<Vector2Int, Vector2Int> Reachable(Vector2Int start, int move, Func<Vector2Int, bool> occupied)
+        public Terrain TerrainAt(Vector2Int p) => Ter[p.x, p.y];
+        public int HeightAt(Vector2Int p) => Height[p.x, p.y];
+
+        public static bool Impassable(Terrain t) => t == Terrain.River || t == Terrain.Wall || t == Terrain.Gate || t == Terrain.JuMa || t == Terrain.Rock;
+
+        public static string Name(Terrain t) => t switch
+        {
+            Terrain.Grass => "草地", Terrain.Sand => "沙地", Terrain.River => "河流", Terrain.Ford => "浅滩", Terrain.Bridge => "桥",
+            Terrain.Road => "道路", Terrain.Camp => "营寨", Terrain.Wall => "关墙", Terrain.Gate => "关门", Terrain.JuMa => "拒马", _ => "山石"
+        };
+
+        // 进入一格的移动消耗：沙地 2（骑兵 3）、浅滩 2；每往上爬一层 +1；高低差超过一层不能直接走
+        public int StepCost(Vector2Int from, Vector2Int to, Troop troop)
+        {
+            var t = Ter[to.x, to.y];
+            if (Blocked[to.x, to.y] || Impassable(t)) return -1;
+            int dh = Height[to.x, to.y] - Height[from.x, from.y];
+            if (Mathf.Abs(dh) > 1) return -1;
+            int cost = t == Terrain.Sand ? (troop == Troop.Cavalry ? 3 : 2) : t == Terrain.Ford ? 2 : 1;
+            return cost + Mathf.Max(0, dh);
+        }
+
+        // 可达格（含起点）及来路：按移动消耗的最短路；所有单位都挡路，不能穿过
+        public Dictionary<Vector2Int, Vector2Int> Reachable(Vector2Int start, int move, Func<Vector2Int, bool> occupied, Troop troop = Troop.Infantry)
         {
             var parent = new Dictionary<Vector2Int, Vector2Int> { [start] = start };
-            var frontier = new Queue<(Vector2Int, int)>(); frontier.Enqueue((start, 0));
-            while (frontier.Count > 0)
+            var best = new Dictionary<Vector2Int, int> { [start] = 0 };
+            var open = new List<Vector2Int> { start };
+            while (open.Count > 0)
             {
-                var (p, d) = frontier.Dequeue();
-                if (d == move) continue;
+                var p = open.OrderBy(q => best[q]).First(); open.Remove(p);
                 foreach (var dir in Dirs)
                 {
                     var n = p + dir;
-                    if (!In(n) || Blocked[n.x, n.y] || parent.ContainsKey(n) || occupied(n)) continue;
-                    parent[n] = p; frontier.Enqueue((n, d + 1));
+                    if (!In(n) || occupied(n)) continue;
+                    int c = StepCost(p, n, troop);
+                    if (c < 0) continue;
+                    int d = best[p] + c;
+                    if (d > move || (best.TryGetValue(n, out int old) && old <= d)) continue;
+                    best[n] = d; parent[n] = p;
+                    if (!open.Contains(n)) open.Add(n);
                 }
             }
             return parent;
+        }
+
+        // 从文字地图读入（第一行为最北，即 y 最大）
+        public static Grid FromRows(string[] rows, Func<char, (Terrain, int)> legend)
+        {
+            int h = rows.Length, w = rows[0].Length;
+            var g = new Grid(w, h);
+            for (int r = 0; r < h; r++)
+            {
+                if (rows[r].Length != w) throw new ArgumentException($"地图第{r}行长度{rows[r].Length}≠{w}");
+                for (int x = 0; x < w; x++)
+                {
+                    var (t, height) = legend(rows[r][x]);
+                    int y = h - 1 - r;
+                    g.Ter[x, y] = t; g.Height[x, y] = height;
+                }
+            }
+            return g;
         }
 
         public static List<Vector2Int> Path(Dictionary<Vector2Int, Vector2Int> parent, Vector2Int to)

@@ -33,6 +33,10 @@ namespace Prototype.BingshuTactics.EditorTools
             game.ZhangFeiMat = Load<Material>($"{Chars}/ZhangFei/ZhangFei_Pixel.mat");
             game.RebelMat = Load<Material>($"{Chars}/YellowTurban/YellowTurban_Pixel.mat");
             game.ZhangJiaoMat = Load<Material>($"{Chars}/ZhangJiao/ZhangJiao_Pixel.mat");
+            // 虎牢关占位：吕布暂借城门卫兵像素图（放大、偏红），西凉铁骑借巡逻兵，关上弓手借弓手兵
+            game.LuBuMat = Load<Material>($"{Chars}/NpcGateGuard/NpcGateGuard_Pixel.mat");
+            game.XiliangMat = Load<Material>($"{Chars}/NpcPatrolSoldier/NpcPatrolSoldier_Pixel.mat");
+            game.WallArcherMat = Load<Material>($"{Chars}/NpcArcherSoldier/NpcArcherSoldier_Pixel.mat");
             game.LiuBeiBust = Load<Texture2D>($"{Busts}/LiuBei_Bust.png");
             game.GuanYuBust = Load<Texture2D>($"{Busts}/GuanYu_Bust.png");
             game.ZhangFeiBust = Load<Texture2D>($"{Busts}/ZhangFei_Bust.png");

@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &817333537
+--- !u!1 &209317321
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,9 +127,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 817333540}
-  - component: {fileID: 817333539}
-  - component: {fileID: 817333538}
+  - component: {fileID: 209317324}
+  - component: {fileID: 209317323}
+  - component: {fileID: 209317322}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -137,21 +137,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &817333538
+--- !u!81 &209317322
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 817333537}
+  m_GameObject: {fileID: 209317321}
   m_Enabled: 1
---- !u!20 &817333539
+--- !u!20 &209317323
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 817333537}
+  m_GameObject: {fileID: 209317321}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
@@ -196,13 +196,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &817333540
+--- !u!4 &209317324
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 817333537}
+  m_GameObject: {fileID: 209317321}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -211,7 +211,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1566742996
+--- !u!1 &1604102785
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -219,8 +219,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1566742998}
-  - component: {fileID: 1566742997}
+  - component: {fileID: 1604102787}
+  - component: {fileID: 1604102786}
   m_Layer: 0
   m_Name: TacticsGame
   m_TagString: Untagged
@@ -228,13 +228,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1566742997
+--- !u!114 &1604102786
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1566742996}
+  m_GameObject: {fileID: 1604102785}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17319b49e48dd44438020f8c40248122, type: 3}
@@ -245,19 +245,22 @@ MonoBehaviour:
   ZhangFeiMat: {fileID: 2100000, guid: dcba6ebecec9fcc45a113af796acaf85, type: 2}
   RebelMat: {fileID: 2100000, guid: 74d77a363e7365e499e225415562d4de, type: 2}
   ZhangJiaoMat: {fileID: 2100000, guid: 965319176a63a3047b11604d9cd49300, type: 2}
+  LuBuMat: {fileID: 2100000, guid: 84e4ddb6527fcd34e9c5ea602557cd04, type: 2}
+  XiliangMat: {fileID: 2100000, guid: f07fd8bb8823e9a4fb4f279a7f68c180, type: 2}
+  WallArcherMat: {fileID: 2100000, guid: 573aa6f33bba4f24f942d4d2260c2260, type: 2}
   LiuBeiBust: {fileID: 2800000, guid: bfcfa80d06bc17046bd8c092bb1588ba, type: 3}
   GuanYuBust: {fileID: 2800000, guid: 4da65c8eb57f86c47994fd3171a4a51e, type: 3}
   ZhangFeiBust: {fileID: 2800000, guid: cf57d4b50b7e4b24da56371091ce2eb5, type: 3}
   GroundMat: {fileID: 2100000, guid: 1e917ad52d80b314cac127cfd493f3e6, type: 2}
   OverlayMat: {fileID: 2100000, guid: 1ec27d7d0dee9ee4b9a472e1eb11f4cb, type: 2}
   RockMat: {fileID: 2100000, guid: 60ab6f00609356b4ea6b4f2567ae4365, type: 2}
---- !u!4 &1566742998
+--- !u!4 &1604102787
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1566742996}
+  m_GameObject: {fileID: 1604102785}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -270,5 +273,5 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 817333540}
-  - {fileID: 1566742998}
+  - {fileID: 209317324}
+  - {fileID: 1604102787}

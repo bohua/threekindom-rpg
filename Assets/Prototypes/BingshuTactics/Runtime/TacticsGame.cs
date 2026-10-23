@@ -12,12 +12,18 @@ namespace Prototype.BingshuTactics
     public sealed class TacticsGame : MonoBehaviour
     {
         // 由编辑器构建脚本填入（只引用美术资源，不引用正式代码）
-        public Material LiuBeiMat, GuanYuMat, ZhangFeiMat, RebelMat, ZhangJiaoMat;
+        public Material LiuBeiMat, GuanYuMat, ZhangFeiMat, RebelMat, ZhangJiaoMat, LuBuMat, XiliangMat, WallArcherMat;
         public Texture2D LiuBeiBust, GuanYuBust, ZhangFeiBust;
         public Material GroundMat, OverlayMat, RockMat;
 
         const float T = 1.2f;                       // 每格边长（米）
-        const int W = 12, H = 10, DeployCols = 3;
+        const float HS = 0.5f;                      // 每层高度（米）
+        int W, H;
+        // 关卡：0＝黄巾旷野（平地），1＝虎牢关（高低与地形，用户 2026-10-23）；重开场景时保留
+        static int stage = 1;
+        readonly Dictionary<Collider, Vector2Int> tileOf = new Dictionary<Collider, Vector2Int>();
+        readonly Dictionary<Unit, float> sizeOf = new Dictionary<Unit, float>();
+        readonly Dictionary<Unit, int> turnCount = new Dictionary<Unit, int>();
         const float RefH = 720f;
 
         enum Mode { Deploy, Circuit, Idle, Menu, SkillList, TargetMove, TargetAttack, TargetSkill, Busy, Victory, Defeat }
@@ -55,9 +61,8 @@ namespace Prototype.BingshuTactics
         {
             Application.targetFrameRate = 60;
             block = new MaterialPropertyBlock();
-            grid = new Grid(W, H);
-            foreach (var p in new[] { new Vector2Int(5, 2), new Vector2Int(5, 3), new Vector2Int(6, 7), new Vector2Int(4, 7), new Vector2Int(8, 4), new Vector2Int(3, 4) })
-                grid.Blocked[p.x, p.y] = true;
+            grid = stage == 1 ? HulaoGrid() : FieldGrid();
+            W = grid.W; H = grid.H;
             BuildWorld();
             BuildLibrary();
             BuildUnits();
@@ -87,6 +92,8 @@ namespace Prototype.BingshuTactics
             shotDir = dir; System.IO.Directory.CreateDirectory(dir);
             yield return new WaitForSeconds(1.5f);
             yield return Shot("1-deploy");
+            yawTarget = 135f; yield return new WaitForSeconds(0.8f); yield return Shot("1b-deploy-rotated");
+            yawTarget = 45f; yield return new WaitForSeconds(0.8f);
             mode = Mode.Circuit; circuitUnit = 1; circuitSlot = 3;
             yield return new WaitForSeconds(0.5f); yield return Shot("2-circuit-guanyu");
             circuitUnit = 0; circuitSlot = -1;
@@ -115,13 +122,52 @@ namespace Prototype.BingshuTactics
             while (mode != Mode.Victory && mode != Mode.Defeat && Time.time - t0 < 240f)
             {
                 if (units.Any(u => u.Alive && u.PendingCast != null && u.Team == Team.Enemy) && !shotCast) { shotCast = true; yield return Shot("7-enemy-casting"); }
+                if (stage == 1 && !shotFace && units.Any(u => u.Alive && u.Team == Team.Player && u.Pos == new Vector2Int(7, 10))) { shotFace = true; yield return new WaitForSeconds(0.8f); yield return Shot("9-face-lubu"); }
                 yield return null;
             }
             yield return new WaitForSeconds(0.5f); yield return Shot("8-end");
             Debug.Log($"POC_AUTOPLAY_RESULT {mode} turns={turns} time={Time.time - t0:0}s");
             Application.Quit();
         }
-        bool shotCast; Vector2Int? forcedHover;
+        bool shotCast, shotFace; Vector2Int? forcedHover;
+
+        // 虎牢关：北面关墙（三层高），吕布守在关门前；左右拒马，只有正前方一格能与他近身交锋。
+        // 两侧营寨驻西凉铁骑，关墙上有弓手；中段河流只有两处浅滩和一座桥可过；东西两侧有山坡。
+        public static readonly string[] HulaoRows =
+        {
+            "WWWWWWWGWWWWWW",
+            "ccc.xxx:xxx.cc",
+            "ccc....:...ccc",
+            "^^.,...:.,..^^",
+            "A^.,,..:..,,^A",
+            "A^..,,.:.,,.^A",
+            "^^...,.:.,...^",
+            "~~~=~~~b~~~=~~",
+            "...,...:...,..",
+            "..r....:....r.",
+            ".......:......",
+            ".......:......",
+            ".......:......",
+        };
+
+        public static (Terrain, int) Legend(char ch) => ch switch
+        {
+            ',' => (Terrain.Sand, 0), '~' => (Terrain.River, 0), '=' => (Terrain.Ford, 0), 'b' => (Terrain.Bridge, 0),
+            ':' => (Terrain.Road, 0), 'c' => (Terrain.Camp, 0), 'W' => (Terrain.Wall, 3), 'G' => (Terrain.Gate, 3),
+            'x' => (Terrain.JuMa, 0), 'r' => (Terrain.Rock, 0), '^' => (Terrain.Grass, 1), 'A' => (Terrain.Grass, 2), _ => (Terrain.Grass, 0)
+        };
+
+        public static Grid HulaoGrid() => Grid.FromRows(HulaoRows, Legend);
+
+        static Grid FieldGrid()
+        {
+            var g = new Grid(12, 10);
+            foreach (var p in new[] { new Vector2Int(5, 2), new Vector2Int(5, 3), new Vector2Int(6, 7), new Vector2Int(4, 7), new Vector2Int(8, 4), new Vector2Int(3, 4) })
+                g.Ter[p.x, p.y] = Terrain.Rock;
+            return g;
+        }
+
+        bool InDeploy(Vector2Int p) => stage == 1 ? p.y <= 1 && p.x >= 3 && p.x <= 10 : p.x < 3;
 
         void BuildWorld()
         {
@@ -138,26 +184,7 @@ namespace Prototype.BingshuTactics
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.52f, 0.55f, 0.62f);
 
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ground.name = "Ground";
-            ground.transform.position = new Vector3(W * T / 2f, -0.15f, H * T / 2f);
-            ground.transform.localScale = new Vector3(W * T + 2f, 0.3f, H * T + 2f);
-            var gm = new Material(GroundMat) { mainTexture = GroundTexture() };
-            gm.SetTexture("_BaseMap", gm.mainTexture);
-            gm.SetTextureScale("_BaseMap", Vector2.one);
-            ground.GetComponent<Renderer>().sharedMaterial = gm;
-
-            for (int x = 0; x < W; x++)
-                for (int y = 0; y < H; y++)
-                    if (grid.Blocked[x, y])
-                    {
-                        var rock = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                        rock.name = "Rock";
-                        rock.transform.position = Tile(new Vector2Int(x, y)) + Vector3.up * 0.35f;
-                        rock.transform.localScale = new Vector3(T * 0.85f, 0.7f, T * 0.85f);
-                        rock.transform.rotation = Quaternion.Euler(0, (x * 37 + y * 11) % 30 - 15, 0);
-                        rock.GetComponent<Renderer>().sharedMaterial = RockMat;
-                    }
+            BuildTerrain();
 
             var ov = new GameObject("Overlay");
             overlayMesh = new Mesh();
@@ -166,25 +193,128 @@ namespace Prototype.BingshuTactics
             mr.sharedMaterial = OverlayMat; mr.shadowCastingMode = ShadowCastingMode.Off; mr.receiveShadows = false;
         }
 
-        Texture2D GroundTexture()
+        // ---------------- 地形块 ----------------
+        readonly Dictionary<Terrain, Material> terrainMats = new Dictionary<Terrain, Material>();
+        Material wood, cloth;
+
+        Material TerrainMat(Terrain t)
         {
-            const int px = 16;
-            var tex = new Texture2D((W + 2) * px, (H + 2) * px) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
-            var rnd = new System.Random(7);
-            for (int x = 0; x < tex.width; x++)
-                for (int y = 0; y < tex.height; y++)
+            if (terrainMats.TryGetValue(t, out var m)) return m;
+            var tex = TerrainTexture(t);
+            m = new Material(GroundMat) { mainTexture = tex };
+            m.SetTexture("_BaseMap", tex);
+            terrainMats[t] = m;
+            return m;
+        }
+
+        static Texture2D TerrainTexture(Terrain t)
+        {
+            const int n = 16;
+            var tex = new Texture2D(n, n) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Repeat };
+            var rnd = new System.Random((int)t * 17 + 3);
+            Color a, b;
+            switch (t)
+            {
+                case Terrain.Sand: a = new Color(0.80f, 0.70f, 0.48f); b = new Color(0.72f, 0.61f, 0.40f); break;
+                case Terrain.River: a = new Color(0.20f, 0.38f, 0.58f); b = new Color(0.30f, 0.50f, 0.70f); break;
+                case Terrain.Ford: a = new Color(0.40f, 0.58f, 0.68f); b = new Color(0.58f, 0.56f, 0.50f); break;
+                case Terrain.Bridge: a = new Color(0.50f, 0.34f, 0.20f); b = new Color(0.38f, 0.25f, 0.15f); break;
+                case Terrain.Road: a = new Color(0.56f, 0.50f, 0.40f); b = new Color(0.48f, 0.43f, 0.35f); break;
+                case Terrain.Camp: a = new Color(0.52f, 0.44f, 0.32f); b = new Color(0.45f, 0.38f, 0.28f); break;
+                case Terrain.Wall: a = new Color(0.52f, 0.50f, 0.47f); b = new Color(0.40f, 0.38f, 0.36f); break;
+                case Terrain.Gate: a = new Color(0.32f, 0.18f, 0.12f); b = new Color(0.22f, 0.12f, 0.08f); break;
+                default: a = new Color(0.42f, 0.55f, 0.30f); b = new Color(0.36f, 0.49f, 0.26f); break;
+            }
+            for (int x = 0; x < n; x++)
+                for (int y = 0; y < n; y++)
                 {
-                    int gx = x / px - 1, gy = y / px - 1;
-                    bool inside = gx >= 0 && gy >= 0 && gx < W && gy < H;
-                    float n = (float)rnd.NextDouble() * 0.05f;
-                    Color c = inside
-                        ? ((gx + gy) % 2 == 0 ? new Color(0.42f, 0.55f, 0.30f) : new Color(0.46f, 0.58f, 0.32f))
-                        : new Color(0.36f, 0.32f, 0.24f);
-                    if (inside && (x % px == 0 || y % px == 0)) c *= 0.82f;
-                    tex.SetPixel(x, y, c + new Color(n, n, n * 0.5f));
+                    Color c = rnd.NextDouble() < 0.3 ? b : a;
+                    if (t == Terrain.River && (y + x / 4) % 6 == 0) c = new Color(0.55f, 0.70f, 0.85f);
+                    if (t == Terrain.Bridge && x % 4 == 0) c = b * 0.8f;
+                    if (t == Terrain.Wall && (y % 5 == 0 || (x + (y / 5 % 2) * 4) % 8 == 0)) c = b * 0.75f;
+                    if (t == Terrain.Gate && x % 5 == 2 && y % 5 == 2) c = new Color(0.75f, 0.62f, 0.30f);
+                    if (x == 0 || y == 0) c *= 0.82f;   // 格线
+                    c.a = 1f;
+                    tex.SetPixel(x, y, c);
                 }
             tex.Apply();
             return tex;
+        }
+
+        GameObject Block(string name, Vector3 center, Vector3 size, Material m, bool collider = false)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = name; go.transform.position = center; go.transform.localScale = size;
+            go.GetComponent<Renderer>().sharedMaterial = m;
+            if (!collider) Destroy(go.GetComponent<Collider>());
+            return go;
+        }
+
+        float TopOf(Vector2Int p)
+        {
+            var t = grid.TerrainAt(p);
+            return t == Terrain.River ? -0.15f : t == Terrain.Ford ? -0.06f : grid.HeightAt(p) * HS;
+        }
+
+        void BuildTerrain()
+        {
+            wood = new Material(GroundMat) { color = new Color(0.45f, 0.30f, 0.18f) };
+            cloth = new Material(GroundMat) { color = new Color(0.82f, 0.76f, 0.62f) };
+            const float bottom = -0.8f;
+            for (int x = 0; x < W; x++)
+                for (int y = 0; y < H; y++)
+                {
+                    var p = new Vector2Int(x, y); var t = grid.TerrainAt(p);
+                    float top = TopOf(p);
+                    var groundT = t == Terrain.JuMa || t == Terrain.Rock ? Terrain.Grass : t;
+                    var col = Block($"Tile {x},{y}", new Vector3((x + 0.5f) * T, (top + bottom) / 2f, (y + 0.5f) * T), new Vector3(T, top - bottom, T), TerrainMat(groundT), true);
+                    tileOf[col.GetComponent<Collider>()] = p;
+                    var c = Tile(p);
+                    switch (t)
+                    {
+                        case Terrain.Rock:
+                            var rock = Block("Rock", c + Vector3.up * 0.35f, new Vector3(T * 0.85f, 0.7f, T * 0.85f), RockMat);
+                            rock.transform.rotation = Quaternion.Euler(0, (x * 37 + y * 11) % 30 - 15, 0);
+                            break;
+                        case Terrain.JuMa:
+                            // 拒马：一根横木，三组交叉的尖桩
+                            Block("JuMa log", c + Vector3.up * 0.5f, new Vector3(T * 1.0f, 0.14f, 0.14f), wood);
+                            for (int k = -1; k <= 1; k++)
+                                foreach (float ang in new[] { 40f, -40f })
+                                {
+                                    var stake = Block("JuMa stake", c + new Vector3(k * T * 0.32f, 0.5f, 0), new Vector3(0.09f, 1.35f, 0.09f), wood);
+                                    stake.transform.rotation = Quaternion.Euler(ang, 0, 0);
+                                }
+                            break;
+                        case Terrain.Wall:
+                            if (x % 2 == 0) Block("Crenel", c + new Vector3(0, 0.18f, -T * 0.35f), new Vector3(T * 0.5f, 0.36f, T * 0.25f), TerrainMat(Terrain.Wall));
+                            break;
+                        case Terrain.Gate:
+                            Block("Gate door", new Vector3(c.x, c.y - 0.75f, c.z - T * 0.5f - 0.03f), new Vector3(T * 0.8f, 1.4f, 0.06f), TerrainMat(Terrain.Gate));
+                            Block("Gate tower", c + Vector3.up * 0.45f, new Vector3(T * 1.4f, 0.9f, T * 0.9f), wood);
+                            break;
+                        case Terrain.Camp:
+                            // 营寨木栅：朝外的边立桩，中间留寨门
+                            foreach (var d in new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
+                            {
+                                var nb = p + d;
+                                if (grid.In(nb) && (grid.TerrainAt(nb) == Terrain.Camp || grid.TerrainAt(nb) == Terrain.Wall)) continue;
+                                for (int k = -1; k <= 1; k++)
+                                {
+                                    if (k == 0 && grid.In(nb) && !Grid.Impassable(grid.TerrainAt(nb))) continue;
+                                    var off = new Vector3(d.x * T * 0.46f + (d.y != 0 ? k * T * 0.3f : 0), 0.3f, d.y * T * 0.46f + (d.x != 0 ? k * T * 0.3f : 0));
+                                    Block("Palisade", c + off, new Vector3(0.09f, 0.6f, 0.09f), wood);
+                                }
+                            }
+                            break;
+                    }
+                }
+            if (stage == 1)
+                foreach (var tp in new[] { new Vector2Int(0, 11), new Vector2Int(13, 11) })
+                {
+                    var tent = Block("Tent", Tile(tp) + Vector3.up * 0.05f, new Vector3(0.75f, 0.75f, T * 0.8f), cloth);
+                    tent.transform.rotation = Quaternion.Euler(0, 0, 45f);
+                }
         }
 
         void BuildLibrary()
@@ -220,6 +350,20 @@ namespace Prototype.BingshuTactics
             zhang.Crafts.Add(Craft("威慑", "自身周围3格内敌军物攻-20% 2回合", Effect.Debuff, Area.SelfCircle, 0, 3, 0f, 25, turns: 2, amount: 0.2f));
             zhang.Slots[0] = L("《孙膑兵法·八阵》"); zhang.Slots[1] = L("《墨子·备城门》"); zhang.Slots[5] = L("《六韬·龙韬》"); zhang.Slots[2] = L("《吴子》");
 
+            if (stage == 1)
+            {
+                liu.Pos = new Vector2Int(5, 0); guan.Pos = new Vector2Int(7, 1); zhang.Pos = new Vector2Int(9, 0);
+                foreach (var pu in new[] { liu, guan, zhang }) views[pu].position = Tile(pu.Pos);
+                var lubu = NewUnit("吕布", "LuBu", Team.Enemy, Troop.Cavalry, School.Bing, 700, 92, 45, 30, 22, 11, 0, 1, 0, new Vector2Int(7, 11), 1.25f, new Color(1f, 0.78f, 0.78f));
+                lubu.Int = 26;
+                lubu.Crafts.Add(Craft("天下无双", "方天画戟直劈：正前方2格物理1.3倍", Effect.Damage, Area.Line, 1, 0, 1.3f, 0, might: true));
+                lubu.Crafts[0].Length = 2;
+                foreach (var ap in new[] { new Vector2Int(4, 12), new Vector2Int(10, 12) })
+                    NewUnit("关上弓手", "WallArcher", Team.Enemy, Troop.Archer, School.Mo, 90, 40, 22, 20, 18, 7, 0, 4, 0, ap);
+                foreach (var xp in new[] { new Vector2Int(1, 10), new Vector2Int(12, 10) })
+                    NewUnit("西凉铁骑", "Xiliang", Team.Enemy, Troop.Cavalry, School.Bing, 140, 55, 30, 20, 20, 10, 5, 1, 0, xp, 1f, new Color(0.85f, 0.88f, 1f));
+                return;
+            }
             var rebels = new[] { new Vector2Int(9, 2), new Vector2Int(10, 4), new Vector2Int(9, 6), new Vector2Int(10, 8) };
             for (int i = 0; i < rebels.Length; i++)
                 NewUnit("黄巾兵" + "甲乙丙丁"[i], "Rebel", Team.Enemy, Troop.Rebel, School.Fa, 130, 45, 28, 30, 22, 6, 3, 1, 0, rebels[i]).Element = Element.Earth;
@@ -228,7 +372,7 @@ namespace Prototype.BingshuTactics
         }
 
         Unit NewUnit(string name, string key, Team team, Troop troop, School school, int hp, int atk, int def, int mat, int mdef,
-            int speed, int move, int range, int ep, Vector2Int pos)
+            int speed, int move, int range, int ep, Vector2Int pos, float scale = 1f, Color? tint = null)
         {
             var u = new Unit
             {
@@ -237,15 +381,21 @@ namespace Prototype.BingshuTactics
                 MaxEp = ep, Ep = ep, Cp = 30, Pos = pos, At = 800f / speed
             };
             units.Add(u);
-            var material = key switch { "LiuBei" => LiuBeiMat, "GuanYu" => GuanYuMat, "ZhangFei" => ZhangFeiMat, "ZhangJiao" => ZhangJiaoMat, _ => RebelMat };
+            var material = key switch
+            {
+                "LiuBei" => LiuBeiMat, "GuanYu" => GuanYuMat, "ZhangFei" => ZhangFeiMat, "ZhangJiao" => ZhangJiaoMat,
+                "LuBu" => LuBuMat, "Xiliang" => XiliangMat, "WallArcher" => WallArcherMat, _ => RebelMat
+            };
             var root = new GameObject(name).transform;
             var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
             Destroy(quad.GetComponent<Collider>());
             quad.transform.SetParent(root, false);
-            float size = 48f / 30f;
+            float size = 48f / 30f * scale;
             quad.transform.localScale = new Vector3(size, size, 1f);
+            sizeOf[u] = size;
             var r = quad.GetComponent<MeshRenderer>();
             r.sharedMaterial = material; r.shadowCastingMode = ShadowCastingMode.On;
+            if (tint.HasValue) { r.GetPropertyBlock(block); block.SetColor("_BaseColor", tint.Value); r.SetPropertyBlock(block); }
             views[u] = root; quads[u] = r; facing[u] = team == Team.Player ? 2 : 1;
             root.position = Tile(pos);
             SetFrame(u, 0);
@@ -257,7 +407,11 @@ namespace Prototype.BingshuTactics
             new SkillDef { Name = name, Desc = desc, Effect = fx, Area = area, Range = range, Radius = radius, Power = power, Cost = cost, UsesMight = might, Turns = turns, Amount = amount, Recover = 110 };
 
         // ---------------- 坐标与绘制工具 ----------------
-        Vector3 Tile(Vector2Int p) => new Vector3((p.x + 0.5f) * T, 0f, (p.y + 0.5f) * T);
+        Vector3 Tile(Vector2Int p) => new Vector3((p.x + 0.5f) * T, grid.In(p) ? Mathf.Max(0f, TopOf(p)) : 0f, (p.y + 0.5f) * T);
+        bool InCamp(Unit u) => grid.TerrainAt(u.Pos) == Terrain.Camp;
+        float HMul(Unit a, Unit t) => Combat.HeightMul(grid.HeightAt(a.Pos), grid.HeightAt(t.Pos));
+        // 弓兵站在两层以上的高处，射程 +1
+        int RangeAt(Unit u, Vector2Int p, int baseRange) => baseRange + (baseRange > 1 && grid.HeightAt(p) >= 2 ? 1 : 0);
         Unit At(Vector2Int p) => units.FirstOrDefault(u => u.Alive && u.Pos == p);
         float S => Screen.height / RefH;
 
@@ -359,13 +513,13 @@ namespace Prototype.BingshuTactics
         {
             yaw = Mathf.MoveTowardsAngle(yaw, yawTarget, 240f * Time.deltaTime);
             var rot = Quaternion.Euler(45f, yaw, 0f);
-            cam.transform.SetPositionAndRotation(lookAt - rot * Vector3.forward * 38f, rot);
+            cam.transform.SetPositionAndRotation(lookAt - rot * Vector3.forward * (38f * Mathf.Max(W, H) / 12f), rot);
 
             foreach (var kv in quads)
             {
                 var u = kv.Key; var q = kv.Value.transform;
                 q.rotation = cam.transform.rotation;
-                q.position = views[u].position + cam.transform.up * (48f / 30f / 2f) * 0.98f;
+                q.position = views[u].position + cam.transform.up * (sizeOf[u] / 2f) * 0.98f;
                 kv.Value.enabled = u.Alive;
             }
 
@@ -382,12 +536,7 @@ namespace Prototype.BingshuTactics
 
             var ray = cam.ScreenPointToRay(mouseScreen);
             hover = new Vector2Int(-1, -1);
-            if (new Plane(Vector3.up, Vector3.zero).Raycast(ray, out float dist))
-            {
-                var hit = ray.GetPoint(dist);
-                var p = new Vector2Int(Mathf.FloorToInt(hit.x / T), Mathf.FloorToInt(hit.z / T));
-                if (grid.In(p)) hover = p;
-            }
+            if (Physics.Raycast(ray, out var hitInfo, 300f) && tileOf.TryGetValue(hitInfo.collider, out var hp)) hover = hp;
             if (forcedHover.HasValue) hover = forcedHover.Value;
             RebuildOverlay();
         }
@@ -403,8 +552,12 @@ namespace Prototype.BingshuTactics
                 Add(new[] { u.Pos }, u.Team == Team.Player ? new Color(0.3f, 0.6f, 1f, 0.35f) : new Color(1f, 0.3f, 0.25f, 0.35f), 0.18f);
 
             if (mode == Mode.Deploy)
-                for (int x = 0; x < DeployCols; x++) for (int y = 0; y < H; y++)
-                        if (!grid.Blocked[x, y]) Add(new[] { new Vector2Int(x, y) }, new Color(0.35f, 0.65f, 1f, 0.22f));
+                for (int x = 0; x < W; x++)
+                    for (int y = 0; y < H; y++)
+                    {
+                        var dp = new Vector2Int(x, y);
+                        if (InDeploy(dp) && !Grid.Impassable(grid.TerrainAt(dp))) Add(new[] { dp }, new Color(0.35f, 0.65f, 1f, 0.22f));
+                    }
 
             foreach (var u in units.Where(u => u.Alive && u.PendingCast != null))
                 Add(CastArea(u), u.Team == Team.Player ? new Color(0.7f, 0.4f, 1f, 0.30f) : new Color(1f, 0.15f, 0.55f, 0.35f));
@@ -436,7 +589,7 @@ namespace Prototype.BingshuTactics
             var v = new List<Vector3>(); var c = new List<Color>(); var idx = new List<int>();
             foreach (var (p, col, inset) in tiles)
             {
-                float x0 = (p.x + inset) * T, x1 = (p.x + 1 - inset) * T, z0 = (p.y + inset) * T, z1 = (p.y + 1 - inset) * T, y = 0.02f + 0.001f * (v.Count / 4 % 50);
+                float x0 = (p.x + inset) * T, x1 = (p.x + 1 - inset) * T, z0 = (p.y + inset) * T, z1 = (p.y + 1 - inset) * T, y = TopOf(p) + 0.02f + 0.001f * (v.Count / 4 % 50);
                 int b = v.Count;
                 v.Add(new Vector3(x0, y, z0)); v.Add(new Vector3(x0, y, z1)); v.Add(new Vector3(x1, y, z1)); v.Add(new Vector3(x1, y, z0));
                 c.Add(col); c.Add(col); c.Add(col); c.Add(col);
@@ -448,7 +601,7 @@ namespace Prototype.BingshuTactics
         }
 
         // ---------------- 规则辅助 ----------------
-        Dictionary<Vector2Int, Vector2Int> ReachOf(Unit u) => grid.Reachable(u.Pos, u.Move, p => At(p) != null && At(p) != u);
+        Dictionary<Vector2Int, Vector2Int> ReachOf(Unit u) => grid.Reachable(u.Pos, u.Move, p => At(p) != null && At(p) != u, u.Troop);
 
         IEnumerable<Unit> Foes(Unit u) => units.Where(x => x.Alive && x.Team != u.Team);
         IEnumerable<Unit> Friends(Unit u) => units.Where(x => x.Alive && x.Team == u.Team);
@@ -456,11 +609,11 @@ namespace Prototype.BingshuTactics
         List<Unit> AttackableTargets(Unit u, int range)
         {
             var r = ReachOf(u);
-            return Foes(u).Where(f => r.Keys.Any(p => Grid.Dist(p, f.Pos) <= range)).ToList();
+            return Foes(u).Where(f => r.Keys.Any(p => Grid.Dist(p, f.Pos) <= RangeAt(u, p, range))).ToList();
         }
 
         Vector2Int ApproachTile(Unit u, Unit target, int range, Dictionary<Vector2Int, Vector2Int> r) =>
-            r.Keys.Where(p => Grid.Dist(p, target.Pos) <= range)
+            r.Keys.Where(p => Grid.Dist(p, target.Pos) <= RangeAt(u, p, range))
                   .OrderBy(p => Grid.Path(r, p).Count).ThenByDescending(p => Grid.Dist(p, target.Pos)).First();
 
         IEnumerable<Vector2Int> SkillRange(Unit u, SkillDef s) =>
@@ -527,6 +680,7 @@ namespace Prototype.BingshuTactics
                 u.TickStatuses();
                 mode = Mode.Busy; turns++;
 
+                if (stage == 1 && !units.First(x => x.Name == "吕布").Alive) { mode = Mode.Victory; Log("吕布力敌三英不支，拨马退入虎牢关！按 R 重来。"); yield break; }
                 if (!Foes(units.First(x => x.Team == Team.Player)).Any()) { mode = Mode.Victory; Log("胜利！黄巾溃退。按 R 重来。"); yield break; }
                 if (!units.Any(x => x.Alive && x.Team == Team.Player)) { mode = Mode.Defeat; Log("我军败退……按 R 重来。"); yield break; }
             }
@@ -585,7 +739,7 @@ namespace Prototype.BingshuTactics
             var r = ReachOf(u);
             yield return Walk(u, Grid.Path(r, ApproachTile(u, target, u.AtkRange, r)));
             yield return Lunge(u, target.Pos);
-            Hit(u, target, Combat.Damage(u, target, 1f, true, Element.None));
+            Hit(u, target, Combat.Damage(u, target, 1f, true, Element.None, HMul(u, target), InCamp(target)));
         }
 
         IEnumerator DoCraft(Unit u, SkillDef s, Vector2Int targetTile)
@@ -615,7 +769,7 @@ namespace Prototype.BingshuTactics
                 {
                     case Effect.Damage:
                     case Effect.Debuff when s.Power > 0:
-                        Hit(u, t, Combat.Damage(u, t, s.Power * mul, s.UsesMight, s.Element));
+                        Hit(u, t, Combat.Damage(u, t, s.Power * mul, s.UsesMight, s.Element, HMul(u, t), InCamp(t)));
                         if (s.AtDelay > 0 && t.Alive)
                         {
                             t.At += s.AtDelay * mul;
@@ -667,6 +821,29 @@ namespace Prototype.BingshuTactics
         IEnumerator EnemyTurn(Unit u)
         {
             yield return new WaitForSeconds(0.2f);
+            turnCount[u] = turnCount.TryGetValue(u, out int tc) ? tc + 1 : 1;
+            if (u.Name == "吕布")
+            {
+                var foe = Foes(u).FirstOrDefault(f => Grid.Dist(f.Pos, u.Pos) == 1);
+                if (foe == null) { Log("吕布横戟立马，守住关门"); u.At = now + AtClock.Delay(60, u.Speed); yield break; }
+                if (turnCount[u] % 2 == 0)
+                {
+                    var craft = u.Crafts[0];
+                    Log($"吕布 武技「{craft.Name}」！");
+                    popups.Add((views[u].position + Vector3.up * 2.6f, "天下无双", new Color(1f, 0.4f, 0.3f), 0f));
+                    yield return Lunge(u, foe.Pos);
+                    yield return Apply(u, craft, grid.LineArea(u.Pos, Grid.DirTo(u.Pos, foe.Pos), craft.Length, 1).ToList(), 1f);
+                    u.At = now + AtClock.Delay(110, u.Speed);
+                }
+                else
+                {
+                    Log($"吕布 攻击 {foe.Name}");
+                    yield return Lunge(u, foe.Pos);
+                    Hit(u, foe, Combat.Damage(u, foe, 1f, true, Element.None, HMul(u, foe), InCamp(foe)));
+                    u.At = now + AtClock.Delay(100, u.Speed);
+                }
+                yield break;
+            }
             var strats = StrategiesOf(u);
             var big = strats.Select(l => l.Def).FirstOrDefault(s => s.Area == Area.Circle && s.Effect == Effect.Damage && u.Ep >= s.Cost);
             if (big != null)
@@ -692,6 +869,7 @@ namespace Prototype.BingshuTactics
                 u.At = now + AtClock.Delay(100, u.Speed);
                 yield break;
             }
+            if (u.Move == 0) { u.At = now + AtClock.Delay(60, u.Speed); yield break; }   // 守关单位不离位
             var r = ReachOf(u);
             var dest = r.Keys.OrderBy(p => Foes(u).Min(f => Grid.Dist(p, f.Pos))).First();
             yield return Walk(u, Grid.Path(r, dest));
@@ -719,7 +897,7 @@ namespace Prototype.BingshuTactics
                 case Mode.Deploy:
                     var u = At(p);
                     if (u != null && u.Team == Team.Player) { deploySel = u; return; }
-                    if (deploySel != null && p.x < DeployCols && !grid.Blocked[p.x, p.y] && u == null)
+                    if (deploySel != null && InDeploy(p) && !Grid.Impassable(grid.TerrainAt(p)) && u == null)
                     {
                         deploySel.Pos = p; views[deploySel].position = Tile(p);
                     }
@@ -843,6 +1021,18 @@ namespace Prototype.BingshuTactics
 
         void DrawWorldLabels()
         {
+            if (stage == 1)
+            {
+                var gp = ToGui(Tile(new Vector2Int(7, 12)) + Vector3.up * 1.1f);
+                Rect(new Rect(gp.x - 34, gp.y - 13, 68, 26), new Color(0.12f, 0.06f, 0.04f, 0.9f));
+                GUI.Label(new Rect(gp.x - 34, gp.y - 13, 68, 26), "<color=#e8c56a>虎牢关</color>", new GUIStyle(center) { fontSize = 16 });
+                var lb = units.FirstOrDefault(x => x.Name == "吕布" && x.Alive);
+                if (lb != null)
+                {
+                    var g2 = ToGui(views[lb].position + Vector3.up * 2.25f);
+                    GUI.Label(new Rect(g2.x - 40, g2.y - 10, 80, 20), "<color=#ff8a70><b>吕布</b></color>", new GUIStyle(center) { fontSize = 15 });
+                }
+            }
             foreach (var u in units.Where(u => u.Alive))
             {
                 var g = ToGui(views[u].position + Vector3.up * 1.75f);
@@ -980,6 +1170,19 @@ namespace Prototype.BingshuTactics
 
         void DrawHoverInfo(float sw)
         {
+            if (grid.In(hover))
+            {
+                var tr = new Rect(sw - 250, 196, 240, 44);
+                Rect(tr, new Color(0.04f, 0.06f, 0.1f, 0.85f));
+                var tt = grid.TerrainAt(hover);
+                string fx = tt switch
+                {
+                    Terrain.Sand => "移动耗2（骑兵3）", Terrain.Ford => "移动耗2", Terrain.Camp => "驻守受伤−15%",
+                    Terrain.River or Terrain.Wall or Terrain.Gate or Terrain.JuMa or Terrain.Rock => "不可通行", _ => "移动耗1"
+                };
+                GUI.Label(new Rect(tr.x + 10, tr.y + 4, 230, 20), $"{Grid.Name(tt)} · 高{grid.HeightAt(hover)}层", text);
+                GUI.Label(new Rect(tr.x + 10, tr.y + 24, 230, 18), fx + "；登高每层+1，居高每层+10%", small);
+            }
             var u = At(hover);
             if (u == null) return;
             var r = new Rect(sw - 250, 40, 240, 150);
@@ -997,8 +1200,13 @@ namespace Prototype.BingshuTactics
         {
             var r = new Rect(sw / 2 - 260, 40, 520, 64);
             Rect(r, new Color(0.04f, 0.06f, 0.1f, 0.85f));
-            GUI.Label(new Rect(r.x + 12, r.y + 6, 500, 22), $"布阵 · 当前选中：{(deploySel != null ? deploySel.Name : "（点选我方武将）")}", text);
+            GUI.Label(new Rect(r.x + 12, r.y + 6, 500, 22), $"{(stage == 1 ? "虎牢关·三英战吕布" : "黄巾旷野")} · 布阵 · 当前选中：{(deploySel != null ? deploySel.Name : "（点选我方武将）")}", text);
             if (GUI.Button(new Rect(r.x + 12, r.y + 32, 150, 26), "兵书回路")) { mode = Mode.Circuit; circuitSlot = -1; }
+            if (GUI.Button(new Rect(r.x + 185, r.y + 32, 150, 26), stage == 1 ? "换关：黄巾旷野" : "换关：虎牢关"))
+            {
+                stage = 1 - stage;
+                UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex);
+            }
             if (GUI.Button(new Rect(r.x + 358, r.y + 32, 150, 26), "出阵！")) { mode = Mode.Busy; StartCoroutine(BattleLoop()); }
         }
 
