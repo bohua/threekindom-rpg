@@ -117,7 +117,11 @@ namespace Prototype.BingshuTactics
                 yield return new WaitForSeconds(0.4f); yield return Shot("6-strategy-target");
                 forcedHover = null;
             }
-            autoPlay = true; mode = Mode.Menu; ChooseRing(4);
+            pendingSkill = null; mode = Mode.Menu; ChooseRing(2);
+            var dest = reach.Keys.Where(p => p != active.Pos).OrderByDescending(p => p.y).ThenBy(p => Mathf.Abs(p.x - active.Pos.x)).First();
+            yield return MoveThenAct(Grid.Path(reach, dest));
+            yield return new WaitForSeconds(0.6f); yield return Shot("4b-after-move");
+            autoPlay = true; ChooseRing(4);
             float t0 = Time.time;
             while (mode != Mode.Victory && mode != Mode.Defeat && Time.time - t0 < 240f)
             {
@@ -601,7 +605,10 @@ namespace Prototype.BingshuTactics
         }
 
         // ---------------- 规则辅助 ----------------
-        Dictionary<Vector2Int, Vector2Int> ReachOf(Unit u) => grid.Reachable(u.Pos, u.Move, p => At(p) != null && At(p) != u, u.Troop);
+        // 本回合已移动过的单位，攻击与近战武技只能在原地出手
+        Dictionary<Vector2Int, Vector2Int> ReachOf(Unit u) => u == active && moved
+            ? new Dictionary<Vector2Int, Vector2Int> { [u.Pos] = u.Pos }
+            : grid.Reachable(u.Pos, u.Move, p => At(p) != null && At(p) != u, u.Troop);
 
         IEnumerable<Unit> Foes(Unit u) => units.Where(x => x.Alive && x.Team != u.Team);
         IEnumerable<Unit> Friends(Unit u) => units.Where(x => x.Alive && x.Team == u.Team);
@@ -652,7 +659,7 @@ namespace Prototype.BingshuTactics
             while (true)
             {
                 var u = AtClock.Next(units);
-                now = u.At; active = u; u.Defending = false;
+                now = u.At; active = u; u.Defending = false; moved = false;
                 yield return new WaitForSeconds(0.25f);
 
                 if (u.PendingCast != null)
@@ -688,7 +695,7 @@ namespace Prototype.BingshuTactics
 
         void EndTurn(int cost)
         {
-            active.At = now + AtClock.Delay(cost, active.Speed);
+            active.At = now + AtClock.Delay(cost + (moved ? MoveCost : 0), active.Speed);
             actionDone = true; mode = Mode.Busy; pendingSkill = null; reach = null;
         }
 
@@ -882,7 +889,7 @@ namespace Prototype.BingshuTactics
             switch (RingItems[i])
             {
                 case "移动": reach = ReachOf(active); mode = Mode.TargetMove; Log("选择移动目的地（右键返回）"); break;
-                case "攻击": reach = ReachOf(active); mode = Mode.TargetAttack; Log("选择攻击目标：会先走到射程内再攻击"); break;
+                case "攻击": reach = ReachOf(active); mode = Mode.TargetAttack; Log(moved ? "选择攻击目标：已移动，只能在原地出手" : "选择攻击目标：会先走到射程内再攻击"); break;
                 case "武技": showCraftList = true; mode = Mode.SkillList; break;
                 case "策略": showCraftList = false; mode = Mode.SkillList; break;
                 case "防御": active.Defending = true; popups.Add((views[active].position + Vector3.up * 2f, "防御", Color.white, 0f)); Log($"{active.Name} 防御"); EndTurn(50); break;
@@ -903,7 +910,7 @@ namespace Prototype.BingshuTactics
                     }
                     return;
                 case Mode.TargetMove:
-                    if (reach.ContainsKey(p) && p != active.Pos) StartCoroutine(Run(Walk(active, Grid.Path(reach, p)), 70, $"{active.Name} 移动"));
+                    if (reach.ContainsKey(p) && p != active.Pos) StartCoroutine(MoveThenAct(Grid.Path(reach, p)));
                     return;
                 case Mode.TargetAttack:
                     var t = At(p);
@@ -921,6 +928,18 @@ namespace Prototype.BingshuTactics
                     else StartCoroutine(Run(DoCraft(active, pendingSkill, p), pendingSkill.Recover, $"{active.Name} 武技「{pendingSkill.Name}」"));
                     return;
             }
+        }
+
+        // 移动不结束回合（用户 2026-10-23）：走完回到环形菜单，还能攻击、用武技、防御或待机；策略须原地咏唱，移动后不能再用
+        const int MoveCost = 30;
+        bool moved;
+
+        IEnumerator MoveThenAct(List<Vector2Int> path)
+        {
+            mode = Mode.Busy; Log($"{active.Name} 移动");
+            yield return Walk(active, path);
+            moved = true; reach = null; ringSel = 0; mode = Mode.Menu;
+            Log($"{active.Name} 已移动：可攻击、用武技、防御或待机（策略须原地咏唱）");
         }
 
         IEnumerator Run(IEnumerator action, int cost, string msg)
@@ -1007,7 +1026,7 @@ namespace Prototype.BingshuTactics
                 {
                     if (e.keyCode == KeyCode.UpArrow || e.keyCode == KeyCode.W) ringSel = (ringSel + RingItems.Length - 1) % RingItems.Length;
                     if (e.keyCode == KeyCode.DownArrow || e.keyCode == KeyCode.S) ringSel = (ringSel + 1) % RingItems.Length;
-                    if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.Space) ChooseRing(ringSel);
+                    if ((e.keyCode == KeyCode.Return || e.keyCode == KeyCode.Space) && RingUsable(RingItems[ringSel])) ChooseRing(ringSel);
                 }
             }
         }
@@ -1130,7 +1149,8 @@ namespace Prototype.BingshuTactics
         {
             "攻击" => AttackableTargets(active, active.AtkRange).Count > 0,
             "武技" => active.Crafts.Count > 0,
-            "策略" => StrategiesOf(active).Count > 0,
+            "策略" => !moved && StrategiesOf(active).Count > 0,   // 策略须原地咏唱
+            "移动" => !moved,
             _ => true
         };
 
