@@ -446,6 +446,44 @@ namespace ThreeKingdoms.EditorTools
             Quad(parent, name, new Vector3((xMin + xMax) / 2f, y, (zMin + zMax) / 2f), new Vector3(90f, 0, 0), size, Mat(key), Repeat(key, size), castShadows: false);
         }
 
+        // A grass block with an irregular grass fringe over its hard edges onto the earth (grass_border, when delivered).
+        static void GrassBlock(Transform parent, string name, float xMin, float xMax, float zMin, float zMax)
+        {
+            Patch(parent, name, "ground_grass", xMin, xMax, zMin, zMax, 0.003f);
+            if (!Tex("grass_border", optional: true)) return;
+            float depth = Metres("grass_border").y;
+            var b = Group(parent, name + " fringe");
+            void Edge(Vector3 centre, float yaw, float length)
+            {
+                var size = new Vector2(length, depth);
+                Quad(b, "Fringe", centre, new Vector3(90f, yaw, 0), size, Mat("grass_border", clip: true), new Vector2(length / Metres("grass_border").x, 1f), castShadows: false);
+            }
+            // The solid half overlaps the block by a third of the strip, the fringe reaches out onto the earth.
+            float o = depth / 2f - depth / 3f;
+            Edge(new Vector3((xMin + xMax) / 2f, 0.005f, zMax + o), 0f, xMax - xMin);
+            Edge(new Vector3((xMin + xMax) / 2f, 0.005f, zMin - o), 180f, xMax - xMin);
+            Edge(new Vector3(xMax + o, 0.005f, (zMin + zMax) / 2f), 90f, zMax - zMin);
+            Edge(new Vector3(xMin - o, 0.005f, (zMin + zMax) / 2f), 270f, zMax - zMin);
+            if (Tex("grass_border_corner", optional: true))
+            {
+                var c = Metres("grass_border_corner");
+                foreach (var (x, z, yaw) in new[] { (xMax, zMax, 0f), (xMax, zMin, 90f), (xMin, zMin, 180f), (xMin, zMax, 270f) })
+                {
+                    var dir = Quaternion.Euler(0, yaw, 0) * new Vector3(c.x / 2f - depth / 3f, 0, c.y / 2f - depth / 3f);
+                    Quad(b, "Fringe corner", new Vector3(x, 0.0055f, z) + dir, new Vector3(90f, yaw, 0), c, Mat("grass_border_corner", clip: true), castShadows: false);
+                }
+            }
+        }
+
+        // A grass fringe lying on a road edge at `edge`, its ragged side pointing along `yaw` onto the road.
+        static void RoadFringe(Transform parent, string name, Vector3 edge, float yaw, float length)
+        {
+            float depth = Metres("grass_border").y, o = depth / 2f - depth / 3f;
+            var size = new Vector2(length, depth);
+            Quad(parent, name, edge + Quaternion.Euler(0, yaw, 0) * new Vector3(0, 0.005f, o), new Vector3(90f, yaw, 0), size,
+                Mat("grass_border", clip: true), new Vector2(length / Metres("grass_border").x, 1f), castShadows: false);
+        }
+
         static void Ground(Transform env)
         {
             var g = Group(env, "Ground");
@@ -454,15 +492,54 @@ namespace ThreeKingdoms.EditorTools
             Patch(g, "Main axis paving", "ground_street_stone", -3f, 3f, -34f, -9f, 0.004f);
             Patch(g, "Market paving", "ground_street_stone", -10f, 10f, -9f, 14.5f, 0.006f);
             // Grass inside the street blocks; the earth between them reads as the ring roads of the concept map.
-            Patch(g, "Grass block NW", "ground_grass", -39f, -11f, 3f, 11f, 0.003f);
-            Patch(g, "Grass block NE", "ground_grass", 11f, 23f, 2f, 11f, 0.003f);
-            Patch(g, "Grass block E", "ground_grass", 31f, 43f, -17f, -11f, 0.003f);
-            Patch(g, "Grass block SW", "ground_grass", -45f, -40f, -22f, -14f, 0.003f);
-            Patch(g, "Grass behind the granaries", "ground_grass", -45f, -13f, 24.5f, 34f, 0.003f);
-            Patch(g, "Grass by the barracks", "ground_grass", 12.5f, 17.5f, 17f, 34f, 0.003f);
+            GrassBlock(g, "Grass block NW", -39f, -11f, 3f, 11f);
+            GrassBlock(g, "Grass block NE", 11f, 23f, 2f, 11f);
+            GrassBlock(g, "Grass block E", 31f, 43f, -17f, -11f);
+            GrassBlock(g, "Grass block SW", -45f, -40f, -22f, -14f);
+            GrassBlock(g, "Grass behind the granaries", -45f, -13f, 24.5f, 34f);
+            GrassBlock(g, "Grass by the barracks", 12.5f, 17.5f, 17f, 34f);
+            GrassBlock(g, "Grass west of the office", -17.5f, -12.5f, 16f, 24.5f);
+            GrassBlock(g, "Well green", -17f, -14f, -11f, -7.5f);
+            GrassBlock(g, "Garden behind house B", -36f, -26f, -13f, -9f);
+            GrassBlock(g, "Clinic garden", 31f, 36f, -23f, -18f);
+            GrassBlock(g, "South wall green W", -12f, -8.5f, -34f, -30f);
+            GrassBlock(g, "South wall green E", 8.5f, 22f, -34f, -31f);
+            GrassBlock(g, "West wall green N", -46f, -44.5f, 4f, 22f);
+            // Worn variants of the earth where they exist (concept map: rutted main roads, gravel along the walls),
+            // and scattered pebbles so the ground is not one texture end to end.
+            if (Tex("ground_earth_ruts", optional: true))
+            {
+                Patch(g, "Ruts west road", "ground_earth_ruts", -44f, -39f, -24.5f, 11f, 0.002f);
+                Patch(g, "Ruts east road", "ground_earth_ruts", 43f, 44.5f, -24f, 14f, 0.002f);
+                Patch(g, "Ruts gate road", "ground_earth_ruts", -3.5f, 3.5f, -80f, -38f, 0.003f);
+            }
+            if (Tex("ground_earth_gravel", optional: true))
+            {
+                Patch(g, "Gravel along the south wall", "ground_earth_gravel", -46f, 46f, -34f, -32.5f, 0.002f);
+                Patch(g, "Gravel by the granaries", "ground_earth_gravel", -44f, -20f, 15.5f, 18.5f, 0.002f);
+            }
+            if (Tex("decal_pebbles", optional: true))
+            {
+                var rng = new System.Random(23);
+                for (int i = 0; i < 70; i++)
+                {
+                    float x = -45f + (float)rng.NextDouble() * 90f, z = -33f + (float)rng.NextDouble() * 66f;
+                    if (Mathf.Abs(x) < 10.5f && z > -9.5f && z < 15f) continue;   // not on the paved square
+                    if (Mathf.Abs(x) < 3.5f) continue;                             // nor the main axis
+                    Quad(g, "Pebbles", new Vector3(x, 0.0075f, z), new Vector3(90f, rng.Next(4) * 90f, 0), Metres("decal_pebbles"), Mat("decal_pebbles", clip: true), castShadows: false);
+                }
+            }
             Patch(g, "Road to the south gate", "ground_packed_earth", -3.5f, 3.5f, -80f, -38f, 0.002f);
             Patch(g, "Lane to the west gate", "ground_packed_earth", -80f, -50f, -2f, 2f, 0.002f);
-            Patch(g, "Earth edge at the road", "ground_earth_to_grass", -9f, 9f, -46f, -38f, 0.001f);
+            if (Tex("grass_border", optional: true))
+            {
+                // Grass fringes over the outside roads' edges instead of the old earth-to-grass patch.
+                RoadFringe(g, "South road W edge", new Vector3(-3.5f, 0, -59f), 90f, 42f);
+                RoadFringe(g, "South road E edge", new Vector3(3.5f, 0, -59f), 270f, 42f);
+                RoadFringe(g, "West lane N edge", new Vector3(-65f, 0, 2f), 180f, 30f);
+                RoadFringe(g, "West lane S edge", new Vector3(-65f, 0, -2f), 0f, 30f);
+            }
+            else Patch(g, "Earth edge at the road", "ground_earth_to_grass", -9f, 9f, -46f, -38f, 0.001f);
             Patch(g, "Peach grove petals", "ground_petals", -78f, -55f, -14f, 14f, 0.001f);
             Patch(g, "Vegetable plot", "ground_vegetable_plot", -45.5f, -41.5f, -32f, -27.5f, 0.004f);
             // Curb and drain along both sides of the main axis.
@@ -516,6 +593,34 @@ namespace ThreeKingdoms.EditorTools
             WallRun(w, "West wall N", new Vector3(-48f, 0, 3f), new Vector3(-48f, 0, 34f));
             SouthGate(w);
             WestGate(w);
+            // Arrow towers flanking both gates and on the four corners (user 2026-10-23, concept map).
+            foreach (var (n, at) in new[] { ("South gate W", new Vector3(-7.5f, 0, -36f)), ("South gate E", new Vector3(7.5f, 0, -36f)),
+                ("West gate S", new Vector3(-48f, 0, -6f)), ("West gate N", new Vector3(-48f, 0, 6f)),
+                ("Corner SW", new Vector3(-48f, 0, -36f)), ("Corner SE", new Vector3(48f, 0, -36f)),
+                ("Corner NW", new Vector3(-48f, 0, 36f)), ("Corner NE", new Vector3(48f, 0, 36f)) })
+                ArrowTower(w, "Arrow tower " + n, at);
+        }
+
+        // A square bastion 6 m across standing proud of the wall, with a timber arrow tower on top (watchtower_* art when
+        // delivered). The whole tower is one occluder.
+        static void ArrowTower(Transform walls, string name, Vector3 at)
+        {
+            const float side = 6f, baseH = WallH + 0.4f;
+            var t = Group(walls, name, at);
+            t.gameObject.AddComponent<Occluder>();
+            var face = new Vector2(side, baseH);
+            var par = new Vector2(side, 1.2f);
+            foreach (float yaw in new[] { 0f, 90f, 180f, 270f })
+            {
+                var q = Quaternion.Euler(0, yaw, 0);
+                Quad(t, "Bastion face", q * new Vector3(0, baseH / 2f, -side / 2f), new Vector3(0, yaw, 0), face, Mat("citywall_face"), Repeat("citywall_face", face));
+                Quad(t, "Bastion parapet", q * new Vector3(0, baseH + 0.6f, -side / 2f), new Vector3(0, yaw, 0), par, Mat("citywall_parapet", clip: true, twoSided: true), Repeat("citywall_parapet", par));
+            }
+            var top = new Vector2(side, side);
+            Quad(t, "Bastion top", new Vector3(0, baseH, 0), new Vector3(90, 0, 0), top, Mat("citywall_walkway"), Repeat("citywall_walkway", top), castShadows: false);
+            Solid(t, new Vector3(0, baseH / 2f, 0), new Vector3(side, baseH, side));
+            if (Tex("watchtower_front", optional: true) && Tex("watchtower_side", optional: true))
+                Building(t, "Tower", new Vector3(0, baseH, -Metres("watchtower_side").x / 2f), 0f, "watchtower_front", "watchtower_side", "watchtower_front", roofKey: "tile", collide: false);
         }
 
         static void SouthGate(Transform walls)
@@ -854,6 +959,55 @@ namespace ThreeKingdoms.EditorTools
                 (-44f, -21f), (-41.5f, -15f), (13f, -26f), (-11f, -24f), (17f, 12f), (-17.5f, 12f),
             };
             foreach (var (x, z) in bushes) Prop(g, "prop_bush", x, z);
+
+            // Denser planting after the concept map and the house-style reference (user 2026-10-23): trees along the
+            // walls and in the gardens, shrubs and flowers at house corners, all clear of landmark doors.
+            (string key, float x, float z, float s)[] more =
+            {
+                ("prop_tree_elm", -44.5f, 28f, 0.9f), ("prop_tree_locust", -20f, 30f, 0.9f), ("prop_tree_elm", -15.5f, 20f, 0.8f),
+                ("prop_tree_locust", 15f, 20f, 0.8f), 
+                ("prop_tree_locust", -45f, 18f, 0.8f), ("prop_tree_elm", -34f, -11f, 0.8f),
+                ("prop_tree_elm", -27f, -11.5f, 0.7f), ("prop_tree_elm", 20f, -32.5f, 0.7f),
+                ("prop_tree_elm", -10.5f, -32f, 0.7f), ("prop_tree_locust", -24f, 8f, 0.9f), ("prop_tree_elm", 16.5f, 7f, 0.8f),
+            };
+            foreach (var (key, x, z, sc) in more) Prop(g, key, x, z, scale: sc, solid: true);
+            (float x, float z)[] shrubs =
+            {
+                (-39.5f, -29f), (-32.5f, -29.6f), (-34.5f, -18.4f), (-27.5f, -18.6f), (-24.5f, -19.4f), (-18.5f, -19.6f),
+                (-18.8f, -29.6f), (-13f, -29.6f), (-26f, -3.6f), (-16.2f, -3.6f), (23.5f, -18.2f), (30.5f, -18.2f),
+                (24f, -29.2f), (42f, -29.2f), (-13f, 30f), (13f, 30f), (-43.5f, -7.5f), (-43.5f, 7.5f), (-9.5f, -13.5f), (10f, -12f),
+                (11.5f, -33f), (16f, -33f), (-36f, 22f), (-26f, 22f),
+            };
+            foreach (var (x, z) in shrubs) Prop(g, "prop_bush", x, z, scale: 0.9f);
+            (float x, float z)[] flowers =
+            {
+                (-37.8f, -29.4f), (-29.5f, -18.6f), (-23f, -19.6f), (-14.8f, -29.6f), (-15.5f, -10.5f), (-13f, -8f),
+                (32f, -20f), (33.5f, -22f), (-34f, -10f), (-30f, -12f), (-16f, 22f), (-14f, 18f), (19f, -32.8f), (-10f, -31f),
+            };
+            foreach (var (x, z) in flowers) Prop(g, "prop_flowers", x, z);
+
+            void Opt(string key, float x, float z, float sc = 1f, bool solid = false) { if (Tex(key, optional: true)) Prop(g, key, x, z, scale: sc, solid: solid); }
+            foreach (var (x, z) in new[] { (-44.6f, -10f), (-44.6f, 12f), (-16.5f, 30f), (16.5f, 24f), (-22f, -32.5f), (13.5f, -32.5f) })
+                Opt("prop_tree_cypress", x, z, solid: true);
+            foreach (var (x, z) in new[] { (-16f, -14.5f), (-31f, -10f), (35f, -22.5f) })
+                Opt("prop_tree_willow", x, z, solid: true);
+            foreach (var (x, z) in new[] { (-38f, 9f), (-12f, 9.5f), (22f, 9f), (-41f, -21f), (40f, -12f), (-33f, -32.6f), (-21f, -17.8f), (33f, -32.8f) })
+                Opt("prop_bush_b", x, z);
+            var tufts = new System.Random(41);
+            for (int i = 0; i < 60; i++)
+            {
+                float x = -45f + (float)tufts.NextDouble() * 90f, z = -33.5f + (float)tufts.NextDouble() * 67f;
+                if (Mathf.Abs(x) < 10.5f && z > -9.5f && z < 15f) continue;
+                if (Mathf.Abs(x) < 3.5f) continue;
+                Opt("prop_grass_tuft", x, z);
+            }
+            if (Tex("prop_hedge", optional: true))
+            {
+                float h = Metres("prop_hedge").y;
+                Strip(g, "Hedge west of the steps", "prop_hedge", new Vector3(-11.5f, 0, 15.6f), new Vector3(-4f, 0, 15.6f), h, solid: false);
+                Strip(g, "Hedge east of the steps", "prop_hedge", new Vector3(4f, 0, 15.6f), new Vector3(11.5f, 0, 15.6f), h, solid: false);
+                Strip(g, "Hedge by the houses", "prop_hedge", new Vector3(-38f, 0, -24.8f), new Vector3(-26f, 0, -24.8f), h, solid: false);
+            }
         }
 
         static void Outside(Transform env)
