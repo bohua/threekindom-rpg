@@ -621,7 +621,8 @@ namespace ThreeKingdoms.EditorTools
             Quad(t, "Bastion top", new Vector3(0, baseH, 0), new Vector3(90, 0, 0), top, Mat("citywall_walkway"), Repeat("citywall_walkway", top), castShadows: false);
             Solid(t, new Vector3(0, baseH / 2f, 0), new Vector3(side, baseH, side));
             if (Tex("watchtower_front", optional: true) && Tex("watchtower_side", optional: true))
-                Building(t, "Tower", new Vector3(0, baseH, -Metres("watchtower_side").x / 2f), 0f, "watchtower_front", "watchtower_side", "watchtower_front", roofKey: "tile", collide: false);
+                Building(t, "Tower", new Vector3(0, baseH, -Metres("watchtower_side").x / 2f), 0f, "watchtower_front", "watchtower_side", "watchtower_front", roofKey: "tile", collide: false,
+                    interior: "wall_rammed_earth");
         }
 
         static void SouthGate(Transform walls)
@@ -673,7 +674,7 @@ namespace ThreeKingdoms.EditorTools
         // A building whose front faces south (yaw 0) or north (yaw 180, back toward the camera). Size comes from the
         // textures: front = width × wall height, side = depth × (wall + gable). roofKey "tile" or "thatch".
         internal static Transform Building(Transform parent, string name, Vector3 frontCenter, float yaw, string front, string side, string back,
-            string roofKey = "tile", string glowMask = null, bool collide = true)
+            string roofKey = "tile", string glowMask = null, bool collide = true, string interior = null, string floor = null)
         {
             var f = Metres(front); var sd = Metres(side);
             float width = f.x, wall = f.y, depth = sd.x, gable = Mathf.Max(0.4f, sd.y - wall);
@@ -687,6 +688,21 @@ namespace ThreeKingdoms.EditorTools
             {
                 var size = new Vector2(width, wall);
                 Quad(b, "Back", new Vector3(0, wall / 2f, depth), new Vector3(0, 180, 0), size, Mat("wall_rammed_earth"), Repeat("wall_rammed_earth", size));
+            }
+            // Fronts with open doorways or stalls look onto an inner back wall and floor instead of the earth behind
+            // the building (user 2026-10-23: the gambling house door showed the ground through it).
+            if (interior != null)
+            {
+                var inner = new Vector2(width, wall);
+                Quad(b, "Interior back wall", new Vector3(0, wall / 2f, depth - 0.03f), Vector3.zero, inner, Mat(interior),
+                    axes.TryGetValue(interior, out string ax) && ax != "none" ? Repeat(interior, inner) : Vector2.one, castShadows: false);
+                foreach (int s in new[] { -1, 1 })
+                    Quad(b, "Interior side wall", new Vector3(s * (width / 2f - 0.03f), wall / 2f, depth / 2f), new Vector3(0, s * -90f, 0), new Vector2(depth, wall), Mat("wall_rammed_earth"), Repeat("wall_rammed_earth", new Vector2(depth, wall)), castShadows: false);
+            }
+            if (floor != null)
+            {
+                var fs = new Vector2(width, depth);
+                Quad(b, "Interior floor", new Vector3(0, 0.012f, depth / 2f), new Vector3(90f, 0, 0), fs, Mat(floor), Repeat(floor, fs), castShadows: false);
             }
             float sideH = wall + gable;
             Quad(b, "Gable L", new Vector3(-width / 2f, sideH / 2f, depth / 2f), new Vector3(0, 90, 0), new Vector2(depth, sideH), Mat(side, clip: true));
@@ -871,7 +887,8 @@ namespace ThreeKingdoms.EditorTools
             // 13 Gambling house east of the smithy (user 2026-10-22; not on the concept map, kept on the same street line).
             bool casinoArt = Tex("casino_front", optional: true);
             var casino = Building(row, "13 Gambling house", new Vector3(38.5f, 0, -4f), 0f,
-                casinoArt ? "casino_front" : "house_b_front", casinoArt ? "casino_side" : "house_b_side", casinoArt ? "casino_back" : "house_b_back");
+                casinoArt ? "casino_front" : "house_b_front", casinoArt ? "casino_side" : "house_b_side", casinoArt ? "casino_back" : "house_b_back",
+                interior: "interior_shop_back_wall", floor: "floor_wood_planks");
             if (casinoArt && Tex("plaque_casino", optional: true)) EaveSign(casino, "plaque_casino", "casino_front", "casino_side");
             var cg = Group(row, "Gambling house props");
             Prop(cg, "prop_lantern_red", 34.9f, -4.4f, y: 2.2f);
@@ -906,7 +923,7 @@ namespace ThreeKingdoms.EditorTools
             Building(row, "04 House D", new Vector3(-16f, 0, -30f), 0f, "house_c_front", "house_c_side", "house_c_back");
             // 06 Clinic below the weapons shop; 09 stable and post station as one yard against the south wall.
             Building(row, "06 Clinic", new Vector3(27f, 0, -18.5f), 0f, "clinic_front", "clinic_side", null);
-            Building(row, "09 Stable", new Vector3(28.5f, 0, -29.5f), 0f, "stable_front", "stable_side", null, roofKey: "thatch");
+            Building(row, "09 Stable", new Vector3(28.5f, 0, -29.5f), 0f, "stable_front", "stable_side", null, roofKey: "thatch", interior: "wall_rammed_earth");
             Building(row, "09 Post station", new Vector3(38f, 0, -29.5f), 0f, "post_station_front", "post_station_side", null);
 
             var hp = Group(row, "House props");
