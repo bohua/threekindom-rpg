@@ -214,15 +214,17 @@ namespace ThreeKingdoms.EditorTools
             tier.Volume = volume; tier.High = high; tier.Low = low;
         }
 
-        // §2 grading: neutral ACES instead of the warm LUT, more contrast, cool shadows / warm highlights.
+        // §2 grading. The first passes dropped the town's warm LUT for neutral ACES; the user found the result too
+        // sharp and the colours unbalanced (2026-10-23), so the LUT is back at half strength to pull the cool stone
+        // and the warm wood into one palette, and the split toning is gentler.
         static VolumeProfile ShowcaseProfile()
         {
-            var profile = HD2DSampleBuilder.CreateProfile(ProfilePath, depthOfField: true, bloomThreshold: 1.1f, bloomIntensity: 0.8f, highQualityBloom: true, lut: null);
+            var lut = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Settings/HD2D_WarmLUT.png");
+            var profile = HD2DSampleBuilder.CreateProfile(ProfilePath, depthOfField: true, bloomThreshold: 1.0f, bloomIntensity: 0.9f, highQualityBloom: true, lut);
             profile.TryGet<ColorLookup>(out var lookup);
-            profile.Remove<ColorLookup>();
-            if (lookup) Object.DestroyImmediate(lookup, true);
+            lookup.contribution.Override(0.5f);
             profile.TryGet<ColorAdjustments>(out var color);
-            color.contrast.Override(10f);
+            color.contrast.Override(4f);
             color.saturation.Override(0f);
             color.postExposure.Override(0.55f);
             profile.TryGet<Vignette>(out var vignette);
@@ -230,11 +232,11 @@ namespace ThreeKingdoms.EditorTools
             vignette.smoothness.Override(0.45f);
             vignette.color.Override(new Color(0.05f, 0.04f, 0.06f));
             profile.TryGet<DepthOfField>(out var dof);
-            dof.aperture.Override(1.6f);   // a little more blur at the top as well as the front
+            dof.aperture.Override(1.4f);   // softer: more blur at the top as well as the front
 
             var split = profile.Add<SplitToning>(true);
-            split.shadows.Override(new Color(0.36f, 0.48f, 0.58f));
-            split.highlights.Override(new Color(1f, 0.78f, 0.52f));
+            split.shadows.Override(new Color(0.46f, 0.50f, 0.54f));
+            split.highlights.Override(new Color(0.86f, 0.74f, 0.60f));
             split.balance.Override(10f);
             var smh = profile.Add<ShadowsMidtonesHighlights>(true);
             smh.shadows.Override(new Vector4(0.94f, 0.98f, 1.06f, 0f));
@@ -305,7 +307,7 @@ namespace ThreeKingdoms.EditorTools
                 var normal = NormalMapFor(albedo);
                 if (!normal) continue;
                 m.SetTexture("_BumpMap", normal);
-                m.SetFloat("_BumpScale", 1f);
+                m.SetFloat("_BumpScale", 0.55f);   // relief that reads, not etched
                 m.EnableKeyword("_NORMALMAP");
                 EditorUtility.SetDirty(m);
             }
@@ -326,7 +328,9 @@ namespace ThreeKingdoms.EditorTools
             var px = source.GetPixels32();
             var alpha = fromHeight ? null : px.Select(p => p.a).ToArray();
             float[] height = px.Select(p => (p.a < 128 && !fromHeight) ? 0f : (0.299f * p.r + 0.587f * p.g + 0.114f * p.b) / 255f).ToArray();
-            if (!fromHeight) height = Blur(height, w, h, albedo.wrapModeU == TextureWrapMode.Repeat, albedo.wrapModeV == TextureWrapMode.Repeat);
+            // Blur delivered height maps too: their hard steps made every stone edge a razor line.
+            height = Blur(height, w, h, albedo.wrapModeU == TextureWrapMode.Repeat, albedo.wrapModeV == TextureWrapMode.Repeat);
+            if (fromHeight) height = Blur(height, w, h, albedo.wrapModeU == TextureWrapMode.Repeat, albedo.wrapModeV == TextureWrapMode.Repeat);
 
             bool wrapU = albedo.wrapModeU == TextureWrapMode.Repeat, wrapV = albedo.wrapModeV == TextureWrapMode.Repeat;
             float H(int x, int y)
