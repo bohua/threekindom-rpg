@@ -291,8 +291,13 @@ namespace ThreeKingdoms.EditorTools
             }
         }
 
-        static Texture2D Tex(string key) =>
-            AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png")
+        // A session may put a folder of replacement textures in front of the town and corner libraries (the HD-2D
+        // showcase tries new Codex art under the old keys without touching the town).
+        internal static string OverrideDir;
+
+        internal static Texture2D Tex(string key) =>
+            (OverrideDir != null ? AssetDatabase.LoadAssetAtPath<Texture2D>($"{OverrideDir}/{key}.png") : null)
+            ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png")
             ?? throw new FileNotFoundException("Missing town texture " + key);
 
         // Null when a not-yet-delivered texture is missing (art still with Codex).
@@ -300,7 +305,7 @@ namespace ThreeKingdoms.EditorTools
             AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png")
             ?? (optional ? null : throw new FileNotFoundException("Missing town texture " + key));
 
-        static Material Mat(string key, bool clip = false, bool twoSided = false, string emissionMask = null, Color? glow = null)
+        internal static Material Mat(string key, bool clip = false, bool twoSided = false, string emissionMask = null, Color? glow = null)
         {
             string id = key + (clip ? "_clip" : "") + (twoSided ? "_2s" : "");
             if (materials.TryGetValue(id, out var cached)) return cached;
@@ -358,7 +363,7 @@ namespace ThreeKingdoms.EditorTools
             return mesh;
         }
 
-        static GameObject Quad(Transform parent, string name, Vector3 center, Vector3 euler, Vector2 size, Material m, Vector2? repeat = null, bool castShadows = true)
+        internal static GameObject Quad(Transform parent, string name, Vector3 center, Vector3 euler, Vector2 size, Material m, Vector2? repeat = null, bool castShadows = true)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -371,15 +376,15 @@ namespace ThreeKingdoms.EditorTools
             return go;
         }
 
-        static Vector2 Repeat(string key, Vector2 size)
+        internal static Vector2 Repeat(string key, Vector2 size)
         {
             var t = Tex(key);
             return new Vector2(size.x * Ppm / t.width, size.y * Ppm / t.height);
         }
 
-        static Vector2 Metres(string key) { var t = Tex(key); return new Vector2(t.width / Ppm, t.height / Ppm); }
+        internal static Vector2 Metres(string key) { var t = Tex(key); return new Vector2(t.width / Ppm, t.height / Ppm); }
 
-        static Transform Group(Transform parent, string name, Vector3 at = default, float yaw = 0f)
+        internal static Transform Group(Transform parent, string name, Vector3 at = default, float yaw = 0f)
         {
             var g = new GameObject(name).transform;
             g.SetParent(parent, false);
@@ -422,7 +427,7 @@ namespace ThreeKingdoms.EditorTools
             }
         }
 
-        static void Solid(Transform parent, Vector3 center, Vector3 size)
+        internal static void Solid(Transform parent, Vector3 center, Vector3 size)
         {
             var box = new GameObject("Collider").AddComponent<BoxCollider>();
             box.transform.SetParent(parent, false);
@@ -621,7 +626,7 @@ namespace ThreeKingdoms.EditorTools
             Plaque(building, key, new Vector3(0, EaveY(front, side) - 0.25f, -0.72f), 0f);
 
         // A flat run of a tileable fence-like strip (courtyard wall, palisade, wattle) along X or Z.
-        static void Strip(Transform parent, string name, string key, Vector3 a, Vector3 b, float height, bool solid = true, string capKey = null)
+        internal static void Strip(Transform parent, string name, string key, Vector3 a, Vector3 b, float height, bool solid = true, string capKey = null)
         {
             bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
             float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
