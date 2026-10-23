@@ -292,7 +292,8 @@ namespace Prototype.BingshuTactics
         // 增益取最强、减益取最强，两者相乘
         public float AtkMul => Statuses.Select(s => s.AtkMul).Where(m => m < 1f).DefaultIfEmpty(1f).Min()
                              * Statuses.Select(s => s.AtkMul).Where(m => m > 1f).DefaultIfEmpty(1f).Max();
-        public float DefMul => Statuses.Where(s => s.DefMul < 1f).Select(s => s.DefMul).DefaultIfEmpty(1f).Min();
+        public float DefMul => Statuses.Select(s => s.DefMul).Where(m => m < 1f).DefaultIfEmpty(1f).Min()
+                             * Statuses.Select(s => s.DefMul).Where(m => m > 1f).DefaultIfEmpty(1f).Max();
         public float Guard => Statuses.Select(s => s.Guard).DefaultIfEmpty(0f).Max();
 
         public void AddStatus(Status s)
@@ -380,8 +381,9 @@ namespace Prototype.BingshuTactics
             return cost + Mathf.Max(0, dh);
         }
 
-        // 可达格（含起点）及来路：按移动消耗的最短路；所有单位都挡路，不能穿过
-        public Dictionary<Vector2Int, Vector2Int> Reachable(Vector2Int start, int move, Func<Vector2Int, bool> occupied, Troop troop = Troop.Infantry)
+        // 可达格（含起点）及来路：按移动消耗的最短路。blocked＝不能进入（敌方单位）；友军可以穿过但不能停留，由调用方判断。
+        // ZOC（用户 2026-10-23）：进入 zoc 为真的格子后不能再继续移动（起点除外）。
+        public Dictionary<Vector2Int, Vector2Int> Reachable(Vector2Int start, int move, Func<Vector2Int, bool> occupied, Troop troop = Troop.Infantry, Func<Vector2Int, bool> zoc = null)
         {
             var parent = new Dictionary<Vector2Int, Vector2Int> { [start] = start };
             var best = new Dictionary<Vector2Int, int> { [start] = 0 };
@@ -389,6 +391,7 @@ namespace Prototype.BingshuTactics
             while (open.Count > 0)
             {
                 var p = open.OrderBy(q => best[q]).First(); open.Remove(p);
+                if (p != start && zoc != null && zoc(p)) continue;
                 foreach (var dir in Dirs)
                 {
                     var n = p + dir;

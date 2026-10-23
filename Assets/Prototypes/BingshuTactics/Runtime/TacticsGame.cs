@@ -139,15 +139,23 @@ namespace Prototype.BingshuTactics
             if (mode != Mode.Menu)
             {
                 mode = Mode.Menu; ChooseRing(2);
-                var dest = reach.Keys.Where(p => p != active.Pos).OrderByDescending(p => p.y).First();
+                var dest = reach.Keys.Where(p => p != active.Pos && CanStop(active, p)).OrderByDescending(p => p.y).First();
                 yield return MoveThenAct(Grid.Path(reach, dest));
             }
             yield return new WaitForSeconds(0.6f); yield return Shot("4b-after-move");
+            // 取消键退回原位
+            var moveSpot = active.Pos;
+            yield return Tap(vpad, GamepadButton.East);
+            Debug.Log($"POC_UNDO_MOVE back={active.Pos == startPos} from={moveSpot} to={active.Pos} moved={moved}");
+            mode = Mode.Menu; ChooseRing(System.Array.IndexOf(RingItems, "移动"));
+            var dest2 = reach.Keys.Where(p => p != active.Pos && CanStop(active, p)).OrderByDescending(p => p.y).First();
+            yield return MoveThenAct(Grid.Path(reach, dest2));
             autoPlay = true; ChooseRing(4);
             float t0 = Time.time;
             while (mode != Mode.Victory && mode != Mode.Defeat && Time.time - t0 < 240f)
             {
                 if (units.Any(u => u.Alive && u.PendingCast != null && u.Team == Team.Enemy) && !shotCast) { shotCast = true; yield return Shot("7-enemy-casting"); }
+                if (!shotRing && castRings.Any(r => r.enabled)) { shotRing = true; yield return new WaitForSeconds(0.3f); yield return Shot("7b-cast-ring"); }
                 if (mode == Mode.Duel && duel != null && duel.Choosing && shotDuel < 2) { shotDuel++; yield return Shot("10-duel-" + shotDuel); }
                 if (stage == 1 && !shotFace && units.Any(u => u.Alive && u.Team == Team.Player && u.Pos == new Vector2Int(7, 10))) { shotFace = true; yield return new WaitForSeconds(0.8f); yield return Shot("9-face-lubu"); }
                 yield return null;
@@ -156,7 +164,7 @@ namespace Prototype.BingshuTactics
             Debug.Log($"POC_AUTOPLAY_RESULT {mode} turns={turns} time={Time.time - t0:0}s duels={string.Join(",", dueled)} trio={trioDone}");
             Application.Quit();
         }
-        bool shotCast, shotFace; int shotDuel; Vector2Int? forcedHover;
+        bool shotCast, shotFace, shotRing; int shotDuel; Vector2Int? forcedHover;
 
         static IEnumerator Tap(Gamepad pad, GamepadButton b)
         {
@@ -410,6 +418,7 @@ namespace Prototype.BingshuTactics
 
             UpdateRigs();
             UpdateScenery();
+            UpdateCastRings();
 
             for (int i = popups.Count - 1; i >= 0; i--)
             {
@@ -444,8 +453,20 @@ namespace Prototype.BingshuTactics
         static Gamepad Pad => Gamepad.current;
         static bool Pressed(params ButtonControl[] bs) => bs.Any(b => b != null && b.wasPressedThisFrame);
 
-        bool ConfirmPressed => Pressed(Kb?.enterKey, Kb?.numpadEnterKey, Kb?.spaceKey, Kb?.zKey, Pad?.buttonSouth);
-        bool CancelPressed => Pressed(Kb?.escapeKey, Kb?.backspaceKey, Kb?.xKey, Pad?.buttonEast);
+        bool ConfirmPressed => Pressed(Kb?.enterKey, Kb?.numpadEnterKey, Kb?.spaceKey, Kb?.zKey, PadButton("Submit"));
+        bool CancelPressed => Pressed(Kb?.escapeKey, Kb?.backspaceKey, Kb?.xKey, PadButton("Cancel"));
+
+        // 手柄确认／取消按设备自身的 Submit／Cancel 用途取键：Xbox 为下／右，任天堂布局为右（A）／下（B）（用户 2026-10-23：A、B 反了）
+        static ButtonControl PadButton(string usage)
+        {
+            var pad = Pad;
+            if (pad == null) return null;
+            foreach (var c in pad.allControls)
+                if (c is ButtonControl b && c.usages.Contains(new UnityEngine.InputSystem.Utilities.InternedString(usage))) return b;
+            bool nintendo = (pad.description.manufacturer + pad.description.product + pad.layout).ToLowerInvariant().Contains("nintendo")
+                         || (pad.description.product ?? "").ToLowerInvariant().Contains("pro controller") || pad.layout.ToLowerInvariant().Contains("switch");
+            return usage == "Submit" ? (nintendo ? pad.buttonEast : pad.buttonSouth) : (nintendo ? pad.buttonSouth : pad.buttonEast);
+        }
 
         Vector2Int ReadDir()
         {
@@ -496,6 +517,7 @@ namespace Prototype.BingshuTactics
             switch (mode)
             {
                 case Mode.Menu:
+                    if (cancel && moved) { UndoMove(); return; }
                     if (pulse.y != 0) ringSel = NextUsable(ringSel, -pulse.y);   // 转轮跳过不可用的选项
                     if (ok && RingUsable(RingItems[ringSel])) ChooseRing(ringSel);
                     return;
@@ -517,7 +539,10 @@ namespace Prototype.BingshuTactics
             {
                 if (!grid.In(cursor)) cursor = active != null ? active.Pos : units.First(u => u.Team == Team.Player).Pos;
                 var n = cursor + ScreenToGrid(pulse);
-                if (grid.In(n)) cursor = n;
+                bool allowed = grid.In(n);
+                if (mode == Mode.TargetMove && reach != null) allowed &= reach.ContainsKey(n);   // 只能在可移动范围内
+                if (mode == Mode.TargetSkill && pendingSkill != null && pendingSkill.Range >= 0) allowed &= SkillRange(active, pendingSkill).Contains(n);
+                if (allowed) cursor = n;
             }
             if (ok && grid.In(cursor)) ClickTile(cursor);
             if (cancel) Back();
@@ -587,7 +612,7 @@ namespace Prototype.BingshuTactics
             foreach (var u in units.Where(u => u.Alive && u.PendingCast != null))
                 Add(CastArea(u), u.Team == Team.Player ? new Color(0.7f, 0.4f, 1f, 0.30f) : new Color(1f, 0.15f, 0.55f, 0.35f));
 
-            if (mode == Mode.TargetMove && reach != null) Add(reach.Keys, new Color(0.3f, 0.65f, 1f, 0.38f));
+            if (mode == Mode.TargetMove && reach != null) Add(reach.Keys.Where(p => CanStop(active, p)), new Color(0.3f, 0.65f, 1f, 0.38f));
             if (mode == Mode.TargetAttack && reach != null)
             {
                 Add(reach.Keys, new Color(0.3f, 0.65f, 1f, 0.22f));
@@ -627,9 +652,25 @@ namespace Prototype.BingshuTactics
 
         // ---------------- 规则辅助 ----------------
         // 本回合已移动过的单位，攻击与近战武技只能在原地出手
+        // 友军可穿过但不能停留；敌方单位挡路；敌方单位与敌方防守建筑（关墙、关门）旁边有 ZOC，进入即停
         Dictionary<Vector2Int, Vector2Int> ReachOf(Unit u) => u == active && moved
             ? new Dictionary<Vector2Int, Vector2Int> { [u.Pos] = u.Pos }
-            : grid.Reachable(u.Pos, u.Move, p => At(p) != null && At(p) != u, u.Troop);
+            : grid.Reachable(u.Pos, u.Move, p => At(p) != null && At(p).Team != u.Team, u.Troop, p => InZoc(u, p));
+
+        bool InZoc(Unit u, Vector2Int p)
+        {
+            foreach (var d in new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
+            {
+                var n = p + d;
+                if (!grid.In(n)) continue;
+                var o = At(n);
+                if (o != null && o.Team != u.Team) return true;
+                if (u.Team == Team.Player && stage == 1 && (grid.TerrainAt(n) == Terrain.Wall || grid.TerrainAt(n) == Terrain.Gate)) return true;
+            }
+            return false;
+        }
+
+        bool CanStop(Unit u, Vector2Int p) => p == u.Pos || At(p) == null;
 
         IEnumerable<Unit> Foes(Unit u) => units.Where(x => x.Alive && x.Team != u.Team);
         IEnumerable<Unit> Friends(Unit u) => units.Where(x => x.Alive && x.Team == u.Team);
@@ -637,11 +678,11 @@ namespace Prototype.BingshuTactics
         List<Unit> AttackableTargets(Unit u, int range)
         {
             var r = ReachOf(u);
-            return Foes(u).Where(f => r.Keys.Any(p => Grid.Dist(p, f.Pos) <= RangeAt(u, p, range))).ToList();
+            return Foes(u).Where(f => r.Keys.Any(p => CanStop(u, p) && Grid.Dist(p, f.Pos) <= RangeAt(u, p, range))).ToList();
         }
 
         Vector2Int ApproachTile(Unit u, Unit target, int range, Dictionary<Vector2Int, Vector2Int> r) =>
-            r.Keys.Where(p => Grid.Dist(p, target.Pos) <= RangeAt(u, p, range))
+            r.Keys.Where(p => CanStop(u, p) && Grid.Dist(p, target.Pos) <= RangeAt(u, p, range))
                   .OrderBy(p => Grid.Path(r, p).Count).ThenByDescending(p => Grid.Dist(p, target.Pos)).First();
 
         IEnumerable<Vector2Int> SkillRange(Unit u, SkillDef s) =>
@@ -871,7 +912,7 @@ namespace Prototype.BingshuTactics
             }
             if (u.Move == 0) { u.At = now + AtClock.Delay(60, u.Speed); yield break; }   // 守关单位不离位
             var r = ReachOf(u);
-            var dest = r.Keys.OrderBy(p => Foes(u).Min(f => Grid.Dist(p, f.Pos))).First();
+            var dest = r.Keys.Where(p => CanStop(u, p)).OrderBy(p => Foes(u).Min(f => Grid.Dist(p, f.Pos))).First();
             yield return Walk(u, Grid.Path(r, dest));
             u.At = now + AtClock.Delay(70, u.Speed);
         }
@@ -903,7 +944,7 @@ namespace Prototype.BingshuTactics
                     }
                     return;
                 case Mode.TargetMove:
-                    if (reach.ContainsKey(p) && p != active.Pos) StartCoroutine(MoveThenAct(Grid.Path(reach, p)));
+                    if (reach.ContainsKey(p) && p != active.Pos && CanStop(active, p)) StartCoroutine(MoveThenAct(Grid.Path(reach, p)));
                     return;
                 case Mode.TargetAttack:
                     var t = At(p);
@@ -927,8 +968,19 @@ namespace Prototype.BingshuTactics
         const int MoveCost = 30;
         bool moved;
 
+        Vector2Int preMovePos; Vector3 preMoveDir;
+
+        // 移动后按取消：退回移动前的位置重新输入（用户 2026-10-23）
+        void UndoMove()
+        {
+            active.Pos = preMovePos; rigs[active].Root.position = Tile(preMovePos); rigs[active].Dir = preMoveDir;
+            moved = false; reach = null; ringSel = DefaultRing(); cursor = active.Pos; mode = Mode.Menu;
+            Log($"{active.Name} 退回原位，重新下令");
+        }
+
         IEnumerator MoveThenAct(List<Vector2Int> path)
         {
+            preMovePos = active.Pos; preMoveDir = rigs[active].Dir;
             mode = Mode.Busy; Log($"{active.Name} 移动");
             yield return Walk(active, path);
             moved = true; reach = null; ringSel = DefaultRing(); mode = Mode.Menu;
@@ -944,7 +996,8 @@ namespace Prototype.BingshuTactics
 
         void Back()
         {
-            if (mode == Mode.TargetMove || mode == Mode.TargetAttack || mode == Mode.SkillList) { mode = Mode.Menu; reach = null; }
+            if (mode == Mode.Menu && moved) UndoMove();
+            else if (mode == Mode.TargetMove || mode == Mode.TargetAttack || mode == Mode.SkillList) { mode = Mode.Menu; reach = null; }
             else if (mode == Mode.TargetSkill) { mode = Mode.SkillList; pendingSkill = null; reach = null; }
             else if (mode == Mode.Circuit) mode = Mode.Deploy;
         }
@@ -1138,11 +1191,26 @@ namespace Prototype.BingshuTactics
         bool RingUsable(string item) => item switch
         {
             "攻击" => AttackableTargets(active, active.AtkRange).Count > 0,
-            "武技" => active.Crafts.Any(c => active.Cp >= c.Cost),
-            "策略" => !moved && StrategiesOf(active).Any(l => active.Ep >= l.Def.Cost),
+            "武技" => active.Crafts.Any(c => active.Cp >= c.Cost && HasTargets(active, c)),
+            "策略" => !moved && StrategiesOf(active).Any(l => active.Ep >= l.Def.Cost && HasTargets(active, l.Def)),
             "移动" => !moved,
             _ => true
         };
+
+        // 范围内是否有可作用的对象：伤害、减益要有敌人，回复、结阵要有友军
+        bool HasTargets(Unit u, SkillDef s)
+        {
+            bool Ok(Unit t) => t != null && t.Alive && (s.TargetsAllies ? t.Team == u.Team : t.Team != u.Team);
+            if (s.Range < 0) return !s.TargetsAllies && AttackableTargets(u, 1).Count > 0;
+            if (s.Radius >= 99) return Friends(u).Any();
+            if (s.Area == Area.SelfCircle) return grid.Diamond(u.Pos, s.Radius).Any(p => Ok(At(p)));
+            foreach (var p in SkillRange(u, s))
+            {
+                if (s.Area == Area.Single) { if (Ok(At(p))) return true; continue; }
+                if (grid.AreaOf(s, u.Pos, p).Any(q => Ok(At(q)))) return true;
+            }
+            return false;
+        }
 
         // 默认选项（用户 2026-10-23）：轮到行动时，攻击范围内有敌人选“攻击”，否则选“移动”；移动后有敌人选“攻击”，否则选“待机”
         int DefaultRing()
@@ -1169,10 +1237,11 @@ namespace Prototype.BingshuTactics
         {
             var rows = new List<(SkillDef s, float mul, string extra, bool ok)>();
             if (showCraftList)
-                foreach (var s in active.Crafts) rows.Add((s, 1f, $"气势{s.Cost}", active.Cp >= s.Cost));
+                foreach (var s in active.Crafts) rows.Add((s, 1f, $"气势{s.Cost}" + (HasTargets(active, s) ? "" : " · 范围内无目标"), active.Cp >= s.Cost && HasTargets(active, s)));
             else
                 foreach (var l in StrategiesOf(active))
-                    rows.Add((l.Def, l.PowerMul, $"策力{l.Def.Cost} 咏唱{l.Def.Cast}" + (l.PowerMul > 1f ? $" 威力×{l.PowerMul:0.00}" : ""), active.Ep >= l.Def.Cost));
+                    rows.Add((l.Def, l.PowerMul, $"策力{l.Def.Cost} 咏唱{l.Def.Cast}" + (l.PowerMul > 1f ? $" 威力×{l.PowerMul:0.00}" : "") + (HasTargets(active, l.Def) ? "" : " · 范围内无目标"),
+                        active.Ep >= l.Def.Cost && HasTargets(active, l.Def)));
             return rows;
         }
 

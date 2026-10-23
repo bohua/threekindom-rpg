@@ -6,6 +6,7 @@
 // 程序侧：整条路径匀速、首尾缓动；登高走抛物线；1 像素呼吸；受击闪白约 70 ms、击退 0.15 m、命中停顿；攻击踏前 0.3 m；圆片阴影。
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -222,6 +223,65 @@ namespace Prototype.BingshuTactics
             var d = Tile(t.Pos) - Tile(a.Pos); d.y = 0;
             rig.Knock = d.sqrMagnitude > 1e-4f ? d.normalized * 0.15f : Vector3.zero; rig.KnockT = 0.2f;
             hitStop = Time.time + 0.07f;
+        }
+
+        // ---------------- 咏唱锁定圈（用户 2026-10-23） ----------------
+        // 单体：锁定目标脚下一圈；范围：把整个范围用一个大圈圈起来；直线与全军：每个受影响的格子一圈
+        readonly List<Renderer> castRings = new List<Renderer>();
+        Material ringMat;
+
+        static Texture2D MakeRing(int n)
+        {
+            var t = new Texture2D(n, n) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            for (int x = 0; x < n; x++)
+                for (int y = 0; y < n; y++)
+                {
+                    float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(n / 2f, n / 2f)) / (n / 2f);
+                    float a = Mathf.Clamp01(1f - Mathf.Abs(d - 0.88f) / 0.09f);
+                    t.SetPixel(x, y, new Color(1, 1, 1, a));
+                }
+            t.Apply();
+            return t;
+        }
+
+        void UpdateCastRings()
+        {
+            var wanted = new List<(Vector3 c, float r, Color col)>();
+            foreach (var u in units.Where(x => x.Alive && x.PendingCast != null))
+            {
+                var s = u.PendingCast;
+                var col = u.Team == Team.Player ? new Color(0.75f, 0.45f, 1f) : new Color(1f, 0.25f, 0.45f);
+                float small = T * 0.48f;
+                if (s.Radius >= 99 || s.Area == Area.Line)
+                    foreach (var p in CastArea(u)) wanted.Add((Tile(p), small, col));
+                else
+                {
+                    var center = u.PendingFollow != null && u.PendingFollow.Alive ? u.PendingFollow.Pos : u.PendingTarget;
+                    wanted.Add((Tile(center), s.Area == Area.Single ? small : (s.Radius + 0.5f) * T * 1.05f, col));
+                }
+            }
+            if (!ringMat) { ringMat = new Material(OverlayMat) { mainTexture = MakeRing(128) }; }
+            while (castRings.Count < wanted.Count)
+            {
+                var q = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                Destroy(q.GetComponent<Collider>());
+                q.name = "Cast ring"; q.transform.rotation = Quaternion.Euler(90, 0, 0);
+                var r = q.GetComponent<MeshRenderer>(); r.sharedMaterial = ringMat; r.shadowCastingMode = ShadowCastingMode.Off; r.receiveShadows = false;
+                castRings.Add(r);
+            }
+            float pulse = 0.75f + 0.25f * Mathf.Sin(Time.time * 5f);
+            for (int i = 0; i < castRings.Count; i++)
+            {
+                var r = castRings[i];
+                r.enabled = i < wanted.Count;
+                if (!r.enabled) continue;
+                var (c, rad, col) = wanted[i];
+                r.transform.position = c + Vector3.up * 0.05f;
+                r.transform.localScale = new Vector3(rad * 2f * (0.97f + 0.03f * pulse), rad * 2f * (0.97f + 0.03f * pulse), 1f);
+                r.GetPropertyBlock(block);
+                block.SetColor("_Color", new Color(col.r, col.g, col.b, pulse));
+                r.SetPropertyBlock(block);
+            }
         }
 
         // 镜头旋转：约 0.35 s 缓入缓出

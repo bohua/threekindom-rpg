@@ -263,4 +263,33 @@ public class TacticsRulesTests
         var trade = DuelRules.Resolve(DuelMove.Attack, DuelMove.Attack, 68, 100);
         Assert.Greater(trade.toA, trade.toB);
     }
+
+    [Test]
+    public void Zoc_StopsMovement_AndAlliesArePassable()
+    {
+        var g = new Grid(7, 1);
+        var start = new Vector2Int(0, 0);
+        // 友军在 (1,0)：可以穿过，到达更远的格子
+        var r = g.Reachable(start, 4, p => false);
+        Assert.IsTrue(r.ContainsKey(new Vector2Int(3, 0)));
+        Assert.AreEqual(new Vector2Int(1, 0), Grid.Path(r, new Vector2Int(2, 0))[1]);
+        // 敌人在 (4,0)：(3,0) 在其 ZOC 内，进入即停，到不了 (4,0) 之后
+        var enemy = new Vector2Int(4, 0);
+        r = g.Reachable(start, 6, p => p == enemy, Troop.Infantry, p => Grid.Dist(p, enemy) == 1);
+        Assert.IsTrue(r.ContainsKey(new Vector2Int(3, 0)));
+        Assert.IsFalse(r.ContainsKey(new Vector2Int(5, 0)));
+        // 起点就在 ZOC 内也能离开
+        r = g.Reachable(new Vector2Int(3, 0), 2, p => p == enemy, Troop.Infantry, p => Grid.Dist(p, enemy) == 1);
+        Assert.IsTrue(r.ContainsKey(new Vector2Int(1, 0)));
+    }
+
+    [Test]
+    public void DefBuff_MultipliesWithDebuff()
+    {
+        var u = new Unit();
+        u.AddStatus(new Status { Name = "昂扬", AtkMul = 1.5f, DefMul = 1.5f, Turns = 3 });
+        u.AddStatus(new Status { Name = "破阵", DefMul = 0.8f, Turns = 2 });
+        Assert.AreEqual(1.2f, u.DefMul, 1e-4);
+        Assert.AreEqual(1.5f, u.AtkMul, 1e-4);
+    }
 }

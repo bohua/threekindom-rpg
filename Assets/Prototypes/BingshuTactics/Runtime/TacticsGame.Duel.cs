@@ -139,6 +139,11 @@ namespace Prototype.BingshuTactics
                 lubu.Hp = Mathf.Max(1, lubu.Hp - lubu.MaxHp / 4);
                 lubu.At += 40; lubu.AddStatus(new Status { Name = "动摇", AtkMul = 0.9f, Turns = 4 });
                 hero.Cp = Mathf.Min(100, hero.Cp + 20);
+                // 得胜：立即再行动一次，进入“昂扬”攻防 +50%，3 回合（本回合结束时的结算会先减 1，故记 4）（用户 2026-10-23）
+                hero.AddStatus(new Status { Name = "昂扬", AtkMul = 1.5f, DefMul = 1.5f, Turns = 4 });
+                hero.At = now - 0.01f;
+                popups.Add((views[hero].position + Vector3.up * 2.4f, "昂扬！再行动", new Color(1f, 0.85f, 0.3f), 0f));
+                yield return Say("", $"{hero.Name}士气昂扬，立即再次行动！（攻防 +50%，3 回合）");
                 popups.Add((views[lubu].position + Vector3.up * 2.4f, "动摇", new Color(0.8f, 0.7f, 1f), 0f));
             }
             else if (duel.HpH < duel.HpL)
