@@ -15,17 +15,20 @@ namespace ThreeKingdoms.EditorTools
     // The whole of Zhuojun (ZHUOJUN_TOWN_DESIGN.md), built like the corner: simple boxes and quads carrying the native
     // pixel textures (corner library + the 97-texture town delivery), props as lit pixel billboards.
     //
-    // Layout, metres (x east, z north; camera looks north):
+    // Layout, metres (x east, z north; camera looks north), matched to the user's concept map (2026-10-23):
     //   walls x -50..50, z -38..38 (4 m thick, 5 m high); south gate (0, -36); west gate (-48, 0)
-    //   north row  (fronts face south at z 14): 08 granary, 01 commandery office (courtyard + hall), 07 barracks
-    //   北横街 z 9..14 · middle row (fronts at z -4): 03 tavern, 02 weapons shop · 中街 + 05 market z -14..-2
-    //   south row (fronts at z -20): 04 houses, 06 clinic, 09 post station + stable · 南回环街 z -25..-21
-    //   main axis x -3..3 from the south gate to the office gate; 11 well yard at (-21, -13); 12 peach grove outside the west gate
+    //   north row: 08 two granaries (fronts z 19), 01 commandery on a 2.1 m platform (z 17.5..33.5), 07 barracks
+    //   middle row (fronts at z -4): 03 tavern, 05 paved market square x -10..10 z -9..14.5, 02 weapons shop, 13 gambling house
+    //   south: 11 well (-12.5, -12.5), 04 four houses in the south-west, 06 clinic below 02, 09 stable + post station on the wall
+    //   stone main axis x -3..3 from the south gate up to the commandery steps; 12 peach grove outside the west gate
     public static class ZhuojunTownBuilder
     {
         public const string ScenePath = "Assets/_Project/Scenes/Zhuojun_Town.unity";
         public const string TownDir = "Assets/_Project/Art/Environment/ZhuojunTown";
         const string CornerDir = ZhuojunCornerBuilder.TextureDir;
+        // Reworked textures after the user's concept map and house-style reference (Codex art/zhuojun-map-b1, -b2,
+        // 2026-10-23). Same keys and sizes as the corner/town originals, which stay untouched; a file here wins.
+        public const string MapDir = "Assets/_Project/Art/Environment/ZhuojunMap";
         const string TownMaterialDir = TownDir + "/Materials";
         const string MeshPath = TownDir + "/Town_Meshes.asset";
         static string materialDir = TownMaterialDir;
@@ -58,6 +61,7 @@ namespace ThreeKingdoms.EditorTools
             NorthRow(env);
             MiddleRow(env);
             SouthRows(env);
+            Greenery(env);
             Outside(env);
             TownsfolkProps(env);
             EndSession();
@@ -74,8 +78,8 @@ namespace ThreeKingdoms.EditorTools
             var player = HD2DSampleBuilder.Character("Liu Bei", "LiuBei", PlayerStart, 3, isPlayer: true);
             player.transform.SetParent(people, true);
             // N13 / N14 (design §4): the two companions, standing where the player meets them.
-            HD2DSampleBuilder.Character("Guan Yu", "GuanYu", new Vector3(-11.6f, 0, -5.4f), 0, isPlayer: false).transform.SetParent(people, true);
-            HD2DSampleBuilder.Character("Zhang Fei", "ZhangFei", new Vector3(-9.6f, 0, -10.5f), 0, isPlayer: false).transform.SetParent(people, true);
+            HD2DSampleBuilder.Character("Guan Yu", "GuanYu", new Vector3(-14f, 0, -6.8f), 0, isPlayer: false).transform.SetParent(people, true);
+            HD2DSampleBuilder.Character("Zhang Fei", "ZhangFei", new Vector3(21f, 0, -9.6f), 0, isPlayer: false).transform.SetParent(people, true);
             Residents(people, player.transform);
             Townsfolk(people, player.transform);
 
@@ -107,12 +111,15 @@ namespace ThreeKingdoms.EditorTools
 
             // Review cameras for screenshots (-camera <name>): one per district.
             ReviewCamera("Review South Gate", new Vector3(0, 0, -46f));
-            ReviewCamera("Review Market", new Vector3(0, 0, -9f));
-            ReviewCamera("Review Tavern", new Vector3(-14, 0, -8f));
+            ReviewCamera("Review Market", new Vector3(0, 0, 2f));
+            ReviewCamera("Review Tavern", new Vector3(-21, 0, -10f));
             ReviewCamera("Review Main Axis", new Vector3(0, 0, -24f));
-            ReviewCamera("Review Office", new Vector3(0, 0, 11f));
-            ReviewCamera("Review Barracks", new Vector3(29, 0, 18f));
-            ReviewCamera("Review Houses", new Vector3(-26, 0, -16f));
+            ReviewCamera("Review Office", new Vector3(0, 0, 12f));
+            ReviewCamera("Review Barracks", new Vector3(31, 0, 20f));
+            ReviewCamera("Review Houses", new Vector3(-27, 0, -24f));
+            ReviewCamera("Review Casino", new Vector3(38.5f, 0, -10f));
+            ReviewCamera("Review Clinic", new Vector3(30, 0, -22f));
+            OverviewCamera();
             ReviewCamera("Review West Gate", new Vector3(-55, 0, 0f));
 
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ScenePath);
@@ -243,6 +250,7 @@ namespace ThreeKingdoms.EditorTools
         {
             ReadManifests();
             ConfigureTextures(TownDir);
+            if (Directory.Exists(MapDir)) ConfigureTextures(MapDir);
             ZhuojunTownBuilder.materials.Clear();
             materialDir = materials;
             Directory.CreateDirectory(materialDir);
@@ -292,13 +300,13 @@ namespace ThreeKingdoms.EditorTools
         }
 
         static Texture2D Tex(string key) =>
-            AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png")
-            ?? throw new FileNotFoundException("Missing town texture " + key);
+            AssetDatabase.LoadAssetAtPath<Texture2D>($"{MapDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png")
+            ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png") ?? throw new FileNotFoundException("Missing town texture " + key);
 
         // Null when a not-yet-delivered texture is missing (art still with Codex).
         static Texture2D Tex(string key, bool optional) =>
-            AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png")
-            ?? (optional ? null : throw new FileNotFoundException("Missing town texture " + key));
+            AssetDatabase.LoadAssetAtPath<Texture2D>($"{MapDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png")
+            ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png") ?? (optional ? null : throw new FileNotFoundException("Missing town texture " + key));
 
         static Material Mat(string key, bool clip = false, bool twoSided = false, string emissionMask = null, Color? glow = null)
         {
@@ -443,19 +451,25 @@ namespace ThreeKingdoms.EditorTools
             var g = Group(env, "Ground");
             Patch(g, "Grass outside", "ground_grass", -110f, 90f, -80f, 80f, -0.01f);
             Patch(g, "Town earth", "ground_packed_earth", -46f, 46f, -34f, 34f, 0f);
-            Patch(g, "Main axis paving", "ground_street_stone", -3f, 3f, -34f, 14f, 0.004f);
-            Patch(g, "Market paving", "ground_street_stone", -9f, 9f, -14f, -2f, 0.006f);
-            Patch(g, "Office forecourt bricks", "ground_square_brick", -9.8f, 9.8f, 14f, 22f, 0.004f);
+            Patch(g, "Main axis paving", "ground_street_stone", -3f, 3f, -34f, -9f, 0.004f);
+            Patch(g, "Market paving", "ground_street_stone", -10f, 10f, -9f, 14.5f, 0.006f);
+            // Grass inside the street blocks; the earth between them reads as the ring roads of the concept map.
+            Patch(g, "Grass block NW", "ground_grass", -39f, -11f, 3f, 11f, 0.003f);
+            Patch(g, "Grass block NE", "ground_grass", 11f, 23f, 2f, 11f, 0.003f);
+            Patch(g, "Grass block E", "ground_grass", 31f, 43f, -17f, -11f, 0.003f);
+            Patch(g, "Grass block SW", "ground_grass", -45f, -40f, -22f, -14f, 0.003f);
+            Patch(g, "Grass behind the granaries", "ground_grass", -45f, -13f, 24.5f, 34f, 0.003f);
+            Patch(g, "Grass by the barracks", "ground_grass", 12.5f, 17.5f, 17f, 34f, 0.003f);
             Patch(g, "Road to the south gate", "ground_packed_earth", -3.5f, 3.5f, -80f, -38f, 0.002f);
             Patch(g, "Lane to the west gate", "ground_packed_earth", -80f, -50f, -2f, 2f, 0.002f);
             Patch(g, "Earth edge at the road", "ground_earth_to_grass", -9f, 9f, -46f, -38f, 0.001f);
             Patch(g, "Peach grove petals", "ground_petals", -78f, -55f, -14f, 14f, 0.001f);
-            Patch(g, "Vegetable plot", "ground_vegetable_plot", -44f, -38f, -32f, -27f, 0.003f);
+            Patch(g, "Vegetable plot", "ground_vegetable_plot", -45.5f, -41.5f, -32f, -27.5f, 0.004f);
             // Curb and drain along both sides of the main axis.
             foreach (float x in new[] { -3.15f, 3.15f })
             {
-                var size = new Vector2(0.6f, 20f);
-                Quad(g, "Drain", new Vector3(x, 0.008f, -24f), new Vector3(90f, 0, 0), size, Mat("ground_transition"), Repeat("ground_transition", size), castShadows: false);
+                var size = new Vector2(0.6f, 25f);
+                Quad(g, "Drain", new Vector3(x, 0.008f, -21.5f), new Vector3(90f, 0, 0), size, Mat("ground_transition"), Repeat("ground_transition", size), castShadows: false);
             }
             var floor = new GameObject("Ground collider").AddComponent<BoxCollider>();
             floor.transform.SetParent(g, false);
@@ -638,181 +652,208 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // ---------- districts ----------
+        // Layout follows the user's concept map (2026-10-23, production/levels/zhuojun/layout.md): 13 buildings, all
+        // fronts facing south; only the commandery stands on a 2.1 m platform. Landmark doors keep 6 m of open ground,
+        // neighbouring gables 4 m apart, everything 3 m off the city wall.
+
+        const float Terrace = 2.1f;   // commandery platform top (six 0.35 m steps)
 
         static void NorthRow(Transform env)
         {
             var row = Group(env, "North row");
-            // 08 Granary (west).
-            Building(row, "08 Granary", new Vector3(-30f, 0, 14f), 0f, "granary_front", "granary_side", null);
-            Building(row, "House 北 W1", new Vector3(-40f, 0, 14f), 0f, "house_front", "house_side", "house_back");
-            Building(row, "House 北 W2", new Vector3(-20f, 0, 14f), 0f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(row, "House 北 E1", new Vector3(14f, 0, 14f), 0f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
+            // 08 Two stilted granaries, north-west.
+            Building(row, "08 Granary W", new Vector3(-37f, 0, 19f), 0f, "granary_front", "granary_side", null);
+            Building(row, "08 Granary E", new Vector3(-27f, 0, 19f), 0f, "granary_front", "granary_side", null);
             var gp = Group(row, "Granary props");
-            Prop(gp, "prop_sacks_pile", -25.2f, 13.0f, solid: true);
-            Prop(gp, "prop_grain_sacks", -34.4f, 13.2f);
-            Prop(gp, "prop_grain_measure", -26.5f, 12.4f);
-            Prop(gp, "prop_carry_pole", -33.0f, 11.6f);
-            Prop(gp, "prop_handcart", -22.5f, 11.8f, solid: true);
+            Prop(gp, "prop_sacks_pile", -32f, 18.2f, solid: true);
+            Prop(gp, "prop_grain_sacks", -41f, 18.6f);
+            Prop(gp, "prop_grain_measure", -28.5f, 18.0f);
+            Prop(gp, "prop_carry_pole", -35.5f, 17.6f);
+            Prop(gp, "prop_handcart", -21.5f, 17.4f, solid: true);
+            // A low wattle fence closes the dead ground behind the granaries, hidden from the camera.
+            Strip(gp, "Granary back fence", "fence_wattle", new Vector3(-44f, 0, 24.5f), new Vector3(-22f, 0, 24.5f), Metres("fence_wattle").y);
 
-            // 01 Commandery office: courtyard wall with the gate, square-brick forecourt, hall at the back.
+            // 01 Commandery office: a 2.1 m stone platform (x -12..12, z 17.5..33.5) reached by six steps in line
+            // with the main axis, walled on three sides, the hall at the back.
             var office = Group(row, "01 Commandery office");
+            Solid(office, new Vector3(0, Terrace / 2f, 25.5f), new Vector3(24f, Terrace, 16f));
+            var topSize = new Vector2(24f, 16f);
+            Quad(office, "Platform top", new Vector3(0, Terrace + 0.004f, 25.5f), new Vector3(90f, 0, 0), topSize, Mat("ground_square_brick"), Repeat("ground_square_brick", topSize), castShadows: false);
+            void Edge(string name, Vector3 at, float yaw, float length)
+            {
+                for (int k = 0; k < 2; k++)
+                {
+                    var size = new Vector2(length, Terrace / 2f);
+                    Quad(office, name, at + new Vector3(0, Terrace / 4f + k * Terrace / 2f, 0), new Vector3(0, yaw, 0), size, Mat("platform_edge"), new Vector2(length / Metres("platform_edge").x, 1f));
+                }
+            }
+            Edge("Platform face W", new Vector3(-7.5f, 0, 17.49f), 0f, 9f);
+            Edge("Platform face E", new Vector3(7.5f, 0, 17.49f), 0f, 9f);
+            Edge("Platform side W", new Vector3(-12.01f, 0, 25.5f), 90f, 16f);
+            Edge("Platform side E", new Vector3(12.01f, 0, 25.5f), -90f, 16f);
+            Stairs(office, "Platform steps", new Vector3(0, 0, 17.5f), 6f, 6, 0.35f, 0.5f, 0.05f);
             float wallH = Metres("courtyard_wall").y;
-            Strip(office, "Courtyard wall W", "courtyard_wall", new Vector3(-10f, 0, 14f), new Vector3(-3f, 0, 14f), wallH, capKey: "courtyard_wall_cap");
-            Strip(office, "Courtyard wall E", "courtyard_wall", new Vector3(3f, 0, 14f), new Vector3(10f, 0, 14f), wallH, capKey: "courtyard_wall_cap");
-            Strip(office, "Courtyard wall side W", "courtyard_wall", new Vector3(-10f, 0, 14f), new Vector3(-10f, 0, 30f), wallH, capKey: "courtyard_wall_cap");
-            Strip(office, "Courtyard wall side E", "courtyard_wall", new Vector3(10f, 0, 14f), new Vector3(10f, 0, 30f), wallH, capKey: "courtyard_wall_cap");
-            var gate = Building(office, "Office gate", new Vector3(0, 0, 13f), 0f, "yamen_gate_front", "yamen_gate_side", null, collide: false);
-            foreach (int s in new[] { -1, 1 }) Solid(gate, new Vector3(s * 2.1f, 2.25f, 2f), new Vector3(1.8f, 4.5f, 4f));
-            EaveSign(gate, "plaque_yamen", "yamen_gate_front", "yamen_gate_side");
-            // Two low stone steps before the office gate, where the castle steward stands to be seen from the street
-            // (user 2026-10-22).
-            Stairs(office, "Gate steps", new Vector3(0, 0, 13f), 4.4f, 2, 0.175f, 0.4f, 0.6f);
-            var hall = Building(office, "Office hall", new Vector3(0, 0, 22f), 0f, "yamen_hall_front", "yamen_hall_side", null);
+            // A breast-high parapet along the front edge (the step opening stays open) and courtyard walls at the sides.
+            Strip(office, "Parapet W", "courtyard_wall", new Vector3(-12f, Terrace, 17.8f), new Vector3(-3.5f, Terrace, 17.8f), 1.0f, capKey: "courtyard_wall_cap");
+            Strip(office, "Parapet E", "courtyard_wall", new Vector3(3.5f, Terrace, 17.8f), new Vector3(12f, Terrace, 17.8f), 1.0f, capKey: "courtyard_wall_cap");
+            Strip(office, "Courtyard wall side W", "courtyard_wall", new Vector3(-11.8f, Terrace, 17.8f), new Vector3(-11.8f, Terrace, 33.5f), wallH, capKey: "courtyard_wall_cap");
+            Strip(office, "Courtyard wall side E", "courtyard_wall", new Vector3(11.8f, Terrace, 17.8f), new Vector3(11.8f, Terrace, 33.5f), wallH, capKey: "courtyard_wall_cap");
+            var hall = Building(office, "Office hall", new Vector3(0, Terrace, 24f), 0f, "yamen_hall_front", "yamen_hall_side", null);
+            EaveSign(hall, "plaque_yamen", "yamen_hall_front", "yamen_hall_side");
             var op = Group(office, "Office props");
-            Prop(op, "prop_banner_han", -4.2f, 12.2f);
-            Prop(op, "prop_banner_han", 4.2f, 12.2f);
-            // Real stone steps and a landing before the hall door (user 2026-10-20: the flat step sprite let the party
-            // walk through it). Door sill about 1.05 m: three 0.35 m risers, under the controller's 0.4 m step offset.
-            Stairs(op, "Hall steps", new Vector3(0, 0, 22f), 3.2f, 3, 0.35f, 0.4f, 0.7f);   // 0.4 m treads = the 12 px tread texture
-            Prop(op, "prop_lantern_red", -2.6f, 21.6f, y: 2.6f);
-            Prop(op, "prop_lantern_red", 2.6f, 21.6f, y: 2.6f);
-            Prop(op, "prop_potted_tree", -7.5f, 18f, key: "prop_tree_elm", scale: 0.7f);
+            Prop(op, "prop_banner_han", -3.8f, 23.2f, y: Terrace);
+            Prop(op, "prop_banner_han", 3.8f, 23.2f, y: Terrace);
+            Prop(op, "prop_banner_han", -4.2f, 14.0f);
+            Prop(op, "prop_banner_han", 4.2f, 14.0f);
+            // Door sill 1.05 m above the platform: three 0.35 m risers, under the controller's 0.4 m step offset.
+            Stairs(op, "Hall steps", new Vector3(0, Terrace, 24f), 3.2f, 3, 0.35f, 0.4f, 0.7f);
+            Prop(op, "prop_lantern_red", -2.6f, 23.6f, y: Terrace + 2.6f);
+            Prop(op, "prop_lantern_red", 2.6f, 23.6f, y: Terrace + 2.6f);
+            Prop(op, "prop_potted_tree", -9f, 20.5f, y: Terrace, key: "prop_tree_elm", scale: 0.7f);
+            Prop(op, "prop_potted_tree", 9f, 20.5f, y: Terrace, key: "prop_tree_elm", scale: 0.7f);
 
-            // 07 Barracks: palisade compound with a drill yard.
+            // 07 Barracks: palisade compound with a drill yard, gate x 26..32 on the north road.
             var camp = Group(row, "07 Barracks");
             float stakeH = Metres("palisade_stakes").y;
-            Strip(camp, "Palisade front W", "palisade_stakes", new Vector3(18f, 0, 14f), new Vector3(26f, 0, 14f), stakeH);
-            Strip(camp, "Palisade front E", "palisade_stakes", new Vector3(32f, 0, 14f), new Vector3(42f, 0, 14f), stakeH);
-            Strip(camp, "Palisade W", "palisade_stakes", new Vector3(18f, 0, 14f), new Vector3(18f, 0, 32f), stakeH);
-            Strip(camp, "Palisade E", "palisade_stakes", new Vector3(42f, 0, 14f), new Vector3(42f, 0, 32f), stakeH);
-            Strip(camp, "Palisade back", "palisade_stakes", new Vector3(18f, 0, 32f), new Vector3(42f, 0, 32f), stakeH);
+            Strip(camp, "Palisade front W", "palisade_stakes", new Vector3(18f, 0, 16f), new Vector3(26f, 0, 16f), stakeH);
+            Strip(camp, "Palisade front E", "palisade_stakes", new Vector3(32f, 0, 16f), new Vector3(44f, 0, 16f), stakeH);
+            Strip(camp, "Palisade W", "palisade_stakes", new Vector3(18f, 0, 16f), new Vector3(18f, 0, 33.5f), stakeH);
+            Strip(camp, "Palisade E", "palisade_stakes", new Vector3(44f, 0, 16f), new Vector3(44f, 0, 33.5f), stakeH);
+            Strip(camp, "Palisade back", "palisade_stakes", new Vector3(18f, 0, 33.5f), new Vector3(44f, 0, 33.5f), stakeH);
             var cp = Group(camp, "Barracks props");
-            Prop(cp, "prop_army_tent", 23.5f, 27f, solid: true);
-            Prop(cp, "prop_army_tent", 36f, 27.5f, solid: true);
-            Prop(cp, "prop_archery_target", 38.5f, 19f);
-            Prop(cp, "prop_archery_target", 40f, 21f);
-            Prop(cp, "prop_training_dummy", 21f, 19f);
-            Prop(cp, "prop_training_dummy", 22.4f, 18f);
-            Prop(cp, "prop_weapon_rack", 26.8f, 22f, solid: true);
-            Prop(cp, "prop_war_drum", 30.5f, 25f);
-            Prop(cp, "prop_banner_han", 29f, 13.2f);
-            Prop(cp, "prop_banner_han", 25.4f, 25.6f);
-            Prop(cp, "prop_brazier", 31.8f, 16f, glowMask: "prop_brazier_glow_mask");
-            Prop(cp, "prop_hay_pile", 40f, 29.5f);
-            PointLight(cp, "Brazier light", new Vector3(31.8f, 1.0f, 15.8f), new Color(1f, 0.5f, 0.2f), 2.5f, 5f);
+            Prop(cp, "prop_army_tent", 23.5f, 29f, solid: true);
+            Prop(cp, "prop_army_tent", 36f, 29.5f, solid: true);
+            Prop(cp, "prop_archery_target", 38.5f, 21f);
+            Prop(cp, "prop_archery_target", 40f, 23f);
+            Prop(cp, "prop_training_dummy", 21f, 21f);
+            Prop(cp, "prop_training_dummy", 22.4f, 20f);
+            Prop(cp, "prop_weapon_rack", 26.8f, 24f, solid: true);
+            Prop(cp, "prop_war_drum", 30.5f, 27f);
+            Prop(cp, "prop_banner_han", 24.6f, 15.2f);
+            Prop(cp, "prop_banner_han", 33.4f, 15.2f);
+            Prop(cp, "prop_banner_han", 25.4f, 27.6f);
+            Prop(cp, "prop_brazier", 31.8f, 18f, glowMask: "prop_brazier_glow_mask");
+            Prop(cp, "prop_hay_pile", 40f, 31.5f);
+            PointLight(cp, "Brazier light", new Vector3(31.8f, 1.0f, 17.8f), new Color(1f, 0.5f, 0.2f), 2.5f, 5f);
         }
 
         static void MiddleRow(Transform env)
         {
             var row = Group(env, "Middle row");
-            // 03 Tavern, west of the market (x -18..-10, z -4..2).
-            var tavern = Building(row, "03 Tavern", new Vector3(-14f, 0, -4f), 0f, "tavern_front", "tavern_side", "tavern_back");
+            // 03 Tavern, west (x -25..-17, z -4..2).
+            var tavern = Building(row, "03 Tavern", new Vector3(-21f, 0, -4f), 0f, "tavern_front", "tavern_side", "tavern_back");
             EaveSign(tavern, "plaque_tavern", "tavern_front", "tavern_side");
             var tp = Group(row, "Tavern props");
-            Prop(tp, "prop_wine_jars", -16.6f, -4.7f);
-            Prop(tp, "prop_barrel", -10.9f, -4.6f);
-            Prop(tp, "prop_banner_wine", -9.7f, -4.3f, y: 0.9f);
-            Prop(tp, "prop_lantern_red", -18.4f, -4.4f, y: 2.2f);
-            PointLight(tp, "Lantern light", new Vector3(-18.4f, 2.5f, -4.6f), new Color(1f, 0.55f, 0.3f), 2f, 5f);
+            Prop(tp, "prop_wine_jars", -23.6f, -4.7f);
+            Prop(tp, "prop_barrel", -17.9f, -4.6f);
+            Prop(tp, "prop_banner_wine", -16.7f, -4.3f, y: 0.9f);
+            Prop(tp, "prop_lantern_red", -25.4f, -4.4f, y: 2.2f);
+            PointLight(tp, "Lantern light", new Vector3(-25.4f, 2.5f, -4.6f), new Color(1f, 0.55f, 0.3f), 2f, 5f);
 
-            // 02 Weapons & equipment shop (the corner smithy), east of the market (x 11..17, z -4..1).
-            var smithy = Building(row, "02 Weapons shop", new Vector3(14f, 0, -4f), 0f, "smithy_front", "smithy_side", null, glowMask: "smithy_forge_glow_mask");
+            // 02 Weapons & equipment shop, east (x 24..30, z -4..1), straight above the clinic.
+            var smithy = Building(row, "02 Weapons shop", new Vector3(27f, 0, -4f), 0f, "smithy_front", "smithy_side", null, glowMask: "smithy_forge_glow_mask");
             EaveSign(smithy, "plaque_smithy", "smithy_front", "smithy_side");
             var sp = Group(row, "Shop props");
-            Prop(sp, "prop_anvil", 13.4f, -4.9f);
-            Prop(sp, "prop_weapon_rack", 17.6f, -4.5f, solid: true);
-            Prop(sp, "prop_bow_rack", 10.2f, -4.6f, solid: true);
-            Prop(sp, "prop_armor_stand", 9.4f, -4.4f);
-            Prop(sp, "prop_banner_iron", 18.4f, -4.1f, y: 0.9f);
-            Prop(sp, "prop_water_vat", 11.4f, -5.2f);
-            PointLight(sp, "Forge light", new Vector3(15.3f, 1.0f, -4.4f), new Color(1f, 0.48f, 0.18f), 3.5f, 4.5f);
+            Prop(sp, "prop_anvil", 26.4f, -4.9f);
+            Prop(sp, "prop_weapon_rack", 30.6f, -4.5f, solid: true);
+            Prop(sp, "prop_bow_rack", 23.2f, -4.6f, solid: true);
+            Prop(sp, "prop_armor_stand", 22.4f, -4.4f);
+            Prop(sp, "prop_banner_iron", 31.4f, -4.1f, y: 0.9f);
+            Prop(sp, "prop_water_vat", 24.4f, -5.2f);
+            PointLight(sp, "Forge light", new Vector3(28.3f, 1.0f, -4.4f), new Color(1f, 0.48f, 0.18f), 3.5f, 4.5f);
 
-            // 13 Gambling house east of the smithy (user 2026-10-22), fronting 中街. Stand-in house textures until the
-            // Codex casino delivery (art/zhuojun-casino); its ruffian and dealer stand at the door.
+            // 13 Gambling house east of the smithy (user 2026-10-22; not on the concept map, kept on the same street line).
             bool casinoArt = Tex("casino_front", optional: true);
-            var casino = Building(row, "13 Gambling house", new Vector3(31f, 0, -4f), 0f,
+            var casino = Building(row, "13 Gambling house", new Vector3(38.5f, 0, -4f), 0f,
                 casinoArt ? "casino_front" : "house_b_front", casinoArt ? "casino_side" : "house_b_side", casinoArt ? "casino_back" : "house_b_back");
             if (casinoArt && Tex("plaque_casino", optional: true)) EaveSign(casino, "plaque_casino", "casino_front", "casino_side");
             var cg = Group(row, "Gambling house props");
-            Prop(cg, "prop_lantern_red", 27.4f, -4.4f, y: 2.2f);
-            Prop(cg, "prop_lantern_red", 34.6f, -4.4f, y: 2.2f);
-            if (Tex("prop_banner_casino", optional: true)) Prop(cg, "prop_banner_casino", 35.6f, -4.3f, y: 0.9f);
-            if (Tex("prop_dice_table", optional: true)) Prop(cg, "prop_dice_table", 31f, -6.2f, solid: true);
-            PointLight(cg, "Gambling house light", new Vector3(31f, 2.4f, -4.8f), new Color(1f, 0.55f, 0.3f), 1.8f, 5f);
+            Prop(cg, "prop_lantern_red", 34.9f, -4.4f, y: 2.2f);
+            Prop(cg, "prop_lantern_red", 42.1f, -4.4f, y: 2.2f);
+            if (Tex("prop_banner_casino", optional: true)) Prop(cg, "prop_banner_casino", 43.6f, -4.3f, y: 0.9f);
+            if (Tex("prop_dice_table", optional: true)) Prop(cg, "prop_dice_table", 35.4f, -6.0f, solid: true);
+            PointLight(cg, "Gambling house light", new Vector3(38.5f, 2.4f, -4.8f), new Color(1f, 0.55f, 0.3f), 1.8f, 5f);
 
-            // 05 Market & notice board on the square (x -9..9, z -14..-2), stalls either side of the main axis.
+            // 05 Market: a paved square from the cross street up to the commandery steps (x -10..10, z -9..14.5), stalls
+            // either side of the main axis, the notice board on its south edge.
             var mk = Group(row, "05 Market");
-            Prop(mk, "prop_stall_cloth", -5.6f, -5.2f, solid: true);
-            Prop(mk, "prop_stall", -5.6f, -10.8f, solid: true);
-            Prop(mk, "prop_stall_bamboo", 5.6f, -5.2f, solid: true);
-            Prop(mk, "prop_stall_grain", 5.6f, -10.8f, solid: true);
-            Prop(mk, "prop_notice_board", 3.6f, -2.6f, solid: true);
-            Prop(mk, "prop_cloth_bolts", -3.8f, -6.4f);
-            Prop(mk, "prop_grain_sacks", 7.8f, -12.4f);
-            Prop(mk, "prop_basket_stack", 3.6f, -12.2f);
-            Prop(mk, "prop_produce_basket", -3.6f, -12.2f);
-            Prop(mk, "prop_carry_pole", 8.0f, -7.0f);
-            Prop(mk, "prop_wine_jars", -7.8f, -12.6f);
-
-            // Street frontage around the market: houses facing 中街 (fronts at z -4), backs facing 北横街 (fronts at z 8),
-            // and gable ends along the main axis.
-            var st = Group(row, "Middle streets");
-            Building(st, "House 中街 W1", new Vector3(-24f, 0, -4f), 0f, "house_front", "house_side", "house_back");
-            Building(st, "House 中街 E1", new Vector3(22f, 0, -4f), 0f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(st, "House 北横街 W1", new Vector3(-14f, 0, 8f), 180f, "house_front", "house_side", "house_back");
-            Building(st, "House 北横街 W2", new Vector3(-24f, 0, 8f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
-            Building(st, "House 北横街 E1", new Vector3(14f, 0, 8f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
-            Building(st, "House axis NW", new Vector3(-4f, 0, 5f), -90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(st, "House axis NE", new Vector3(4f, 0, 5f), 90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
+            Prop(mk, "prop_stall_cloth", -6.5f, 7f, solid: true);
+            Prop(mk, "prop_stall", -6.5f, 0f, solid: true);
+            Prop(mk, "prop_stall_bamboo", 6.5f, 7f, solid: true);
+            Prop(mk, "prop_stall_grain", 6.5f, 0f, solid: true);
+            Prop(mk, "prop_notice_board", 4.6f, -6.0f, solid: true);
+            Prop(mk, "prop_cloth_bolts", -4.2f, -1.2f);
+            Prop(mk, "prop_grain_sacks", 8.4f, -1.4f);
+            Prop(mk, "prop_basket_stack", 4.4f, 5.6f);
+            Prop(mk, "prop_produce_basket", -4.4f, 5.6f);
+            Prop(mk, "prop_carry_pole", 8.6f, 4.0f);
+            Prop(mk, "prop_wine_jars", -8.6f, -1.6f);
         }
 
         static void SouthRows(Transform env)
         {
             var row = Group(env, "South rows");
-            // South row: fronts face 南回环街 at z -20 (5 m deep: z -20..-15; 4 m: -20..-16).
-            Building(row, "04 House A", new Vector3(-34f, 0, -20f), 0f, "house_front", "house_side", "house_back");
-            Building(row, "04 House B", new Vector3(-25f, 0, -20f), 0f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
-            Building(row, "04 House C", new Vector3(-16f, 0, -20f), 0f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(row, "06 Clinic", new Vector3(16f, 0, -20f), 0f, "clinic_front", "clinic_side", null);
-            Building(row, "09 Post station", new Vector3(26f, 0, -20f), 0f, "post_station_front", "post_station_side", null);
-            Building(row, "09 Stable", new Vector3(36f, 0, -20f), 0f, "stable_front", "stable_side", null, roofKey: "thatch");
-            // Backs facing 中街 (fronts at z -11, 4 m deep: z -15..-11).
-            // Nothing directly across 中街 from the tavern and the smithy, nor before the barracks gate: landmark doors
-            // keep open ground in front (user 2026-10-22).
-            Building(row, "House 中街 S E2", new Vector3(24f, 0, -11f), 180f, "clinic_front", "clinic_side", "house_c_back");
-            // The south band of houses by the gate and the axis gable ends were taken out (user 2026-10-22): the way
-            // from the south gate to the market stays open and the landmark buildings are easy to pick out.
+            // 04 Four houses in the south-west, tiled like the style reference (one thatched, as on the map).
+            Building(row, "04 House A", new Vector3(-36f, 0, -30f), 0f, "house_front", "house_side", "house_back");
+            Building(row, "04 House B", new Vector3(-31f, 0, -19f), 0f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
+            Building(row, "04 House C", new Vector3(-21.5f, 0, -20f), 0f, "house_c_front", "house_c_side", "house_c_back");
+            Building(row, "04 House D", new Vector3(-16f, 0, -30f), 0f, "house_c_front", "house_c_side", "house_c_back");
+            // 06 Clinic below the weapons shop; 09 stable and post station as one yard against the south wall.
+            Building(row, "06 Clinic", new Vector3(27f, 0, -18.5f), 0f, "clinic_front", "clinic_side", null);
+            Building(row, "09 Stable", new Vector3(28.5f, 0, -29.5f), 0f, "stable_front", "stable_side", null, roofKey: "thatch");
+            Building(row, "09 Post station", new Vector3(38f, 0, -29.5f), 0f, "post_station_front", "post_station_side", null);
 
             var hp = Group(row, "House props");
-            Prop(hp, "prop_mat_loom", -36.2f, -21.3f);
-            Prop(hp, "prop_straw_mats", -31.8f, -20.6f);
-            Prop(hp, "prop_firewood", -29.2f, -20.6f);
-            Prop(hp, "prop_chopping_block", -21.4f, -21.2f);
-            Prop(hp, "prop_laundry_line", -25f, -23.2f);
-            Prop(hp, "prop_flowers", -33f, -21f);
+            Prop(hp, "prop_mat_loom", -38.6f, -31f);
+            Prop(hp, "prop_straw_mats", -33.8f, -31f);
+            Prop(hp, "prop_firewood", -29.5f, -19.6f);
+            Prop(hp, "prop_chopping_block", -19.5f, -21f);
+            Prop(hp, "prop_laundry_line", -30.5f, -22.6f);
+            Prop(hp, "prop_flowers", -34.6f, -30.8f);
             float fenceH = Metres("fence_wattle").y;
-            Strip(hp, "Garden fence S", "fence_wattle", new Vector3(-44.5f, 0, -32.5f), new Vector3(-37.5f, 0, -32.5f), fenceH);
-            Strip(hp, "Garden fence E", "fence_wattle", new Vector3(-37.5f, 0, -32.5f), new Vector3(-37.5f, 0, -27f), fenceH);
+            Strip(hp, "Garden fence S", "fence_wattle", new Vector3(-45.5f, 0, -32.5f), new Vector3(-41.5f, 0, -32.5f), fenceH);
+            Strip(hp, "Garden fence E", "fence_wattle", new Vector3(-41.5f, 0, -32.5f), new Vector3(-41.5f, 0, -27.5f), fenceH);
 
-            // 11 Well yard between the south row and the market street (x -30..-18, z -15..-11).
+            // 11 Well yard south-west of the market, below the tavern.
             var wy = Group(row, "11 Well yard");
-            Prop(wy, "prop_well", -24f, -13.4f, solid: true);
-            Prop(wy, "prop_stone_bench", -21.2f, -14.2f, solid: true);
-            Prop(wy, "prop_tree_elm", -28.6f, -12.6f, solid: true);
-            Prop(wy, "prop_bush", -19.4f, -12.2f);
+            Prop(wy, "prop_well", -12.5f, -12.5f, solid: true);
+            Prop(wy, "prop_stone_bench", -10f, -12.2f, solid: true);
+            Prop(wy, "prop_tree_elm", -15.5f, -9.4f, solid: true);
+            Prop(wy, "prop_bush", -8.6f, -9.6f);
 
             var cl = Group(row, "Clinic props");
-            Prop(cl, "prop_herb_rack", 18.8f, -20.9f);
-            Prop(cl, "prop_herb_mortar", 13.4f, -20.6f);
-            Prop(cl, "prop_banner_medicine", 12.8f, -20.4f, y: 0.9f);
-            Prop(cl, "prop_potted_plant", 15.2f, -20.6f, key: "prop_flowers");
+            Prop(cl, "prop_herb_rack", 29.8f, -19.4f);
+            Prop(cl, "prop_herb_rack", 32f, -18.8f);
+            Prop(cl, "prop_herb_mortar", 24.4f, -19.1f);
+            Prop(cl, "prop_banner_medicine", 23.8f, -18.9f, y: 0.9f);
+            Prop(cl, "prop_potted_plant", 24.9f, -19.1f, key: "prop_flowers");
 
             var ps = Group(row, "Post station props");
-            Prop(ps, "prop_banner_post", 29.9f, -20.4f, y: 0.9f);
-            Prop(ps, "prop_hitching_post", 31.0f, -21.8f, solid: true);
-            Prop(ps, "prop_trough", 34.6f, -21.4f);
-            Prop(ps, "prop_hay_pile", 41.4f, -20.8f);
-            Prop(ps, "prop_ox_cart", 23.6f, -22.6f, solid: true);
+            Prop(ps, "prop_banner_post", 34.2f, -30.1f, y: 0.9f);
+            Prop(ps, "prop_hitching_post", 33.5f, -31.3f, solid: true);
+            Prop(ps, "prop_trough", 31.5f, -31.0f);
+            Prop(ps, "prop_hay_pile", 44f, -30.2f);
+            Prop(ps, "prop_ox_cart", 43.6f, -31.6f, solid: true);
+        }
+
+        // Trees and bushes inside the street blocks (the concept map's green), never in a landmark's open ground.
+        static void Greenery(Transform env)
+        {
+            var g = Group(env, "Greenery");
+            (string key, float x, float z, float s)[] trees =
+            {
+                ("prop_tree_elm", -36f, 7f, 1f), ("prop_tree_locust", -30f, 9.5f, 0.9f), ("prop_tree_elm", -14f, 7.5f, 0.9f),
+                ("prop_tree_locust", 14f, 6f, 1f), ("prop_tree_elm", 20f, 9f, 0.9f), ("prop_tree_locust", -16f, 26f, 0.9f),
+                ("prop_tree_elm", 15f, 27f, 0.9f), ("prop_tree_elm", 38f, -14f, 0.9f), ("prop_tree_locust", -43f, -18f, 0.9f),
+                ("prop_tree_elm", -43f, 8f, 0.8f), ("prop_tree_locust", 10f, -28f, 0.8f), ("prop_tree_elm", -9f, -27f, 0.8f),
+            };
+            foreach (var (key, x, z, s) in trees) Prop(g, key, x, z, scale: s, solid: true);
+            (float x, float z)[] bushes =
+            {
+                (-38f, 5f), (-27f, 4f), (-12.5f, 4.5f), (12.5f, 3.5f), (21.5f, 4f), (35f, -13f), (41f, -16f),
+                (-44f, -21f), (-41.5f, -15f), (13f, -26f), (-11f, -24f), (17f, 12f), (-17.5f, 12f),
+            };
+            foreach (var (x, z) in bushes) Prop(g, "prop_bush", x, z);
         }
 
         static void Outside(Transform env)
@@ -863,17 +904,17 @@ namespace ThreeKingdoms.EditorTools
             (string id, string name, Vector3 at, Vector3[] route)[] posts =
             {
                 ("N01", "N01 南门守卫", new Vector3(3.6f, 0, -32.5f), null),
-                ("N02", "N02 巡城兵", new Vector3(1.8f, 0, -27f), new[] { new Vector3(1.8f, 0, -27f), new Vector3(1.8f, 0, -17f) }),
-                ("N03", "N03 城主府掌士", new Vector3(-1.5f, 0.35f, 12.7f), null),   // on the office gate steps (user 2026-10-22)
-                ("N04", "N04 铁匠兼装备商", new Vector3(14f, 0, -5.4f), null),
-                ("N05", "N05 酒馆掌柜", new Vector3(-14f, 0, -5.2f), null),
-                ("N06", "N06 医者", new Vector3(16f, 0, -21.2f), null),
-                ("N07", "N07 驿卒", new Vector3(33f, 0, -21.6f), null),
-                ("N08", "N08 织席妇人", new Vector3(-35.4f, 0, -22f), null),
-                ("N09", "N09 街坊老者", new Vector3(-21.2f, 0, -13.2f), null),
-                ("N10", "N10 孩童", new Vector3(-26f, 0, -12.6f), new[] { new Vector3(-26f, 0, -12.6f), new Vector3(-24.2f, 0, -11f), new Vector3(-23.6f, 0, -14f) }),
-                ("N11", "N11 粮贩", new Vector3(5.6f, 0, -12.6f), null),
-                ("N12", "N12 运粮脚夫", new Vector3(-26f, 0, 11f), new[] { new Vector3(-26f, 0, 11f), new Vector3(-19f, 0, 10.5f) }),
+                ("N02", "N02 巡城兵", new Vector3(1.8f, 0, -26f), new[] { new Vector3(1.8f, 0, -26f), new Vector3(1.8f, 0, -12f) }),
+                ("N03", "N03 城主府掌士", new Vector3(-1.8f, Terrace, 18.2f), null),   // at the top of the commandery steps, seen from the square
+                ("N04", "N04 铁匠兼装备商", new Vector3(27f, 0, -5.4f), null),
+                ("N05", "N05 酒馆掌柜", new Vector3(-21f, 0, -5.2f), null),
+                ("N06", "N06 医者", new Vector3(27f, 0, -19.7f), null),
+                ("N07", "N07 驿卒", new Vector3(38f, 0, -30.7f), null),
+                ("N08", "N08 织席妇人", new Vector3(-37.4f, 0, -31.2f), null),
+                ("N09", "N09 街坊老者", new Vector3(-10f, 0, -11.2f), null),
+                ("N10", "N10 孩童", new Vector3(-14.5f, 0, -11.6f), new[] { new Vector3(-14.5f, 0, -11.6f), new Vector3(-12.5f, 0, -9.6f), new Vector3(-11f, 0, -14f) }),
+                ("N11", "N11 粮贩", new Vector3(6.5f, 0, -1.2f), null),
+                ("N12", "N12 运粮脚夫", new Vector3(-32f, 0, 17f), new[] { new Vector3(-32f, 0, 17f), new Vector3(-20f, 0, 16.5f) }),
             };
             foreach (var (id, name, at, route) in posts)
             {
@@ -894,12 +935,12 @@ namespace ThreeKingdoms.EditorTools
         {
             var g = Group(env, "Townsfolk props");
             void Opt(string key, float x, float z, bool solid = false) { if (Tex(key, optional: true)) Prop(g, key, x, z, solid: solid); }
-            Opt("prop_recruit_desk", 33.6f, 11.2f, solid: true);
-            Opt("prop_wash_basin", -27.2f, -22.5f);
-            Opt("prop_juggle_props", -7.8f, -9.2f);
+            Opt("prop_recruit_desk", 35.5f, 13.4f, solid: true);
+            Opt("prop_wash_basin", -33.2f, -20.7f);
+            Opt("prop_juggle_props", -7.2f, -6.4f);
             Opt("prop_beggar_bowl", -4.6f, -16.8f);
-            Opt("prop_bookstand", -14.2f, -22.3f);
-            Opt("prop_hoe_field", -41.2f, -31.2f);
+            Opt("prop_bookstand", -14.5f, -22.3f);
+            Opt("prop_hoe_field", -43.5f, -32.2f);
         }
 
         // The second batch of townsfolk (user 2026-10-22): soldiers drilling and an archer at the barracks, a recruiting
@@ -912,30 +953,30 @@ namespace ThreeKingdoms.EditorTools
             var g = Group(people, "Townsfolk");
             (string id, string name, Vector3 at, int frame, int[] poses, Vector3[] route)[] posts =
             {
-                ("N13", "N13 操练的兵卒 甲", new Vector3(28.6f, 0, 20.8f), 0, new[] { 5, 6, 7 }, null),
-                ("N13", "N13 操练的兵卒 乙", new Vector3(30.4f, 0, 20.8f), 0, new[] { 5, 6, 7 }, null),
-                ("N13", "N13 操练的兵卒 丙", new Vector3(32.2f, 0, 20.8f), 0, new[] { 5, 6, 7 }, null),
-                ("N15", "N15 教头", new Vector3(30.4f, 0, 23.4f), 0, new[] { 0, 6, 8 }, null),
-                ("N14", "N14 练射的弓手", new Vector3(35.2f, 0, 19.4f), 2, new[] { 2, 5, 6, 7 }, null),
-                ("N28", "N28 征兵小吏", new Vector3(33.6f, 0, 12.0f), 0, new[] { 0, 6 }, null),
-                ("N29", "N29 应募青年 甲", new Vector3(35.0f, 0, 11.8f), 1, null, null),
-                ("N29", "N29 应募青年 乙", new Vector3(36.4f, 0, 11.8f), 1, null, null),
-                ("N29", "N29 应募青年 丙", new Vector3(37.8f, 0, 11.8f), 1, null, null),
-                ("N16", "N16 看榜的汉子", new Vector3(2.0f, 0, -3.4f), 3, new[] { 3, 3, 8 }, null),
-                ("N17", "N17 看榜的妇人", new Vector3(5.2f, 0, -3.4f), 3, new[] { 3, 3, 6 }, null),
-                ("N18", "N18 杂耍艺人", new Vector3(-7.8f, 0, -8.4f), 0, new[] { 5, 6, 7, 6 }, null),
-                ("N19", "N19 卖艺汉子", new Vector3(7.8f, 0, -8.4f), 0, new[] { 5, 6, 7, 8 }, null),
-                ("N20", "N20 卖饼小贩", new Vector3(-6.8f, 0, -12.4f), 0, new[] { 0, 6 }, null),
-                ("N21", "N21 洗衣妇人", new Vector3(-27.2f, 0, -21.8f), 0, new[] { 5, 6, 7 }, null),
-                ("N22", "N22 顽童", new Vector3(-31f, 0, -23.4f), 0, null, new[] { new Vector3(-31f, 0, -23.4f), new Vector3(-28.6f, 0, -24.6f), new Vector3(-30.2f, 0, -25.4f) }),
-                ("N23", "N23 小姑娘", new Vector3(-20f, 0, -22.6f), 0, null, new[] { new Vector3(-20f, 0, -22.6f), new Vector3(-17.6f, 0, -23.8f) }),
-                ("N24", "N24 读书人", new Vector3(-14.2f, 0, -21.6f), 0, new[] { 0, 5 }, null),
-                ("N25", "N25 闲聊的汉子", new Vector3(-23.3f, 0, -24.6f), 2, new[] { 2, 6, 2, 7 }, null),
-                ("N26", "N26 闲聊的妇人", new Vector3(-21.9f, 0, -24.6f), 1, new[] { 1, 1, 6 }, null),
-                ("N27", "N27 农夫", new Vector3(-42.5f, 0, -29f), 0, null, new[] { new Vector3(-42.5f, 0, -29f), new Vector3(-39.8f, 0, -30.6f) }),
+                ("N13", "N13 操练的兵卒 甲", new Vector3(28.6f, 0, 22.8f), 0, new[] { 5, 6, 7 }, null),
+                ("N13", "N13 操练的兵卒 乙", new Vector3(30.4f, 0, 22.8f), 0, new[] { 5, 6, 7 }, null),
+                ("N13", "N13 操练的兵卒 丙", new Vector3(32.2f, 0, 22.8f), 0, new[] { 5, 6, 7 }, null),
+                ("N15", "N15 教头", new Vector3(30.4f, 0, 25.4f), 0, new[] { 0, 6, 8 }, null),
+                ("N14", "N14 练射的弓手", new Vector3(35.2f, 0, 21.4f), 2, new[] { 2, 5, 6, 7 }, null),
+                ("N28", "N28 征兵小吏", new Vector3(35.5f, 0, 14.3f), 0, new[] { 0, 6 }, null),
+                ("N29", "N29 应募青年 甲", new Vector3(37.0f, 0, 13.9f), 1, null, null),
+                ("N29", "N29 应募青年 乙", new Vector3(38.4f, 0, 13.9f), 1, null, null),
+                ("N29", "N29 应募青年 丙", new Vector3(39.8f, 0, 13.9f), 1, null, null),
+                ("N16", "N16 看榜的汉子", new Vector3(3.0f, 0, -6.8f), 3, new[] { 3, 3, 8 }, null),
+                ("N17", "N17 看榜的妇人", new Vector3(6.2f, 0, -6.8f), 3, new[] { 3, 3, 6 }, null),
+                ("N18", "N18 杂耍艺人", new Vector3(-7.2f, 0, -5.6f), 0, new[] { 5, 6, 7, 6 }, null),
+                ("N19", "N19 卖艺汉子", new Vector3(8.6f, 0, 11.6f), 0, new[] { 5, 6, 7, 8 }, null),
+                ("N20", "N20 卖饼小贩", new Vector3(-6.8f, 0, -8.0f), 0, new[] { 0, 6 }, null),
+                ("N21", "N21 洗衣妇人", new Vector3(-33.2f, 0, -20.0f), 0, new[] { 5, 6, 7 }, null),
+                ("N22", "N22 顽童", new Vector3(-37f, 0, -23f), 0, null, new[] { new Vector3(-37f, 0, -23f), new Vector3(-34.6f, 0, -22.2f), new Vector3(-36.4f, 0, -21.4f) }),
+                ("N23", "N23 小姑娘", new Vector3(-20.5f, 0, -22.8f), 0, null, new[] { new Vector3(-20.5f, 0, -22.8f), new Vector3(-17.5f, 0, -23.6f) }),
+                ("N24", "N24 读书人", new Vector3(-14.5f, 0, -21.6f), 0, new[] { 0, 5 }, null),
+                ("N25", "N25 闲聊的汉子", new Vector3(-23.0f, 0, -23.0f), 2, new[] { 2, 6, 2, 7 }, null),
+                ("N26", "N26 闲聊的妇人", new Vector3(-21.6f, 0, -23.0f), 1, new[] { 1, 1, 6 }, null),
+                ("N27", "N27 农夫", new Vector3(-44.5f, 0, -31f), 0, null, new[] { new Vector3(-44.5f, 0, -31f), new Vector3(-42.2f, 0, -28.8f) }),
                 ("N30", "N30 乞丐", new Vector3(-4.6f, 0, -16.2f), 0, new[] { 0, 5 }, null),
-                ("N31", "N31 地痞", new Vector3(28.8f, 0, -5.2f), 0, new[] { 0, 6 }, null),
-                ("N32", "N32 赌坊庄家", new Vector3(33.2f, 0, -5.2f), 0, new[] { 5, 6, 7 }, null),
+                ("N31", "N31 地痞", new Vector3(40.2f, 0, -5.2f), 0, new[] { 0, 6 }, null),
+                ("N32", "N32 赌坊庄家", new Vector3(35.4f, 0, -5.2f), 0, new[] { 5, 6, 7 }, null),
             };
             for (int i = 0; i < posts.Length; i++)
             {
@@ -968,6 +1009,16 @@ namespace ThreeKingdoms.EditorTools
             l.transform.localPosition = at;
             l.type = LightType.Point; l.color = color; l.intensity = intensity; l.range = range;
             l.shadows = LightShadows.None;
+        }
+
+        // The whole town from high up, framed like the concept map, for side-by-side comparison (-camera "Review Overview").
+        static void OverviewCamera()
+        {
+            var cam = new GameObject("Review Overview").AddComponent<Camera>();
+            cam.enabled = false;
+            cam.fieldOfView = 30f;
+            cam.farClipPlane = 400f;
+            cam.transform.SetPositionAndRotation(new Vector3(0f, 118f, -128f), Quaternion.Euler(40f, 0f, 0f));
         }
 
         // A disabled camera preset (-camera) plus a "Spot …" marker for -teleport, which moves the player there so the

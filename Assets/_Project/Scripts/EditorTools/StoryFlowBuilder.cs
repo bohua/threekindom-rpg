@@ -225,8 +225,8 @@ namespace ThreeKingdoms.EditorTools
             c.NoticeBoard = GameObject.Find("05 Market")?.transform.Find("prop_notice_board");
             if (!c.NoticeBoard) throw new System.InvalidOperationException("Town has no notice board on the market square");
             c.NoticeSpot = Spot("Read the notice", c.NoticeBoard.position + new Vector3(0, 0, -1.4f));
-            c.ZhangFeiEntrance = new[] { new Vector3(17f, 0, -8f), new Vector3(2.2f, 0, -8f), new Vector3(2.2f, 0, -5.4f) };
-            c.TavernDoor = Spot("Tavern door", new Vector3(-14f, 0, -4.4f));
+            c.ZhangFeiEntrance = new[] { new Vector3(21f, 0, -9.6f), new Vector3(4.0f, 0, -9.6f), new Vector3(3.2f, 0, -8.8f) };
+            c.TavernDoor = Spot("Tavern door", new Vector3(-21f, 0, -4.4f));
             c.GroveSpots = new[]
             {
                 Spot("Grove Liu Bei", new Vector3(-66f, 0, -1.2f)),

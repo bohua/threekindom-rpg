@@ -107,7 +107,15 @@ namespace ThreeKingdoms.App
             if (follow) follow.enabled = false;
             main.transform.SetPositionAndRotation(preset.transform.position, preset.transform.rotation);
             var presetCamera = preset.GetComponent<Camera>();
-            if (presetCamera) main.fieldOfView = presetCamera.fieldOfView;
+            if (presetCamera) { main.fieldOfView = presetCamera.fieldOfView; main.farClipPlane = Mathf.Max(main.farClipPlane, presetCamera.farClipPlane); }
+            // A whole-town overview (compared side by side with the concept map) skips the haze and the tilt-shift blur.
+            if (PresetName.Contains("Overview"))
+            {
+                RenderSettings.fog = false;
+                foreach (var volume in FindObjectsByType<UnityEngine.Rendering.Volume>(FindObjectsSortMode.None))
+                    foreach (var c in volume.profile.components)
+                        if (c.GetType().Name == "DepthOfField") c.active = false;
+            }
         }
     }
 
