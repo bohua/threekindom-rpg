@@ -121,9 +121,10 @@ namespace Prototype.BingshuTactics
                 forcedHover = null;
             }
             // 用虚拟手柄走一遍：十字键下两次转到“移动”，A 确认，十字键移动光标，A 移动
-            pendingSkill = null; forcedHover = null; ringSel = 0; mode = Mode.Menu;
+            pendingSkill = null; forcedHover = null; ringSel = DefaultRing(); mode = Mode.Menu;
+            Debug.Log($"POC_RING_DEFAULT start={RingItems[ringSel]} attackUsable={RingUsable("攻击")}");
             var vpad = InputSystem.AddDevice<Gamepad>(); vpad.MakeCurrent();
-            yield return Tap(vpad, GamepadButton.DpadDown); yield return Tap(vpad, GamepadButton.DpadDown);
+            for (int k = 0; k < 6 && RingItems[ringSel] != "移动"; k++) yield return Tap(vpad, GamepadButton.DpadDown);
             yield return new WaitForSeconds(0.4f); yield return Shot("4c-pad-ring");
             bool ringOk = RingItems[ringSel] == "移动";
             yield return Tap(vpad, GamepadButton.South);
@@ -134,6 +135,7 @@ namespace Prototype.BingshuTactics
             yield return Tap(vpad, GamepadButton.South);
             float tw = Time.time; while (mode != Mode.Menu && Time.time - tw < 3f) yield return null;
             Debug.Log($"POC_PAD_RESULT ring={ringOk} target={targetOk} moved={active.Pos != startPos} cursor={cursor} mode={mode}");
+            Debug.Log($"POC_RING_AFTER_MOVE default={RingItems[ringSel]} moveUsable={RingUsable("移动")} stratUsable={RingUsable("策略")}");
             if (mode != Mode.Menu)
             {
                 mode = Mode.Menu; ChooseRing(2);
@@ -494,7 +496,7 @@ namespace Prototype.BingshuTactics
             switch (mode)
             {
                 case Mode.Menu:
-                    if (pulse.y != 0) ringSel = (ringSel - pulse.y + RingItems.Length) % RingItems.Length;
+                    if (pulse.y != 0) ringSel = NextUsable(ringSel, -pulse.y);   // 转轮跳过不可用的选项
                     if (ok && RingUsable(RingItems[ringSel])) ChooseRing(ringSel);
                     return;
                 case Mode.SkillList:
@@ -694,7 +696,7 @@ namespace Prototype.BingshuTactics
                 }
                 else if (u.Team == Team.Player)
                 {
-                    actionDone = false; ringSel = 0; cursor = u.Pos; mode = Mode.Menu;
+                    actionDone = false; moved = false; ringSel = DefaultRing(); cursor = u.Pos; mode = Mode.Menu;
                     Log($"{u.Name} 的回合");
                     while (!actionDone) yield return null;
                 }
@@ -929,7 +931,7 @@ namespace Prototype.BingshuTactics
         {
             mode = Mode.Busy; Log($"{active.Name} 移动");
             yield return Walk(active, path);
-            moved = true; reach = null; ringSel = 0; mode = Mode.Menu;
+            moved = true; reach = null; ringSel = DefaultRing(); mode = Mode.Menu;
             Log($"{active.Name} 已移动：可攻击、用武技、防御或待机（策略须原地咏唱）");
         }
 
@@ -1121,7 +1123,7 @@ namespace Prototype.BingshuTactics
                 var st = new GUIStyle(center) { fontSize = sel ? 18 : 15 };
                 if (!usable) st.normal.textColor = new Color(0.55f, 0.55f, 0.55f);
                 var r = new Rect(p.x - 34, p.y - 34, 68, 68);
-                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { ringSel = i; if (usable) ChooseRing(i); }   // 鼠标单击直接触发
+                if (usable && GUI.Button(r, GUIContent.none, GUIStyle.none)) { ringSel = i; ChooseRing(i); }   // 鼠标单击直接触发；置灰的选项点不中
                 GUI.Label(r, RingItems[i], st);
                 if (sel)
                 {
@@ -1132,14 +1134,34 @@ namespace Prototype.BingshuTactics
             GUI.Label(new Rect(c.x - 140, c.y + 120, 280, 20), "↑↓／摇杆 转动 · 回车／A 确定 · 鼠标单击直接选", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
         }
 
+        // 选项不成立就置灰、不能选：没有可攻击的敌人、气势或策力不够、已移动过（策略须原地咏唱）
         bool RingUsable(string item) => item switch
         {
             "攻击" => AttackableTargets(active, active.AtkRange).Count > 0,
-            "武技" => active.Crafts.Count > 0,
-            "策略" => !moved && StrategiesOf(active).Count > 0,   // 策略须原地咏唱
+            "武技" => active.Crafts.Any(c => active.Cp >= c.Cost),
+            "策略" => !moved && StrategiesOf(active).Any(l => active.Ep >= l.Def.Cost),
             "移动" => !moved,
             _ => true
         };
+
+        // 默认选项（用户 2026-10-23）：轮到行动时，攻击范围内有敌人选“攻击”，否则选“移动”；移动后有敌人选“攻击”，否则选“待机”
+        int DefaultRing()
+        {
+            int attack = System.Array.IndexOf(RingItems, "攻击");
+            if (RingUsable("攻击")) return attack;
+            return System.Array.IndexOf(RingItems, moved ? "待机" : "移动");
+        }
+
+        // 从 from 朝 step 方向找下一个可用选项
+        int NextUsable(int from, int step)
+        {
+            for (int k = 1; k <= RingItems.Length; k++)
+            {
+                int i = ((from + step * k) % RingItems.Length + RingItems.Length) % RingItems.Length;
+                if (RingUsable(RingItems[i])) return i;
+            }
+            return from;
+        }
 
         int listSel;
 
