@@ -24,6 +24,7 @@ namespace Prototype.BingshuTactics
             public Anim Anim; public float AnimT, WalkPhase, BreathPhase;
             public float FlashT; public Vector3 Knock; public float KnockT;
             public Vector3 Step; public float StepHold; public float Jump; public float DeadT;
+            public Texture BaseTex, DuelTex; public int DuelCol = -1;   // 单挑动作帧：10 列×2 行（左下、左上）
         }
 
         readonly Dictionary<Unit, Rig> rigs = new Dictionary<Unit, Rig>();
@@ -64,6 +65,8 @@ namespace Prototype.BingshuTactics
             var sr = sh.GetComponent<MeshRenderer>(); sr.sharedMaterial = shadowMat; sr.shadowCastingMode = ShadowCastingMode.Off; sr.receiveShadows = false;
             rig.Shadow = sh.transform;
             rig.Dir = u.Team == Team.Player ? new Vector3(0, 0, 1) : new Vector3(0, 0, -1);
+            rig.BaseTex = tex;
+            rig.DuelTex = u.Key switch { "LiuBei" => LiuBeiDuel, "GuanYu" => GuanYuDuel, "ZhangFei" => ZhangFeiDuel, "LuBu" => LuBuDuel, _ => null };
             rigs[u] = rig;
         }
 
@@ -146,7 +149,18 @@ namespace Prototype.BingshuTactics
                 rig.Shadow.localScale = new Vector3(T * 0.7f * shrink, T * 0.42f * shrink, 1);
 
                 rig.R.GetPropertyBlock(block);
-                block.SetVector("_BaseMap_ST", FrameST(rig));
+                if (rig.DuelCol >= 0 && rig.DuelTex)
+                {
+                    int idx = DirIndex(rig); bool upRow = idx >= 3 && idx <= 5; bool flip = idx >= 5;
+                    float w = 0.1f, h = 0.5f, row = upRow ? 1 : 0;
+                    block.SetTexture("_BaseMap", rig.DuelTex);
+                    block.SetVector("_BaseMap_ST", flip ? new Vector4(-w, h, (rig.DuelCol + 1) * w, 1f - (row + 1) * h) : new Vector4(w, h, rig.DuelCol * w, 1f - (row + 1) * h));
+                }
+                else
+                {
+                    if (rig.BaseTex) block.SetTexture("_BaseMap", rig.BaseTex);
+                    block.SetVector("_BaseMap_ST", FrameST(rig));
+                }
                 // 受击闪白：把底色推亮
                 var tint = rig.Tint;
                 if (rig.FlashT > 0) { rig.FlashT -= Time.deltaTime; tint = new Color(4f, 4f, 4f, 1f); }

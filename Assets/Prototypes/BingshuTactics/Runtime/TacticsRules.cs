@@ -280,7 +280,7 @@ namespace Prototype.BingshuTactics
     public sealed class Unit
     {
         public string Name, Key; public Team Team; public Troop Troop; public Element Element; public School School;
-        public int MaxHp, Hp, Atk, Def, Mat, Mdef, Speed, Move, AtkRange, MaxEp, Ep, Cp, Int;
+        public int MaxHp, Hp, Atk, Def, Mat, Mdef, Speed, Move, AtkRange, MaxEp, Ep, Cp, Int, Wu;
         public Vector2Int Pos; public float At; public bool Defending;
         public List<Status> Statuses = new List<Status>();
         public List<SkillDef> Crafts = new List<SkillDef>();
@@ -476,6 +476,36 @@ namespace Prototype.BingshuTactics
                 default: return LineArea(caster, DirTo(caster, target), s.Length, s.Width);
             }
         }
+    }
+
+    // 单挑（用户 2026-10-23）：三回合，每回合双方出“攻击／架挡／绝招”。架挡克攻击，绝招破架挡，攻击打断绝招。
+    public enum DuelMove { Attack, Guard, Special }
+
+    public static class DuelRules
+    {
+        public const int Hp = 100, Rounds = 3, SpecialCp = 30;
+
+        static int Base(DuelMove m) => m == DuelMove.Special ? 38 : 24;
+        static int Scale(int dmg, int wu) => Mathf.Max(1, Mathf.RoundToInt(dmg * wu / 95f));
+
+        // 返回 (a 受到的伤害, b 受到的伤害, 结果键)
+        public static (int toA, int toB, string key) Resolve(DuelMove a, DuelMove b, int wuA, int wuB)
+        {
+            if (a == b)
+                return a == DuelMove.Guard ? (0, 0, "相持")
+                     : a == DuelMove.Attack ? (Scale(Base(b), wuB), Scale(Base(a), wuA), "互搏")
+                     : (Scale(Base(b) * 4 / 5, wuB), Scale(Base(a) * 4 / 5, wuA), "对拼");
+            if (Beats(a, b)) return (0, Scale(Base(a) + (a == DuelMove.Guard ? -12 : a == DuelMove.Attack ? 6 : 0), wuA), Key(a));
+            var (toB, toA, k) = Resolve(b, a, wuB, wuA);
+            return (toA, toB, k);
+        }
+
+        public static bool Beats(DuelMove a, DuelMove b) =>
+            (a == DuelMove.Guard && b == DuelMove.Attack) || (a == DuelMove.Special && b == DuelMove.Guard) || (a == DuelMove.Attack && b == DuelMove.Special);
+
+        static string Key(DuelMove winner) => winner == DuelMove.Guard ? "挡下" : winner == DuelMove.Special ? "破防" : "打断";
+
+        public static string Name(DuelMove m) => m == DuelMove.Attack ? "攻击" : m == DuelMove.Guard ? "架挡" : "绝招";
     }
 
     // AT 行动条：数值小者先动；动作越重，推后越多；速度越快，推后越少。

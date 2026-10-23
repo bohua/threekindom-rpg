@@ -43,6 +43,15 @@ namespace Prototype.BingshuTactics.EditorTools
             var guan8 = ImportArt("char_guanyu_idlewalk_8dir_96.png", game.LiuBeiMat); if (guan8) game.GuanYuMat = guan8;
             var zhang8 = ImportArt("char_zhangfei_idlewalk_8dir_96.png", game.LiuBeiMat); if (zhang8) game.ZhangFeiMat = zhang8;
             game.LuBuBust = ImportTexture("char_lubu_bust.png", false);
+            // 单挑立绘与动作帧
+            game.LiuBeiPortrait = Load<Texture2D>($"{Busts}/Full/LIU_BEI_MAIN_POSE.png");
+            game.GuanYuPortrait = Load<Texture2D>($"{Busts}/Full/GUAN_YU_MAIN_POSE.png");
+            game.ZhangFeiPortrait = Load<Texture2D>($"{Busts}/Full/ZHANG_FEI_MAIN_POSE.png");
+            game.LuBuPortrait = ImportTexture("char_lubu_mainpose.png", false);
+            game.LiuBeiDuel = ImportDuel("char_liubei_duel_96.png");
+            game.GuanYuDuel = ImportDuel("char_guanyu_duel_96.png");
+            game.ZhangFeiDuel = ImportDuel("char_zhangfei_duel_96.png");
+            game.LuBuDuel = ImportDuel("char_lubu_duel_96.png");
             game.LiuBeiBust = Load<Texture2D>($"{Busts}/LiuBei_Bust.png");
             game.GuanYuBust = Load<Texture2D>($"{Busts}/GuanYu_Bust.png");
             game.ZhangFeiBust = Load<Texture2D>($"{Busts}/ZhangFei_Bust.png");
@@ -116,6 +125,23 @@ namespace Prototype.BingshuTactics.EditorTools
             imp.textureCompression = pixel ? TextureImporterCompression.Uncompressed : TextureImporterCompression.CompressedHQ;
             imp.wrapMode = TextureWrapMode.Clamp;
             imp.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(dst);
+        }
+
+        // 单挑动作帧（Codex：art/battle-poc-duel-v3），没有就返回 null
+        static Texture2D ImportDuel(string file)
+        {
+            var src = Path.Combine(ArtSource.Replace("battle-poc-8dir-v3", "battle-poc-duel-v3"), file);
+            if (!File.Exists(src)) return null;
+            Directory.CreateDirectory(ArtDir);
+            var dst = $"{ArtDir}/{file}";
+            File.Copy(src, dst, true);
+            AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceUpdate);
+            var imp = (TextureImporter)AssetImporter.GetAtPath(dst);
+            imp.mipmapEnabled = false; imp.alphaIsTransparency = true; imp.npotScale = TextureImporterNPOTScale.None;
+            imp.filterMode = FilterMode.Point; imp.textureCompression = TextureImporterCompression.Uncompressed; imp.wrapMode = TextureWrapMode.Clamp;
+            imp.SaveAndReimport();
+            Debug.Log("BINGSHU_DUEL_IMPORTED " + file);
             return AssetDatabase.LoadAssetAtPath<Texture2D>(dst);
         }
 

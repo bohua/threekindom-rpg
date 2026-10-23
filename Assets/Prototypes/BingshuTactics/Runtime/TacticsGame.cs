@@ -29,7 +29,7 @@ namespace Prototype.BingshuTactics
         readonly Dictionary<Unit, int> turnCount = new Dictionary<Unit, int>();
         const float RefH = 720f;
 
-        enum Mode { Deploy, Circuit, Idle, Menu, SkillList, TargetMove, TargetAttack, TargetSkill, Busy, Victory, Defeat }
+        enum Mode { Deploy, Circuit, Idle, Menu, SkillList, TargetMove, TargetAttack, TargetSkill, Busy, Victory, Defeat, Duel }
         Mode mode = Mode.Deploy;
 
         Grid grid;
@@ -146,14 +146,15 @@ namespace Prototype.BingshuTactics
             while (mode != Mode.Victory && mode != Mode.Defeat && Time.time - t0 < 240f)
             {
                 if (units.Any(u => u.Alive && u.PendingCast != null && u.Team == Team.Enemy) && !shotCast) { shotCast = true; yield return Shot("7-enemy-casting"); }
+                if (mode == Mode.Duel && duel != null && duel.Choosing && shotDuel < 2) { shotDuel++; yield return Shot("10-duel-" + shotDuel); }
                 if (stage == 1 && !shotFace && units.Any(u => u.Alive && u.Team == Team.Player && u.Pos == new Vector2Int(7, 10))) { shotFace = true; yield return new WaitForSeconds(0.8f); yield return Shot("9-face-lubu"); }
                 yield return null;
             }
             yield return new WaitForSeconds(0.5f); yield return Shot("8-end");
-            Debug.Log($"POC_AUTOPLAY_RESULT {mode} turns={turns} time={Time.time - t0:0}s");
+            Debug.Log($"POC_AUTOPLAY_RESULT {mode} turns={turns} time={Time.time - t0:0}s duels={string.Join(",", dueled)} trio={trioDone}");
             Application.Quit();
         }
-        bool shotCast, shotFace; Vector2Int? forcedHover;
+        bool shotCast, shotFace; int shotDuel; Vector2Int? forcedHover;
 
         static IEnumerator Tap(Gamepad pad, GamepadButton b)
         {
@@ -240,20 +241,20 @@ namespace Prototype.BingshuTactics
         void BuildUnits()
         {
             var liu = NewUnit("刘备", "LiuBei", Team.Player, Troop.Archer, School.Ru, 160, 50, 35, 56, 35, 8, 3, 3, 60, new Vector2Int(1, 5));
-            liu.Int = 81;
+            liu.Int = 81; liu.Wu = 68;
             liu.Crafts.Add(Craft("整队", "单体友军回复30%兵力", Effect.Heal, Area.Single, 3, 0, 0.30f, 20));
             liu.Crafts.Add(Craft("火矢", "单体计策1.3倍（射程4）", Effect.Damage, Area.Single, 4, 0, 1.3f, 25));
             liu.Slots[0] = L("《管子·度地》"); liu.Slots[1] = L("《三略》"); liu.Slots[2] = L("《司马法》"); liu.Slots[3] = L("《墨子·备水》");
 
             var guan = NewUnit("关羽", "GuanYu", Team.Player, Troop.Cavalry, School.Bing, 170, 64, 36, 47, 29, 10, 5, 1, 40, new Vector2Int(2, 7));
-            guan.Int = 63;
+            guan.Int = 63; guan.Wu = 96;
             guan.Crafts.Add(Craft("突击", "近战单体物理1.5倍", Effect.Damage, Area.Single, -1, 0, 1.5f, 25, might: true));
             guan.Crafts.Add(Craft("破阵", "近战单体1.1倍，物防-20% 2回合", Effect.Debuff, Area.Single, -1, 0, 1.1f, 30, might: true, turns: 2, amount: 0.2f));
             guan.Slots[0] = L("《孙子·火攻》"); guan.Slots[3] = L("《六韬·火战》"); guan.Slots[4] = L("《火攻》残卷");
             guan.Slots[1] = L("《尉缭子》"); guan.Slots[2] = L("《管子·牧民》");
 
             var zhang = NewUnit("张飞", "ZhangFei", Team.Player, Troop.Infantry, School.Fa, 190, 66, 40, 40, 24, 6, 3, 1, 30, new Vector2Int(2, 3));
-            zhang.Int = 48;
+            zhang.Int = 48; zhang.Wu = 100;
             zhang.Crafts.Add(Craft("横扫", "自身周围2格内敌军物理0.65倍", Effect.Damage, Area.SelfCircle, 0, 2, 0.65f, 30, might: true));
             zhang.Crafts.Add(Craft("威慑", "自身周围3格内敌军物攻-20% 2回合", Effect.Debuff, Area.SelfCircle, 0, 3, 0f, 25, turns: 2, amount: 0.2f));
             zhang.Slots[0] = L("《孙膑兵法·八阵》"); zhang.Slots[1] = L("《墨子·备城门》"); zhang.Slots[5] = L("《六韬·龙韬》"); zhang.Slots[2] = L("《吴子》");
@@ -263,7 +264,7 @@ namespace Prototype.BingshuTactics
                 liu.Pos = new Vector2Int(5, 0); guan.Pos = new Vector2Int(7, 1); zhang.Pos = new Vector2Int(9, 0);
                 foreach (var pu in new[] { liu, guan, zhang }) views[pu].position = Tile(pu.Pos);
                 var lubu = NewUnit("吕布", "LuBu", Team.Enemy, Troop.Cavalry, School.Bing, 700, 92, 45, 30, 22, 11, 0, 1, 0, new Vector2Int(7, 11), 1.25f, new Color(1f, 0.78f, 0.78f));
-                lubu.Int = 26;
+                lubu.Int = 26; lubu.Wu = 100;
                 lubu.Crafts.Add(Craft("天下无双", "方天画戟直劈：正前方2格物理1.3倍", Effect.Damage, Area.Line, 1, 0, 1.3f, 0, might: true));
                 lubu.Crafts[0].Length = 2;
                 foreach (var ap in new[] { new Vector2Int(4, 12), new Vector2Int(10, 12) })
@@ -399,7 +400,11 @@ namespace Prototype.BingshuTactics
         {
             UpdateCameraYaw();
             var rot = Quaternion.Euler(45f, yaw, 0f);
-            cam.transform.SetPositionAndRotation(lookAt - rot * Vector3.forward * (38f * Mathf.Max(W, H) / 12f), rot);
+            // 单挑时镜头拉近到两人之间
+            camZoom = Mathf.MoveTowards(camZoom, camFocus.HasValue ? 1f : 0f, Time.deltaTime * 2.5f);
+            if (camFocus.HasValue) duelLook = camFocus.Value;
+            var look = Vector3.Lerp(lookAt, duelLook, Mathf.SmoothStep(0, 1, camZoom));
+            cam.transform.SetPositionAndRotation(look - rot * Vector3.forward * (38f * Mathf.Max(W, H) / 12f * (1f - 0.55f * Mathf.SmoothStep(0, 1, camZoom))), rot);
 
             UpdateRigs();
             UpdateScenery();
@@ -424,7 +429,7 @@ namespace Prototype.BingshuTactics
             RebuildOverlay();
         }
 
-        Vector2 mouseScreen, lastMouse;
+        Vector2 mouseScreen, lastMouse; Vector3 duelLook;
 
         // ---------------- 键盘与手柄（Input System） ----------------
         // 方向：方向键／WASD／十字键／左摇杆；确认：回车／空格／Z／手柄 A；取消：Esc／退格／X／手柄 B
@@ -482,6 +487,7 @@ namespace Prototype.BingshuTactics
             if (pulse != Vector2Int.zero || ok || cancel) padMode = true;
 
             if (mode == Mode.Circuit) { CircuitInput(pulse, ok, cancel, lb, rb); return; }
+            if (mode == Mode.Duel) { DuelInput(pulse, ok); return; }
             if (lb) yawTarget -= 90f;
             if (rb) yawTarget += 90f;
 
@@ -697,6 +703,7 @@ namespace Prototype.BingshuTactics
                     mode = Mode.Busy;
                     yield return EnemyTurn(u);
                 }
+                if (u.Team == Team.Player) yield return MaybeDuel(u);
                 u.TickStatuses();
                 mode = Mode.Busy; turns++;
 
@@ -981,12 +988,13 @@ namespace Prototype.BingshuTactics
 
             DrawWorldLabels();
             DrawAtBar();
-            DrawParty(sw);
+            if (mode != Mode.Duel) DrawParty(sw);
             DrawTopBar(sw);
 
             if (mode == Mode.Deploy) DrawDeploy(sw);
             if (mode == Mode.Circuit) DrawCircuit(sw);
             if (mode == Mode.Menu) DrawRing();
+            if (mode == Mode.Duel) DrawDuel(sw);
             if (mode == Mode.SkillList) DrawSkillList();
             if (mode == Mode.TargetSkill || mode == Mode.TargetAttack || mode == Mode.TargetMove) DrawHoverInfo(sw);
             if (mode == Mode.Idle || mode == Mode.Busy || mode == Mode.Deploy) DrawHoverInfo(sw);

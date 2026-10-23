@@ -245,4 +245,22 @@ public class TacticsRulesTests
             Assert.AreEqual(1, Mathf.Abs(up.x) + Mathf.Abs(up.y));
         }
     }
+
+    [Test]
+    public void Duel_RockPaperScissors_AndSymmetric()
+    {
+        Assert.IsTrue(DuelRules.Beats(DuelMove.Guard, DuelMove.Attack));
+        Assert.IsTrue(DuelRules.Beats(DuelMove.Special, DuelMove.Guard));
+        Assert.IsTrue(DuelRules.Beats(DuelMove.Attack, DuelMove.Special));
+        var (toA, toB, key) = DuelRules.Resolve(DuelMove.Guard, DuelMove.Attack, 95, 95);
+        Assert.AreEqual(0, toA); Assert.Greater(toB, 0); Assert.AreEqual("挡下", key);
+        (toA, toB, key) = DuelRules.Resolve(DuelMove.Attack, DuelMove.Guard, 95, 95);
+        Assert.Greater(toA, 0); Assert.AreEqual(0, toB); Assert.AreEqual("挡下", key);
+        (toA, toB, key) = DuelRules.Resolve(DuelMove.Guard, DuelMove.Guard, 95, 95);
+        Assert.AreEqual(0, toA + toB); Assert.AreEqual("相持", key);
+        // 破防比互搏更痛；武力高的一方打得更重
+        Assert.Greater(DuelRules.Resolve(DuelMove.Special, DuelMove.Guard, 95, 95).toB, DuelRules.Resolve(DuelMove.Attack, DuelMove.Attack, 95, 95).toB);
+        var trade = DuelRules.Resolve(DuelMove.Attack, DuelMove.Attack, 68, 100);
+        Assert.Greater(trade.toA, trade.toB);
+    }
 }
