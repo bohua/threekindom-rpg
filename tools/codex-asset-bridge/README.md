@@ -47,7 +47,8 @@ claude mcp add --scope user codex-assets -- node "$env:LOCALAPPDATA\codex-asset-
 ```powershell
 node scripts/cli.mjs generate examples/tao-qian-portrait.json            # 只出提示词
 node scripts/cli.mjs generate <spec.json> --authorize "用户原话 时间"      # 允许生图
-node scripts/cli.mjs status <id> | list | wait <id> | cancel <id>
+node scripts/cli.mjs status <id> | list | wait <id> | preview <id> | approve <id> | cancel <id>
+node scripts/cli.mjs revise <id> "修改意见" [--authorize "用户原话 时间"]
 node scripts/mcp-smoke.mjs        # 启动 MCP 服务器并列出工具
 node scripts/probe-tools.mjs      # 让 Codex 列出它的工具（不生图）
 ```
