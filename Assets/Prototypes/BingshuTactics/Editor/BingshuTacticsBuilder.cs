@@ -37,6 +37,12 @@ namespace Prototype.BingshuTactics.EditorTools
             game.LuBuMat = Load<Material>($"{Chars}/NpcGateGuard/NpcGateGuard_Pixel.mat");
             game.XiliangMat = Load<Material>($"{Chars}/NpcPatrolSoldier/NpcPatrolSoldier_Pixel.mat");
             game.WallArcherMat = Load<Material>($"{Chars}/NpcArcherSoldier/NpcArcherSoldier_Pixel.mat");
+            // Codex 八向像素图（battle-poc-8dir-v3，V3 低像素风格）：有就换上，没有就沿用旧四方向图
+            var liu8 = ImportArt("char_liubei_idlewalk_8dir_96.png", game.LiuBeiMat); if (liu8) game.LiuBeiMat = liu8;
+            var lubu8 = ImportArt("char_lubu_idlewalk_8dir_96.png", game.LiuBeiMat); if (lubu8) game.LuBuMat = lubu8;
+            var guan8 = ImportArt("char_guanyu_idlewalk_8dir_96.png", game.LiuBeiMat); if (guan8) game.GuanYuMat = guan8;
+            var zhang8 = ImportArt("char_zhangfei_idlewalk_8dir_96.png", game.LiuBeiMat); if (zhang8) game.ZhangFeiMat = zhang8;
+            game.LuBuBust = ImportTexture("char_lubu_bust.png", false);
             game.LiuBeiBust = Load<Texture2D>($"{Busts}/LiuBei_Bust.png");
             game.GuanYuBust = Load<Texture2D>($"{Busts}/GuanYu_Bust.png");
             game.ZhangFeiBust = Load<Texture2D>($"{Busts}/ZhangFei_Bust.png");
@@ -85,6 +91,41 @@ namespace Prototype.BingshuTactics.EditorTools
             Object.DestroyImmediate(tex);
             Debug.Log("BINGSHU_PALETTE " + seen.Count);
             return seen.ToArray();
+        }
+
+        const string ArtSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-poc-8dir-v3";
+        const string ArtDir = Dir + "/Art";
+
+        static Texture2D ImportTexture(string file, bool pixel)
+        {
+            // 可用环境变量 BINGSHU_ART_SOURCE 指向未批准的暂存修订，只用于本地预看
+            var srcDir = System.Environment.GetEnvironmentVariable("BINGSHU_ART_SOURCE");
+            var src = Path.Combine(string.IsNullOrEmpty(srcDir) ? ArtSource : srcDir, file);
+            if (!File.Exists(src)) return null;
+            Directory.CreateDirectory(ArtDir);
+            var dst = $"{ArtDir}/{file}";
+            File.Copy(src, dst, true);
+            AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceUpdate);
+            var imp = (TextureImporter)AssetImporter.GetAtPath(dst);
+            imp.textureType = TextureImporterType.Default;
+            imp.mipmapEnabled = false; imp.alphaIsTransparency = true; imp.npotScale = TextureImporterNPOTScale.None;
+            imp.filterMode = pixel ? FilterMode.Point : FilterMode.Bilinear;
+            imp.textureCompression = pixel ? TextureImporterCompression.Uncompressed : TextureImporterCompression.CompressedHQ;
+            imp.wrapMode = TextureWrapMode.Clamp;
+            imp.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(dst);
+        }
+
+        // 用旧像素材质（Lit、alpha clip）做模板，换上新图
+        static Material ImportArt(string file, Material template)
+        {
+            var tex = ImportTexture(file, true);
+            if (!tex) return null;
+            var m = new Material(template) { name = Path.GetFileNameWithoutExtension(file) };
+            m.SetTexture("_BaseMap", tex); m.mainTexture = tex;
+            m.SetVector("_BaseMap_ST", new Vector4(1, 1, 0, 0));
+            Debug.Log("BINGSHU_ART_IMPORTED " + file + " " + tex.width + "x" + tex.height);
+            return SaveMat(m.name, m);
         }
 
         static T Load<T>(string path) where T : Object

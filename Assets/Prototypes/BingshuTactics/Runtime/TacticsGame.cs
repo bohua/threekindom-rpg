@@ -16,7 +16,7 @@ namespace Prototype.BingshuTactics
     {
         // 由编辑器构建脚本填入（只引用美术资源，不引用正式代码）
         public Material LiuBeiMat, GuanYuMat, ZhangFeiMat, RebelMat, ZhangJiaoMat, LuBuMat, XiliangMat, WallArcherMat;
-        public Texture2D LiuBeiBust, GuanYuBust, ZhangFeiBust;
+        public Texture2D LiuBeiBust, GuanYuBust, ZhangFeiBust, LuBuBust;
         public Material GroundMat, OverlayMat, RockMat;
 
         const float T = 1.2f;                       // 每格边长（米）
@@ -1049,7 +1049,7 @@ namespace Prototype.BingshuTactics
             }
         }
 
-        Texture2D Bust(Unit u) => u.Key switch { "LiuBei" => LiuBeiBust, "GuanYu" => GuanYuBust, "ZhangFei" => ZhangFeiBust, _ => null };
+        Texture2D Bust(Unit u) => u.Key switch { "LiuBei" => LiuBeiBust, "GuanYu" => GuanYuBust, "ZhangFei" => ZhangFeiBust, "LuBu" => LuBuBust, _ => null };
 
         void DrawAtBar()
         {

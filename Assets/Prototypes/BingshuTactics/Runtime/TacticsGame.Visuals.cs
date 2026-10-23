@@ -37,16 +37,21 @@ namespace Prototype.BingshuTactics
         {
             var tex = r.sharedMaterial.GetTexture("_BaseMap");
             var rig = new Rig { Root = root, Quad = r.transform, R = r, Tint = tint ?? Color.white, BreathPhase = Random.value * 10f };
-            if (tex && tex.width == 640 && tex.height == 320) { rig.Kind = SheetKind.Eight; rig.Cols = 10; rig.Rows = 5; }
+            if (tex && tex.width * 5 == tex.height * 10 && tex.width >= 640) { rig.Kind = SheetKind.Eight; rig.Cols = 10; rig.Rows = 5; }
             else
             {
                 int cols = tex ? Mathf.Max(1, tex.width / tex.height) : 9;
                 rig.Kind = cols >= 25 ? SheetKind.Legacy25 : SheetKind.Legacy9; rig.Cols = cols; rig.Rows = 1;
             }
-            // 新八向图 64 像素帧、pivot (32,58)；旧图 48 像素帧、脚底贴底
-            float px = rig.Kind == SheetKind.Eight ? 64f : 48f;
-            rig.Size = px / 30f * scale;
-            rig.PivotLift = rig.Kind == SheetKind.Eight ? -6f / 30f * scale : 0f;
+            // 八向图：V3 低像素 96 像素帧（pivot (48,93)，用户 2026-10-23 定稿），或早先规划的 64 像素帧（pivot (32,58)）；旧图 48 像素帧、脚底贴底
+            float px = rig.Kind == SheetKind.Eight ? tex.width / 10f : 48f;
+            // V3 人物身高约 50–64 像素，按每米 36 像素显示，约 1.6 米，和一格 1.2 米相称
+            float ppu = rig.Kind == SheetKind.Eight && px >= 96f ? 36f : 30f;
+            float footRows = rig.Kind == SheetKind.Eight ? (px >= 96f ? 2f : 6f) : 0f;
+            // 新图本身就按角色体型画好了，放大只保留一点，避免吕布过大；也不再叠加占位用的偏色
+            if (rig.Kind == SheetKind.Eight) { scale = scale > 1f ? 1.08f : 1f; rig.Tint = Color.white; }
+            rig.Size = px / ppu * scale;
+            rig.PivotLift = -footRows / ppu * scale;
             r.transform.localScale = new Vector3(rig.Size, rig.Size, 1f);
             r.shadowCastingMode = ShadowCastingMode.Off;   // 人物不投实时阴影，改用圆片
             // 圆片阴影
