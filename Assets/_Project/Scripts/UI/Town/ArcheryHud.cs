@@ -31,7 +31,7 @@ namespace ThreeKingdoms.UI.Town
         readonly Dictionary<ArcheryGame.Target, float> hitAt = new Dictionary<ArcheryGame.Target, float>();
         float releasedAt = -10f;
 
-        const float PxPerMetre = 40f, OriginX = 200f, GroundY = 860f;
+        const float PxPerMetre = 40f, OriginX = 200f, GroundY = 900f;
         const float AngleStep = 1f, PowerStep = 0.02f, FlightSpeed = 1.6f;   // path samples are 0.01 s apart
 
         VisualElement root, panel, range, pad;
@@ -67,9 +67,10 @@ namespace ThreeKingdoms.UI.Town
             if (HasArt)
             {
                 // Painted range: sky, far camp, ground behind everything; the front layer over the sprites.
-                if (T("range_bg_sky")) panel.Add(Layer(T("range_bg_sky")));
-                if (T("ground_grass")) Camp();
-                else foreach (var layer in new[] { "range_bg_far", "range_ground" }) if (T(layer)) panel.Add(Layer(T(layer)));
+                // Clear blue sky behind every target (user 2026-10-23), the archer and the targets on one stone
+                // platform along the bottom.
+                if (T("platform_top")) Platform();
+                else foreach (var layer in new[] { "range_bg_sky", "range_bg_far", "range_ground" }) if (T(layer)) panel.Add(Layer(T(layer)));
             }
             range = new VisualElement { pickingMode = PickingMode.Ignore };
             range.style.position = Position.Absolute;
@@ -80,7 +81,7 @@ namespace ThreeKingdoms.UI.Town
             sprites.style.position = Position.Absolute;
             sprites.style.left = sprites.style.top = sprites.style.right = sprites.style.bottom = 0;
             panel.Add(sprites);
-            if (HasArt && T("range_front")) { front = Layer(T("range_front")); panel.Add(front); }
+            if (HasArt && !T("platform_top") && T("range_front")) { front = Layer(T("range_front")); panel.Add(front); }
 
             var top = new VisualElement { pickingMode = PickingMode.Ignore };
             top.style.position = Position.Absolute; top.style.left = 40; top.style.top = 30; top.style.right = 40;
@@ -221,41 +222,58 @@ namespace ThreeKingdoms.UI.Town
             range.MarkDirtyRepaint();
         }
 
-        // Green grass from the horizon down, a palisade along it with tents and Han banners (user 2026-10-23: the
-        // yellow straw targets must stand out from the ground).
-        void Camp()
+        // Sky blue from the top down to the platform, deeper at the top; a level stone platform the archer and the
+        // targets stand on (stone top, coursed face, grass below); a Han banner at each end of the platform.
+        void Platform()
         {
-            var grass = new VisualElement { pickingMode = PickingMode.Ignore };
-            grass.style.position = Position.Absolute;
-            grass.style.left = 0; grass.style.right = 0; grass.style.top = Horizon; grass.style.bottom = 0;
-            grass.style.backgroundImage = new StyleBackground(T("ground_grass"));
-            grass.style.backgroundRepeat = new BackgroundRepeat(Repeat.Repeat, Repeat.Repeat);
-            grass.style.backgroundSize = new BackgroundSize(T("ground_grass").width * ArtScale, T("ground_grass").height * ArtScale);
-            panel.Add(grass);
-            var stakes = T("palisade_stakes");
-            if (stakes)
+            panel.style.backgroundColor = new Color(0.36f, 0.62f, 0.86f);
+            var sky = new VisualElement { pickingMode = PickingMode.Ignore };
+            sky.style.position = Position.Absolute;
+            sky.style.left = 0; sky.style.right = 0; sky.style.top = 0; sky.style.height = GroundY;
+            sky.generateVisualContent += mgc =>
             {
-                var wall = new VisualElement { pickingMode = PickingMode.Ignore };
-                wall.style.position = Position.Absolute;
-                wall.style.left = 0; wall.style.right = 0;
-                wall.style.height = stakes.height * 2; wall.style.top = Horizon - stakes.height * 2 + 16;
-                wall.style.backgroundImage = new StyleBackground(stakes);
-                wall.style.backgroundRepeat = new BackgroundRepeat(Repeat.Repeat, Repeat.NoRepeat);
-                wall.style.backgroundSize = new BackgroundSize(stakes.width * 2, stakes.height * 2);
-                panel.Add(wall);
+                var r = sky.contentRect;
+                var top = new Color(0.20f, 0.42f, 0.74f); var low = new Color(0.56f, 0.76f, 0.93f);
+                var mesh = mgc.Allocate(4, 6);
+                mesh.SetNextVertex(new Vertex { position = new Vector3(0, 0, Vertex.nearZ), tint = top });
+                mesh.SetNextVertex(new Vertex { position = new Vector3(r.width, 0, Vertex.nearZ), tint = top });
+                mesh.SetNextVertex(new Vertex { position = new Vector3(r.width, r.height, Vertex.nearZ), tint = low });
+                mesh.SetNextVertex(new Vertex { position = new Vector3(0, r.height, Vertex.nearZ), tint = low });
+                mesh.SetNextIndex(0); mesh.SetNextIndex(1); mesh.SetNextIndex(2);
+                mesh.SetNextIndex(0); mesh.SetNextIndex(2); mesh.SetNextIndex(3);
+            };
+            panel.Add(sky);
+
+            const float TopDepth = 60f;
+            VisualElement Strip(Texture2D tex, float top, float height, float scale)
+            {
+                var e = new VisualElement { pickingMode = PickingMode.Ignore };
+                e.style.position = Position.Absolute;
+                e.style.left = 0; e.style.right = 0; e.style.top = top; e.style.height = height;
+                if (tex)
+                {
+                    e.style.backgroundImage = new StyleBackground(tex);
+                    e.style.backgroundRepeat = new BackgroundRepeat(Repeat.Repeat, Repeat.Repeat);
+                    e.style.backgroundSize = new BackgroundSize(tex.width * scale, tex.height * scale);
+                }
+                panel.Add(e);
+                return e;
             }
+            var below = Strip(T("ground_grass"), GroundY + TopDepth / 2f, 1080f - GroundY, 3f);
+            below.style.bottom = 0; below.style.height = StyleKeyword.Auto;
+            Strip(T("platform_top"), GroundY - TopDepth / 2f, TopDepth, 2f);
+            var edge = T("platform_edge");
+            if (edge) Strip(edge, GroundY + TopDepth / 2f, edge.height * 3f, 3f);
+
             void Stand(string key, float x, float scale)
             {
                 var t = T(key);
                 if (!t) return;
                 var e = Sprite(panel, t, scale);
-                e.style.left = x - t.width * scale / 2f; e.style.top = Horizon + 20 - t.height * scale;
+                e.style.left = x - t.width * scale / 2f; e.style.top = GroundY - t.height * scale;
             }
-            Stand("prop_army_tent", 1180, 2f);
-            Stand("prop_army_tent", 1560, 2f);
-            Stand("prop_banner_han", 980, 2f);
-            Stand("prop_banner_han", 1380, 2f);
-            Stand("prop_banner_han", 1780, 2f);
+            Stand("prop_banner_han", 70, 2f);
+            Stand("prop_banner_han", 1860, 2f);
         }
 
         static VisualElement Layer(Texture2D tex)

@@ -13,8 +13,9 @@ namespace ThreeKingdoms.Core.Town
         public const int Arrows = 3, TargetCount = 5;
         public const float MinAngle = 0f, MaxAngle = 60f, MinPower = 0.2f, MaxPower = 1f;
         public const float Gravity = 9.8f, MinSpeed = 12f, MaxSpeed = 30f, TargetRadius = 1.2f;   // doubled after playtest (user 2026-10-23)
-        public const float NearestTarget = 12f, FarthestTarget = 36f, LowestTarget = 1f, HighestTarget = 9f;
-        public static readonly (float x, float y) Release = (0f, 1.4f);
+        public const float NearestTarget = 12f, FarthestTarget = 36f, LowestTarget = 2.4f, HighestTarget = 10f;   // straw clear of the platform
+        // The bow hand of the archer standing on the range platform (user 2026-10-23: archer and targets on one level).
+        public static readonly (float x, float y) Release = (0f, 3.2f);
 
         public sealed class Target
         {
