@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &1169258500
+--- !u!1 &59857710
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,9 +127,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1169258503}
-  - component: {fileID: 1169258502}
-  - component: {fileID: 1169258501}
+  - component: {fileID: 59857713}
+  - component: {fileID: 59857712}
+  - component: {fileID: 59857711}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -137,21 +137,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &1169258501
+--- !u!81 &59857711
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1169258500}
+  m_GameObject: {fileID: 59857710}
   m_Enabled: 1
---- !u!20 &1169258502
+--- !u!20 &59857712
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1169258500}
+  m_GameObject: {fileID: 59857710}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
@@ -196,13 +196,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &1169258503
+--- !u!4 &59857713
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1169258500}
+  m_GameObject: {fileID: 59857710}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -211,7 +211,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1411789282
+--- !u!1 &1802115421
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -219,8 +219,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1411789284}
-  - component: {fileID: 1411789283}
+  - component: {fileID: 1802115423}
+  - component: {fileID: 1802115422}
   m_Layer: 0
   m_Name: TacticsGame
   m_TagString: Untagged
@@ -228,18 +228,148 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1411789283
+--- !u!114 &1802115422
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1411789282}
+  m_GameObject: {fileID: 1802115421}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17319b49e48dd44438020f8c40248122, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Prototype.BingshuTactics::Prototype.BingshuTactics.TacticsGame
+  Palette:
+  - serializedVersion: 2
+    rgba: 4282267431
+  - serializedVersion: 2
+    rgba: 4283583804
+  - serializedVersion: 2
+    rgba: 4285163094
+  - serializedVersion: 2
+    rgba: 4286611569
+  - serializedVersion: 2
+    rgba: 4287863183
+  - serializedVersion: 2
+    rgba: 4281680983
+  - serializedVersion: 2
+    rgba: 4282407285
+  - serializedVersion: 2
+    rgba: 4283200404
+  - serializedVersion: 2
+    rgba: 4284582832
+  - serializedVersion: 2
+    rgba: 4286096838
+  - serializedVersion: 2
+    rgba: 4279967524
+  - serializedVersion: 2
+    rgba: 4280429627
+  - serializedVersion: 2
+    rgba: 4280892500
+  - serializedVersion: 2
+    rgba: 4281553008
+  - serializedVersion: 2
+    rgba: 4282739596
+  - serializedVersion: 2
+    rgba: 4286421670
+  - serializedVersion: 2
+    rgba: 4288724937
+  - serializedVersion: 2
+    rgba: 4290961385
+  - serializedVersion: 2
+    rgba: 4281018947
+  - serializedVersion: 2
+    rgba: 4281414502
+  - serializedVersion: 2
+    rgba: 4282074767
+  - serializedVersion: 2
+    rgba: 4283132597
+  - serializedVersion: 2
+    rgba: 4282667359
+  - serializedVersion: 2
+    rgba: 4283392889
+  - serializedVersion: 2
+    rgba: 4284185238
+  - serializedVersion: 2
+    rgba: 4285699247
+  - serializedVersion: 2
+    rgba: 4287147716
+  - serializedVersion: 2
+    rgba: 4281482801
+  - serializedVersion: 2
+    rgba: 4282407244
+  - serializedVersion: 2
+    rgba: 4283265897
+  - serializedVersion: 2
+    rgba: 4285042823
+  - serializedVersion: 2
+    rgba: 4286491300
+  - serializedVersion: 2
+    rgba: 4281494200
+  - serializedVersion: 2
+    rgba: 4283147237
+  - serializedVersion: 2
+    rgba: 4286238707
+  - serializedVersion: 2
+    rgba: 4281412644
+  - serializedVersion: 2
+    rgba: 4283124033
+  - serializedVersion: 2
+    rgba: 4285362537
+  - serializedVersion: 2
+    rgba: 4278190080
+  - serializedVersion: 2
+    rgba: 4294967295
+  - serializedVersion: 2
+    rgba: 4280294424
+  - serializedVersion: 2
+    rgba: 4288923351
+  - serializedVersion: 2
+    rgba: 4288853433
+  - serializedVersion: 2
+    rgba: 4286091154
+  - serializedVersion: 2
+    rgba: 4286807657
+  - serializedVersion: 2
+    rgba: 4288717202
+  - serializedVersion: 2
+    rgba: 4287592065
+  - serializedVersion: 2
+    rgba: 4289896621
+  - serializedVersion: 2
+    rgba: 4288382051
+  - serializedVersion: 2
+    rgba: 4289567612
+  - serializedVersion: 2
+    rgba: 4291081369
+  - serializedVersion: 2
+    rgba: 4291742134
+  - serializedVersion: 2
+    rgba: 4292139729
+  - serializedVersion: 2
+    rgba: 4291354600
+  - serializedVersion: 2
+    rgba: 4287003234
+  - serializedVersion: 2
+    rgba: 4289569934
+  - serializedVersion: 2
+    rgba: 4282604612
+  - serializedVersion: 2
+    rgba: 4283332193
+  - serializedVersion: 2
+    rgba: 4284454017
+  - serializedVersion: 2
+    rgba: 4286230176
+  - serializedVersion: 2
+    rgba: 4281030251
+  - serializedVersion: 2
+    rgba: 4281895080
+  - serializedVersion: 2
+    rgba: 4283476679
+  - serializedVersion: 2
+    rgba: 4286434275
+  trianglesBuilt: 0
   LiuBeiMat: {fileID: 2100000, guid: 9b1bab400275e0f469ab1cf180d56c10, type: 2}
   GuanYuMat: {fileID: 2100000, guid: 4548946bb1dede942bf040fbf5edcd53, type: 2}
   ZhangFeiMat: {fileID: 2100000, guid: dcba6ebecec9fcc45a113af796acaf85, type: 2}
@@ -254,13 +384,13 @@ MonoBehaviour:
   GroundMat: {fileID: 2100000, guid: 1e917ad52d80b314cac127cfd493f3e6, type: 2}
   OverlayMat: {fileID: 2100000, guid: 1ec27d7d0dee9ee4b9a472e1eb11f4cb, type: 2}
   RockMat: {fileID: 2100000, guid: 60ab6f00609356b4ea6b4f2567ae4365, type: 2}
---- !u!4 &1411789284
+--- !u!4 &1802115423
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1411789282}
+  m_GameObject: {fileID: 1802115421}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -273,5 +403,5 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1169258503}
-  - {fileID: 1411789284}
+  - {fileID: 59857713}
+  - {fileID: 1802115423}

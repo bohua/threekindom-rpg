@@ -41,6 +41,7 @@ namespace Prototype.BingshuTactics.EditorTools
             game.GuanYuBust = Load<Texture2D>($"{Busts}/GuanYu_Bust.png");
             game.ZhangFeiBust = Load<Texture2D>($"{Busts}/ZhangFei_Bust.png");
             game.GroundMat = ground; game.RockMat = rock; game.OverlayMat = overlay;
+            game.Palette = LoadPalette(PalettePath);
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
             Debug.Log("BINGSHU_TACTICS_SCENE_OK");
@@ -65,6 +66,25 @@ namespace Prototype.BingshuTactics.EditorTools
             }
             finally { PlayerSettings.productName = product; }
             Debug.Log("BINGSHU_TACTICS_BUILD_OK " + output);
+        }
+
+        // 城外战斗背景 64 色调色板（前 48 色为街角原表）；按首次出现顺序取不重复颜色
+        const string PalettePath = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-outskirts\palette_outskirts.png";
+
+        static Color32[] LoadPalette(string path)
+        {
+            var tex = new Texture2D(2, 2);
+            if (!File.Exists(path) || !tex.LoadImage(File.ReadAllBytes(path))) throw new FileNotFoundException("Missing palette " + path);
+            var seen = new System.Collections.Generic.List<Color32>();
+            foreach (var c in tex.GetPixels32())
+            {
+                if (c.a < 128) continue;
+                var k = new Color32(c.r, c.g, c.b, 255);
+                if (!seen.Exists(x => x.r == k.r && x.g == k.g && x.b == k.b)) seen.Add(k);
+            }
+            Object.DestroyImmediate(tex);
+            Debug.Log("BINGSHU_PALETTE " + seen.Count);
+            return seen.ToArray();
         }
 
         static T Load<T>(string path) where T : Object

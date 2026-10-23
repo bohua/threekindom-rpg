@@ -12,7 +12,7 @@ using UnityEngine.InputSystem.LowLevel;
 
 namespace Prototype.BingshuTactics
 {
-    public sealed class TacticsGame : MonoBehaviour
+    public sealed partial class TacticsGame : MonoBehaviour
     {
         // 由编辑器构建脚本填入（只引用美术资源，不引用正式代码）
         public Material LiuBeiMat, GuanYuMat, ZhangFeiMat, RebelMat, ZhangJiaoMat, LuBuMat, XiliangMat, WallArcherMat;
@@ -66,12 +66,12 @@ namespace Prototype.BingshuTactics
             block = new MaterialPropertyBlock();
             grid = stage == 1 ? HulaoGrid() : FieldGrid();
             W = grid.W; H = grid.H;
+            disc = MakeDisc(64);
             BuildWorld();
             BuildLibrary();
             BuildUnits();
             font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "Microsoft YaHei UI", "SimHei", "SimSun", "DengXian" }, 18);
             white = Texture2D.whiteTexture;
-            disc = MakeDisc(64);
             Log("布阵：点选我方武将，再点蓝色格子调整站位。可先打开「兵书回路」配书。");
             var args = System.Environment.GetCommandLineArgs();
             int i = System.Array.IndexOf(args, "-poc-shots");
@@ -216,137 +216,13 @@ namespace Prototype.BingshuTactics
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.52f, 0.55f, 0.62f);
 
-            BuildTerrain();
+            BuildWorld3D();
 
             var ov = new GameObject("Overlay");
             overlayMesh = new Mesh();
             ov.AddComponent<MeshFilter>().sharedMesh = overlayMesh;
             var mr = ov.AddComponent<MeshRenderer>();
             mr.sharedMaterial = OverlayMat; mr.shadowCastingMode = ShadowCastingMode.Off; mr.receiveShadows = false;
-        }
-
-        // ---------------- 地形块 ----------------
-        readonly Dictionary<Terrain, Material> terrainMats = new Dictionary<Terrain, Material>();
-        Material wood, cloth;
-
-        Material TerrainMat(Terrain t)
-        {
-            if (terrainMats.TryGetValue(t, out var m)) return m;
-            var tex = TerrainTexture(t);
-            m = new Material(GroundMat) { mainTexture = tex };
-            m.SetTexture("_BaseMap", tex);
-            terrainMats[t] = m;
-            return m;
-        }
-
-        static Texture2D TerrainTexture(Terrain t)
-        {
-            const int n = 16;
-            var tex = new Texture2D(n, n) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Repeat };
-            var rnd = new System.Random((int)t * 17 + 3);
-            Color a, b;
-            switch (t)
-            {
-                case Terrain.Sand: a = new Color(0.80f, 0.70f, 0.48f); b = new Color(0.72f, 0.61f, 0.40f); break;
-                case Terrain.River: a = new Color(0.20f, 0.38f, 0.58f); b = new Color(0.30f, 0.50f, 0.70f); break;
-                case Terrain.Ford: a = new Color(0.40f, 0.58f, 0.68f); b = new Color(0.58f, 0.56f, 0.50f); break;
-                case Terrain.Bridge: a = new Color(0.50f, 0.34f, 0.20f); b = new Color(0.38f, 0.25f, 0.15f); break;
-                case Terrain.Road: a = new Color(0.56f, 0.50f, 0.40f); b = new Color(0.48f, 0.43f, 0.35f); break;
-                case Terrain.Camp: a = new Color(0.52f, 0.44f, 0.32f); b = new Color(0.45f, 0.38f, 0.28f); break;
-                case Terrain.Wall: a = new Color(0.52f, 0.50f, 0.47f); b = new Color(0.40f, 0.38f, 0.36f); break;
-                case Terrain.Gate: a = new Color(0.32f, 0.18f, 0.12f); b = new Color(0.22f, 0.12f, 0.08f); break;
-                default: a = new Color(0.42f, 0.55f, 0.30f); b = new Color(0.36f, 0.49f, 0.26f); break;
-            }
-            for (int x = 0; x < n; x++)
-                for (int y = 0; y < n; y++)
-                {
-                    Color c = rnd.NextDouble() < 0.3 ? b : a;
-                    if (t == Terrain.River && (y + x / 4) % 6 == 0) c = new Color(0.55f, 0.70f, 0.85f);
-                    if (t == Terrain.Bridge && x % 4 == 0) c = b * 0.8f;
-                    if (t == Terrain.Wall && (y % 5 == 0 || (x + (y / 5 % 2) * 4) % 8 == 0)) c = b * 0.75f;
-                    if (t == Terrain.Gate && x % 5 == 2 && y % 5 == 2) c = new Color(0.75f, 0.62f, 0.30f);
-                    if (x == 0 || y == 0) c *= 0.82f;   // 格线
-                    c.a = 1f;
-                    tex.SetPixel(x, y, c);
-                }
-            tex.Apply();
-            return tex;
-        }
-
-        GameObject Block(string name, Vector3 center, Vector3 size, Material m, bool collider = false)
-        {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = name; go.transform.position = center; go.transform.localScale = size;
-            go.GetComponent<Renderer>().sharedMaterial = m;
-            if (!collider) Destroy(go.GetComponent<Collider>());
-            return go;
-        }
-
-        float TopOf(Vector2Int p)
-        {
-            var t = grid.TerrainAt(p);
-            return t == Terrain.River ? -0.15f : t == Terrain.Ford ? -0.06f : grid.HeightAt(p) * HS;
-        }
-
-        void BuildTerrain()
-        {
-            wood = new Material(GroundMat) { color = new Color(0.45f, 0.30f, 0.18f) };
-            cloth = new Material(GroundMat) { color = new Color(0.82f, 0.76f, 0.62f) };
-            const float bottom = -0.8f;
-            for (int x = 0; x < W; x++)
-                for (int y = 0; y < H; y++)
-                {
-                    var p = new Vector2Int(x, y); var t = grid.TerrainAt(p);
-                    float top = TopOf(p);
-                    var groundT = t == Terrain.JuMa || t == Terrain.Rock ? Terrain.Grass : t;
-                    var col = Block($"Tile {x},{y}", new Vector3((x + 0.5f) * T, (top + bottom) / 2f, (y + 0.5f) * T), new Vector3(T, top - bottom, T), TerrainMat(groundT), true);
-                    tileOf[col.GetComponent<Collider>()] = p;
-                    var c = Tile(p);
-                    switch (t)
-                    {
-                        case Terrain.Rock:
-                            var rock = Block("Rock", c + Vector3.up * 0.35f, new Vector3(T * 0.85f, 0.7f, T * 0.85f), RockMat);
-                            rock.transform.rotation = Quaternion.Euler(0, (x * 37 + y * 11) % 30 - 15, 0);
-                            break;
-                        case Terrain.JuMa:
-                            // 拒马：一根横木，三组交叉的尖桩
-                            Block("JuMa log", c + Vector3.up * 0.5f, new Vector3(T * 1.0f, 0.14f, 0.14f), wood);
-                            for (int k = -1; k <= 1; k++)
-                                foreach (float ang in new[] { 40f, -40f })
-                                {
-                                    var stake = Block("JuMa stake", c + new Vector3(k * T * 0.32f, 0.5f, 0), new Vector3(0.09f, 1.35f, 0.09f), wood);
-                                    stake.transform.rotation = Quaternion.Euler(ang, 0, 0);
-                                }
-                            break;
-                        case Terrain.Wall:
-                            if (x % 2 == 0) Block("Crenel", c + new Vector3(0, 0.18f, -T * 0.35f), new Vector3(T * 0.5f, 0.36f, T * 0.25f), TerrainMat(Terrain.Wall));
-                            break;
-                        case Terrain.Gate:
-                            Block("Gate door", new Vector3(c.x, c.y - 0.75f, c.z - T * 0.5f - 0.03f), new Vector3(T * 0.8f, 1.4f, 0.06f), TerrainMat(Terrain.Gate));
-                            Block("Gate tower", c + Vector3.up * 0.45f, new Vector3(T * 1.4f, 0.9f, T * 0.9f), wood);
-                            break;
-                        case Terrain.Camp:
-                            // 营寨木栅：朝外的边立桩，中间留寨门
-                            foreach (var d in new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
-                            {
-                                var nb = p + d;
-                                if (grid.In(nb) && (grid.TerrainAt(nb) == Terrain.Camp || grid.TerrainAt(nb) == Terrain.Wall)) continue;
-                                for (int k = -1; k <= 1; k++)
-                                {
-                                    if (k == 0 && grid.In(nb) && !Grid.Impassable(grid.TerrainAt(nb))) continue;
-                                    var off = new Vector3(d.x * T * 0.46f + (d.y != 0 ? k * T * 0.3f : 0), 0.3f, d.y * T * 0.46f + (d.x != 0 ? k * T * 0.3f : 0));
-                                    Block("Palisade", c + off, new Vector3(0.09f, 0.6f, 0.09f), wood);
-                                }
-                            }
-                            break;
-                    }
-                }
-            if (stage == 1)
-                foreach (var tp in new[] { new Vector2Int(0, 11), new Vector2Int(13, 11) })
-                {
-                    var tent = Block("Tent", Tile(tp) + Vector3.up * 0.05f, new Vector3(0.75f, 0.75f, T * 0.8f), cloth);
-                    tent.transform.rotation = Quaternion.Euler(0, 0, 45f);
-                }
         }
 
         void BuildLibrary()
@@ -422,15 +298,12 @@ namespace Prototype.BingshuTactics
             var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
             Destroy(quad.GetComponent<Collider>());
             quad.transform.SetParent(root, false);
-            float size = 48f / 30f * scale;
-            quad.transform.localScale = new Vector3(size, size, 1f);
-            sizeOf[u] = size;
             var r = quad.GetComponent<MeshRenderer>();
-            r.sharedMaterial = material; r.shadowCastingMode = ShadowCastingMode.On;
-            if (tint.HasValue) { r.GetPropertyBlock(block); block.SetColor("_BaseColor", tint.Value); r.SetPropertyBlock(block); }
-            views[u] = root; quads[u] = r; facing[u] = team == Team.Player ? 2 : 1;
+            r.sharedMaterial = material;
+            views[u] = root; quads[u] = r;
+            InitRig(u, root, r, scale, tint);
+            sizeOf[u] = rigs[u].Size;
             root.position = Tile(pos);
-            SetFrame(u, 0);
             return u;
         }
 
@@ -451,25 +324,6 @@ namespace Prototype.BingshuTactics
         {
             var sp = cam.WorldToScreenPoint(world);
             return new Vector2(sp.x / S, (Screen.height - sp.y) / S);
-        }
-
-        void SetFrame(Unit u, int step)
-        {
-            var r = quads[u];
-            var tex = r.sharedMaterial.GetTexture("_BaseMap");
-            int cols = tex ? Mathf.Max(1, tex.width / tex.height) : 9;
-            int frame = cols >= 25 ? 9 + facing[u] * 4 + (step % 4) : 0;
-            r.GetPropertyBlock(block);
-            block.SetVector("_BaseMap_ST", new Vector4(1f / cols, 1f, frame / (float)cols, 0f));
-            r.SetPropertyBlock(block);
-        }
-
-        void Face(Unit u, Vector3 worldDir)
-        {
-            var right = Vector3.ProjectOnPlane(cam.transform.right, Vector3.up).normalized;
-            var fwd = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up).normalized;
-            float a = Vector3.Dot(worldDir, right), b = Vector3.Dot(worldDir, fwd);
-            facing[u] = Mathf.Abs(a) >= Mathf.Abs(b) ? (a > 0 ? 2 : 1) : (b > 0 ? 3 : 0);
         }
 
         // 八卦盘底图：八角铜盘、金边、外圈后天八卦三爻、内圈槽位环、中心太极
@@ -543,17 +397,12 @@ namespace Prototype.BingshuTactics
         // ---------------- 每帧 ----------------
         void Update()
         {
-            yaw = Mathf.MoveTowardsAngle(yaw, yawTarget, 240f * Time.deltaTime);
+            UpdateCameraYaw();
             var rot = Quaternion.Euler(45f, yaw, 0f);
             cam.transform.SetPositionAndRotation(lookAt - rot * Vector3.forward * (38f * Mathf.Max(W, H) / 12f), rot);
 
-            foreach (var kv in quads)
-            {
-                var u = kv.Key; var q = kv.Value.transform;
-                q.rotation = cam.transform.rotation;
-                q.position = views[u].position + cam.transform.up * (sizeOf[u] / 2f) * 0.98f;
-                kv.Value.enabled = u.Alive;
-            }
+            UpdateRigs();
+            UpdateScenery();
 
             for (int i = popups.Count - 1; i >= 0; i--)
             {
@@ -863,38 +712,9 @@ namespace Prototype.BingshuTactics
             actionDone = true; mode = Mode.Busy; pendingSkill = null; reach = null;
         }
 
-        IEnumerator Walk(Unit u, List<Vector2Int> path)
-        {
-            for (int i = 1; i < path.Count; i++)
-            {
-                var a = Tile(path[i - 1]); var b = Tile(path[i]);
-                Face(u, b - a);
-                for (float t = 0; t < 1f; t += Time.deltaTime / 0.16f)
-                {
-                    views[u].position = Vector3.Lerp(a, b, t);
-                    SetFrame(u, (i * 2 + (t > 0.5f ? 1 : 0)));
-                    yield return null;
-                }
-                views[u].position = b;
-            }
-            u.Pos = path[path.Count - 1];
-            SetFrame(u, 1);
-        }
-
-        IEnumerator Lunge(Unit u, Vector2Int target)
-        {
-            var a = Tile(u.Pos); var b = Tile(target);
-            Face(u, b - a); SetFrame(u, 0);
-            for (float t = 0; t < 1f; t += Time.deltaTime / 0.25f)
-            {
-                views[u].position = a + (b - a).normalized * Mathf.Sin(t * Mathf.PI) * 0.45f;
-                yield return null;
-            }
-            views[u].position = a; SetFrame(u, 1);
-        }
-
         void Hit(Unit a, Unit t, int dmg)
         {
+            HitFx(a, t);
             t.Hp = Mathf.Max(0, t.Hp - dmg);
             a.Cp = Mathf.Min(100, a.Cp + 8); t.Cp = Mathf.Min(100, t.Cp + 5);
             popups.Add((views[t].position + Vector3.up * 1.8f, dmg.ToString(), new Color(1f, 0.95f, 0.8f), 0f));
