@@ -1,0 +1,16 @@
+{
+  "task_name": "tao-qian-portrait",
+  "title": "陶谦专属主立绘",
+  "asset_type": "character_portrait",
+  "target_dir": "tao-qian-portrait",
+  "expected_files": [
+    { "name": "TAO_QIAN_MAIN_PORTRAIT.png", "width": 1024, "height": 1536, "transparent": true }
+  ],
+  "reference_paths": [
+    "D:/BuildArtifacts/Codex/hd2d-jrpg/four-heroes-pose-redesign-20261018-v1/LIU_BEI_MAIN_POSE.png",
+    "D:/BuildArtifacts/Codex/hd2d-jrpg/four-heroes-pose-redesign-20261018-v1/GUAN_YU_MAIN_POSE.png",
+    "D:/BuildArtifacts/Codex/hd2d-jrpg/initial-scenario-enemy-art-20261018-v1/TAO_QIAN_PORTRAIT_PROMPT.txt"
+  ],
+  "brief": "# 陶谦专属主立绘\n\n用途：首版徐州结尾过场（陶谦临终三让徐州、推举刘备）的对白立绘。目前过场临时借用“城主府掌士”的灰须文官坐姿图，本图交付后替换它。\n\n## 风格\n- 与刘关张赵四人主立绘同一画风：漫画武侠角色主视觉，粗细变化的墨线、鲜明赛璐珞色块、克制的织物质感。参考 LIU_BEI_MAIN_POSE.png、GUAN_YU_MAIN_POSE.png 只取画风，不抄面孔、服装、姿势。\n- 不是写实战略游戏头像、不是 3D、不是 Q 版。\n\n## 人物\n- 陶谦，徐州牧，约六十岁的老年文官。面容和善而疲惫，银灰胡须，眼神沉思略下垂，神情庄重。\n- 黑色汉式进贤冠类文官冠，石板蓝与深梅紫的多层官袍，象牙色交领，朴素织边。可手持一枚象征徐州牧的印绶或卷起的文书（暗示让徐州），不持兵器。\n- 姿态：全身，坐姿或拄杖缓步皆可，但要与城主府掌士坐姿图明显不同；体现年老体衰却仍有州牧威仪。机位与四将不同（例如略仰的正侧面）。\n- 已有旧提示词 TAO_QIAN_PORTRAIT_PROMPT.txt 可参考人物设定，但它对应的图是掌士图，不要沿用其构图。\n\n## 规格\n- 交付 TAO_QIAN_MAIN_PORTRAIT.png：1024×1536，RGBA，透明背景，人物完整全身居中，四周留少量空白；不画背景、地面投影或文字。\n- 半透明抗锯齿边缘允许（这是立绘，不是像素图）。\n\n## 自检\n- 尺寸、透明背景、人物不被裁切\n- 与四将同画风；与掌士图不像同一人\n- 无兵器、无超自然元素、无文字水印",
+  "budget": { "max_images": 4, "max_retries": 2, "max_revisions": 3, "run_timeout_minutes": 40 }
+}
