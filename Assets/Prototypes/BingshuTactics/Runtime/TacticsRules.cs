@@ -25,9 +25,10 @@ namespace Prototype.BingshuTactics
 
         public static Color Tint(Element e) => e switch
         {
-            Element.Metal => new Color(0.86f, 0.84f, 0.70f), Element.Wood => new Color(0.36f, 0.78f, 0.36f),
-            Element.Water => new Color(0.30f, 0.55f, 0.95f), Element.Fire => new Color(0.95f, 0.38f, 0.22f),
-            Element.Earth => new Color(0.82f, 0.62f, 0.25f), _ => new Color(0.6f, 0.6f, 0.6f)
+            // 传统五色：金白、木青、水玄、火赤、土黄（水色提亮以便在深色底上辨认）
+            Element.Metal => new Color(0.90f, 0.88f, 0.80f), Element.Wood => new Color(0.25f, 0.62f, 0.48f),
+            Element.Water => new Color(0.30f, 0.45f, 0.72f), Element.Fire => new Color(0.78f, 0.24f, 0.18f),
+            Element.Earth => new Color(0.84f, 0.66f, 0.20f), _ => new Color(0.6f, 0.6f, 0.6f)
         };
 
         // 相生：木生火、火生土、土生金、金生水、水生木
@@ -54,11 +55,34 @@ namespace Prototype.BingshuTactics
         public string GradeName => Grade switch { 1 => "残卷", 2 => "抄本", _ => "善本" };
     }
 
+    // 后天八卦：方位（南上北下、东左西右）、五行与三爻（自下而上，1＝阳爻，0＝阴爻）
+    public sealed class Gua
+    {
+        public string Name; public Element Element; public float Angle; public int[] Yao;
+        public Vector2 Dir => new Vector2(Mathf.Cos(Angle * Mathf.Deg2Rad), Mathf.Sin(Angle * Mathf.Deg2Rad));
+    }
+
+    public static class Bagua
+    {
+        public const int Qian = 0, Dui = 1, Li = 2, Zhen = 3, Xun = 4, Kan = 5, Gen = 6, Kun = 7;
+        public static readonly Gua[] All =
+        {
+            new Gua { Name = "乾", Element = Element.Metal, Angle = -45, Yao = new[] { 1, 1, 1 } },
+            new Gua { Name = "兑", Element = Element.Metal, Angle = 0, Yao = new[] { 1, 1, 0 } },
+            new Gua { Name = "离", Element = Element.Fire, Angle = 90, Yao = new[] { 1, 0, 1 } },
+            new Gua { Name = "震", Element = Element.Wood, Angle = 180, Yao = new[] { 1, 0, 0 } },
+            new Gua { Name = "巽", Element = Element.Wood, Angle = 135, Yao = new[] { 0, 1, 1 } },
+            new Gua { Name = "坎", Element = Element.Water, Angle = -90, Yao = new[] { 0, 1, 0 } },
+            new Gua { Name = "艮", Element = Element.Earth, Angle = -135, Yao = new[] { 0, 0, 1 } },
+            new Gua { Name = "坤", Element = Element.Earth, Angle = 45, Yao = new[] { 0, 0, 0 } },
+        };
+    }
+
     public sealed class SlotDef
     {
         public Element Locked;     // None = 任意五行
-        public Vector2 Pos;        // 绘制位置，单位圆坐标
-        public SlotDef(Element locked, float x, float y) { Locked = locked; Pos = new Vector2(x, y); }
+        public int Gua = -1;       // -1 = 中枢（太极）；否则为所在卦位
+        public Vector2 Pos => Gua < 0 ? Vector2.zero : Bagua.All[Gua].Dir;
     }
 
     public sealed class CircuitDef
@@ -70,52 +94,47 @@ namespace Prototype.BingshuTactics
 
     public static class Circuits
     {
-        static Vector2 P(float deg, float r = 1f) => new Vector2(Mathf.Cos(deg * Mathf.Deg2Rad) * r, Mathf.Sin(deg * Mathf.Deg2Rad) * r);
-        static SlotDef S(Element e, Vector2 p) => new SlotDef(e, p.x, p.y);
-        static SlotDef S(Element e, float deg, float r = 1f) => S(e, P(deg, r));
+        static SlotDef Hub(Element e) => new SlotDef { Locked = e };
+        static SlotDef G(int gua, Element locked = Element.None) => new SlotDef { Gua = gua, Locked = locked };
 
-        // 各学派回路：五行布局（锁定位）与包容性（自由位多少、线路长短）不同。中枢位在多条线上，计入每条线。
+        // 各学派回路是一张八卦盘：中枢（太极）只能放本学派偏向五行的兵书（用户 2026-10-23）；
+        // 其余槽位落在八卦方位上，锁定位与线路走向（五行布局）、自由位多少（包容性）各不相同。中枢计入每条线。
         public static readonly CircuitDef[] All =
         {
             new CircuitDef
             {
                 School = School.Ru, Name = "儒家", Affinity = Element.Water, Inclusivity = "高",
-                Note = "中枢锁水，其余六位不限五行；两条四位线，均衡易配。",
-                Slots = new[] { S(Element.Water, Vector2.zero), S(Element.None, 90), S(Element.None, 30), S(Element.None, -30),
-                                S(Element.None, 150), S(Element.None, 210), S(Element.None, 270) },
+                Note = "中枢锁水。阴阳两仪各一线：坎乾兑、离巽震，六位不限五行，中正均衡、易于兼修。",
+                Slots = new[] { Hub(Element.Water), G(Bagua.Kan), G(Bagua.Qian), G(Bagua.Dui), G(Bagua.Li), G(Bagua.Xun), G(Bagua.Zhen) },
                 Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 0, 4, 5, 6 } }
             },
             new CircuitDef
             {
                 School = School.Bing, Name = "兵家", Affinity = Element.Fire, Inclusivity = "中",
-                Note = "六位一线贯通，威力最易叠高；但三位锁火，配法偏狭。",
-                Slots = new[] { S(Element.Fire, Vector2.zero), S(Element.None, 90), S(Element.Fire, 30), S(Element.None, -30),
-                                S(Element.Fire, 270), S(Element.None, 210) },
+                Note = "中枢锁火，离位锁火，巽位锁火（巽风助火）。艮震巽离坤一线贯通，威力最易叠高，配法偏狭。",
+                Slots = new[] { Hub(Element.Fire), G(Bagua.Gen), G(Bagua.Zhen), G(Bagua.Xun, Element.Fire), G(Bagua.Li, Element.Fire), G(Bagua.Kun) },
                 Lines = new[] { new[] { 0, 1, 2, 3, 4, 5 } }
             },
             new CircuitDef
             {
                 School = School.Dao, Name = "道家", Affinity = Element.Wood, Inclusivity = "最高",
-                Note = "七位全不限五行，但分成三条三位短线：策略种类多、高阶难成。",
-                Slots = new[] { S(Element.None, Vector2.zero), S(Element.None, 90), S(Element.None, 50), S(Element.None, -30),
-                                S(Element.None, -70), S(Element.None, 210), S(Element.None, 170) },
+                Note = "中枢锁木，其余六位不限五行。三生万物：三条三位短线鼎足而立，策略种类多、高阶难成。",
+                Slots = new[] { Hub(Element.Wood), G(Bagua.Xun), G(Bagua.Li), G(Bagua.Dui), G(Bagua.Qian), G(Bagua.Kan), G(Bagua.Gen) },
                 Lines = new[] { new[] { 0, 1, 2 }, new[] { 0, 3, 4 }, new[] { 0, 5, 6 } }
             },
             new CircuitDef
             {
                 School = School.Mo, Name = "墨家", Affinity = Element.Metal, Inclusivity = "中",
-                Note = "中枢锁金、首位锁土（土生金）；一条四位线加一条三位线。",
-                Slots = new[] { S(Element.Metal, Vector2.zero), S(Element.Earth, 90), S(Element.None, 30), S(Element.None, -30),
-                                S(Element.Metal, 210), S(Element.None, 150) },
+                Note = "中枢锁金，兑位锁金、坤位锁土（土生金）。兑乾坎一线（金生水），坤离一线，备守兼用。",
+                Slots = new[] { Hub(Element.Metal), G(Bagua.Dui, Element.Metal), G(Bagua.Qian), G(Bagua.Kan), G(Bagua.Kun, Element.Earth), G(Bagua.Li) },
                 Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 0, 4, 5 } }
             },
             new CircuitDef
             {
                 School = School.Fa, Name = "法家", Affinity = Element.Earth, Inclusivity = "最低",
-                Note = "三位锁土、一位锁金，只剩两位自由；主线五位，法度森严而强。",
-                Slots = new[] { S(Element.Earth, Vector2.zero), S(Element.Earth, 90), S(Element.Earth, 30), S(Element.None, -30),
-                                S(Element.None, 270), S(Element.Metal, 180) },
-                Lines = new[] { new[] { 0, 1, 2, 3, 4 }, new[] { 0, 5 } }
+                Note = "中枢、坤、艮三位锁土，兑位锁金，只剩乾、坎两位自由。法度森严，土系最强。",
+                Slots = new[] { Hub(Element.Earth), G(Bagua.Kun, Element.Earth), G(Bagua.Dui, Element.Metal), G(Bagua.Qian), G(Bagua.Kan), G(Bagua.Gen, Element.Earth) },
+                Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 0, 5, 4 } }
             },
         };
 

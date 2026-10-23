@@ -22,8 +22,16 @@ public class TacticsRulesTests
         Assert.AreEqual(Element.Wood, Circuits.Of(School.Dao).Affinity);
         Assert.AreEqual(Element.Metal, Circuits.Of(School.Mo).Affinity);
         Assert.AreEqual(Element.Earth, Circuits.Of(School.Fa).Affinity);
-        // 包容性：道家全自由，法家自由位最少
-        Assert.AreEqual(Circuits.Of(School.Dao).Slots.Length, Circuits.Of(School.Dao).FreeSlots);
+        // 中枢只能放本学派偏向五行（用户 2026-10-23）
+        foreach (var c in Circuits.All)
+        {
+            Assert.AreEqual(-1, c.Slots[0].Gua, c.Name);
+            Assert.AreEqual(c.Affinity, c.Slots[0].Locked, c.Name);
+            Assert.AreEqual(c.Slots.Length, c.Slots.Select(x => x.Gua).Distinct().Count(), c.Name + " 卦位不重复");
+        }
+        // 包容性：道家除中枢外全自由且自由位最多，法家自由位最少
+        Assert.AreEqual(Circuits.Of(School.Dao).Slots.Length - 1, Circuits.Of(School.Dao).FreeSlots);
+        Assert.AreEqual(Circuits.All.Max(c => c.FreeSlots), Circuits.Of(School.Dao).FreeSlots);
         Assert.AreEqual(Circuits.All.Min(c => c.FreeSlots), Circuits.Of(School.Fa).FreeSlots);
         foreach (var c in Circuits.All)
             foreach (var line in c.Lines) Assert.IsTrue(line.All(i => i >= 0 && i < c.Slots.Length), c.Name);
@@ -54,7 +62,7 @@ public class TacticsRulesTests
         var lit = CircuitMath.Lit(dao, slots);
         Assert.IsTrue(Has(lit, "引火"));
         Assert.IsFalse(Has(lit, "火烧营寨"));    // 合计 4 但不在同一条线
-        slots[0] = B(Element.Fire, 2); slots[2] = B(Element.Wood, 1);   // 中枢计入每条线
+        slots[0] = B(Element.Wood, 1); slots[2] = B(Element.Fire, 2);   // 中枢（锁木）计入每条线：火4、木2
         lit = CircuitMath.Lit(dao, slots);
         Assert.IsTrue(Has(lit, "火烧营寨"));
     }

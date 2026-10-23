@@ -43,6 +43,9 @@ namespace Prototype.BingshuTactics
         Vector2Int hover = new Vector2Int(-1, -1);
         bool actionDone; float now;
         int circuitUnit, circuitSlot = -1;
+        Texture2D plate;
+        // 连线用传统颜料色：朱红、石青、藤黄
+        static readonly Color[] lineCols = { new Color(0.80f, 0.22f, 0.16f), new Color(0.22f, 0.50f, 0.66f), new Color(0.88f, 0.68f, 0.16f) };
 
         static readonly string[] RingItems = { "攻击", "策略", "移动", "待机", "防御", "武技" };
 
@@ -200,13 +203,13 @@ namespace Prototype.BingshuTactics
             var guan = NewUnit("关羽", "GuanYu", Team.Player, Troop.Cavalry, School.Bing, 170, 64, 36, 47, 29, 10, 5, 1, 40, new Vector2Int(2, 7));
             guan.Crafts.Add(Craft("突击", "近战单体物理1.5倍", Effect.Damage, Area.Single, -1, 0, 1.5f, 25, might: true));
             guan.Crafts.Add(Craft("破阵", "近战单体1.1倍，物防-20% 2回合", Effect.Debuff, Area.Single, -1, 0, 1.1f, 30, might: true, turns: 2, amount: 0.2f));
-            guan.Slots[0] = L("《孙子·火攻》"); guan.Slots[2] = L("《六韬·火战》"); guan.Slots[4] = L("《火攻》残卷");
-            guan.Slots[1] = L("《尉缭子》"); guan.Slots[3] = L("《管子·牧民》");
+            guan.Slots[0] = L("《孙子·火攻》"); guan.Slots[3] = L("《六韬·火战》"); guan.Slots[4] = L("《火攻》残卷");
+            guan.Slots[1] = L("《尉缭子》"); guan.Slots[2] = L("《管子·牧民》");
 
             var zhang = NewUnit("张飞", "ZhangFei", Team.Player, Troop.Infantry, School.Fa, 190, 66, 40, 40, 24, 6, 3, 1, 30, new Vector2Int(2, 3));
             zhang.Crafts.Add(Craft("横扫", "自身周围2格内敌军物理0.65倍", Effect.Damage, Area.SelfCircle, 0, 2, 0.65f, 30, might: true));
             zhang.Crafts.Add(Craft("威慑", "自身周围3格内敌军物攻-20% 2回合", Effect.Debuff, Area.SelfCircle, 0, 3, 0f, 25, turns: 2, amount: 0.2f));
-            zhang.Slots[0] = L("《孙膑兵法·八阵》"); zhang.Slots[1] = L("《墨子·备城门》"); zhang.Slots[2] = L("《六韬·龙韬》"); zhang.Slots[5] = L("《吴子》");
+            zhang.Slots[0] = L("《孙膑兵法·八阵》"); zhang.Slots[1] = L("《墨子·备城门》"); zhang.Slots[5] = L("《六韬·龙韬》"); zhang.Slots[2] = L("《吴子》");
 
             var rebels = new[] { new Vector2Int(9, 2), new Vector2Int(10, 4), new Vector2Int(9, 6), new Vector2Int(10, 8) };
             for (int i = 0; i < rebels.Length; i++)
@@ -272,6 +275,59 @@ namespace Prototype.BingshuTactics
             var fwd = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up).normalized;
             float a = Vector3.Dot(worldDir, right), b = Vector3.Dot(worldDir, fwd);
             facing[u] = Mathf.Abs(a) >= Mathf.Abs(b) ? (a > 0 ? 2 : 1) : (b > 0 ? 3 : 0);
+        }
+
+        // 八卦盘底图：八角铜盘、金边、外圈后天八卦三爻、内圈槽位环、中心太极
+        static Texture2D MakeBaguaPlate(int n)
+        {
+            var t = new Texture2D(n, n) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            Color gold = new Color(0.80f, 0.64f, 0.30f), rim = new Color(0.62f, 0.47f, 0.20f), clear = new Color(0, 0, 0, 0);
+            Color ink = new Color(0.10f, 0.09f, 0.08f), paper = new Color(0.91f, 0.86f, 0.74f);
+            float[,] bands = { { 0.78f, 0.82f }, { 0.835f, 0.875f }, { 0.89f, 0.93f } };
+            for (int px = 0; px < n; px++)
+                for (int py = 0; py < n; py++)
+                {
+                    float x = (px + 0.5f) / n * 2f - 1f, y = (py + 0.5f) / n * 2f - 1f;
+                    float d = Mathf.Max(Mathf.Abs(x), Mathf.Abs(y), (Mathf.Abs(x) + Mathf.Abs(y)) / Mathf.Sqrt(2f));
+                    float r = Mathf.Sqrt(x * x + y * y);
+                    Color c;
+                    if (d > 1f) c = clear;
+                    else if (d > 0.965f) c = rim;
+                    else
+                    {
+                        c = Color.Lerp(new Color(0.20f, 0.15f, 0.10f), new Color(0.12f, 0.09f, 0.06f), r);
+                        if (d > 0.945f && d < 0.955f) c = gold * 0.8f;
+                        if (d > 0.735f && d < 0.75f) c = gold * 0.8f;
+                        // 外圈三爻
+                        float ang = Mathf.Atan2(y, x) * Mathf.Rad2Deg;
+                        float k = Mathf.Round(ang / 45f) * 45f;
+                        var g = Bagua.All.First(q => Mathf.Abs(Mathf.DeltaAngle(q.Angle, k)) < 1f);
+                        var u = g.Dir; float along = Vector2.Dot(new Vector2(x, y), new Vector2(-u.y, u.x));
+                        for (int b = 0; b < 3; b++)
+                            if (d >= bands[b, 0] && d <= bands[b, 1] && Mathf.Abs(along) < 0.27f * d && !(g.Yao[b] == 0 && Mathf.Abs(along) < 0.05f * d))
+                                c = gold;
+                        // 槽位环
+                        if (Mathf.Abs(r - 0.6f) < 0.006f) c = Color.Lerp(c, gold, 0.5f);
+                        // 太极
+                        if (r < 0.30f)
+                        {
+                            float tx = x / 0.27f, ty = y / 0.27f;
+                            if (r > 0.27f) c = gold;
+                            else
+                            {
+                                bool dark = tx < 0;
+                                if (Vector2.Distance(new Vector2(tx, ty), new Vector2(0, 0.5f)) < 0.5f) dark = true;
+                                if (Vector2.Distance(new Vector2(tx, ty), new Vector2(0, -0.5f)) < 0.5f) dark = false;
+                                if (Vector2.Distance(new Vector2(tx, ty), new Vector2(0, 0.5f)) < 0.14f) dark = false;
+                                if (Vector2.Distance(new Vector2(tx, ty), new Vector2(0, -0.5f)) < 0.14f) dark = true;
+                                c = dark ? ink : paper;
+                            }
+                        }
+                    }
+                    t.SetPixel(px, py, c);
+                }
+            t.Apply();
+            return t;
         }
 
         static Texture2D MakeDisc(int n)
@@ -976,31 +1032,44 @@ namespace Prototype.BingshuTactics
             }
             GUI.Label(new Rect(20, 450, 190, 120), c.Note, new GUIStyle(small) { wordWrap = true });
 
-            // 回路图
-            var hub = new Vector2(370, 250); float R = 130;
-            Disc(hub, R + 34, new Color(0.25f, 0.2f, 0.12f, 0.9f));
-            Disc(hub, R + 26, new Color(0.08f, 0.09f, 0.12f, 1f));
+            // 回路图：五行八卦盘（太极中枢、外圈八卦爻、方孔钱槽、彩绳连线）
+            var hub = new Vector2(370, 250); const float PR = 160f; float R = PR * 0.6f;
+            if (!plate) plate = MakeBaguaPlate(400);
+            GUI.DrawTexture(new Rect(hub.x - PR, hub.y - PR, PR * 2, PR * 2), plate);
+            foreach (var g in Bagua.All)
+            {
+                var lp = hub + new Vector2(g.Dir.x, -g.Dir.y) * (PR * 1.1f);
+                var gs = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontSize = 13 };
+                gs.normal.textColor = Wuxing.Tint(g.Element);
+                GUI.Label(new Rect(lp.x - 30, lp.y - 10, 60, 20), $"{g.Name}·{Wuxing.Name(g.Element)}", gs);
+            }
             Vector2 SP(int i) => hub + new Vector2(c.Slots[i].Pos.x, -c.Slots[i].Pos.y) * R;
-            Color[] lineCols = { new Color(1f, 0.75f, 0.2f), new Color(0.4f, 0.75f, 1f), new Color(0.6f, 1f, 0.5f) };
             for (int l = 0; l < c.Lines.Length; l++)
                 for (int k = 1; k < c.Lines[l].Length; k++)
-                    Line(SP(c.Lines[l][k - 1]) + Vector2.one * (l * 3 - 3), SP(c.Lines[l][k]) + Vector2.one * (l * 3 - 3), 6, lineCols[l]);
+                {
+                    Vector2 off = Vector2.one * (l * 3 - 3), p0 = SP(c.Lines[l][k - 1]) + off, p1 = SP(c.Lines[l][k]) + off;
+                    Line(p0, p1, 9, new Color(0.08f, 0.06f, 0.04f, 0.9f));
+                    Line(p0, p1, 5, lineCols[l]);
+                }
             for (int i = 0; i < c.Slots.Length; i++)
             {
                 var p = SP(i); var book = u.Slots[i]; var lockE = c.Slots[i].Locked;
-                Disc(p, 28, i == circuitSlot ? Color.white : new Color(0.55f, 0.48f, 0.35f));
-                Disc(p, 24, book != null ? Wuxing.Tint(book.Element) : (lockE != Element.None ? Wuxing.Tint(lockE) * 0.45f : new Color(0.18f, 0.18f, 0.2f)));
-                var lab = book != null ? $"{Wuxing.Name(book.Element)}{CircuitMath.Value(c, book)}" : (lockE != Element.None ? $"限{Wuxing.Name(lockE)}" : "空");
-                var st = new GUIStyle(center) { fontSize = 14 }; st.normal.textColor = book != null ? Color.black : Color.white;
+                // 方孔钱：铜边、五行色钱面；空槽露出方孔
+                Disc(p, 27, i == circuitSlot ? new Color(1f, 0.92f, 0.6f) : new Color(0.62f, 0.48f, 0.24f));
+                Disc(p, 23, book != null ? Wuxing.Tint(book.Element) : (lockE != Element.None ? Wuxing.Tint(lockE) * 0.55f + new Color(0, 0, 0, 0.45f) : new Color(0.22f, 0.18f, 0.13f)));
+                if (book == null) Rect(new Rect(p.x - 6, p.y - 6, 12, 12), new Color(0.06f, 0.05f, 0.04f, 0.9f));
+                var lab = book != null ? $"{Wuxing.Name(book.Element)}{CircuitMath.Value(c, book)}" : (lockE != Element.None ? $"限{Wuxing.Name(lockE)}" : "");
+                var st = new GUIStyle(center) { fontSize = 14 };
+                st.normal.textColor = book != null && (book.Element == Element.Metal || book.Element == Element.Earth) ? new Color(0.1f, 0.08f, 0.05f) : Color.white;
                 var rr = new Rect(p.x - 26, p.y - 26, 52, 52);
                 if (GUI.Button(rr, GUIContent.none, GUIStyle.none))
                 {
                     if (Event.current.button == 1 || (circuitSlot == i && book != null)) u.Slots[i] = null;
                     circuitSlot = i;
                 }
-                GUI.Label(rr, lab, st);
+                GUI.Label(new Rect(rr.x, rr.y + (book == null && lockE != Element.None ? 14 : 0), rr.width, rr.height), lab, st);
             }
-            GUI.Label(new Rect(hub.x - 150, hub.y + R + 40, 300, 20), "点空槽再点右侧兵书镶嵌；再点一次已镶嵌槽卸下", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
+            GUI.Label(new Rect(hub.x - 150, hub.y + PR + 22, 300, 20), "点空槽再点右侧兵书镶嵌；再点一次已镶嵌槽卸下", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
             // 线路合计（对应参考图3右上）
             float ly = 470;
