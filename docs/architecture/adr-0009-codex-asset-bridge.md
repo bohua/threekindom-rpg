@@ -87,6 +87,11 @@ Proposed（2026-10-23 起草）。用户 2026-10-23 要求：美术继续由 Cod
 - `npm test`：状态机转换、路径逃逸被拒、不覆盖规则、PNG 校验（尺寸、二值透明）、预算判定。
 - 端到端：一次人物立绘任务走完 generate → status → preview → approve，正式目录出现文件与 `CODEX_STATUS.txt`，未改动任何已有文件。
 
+### 验证结果（2026-10-23）
+
+- `npm test` 13/13 通过；MCP stdio 冒烟测试列出 6 个工具。
+- 陶谦主立绘端到端（任务 `tao-qian-portrait-202610231158-cc8b`）：r1 只出提示词约 6 分钟，生图目录无新文件，批准被拒；用户同意（Bohua 12:09“可以”）后 r2 在同一 Codex 线程生成 1 张，桥校验 1024×1536 RGBA 透明通过，预览后批准，复制到 `art\tao-qian-portrait\`，旧资源哈希不变。`networkAccessEnabled:false` 不影响 `image_gen`。两次修订合计约 165 万 token。
+
 ## Performance Implications
 
 不进游戏运行时，无帧率或内存影响。代价只有磁盘（暂存与 `_sources/` 留档）和用户的 Codex 额度。暂存目录目前不自动清理：已批准任务的 `staging/<id>` 可手动删除，状态 JSON 保留作记录。
