@@ -26,8 +26,7 @@ namespace ThreeKingdoms.EditorTools
         static readonly Vector2[] PlayerFeet = { new Vector2(-5.4f, -0.4f), new Vector2(-3.9f, -1.8f), new Vector2(-5.6f, -3.2f) };
         static readonly Vector2[] EnemyFeet = { new Vector2(4.2f, -0.4f), new Vector2(5.8f, -1.3f), new Vector2(4.2f, -2.3f), new Vector2(5.8f, -3.2f) };
 
-        // One playable scene per V1 battle (V1_SPEC §2.2). Battle 1 is fought in the market; battles 2–3 in front of the
-        // Yellow Turban camp outside the walls (the second of the two backdrops V1_SPEC §2.3 allows). Enemy sprite keys follow INITIAL_SCENARIO_ART: generic
+        // One playable scene per V1 battle (V1_SPEC §2.2), all three in front of the Yellow Turban camp outside the walls. Enemy sprite keys follow INITIAL_SCENARIO_ART: generic
         // Yellow Turban officers share one sheet; the three brothers each have their own.
         sealed class BattleSpec
         {
@@ -38,7 +37,8 @@ namespace ThreeKingdoms.EditorTools
 
         static readonly BattleSpec[] Battles =
         {
-            new BattleSpec { Path = ScenePath, EncounterId = "battle_1", Next = "Battle_Tutorial02", Location = "涿郡 · 街市",
+            // Battle 1 too is fought outside the south gate, where Cheng Yuanzhi blocks it (user 2026-10-22).
+            new BattleSpec { Path = ScenePath, EncounterId = "battle_1", Next = "Battle_Tutorial02", Location = "涿郡 · 城外", BaseScene = BattleBackdropBaker.OutskirtsScenePath,
                 EnemySprites = new[] { "YellowTurban", "YellowTurban", "YellowTurban" }, StartExp = 0, StartCopper = 120 },
             new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Tutorial02.unity", EncounterId = "battle_2", Next = "Battle_Tutorial03", Location = "涿郡 · 城外", BaseScene = BattleBackdropBaker.OutskirtsScenePath,
                 EnemySprites = new[] { "ZhangLiang", "YellowTurban", "YellowTurban", "YellowTurban" }, StartExp = 10, StartCopper = 150 },
@@ -60,9 +60,12 @@ namespace ThreeKingdoms.EditorTools
             // Base scenes first: building them switches scenes, which unloads assets loaded before (panel settings, icons).
             BattleBackdropBaker.BuildOutskirts();
             var catalog = BattleDataBuilder.Build();
+            BattleUiSkinBuilder.Build();   // BATTLE_UI_SKIN.md pixel frames
             var icons = BuildTroopIcons();
             var panel = BuildPanelSettings();
             ConvertEnemySheets();
+            vfxSheets = CodexArtImporter.VfxSheets();   // art/battle-vfx
+            DialoguePortraitImporter.Import();   // speakers' illustrations for the lines after a victory
             if (!File.Exists(BattleBackdropBaker.ScenePath)) BattleBackdropBaker.Build();
             foreach (var battle in Battles) BuildScene(battle, catalog, icons, panel);
 
@@ -145,6 +148,28 @@ namespace ThreeKingdoms.EditorTools
             hud.BattleCamera = Camera.main;
             hud.TroopIcons = icons;
             hud.LocationName = battle.Location;
+            hud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
+            hud.Portraits = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Story.DialoguePortraitSet>(DialoguePortraitImporter.SetPath);
+
+            // Attack and skill effects (user 2026-10-22).
+            var vfx = new GameObject("Battle VFX").AddComponent<ThreeKingdoms.Gameplay.Battle.BattleVfx>();
+            vfx.Controller = controller;
+            vfx.Additive = VfxMaterial();
+            vfx.ShakeTarget = Camera.main ? Camera.main.transform : null;
+            vfx.Sheets = vfxSheets;
+            vfx.SheetAlpha = SheetMaterial("VfxSheetAlpha", additive: false);
+            vfx.SheetAdditive = SheetMaterial("VfxSheetAdditive", additive: true);
+
+            var tutor = controller.gameObject.AddComponent<ThreeKingdoms.Gameplay.Battle.BattleTutor>();
+            tutor.Controller = controller;
+            hud.Tutor = tutor;
+
+            // Pre-battle "配装" reuses the shop panel in outfit-only mode, above the battle HUD.
+            var outfitGo = new GameObject("Outfit HUD");
+            var outfitDoc = outfitGo.AddComponent<UIDocument>();
+            outfitDoc.panelSettings = doc.panelSettings;
+            outfitDoc.sortingOrder = 10;
+            var outfitHud = outfitGo.AddComponent<ThreeKingdoms.UI.Shop.ShopHud>(); outfitHud.Host = controller; outfitHud.Skin = hud.Skin;
 
             var es = new GameObject("EventSystem");
             es.AddComponent<EventSystem>();
@@ -195,6 +220,48 @@ namespace ThreeKingdoms.EditorTools
             view.SelectionRing = Ring(unit, "Selection ring", ringMat, 1f);
             view.TargetMarker = Ring(unit, "Target marker", targetMat, 1.25f);
             return view;
+        }
+
+        const string VfxMaterialPath = "Assets/_Project/Art/Battle/Vfx/VfxAdditive.mat";
+        static BattleVfx.Sheet[] vfxSheets = new BattleVfx.Sheet[0];
+
+        // Template materials for the effect sheets: unlit, transparent, alpha or additive; each effect copies one and
+        // sets its strip and frame.
+        static Material SheetMaterial(string name, bool additive)
+        {
+            string path = $"Assets/_Project/Art/Battle/Vfx/{name}.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(path)) AssetDatabase.DeleteAsset(path);
+            var m = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit")) { name = name };
+            m.SetFloat("_Surface", 1f);
+            m.SetFloat("_Blend", additive ? 2f : 0f);
+            m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            m.SetFloat("_DstBlend", (float)(additive ? UnityEngine.Rendering.BlendMode.One : UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha));
+            m.SetFloat("_ZWrite", 0f);
+            m.SetFloat("_Cull", 0f);   // mirrored quads stay visible
+            m.SetColor("_BaseColor", Color.white);
+            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent + 10;
+            AssetDatabase.CreateAsset(m, path);
+            return m;
+        }
+
+        // Additive URP particle material for the effect strokes and sparks (vertex colour, no texture: square pixels).
+        static Material VfxMaterial()
+        {
+            // Alpha-blended (not additive): strokes must read against the bright daylight backdrop.
+            if (AssetDatabase.LoadAssetAtPath<Material>(VfxMaterialPath)) AssetDatabase.DeleteAsset(VfxMaterialPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(VfxMaterialPath));
+            var m = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit")) { name = "VfxAdditive" };
+            m.SetFloat("_Surface", 1f);
+            m.SetFloat("_Blend", 0f);
+            m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            m.SetFloat("_ZWrite", 0f);
+            m.SetColor("_BaseColor", Color.white);
+            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            AssetDatabase.CreateAsset(m, VfxMaterialPath);
+            return m;
         }
 
         static Texture2D LoadPortrait(string key)

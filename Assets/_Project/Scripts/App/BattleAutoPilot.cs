@@ -15,6 +15,7 @@ namespace ThreeKingdoms.App
         void Update()
         {
             if (!controller) { controller = FindAnyObjectByType<BattleController>(); return; }
+            if (controller.Current == BattleController.Phase.Preparing && controller.Panel == null) { controller.ConfirmPreparation(); return; }
             if (controller.Current != BattleController.Phase.Commanding || controller.Actor == null) return;
             var state = controller.Session.State;
             if (state.Round >= StopAtRound)

@@ -12,6 +12,8 @@ namespace ThreeKingdoms.Gameplay
         public int Columns = 9;
         public int Rows = 1;
         public int Frame;
+        [Tooltip("Square frames in one row: take the column count from the texture (9 poses, or 9 + 16 walk frames)")]
+        public bool AutoColumns = true;
         MaterialPropertyBlock block;
         int shown = -1;
 
@@ -26,6 +28,8 @@ namespace ThreeKingdoms.Gameplay
         {
             if (!Target) return;
             block ??= new MaterialPropertyBlock();
+            var tex = Target.sharedMaterial ? Target.sharedMaterial.GetTexture("_BaseMap") : null;
+            if (AutoColumns && tex && tex.height > 0) { Columns = Mathf.Max(1, tex.width / tex.height); Rows = 1; }
             int frame = Mathf.Clamp(Frame, 0, Columns * Rows - 1);
             float w = 1f / Columns, h = 1f / Rows;
             int column = frame % Columns, row = frame / Columns;

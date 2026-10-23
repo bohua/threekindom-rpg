@@ -1187,6 +1187,46 @@
       "available": true,
       "source_texture": "prop_lamp_stand.png",
       "color_space": "linear"
+    },
+    {
+      "filename": "steps_tread.png",
+      "width": 120,
+      "height": 12,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "stone-steps delivery 2026-10-20 (art/stone-steps)"
+    },
+    {
+      "filename": "steps_riser.png",
+      "width": 120,
+      "height": 11,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "stone-steps delivery 2026-10-20 (art/stone-steps)"
+    },
+    {
+      "filename": "steps_side.png",
+      "width": 36,
+      "height": 32,
+      "tileable": false,
+      "tile_axes": "none",
+      "purpose": "stone-steps delivery 2026-10-20 (art/stone-steps)"
+    },
+    {
+      "filename": "platform_top.png",
+      "width": 120,
+      "height": 120,
+      "tileable": true,
+      "tile_axes": "xy",
+      "purpose": "stone-steps delivery 2026-10-20 (art/stone-steps)"
+    },
+    {
+      "filename": "platform_edge.png",
+      "width": 120,
+      "height": 32,
+      "tileable": true,
+      "tile_axes": "x",
+      "purpose": "stone-steps delivery 2026-10-20 (art/stone-steps)"
     }
   ],
   "reused_assets": [

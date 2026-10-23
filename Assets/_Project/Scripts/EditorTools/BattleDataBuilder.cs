@@ -1,6 +1,8 @@
 using System.IO;
 using ThreeKingdoms.Core.Battle;
+using ThreeKingdoms.Core.Economy;
 using ThreeKingdoms.Data.Battle;
+using ThreeKingdoms.Data.Economy;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,7 +18,7 @@ namespace ThreeKingdoms.EditorTools
         [MenuItem("JRPG/Build Battle Data (combat GDD)")]
         public static BattleCatalog Build()
         {
-            foreach (var dir in new[] { "Battle", "Characters", "Skills", "Items", "Encounters" })
+            foreach (var dir in new[] { "Battle", "Characters", "Skills", "Items", "Encounters", "Economy", "Equipment" })
                 Directory.CreateDirectory($"{Root}/{dir}");
 
             var config = Asset<BattleConfigDefinition>("Battle/BattleConfig", c =>
@@ -76,9 +78,34 @@ namespace ThreeKingdoms.EditorTools
             var b2 = Encounter("battle_2", "Battle2_ZhangLiang", "第二战 · 张梁", EnemyAiKind.FacingSlot, 20, 50, (zhangLiang, 3), (officer, 1), (officer, 1), (officer, 1));
             var b3 = Encounter("battle_3", "Battle3_ZhangBrothers", "第三战 · 张角三兄弟", EnemyAiKind.FacingSlot, 30, 60, (zhangJiao, 4), (zhangBao, 4), (zhangLiang, 4));
 
+            // Equipment catalogue (equipment-items GDD, adopted 2026-10-19; names provisional, values to be tuned).
+            var saber = Equip("ring_pommel_saber", "环首刀", EquipSlot.Weapon, TroopType.Infantry, gift: 15, atk: 4);
+            var lance = Equip("cavalry_lance", "骑枪", EquipSlot.Weapon, TroopType.Cavalry, gift: 15, atk: 4);
+            var huntingBow = Equip("hunting_bow", "猎弓", EquipSlot.Weapon, TroopType.Archer, gift: 15, atk: 4);
+            var cloth = Equip("cloth_armor", "布甲", EquipSlot.Armor, null, gift: 10, def: 3);
+            var spear = Equip("iron_spear", "精铁长矛", EquipSlot.Weapon, TroopType.Infantry, buy: 60, atk: 9);
+            var shuo = Equip("iron_shuo", "精铁马槊", EquipSlot.Weapon, TroopType.Cavalry, buy: 60, atk: 9);
+            var hornBow = Equip("horn_bow", "角弓", EquipSlot.Weapon, TroopType.Archer, buy: 60, atk: 8, speed: 1);
+            var leather = Equip("leather_armor", "皮甲", EquipSlot.Armor, null, buy: 50, def: 6, troops: 10);
+            var bracers = Equip("leather_bracers", "皮护腕", EquipSlot.Accessory, null, buy: 40, def: 3);
+            var banner = Equip("war_banner", "军旗", EquipSlot.Accessory, null, buy: 60, troops: 20);
+            var manual = Equip("war_manual_fragment", "兵书残卷", EquipSlot.Accessory, null, buy: 80, tech: 2);
+            var whip = Equip("swift_whip", "快马鞭", EquipSlot.Accessory, null, gift: 30, speed: 1);   // side-quest reward: not obtainable in Alpha 0.1
+            var economy = Asset<EconomyCatalog>("Economy/EconomyCatalog", c =>
+            {
+                c.StartCopper = 120; c.StartRations = 2; c.RationPrice = 10; c.SellPercent = 50;
+                c.Equipment = new[] { saber, lance, huntingBow, cloth, spear, shuo, hornBow, leather, bracers, banner, manual, whip };
+                c.StartingGear = new[]
+                {
+                    new StartingGearEntry { General = liu, Items = new[] { huntingBow, cloth } },
+                    new StartingGearEntry { General = guan, Items = new[] { lance, cloth } },
+                    new StartingGearEntry { General = zhang, Items = new[] { saber, cloth } },
+                };
+            });
+
             var catalog = Asset<BattleCatalog>("Battle/BattleCatalog", c =>
             {
-                c.Config = config; c.Troops = troops; c.Ration = ration;
+                c.Config = config; c.Troops = troops; c.Ration = ration; c.Economy = economy;
                 c.Party = new[] { liu, guan, zhang };
                 c.Encounters = new[] { b1, b2, b3 };
             });
@@ -112,6 +139,15 @@ namespace ThreeKingdoms.EditorTools
             {
                 s.Id = id; s.DisplayName = name; s.Description = description; s.TechCost = cost; s.Target = target; s.Damage = damage;
                 s.PowerPercent = power; s.HealPercent = heal; s.ModifierStat = stat; s.ModifierPercent = mod; s.ModifierTurns = turns;
+            });
+
+        static EquipmentDefinition Equip(string id, string name, EquipSlot slot, TroopType? troop, int buy = 0, int gift = 0,
+            int atk = 0, int def = 0, int troops = 0, int tech = 0, int speed = 0) =>
+            Asset<EquipmentDefinition>($"Equipment/{id}", e =>
+            {
+                e.Id = id; e.DisplayName = name; e.Slot = slot; e.LimitTroop = troop != null; e.Troop = troop ?? TroopType.Infantry;
+                e.PhysicalAttack = atk; e.PhysicalDefense = def; e.Troops = troops; e.Tech = tech; e.Speed = speed;
+                e.BuyPrice = buy; e.GiftSellPrice = gift;
             });
 
         static GeneralDefinition General(string id, string file, string name, TroopType troop, int force, int command, int intellect,

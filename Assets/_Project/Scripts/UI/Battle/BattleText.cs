@@ -43,6 +43,53 @@ namespace ThreeKingdoms.UI.Battle
         public const string Retry = "重新挑战";
         public const string Again = "再战一次";
         public const string NextBattle = "下一战";
+        public const string ReturnToTown = "回到涿郡";
+        public const string Continue = "继续";
+        public const string ToTitle = "返回标题";
+        public const string Prepare = "战前准备";
+        public const string Hints = "提示";
+        public const string Advantaged = "占优";
+
+        // Teaching hints (story-events answer 8). 暂定 wording, to be replaced by the written script.
+        static readonly System.Collections.Generic.Dictionary<string, (string title, string body)> HintText = new System.Collections.Generic.Dictionary<string, (string, string)>
+        {
+            ["b1.command"] = ("下令", "为每名出战武将依次选择指令：攻击、技能、防御或道具。全部选完才开始交锋，提交前可按「返回」修改。"),
+            ["b1.target"] = ("选目标", "选择要攻击的敌人。光标指向的敌人脚下会出现标记，旁边显示其兵力。"),
+            ["b1.order"] = ("行动顺序", "双方按速度从快到慢行动，防御最先生效。画面上方列出本回合的行动顺序。"),
+            ["b1.retreat"] = ("撤退", "兵力降到 0 的部队撤退，本场不再行动。敌方全部撤退即为胜利。"),
+            ["b1.recover"] = ("战后恢复", "战斗结束后全军兵力与技力回满，不会留下损失。"),
+            ["b2.tech"] = ("技力与技能", "技能消耗技力，普通攻击不耗。战斗中技力不会自动回复，留给关键时刻；技力不足的技能会置灰。"),
+            ["b2.defend"] = ("防御与整队", "兵力低于一半时，可让这支部队防御（本回合受到的伤害减半），或让刘备用「整队」回复 30% 兵力。"),
+            ["b2.advantage"] = ("兵种克制", "骑克步、步克弓、弓克骑，占优时伤害 ×1.4。目标旁标有「占优」的敌人更好打；关羽的骑兵对黄巾军也占优。"),
+            ["b2.focus"] = ("集火", "多名武将攻击同一目标，能更快令其撤退，减少敌方的行动次数。"),
+            ["b3.skills"] = ("三级技能与目标优先", "三人已学会第二项技能：火矢、破阵、威慑。张角的计策伤害高，优先让他撤退。"),
+            ["b3.debuff"] = ("剩余回合", "增益和减益会持续数回合；武将卡片和敌人状态上显示剩余回合，归零后效果消失。"),
+            ["b3.ration"] = ("军粮", "「道具」里的军粮可回复一支部队 30% 兵力，占用一次行动，不能让已撤退的部队复活。"),
+        };
+
+        public static string HintTitle(string key) => HintText.TryGetValue(key, out var h) ? h.title : key;
+        public static string HintBody(string key) => HintText.TryGetValue(key, out var h) ? h.body : key;
+        public static string Hint(string key) => $"【{HintTitle(key)}】{HintBody(key)}";
+        public const string LineupHeader = "出战武将（1–3 名，按选择顺序排位）";
+        public const string IntelHeader = "敌方情报";
+        public const string Outfit = "配装";
+        public const string ConfirmSortie = "确认出战";
+        public const string SortieQuestion = "结束整备并出战？";
+        public const string KeepPreparing = "继续整备";
+        public const string Auto = "自动";
+        public const string Standby = "待命";
+        public const string PrepHint = "确认出战后自动存档；战败可还原到此时的状态重新准备。";
+        public const string NeedOne = "至少选择一名武将出战。";
+        public static string SlotMark(int slot) => "①②③".Substring(slot, 1);
+        public static string GeneralLine(string name, TroopType t, int level, int troops) => $"{name}　{Troop(t)}　{Level(level)}　兵力 {troops}";
+        public const string TestVersionEnd = "测试版结束";
+        public const string ThanksForPlaying = "感谢试玩";
+        // Alpha 0.1 ending narration (story-events answer 5). 暂定 — final wording to be written.
+        public static readonly string[] EndingNarration =
+        {
+            "黄巾主力兵败，张角三兄弟各自退走，涿郡城外重归平静。",
+            "刘备、关羽、张飞三人义兵之名，自此渐渐传开。",
+        };
         public const string AllBattlesDone = "三场黄巾教学战全部完成";
         public const string Fast = "加速";
         public static string Level(int level) => $"Lv.{level}";

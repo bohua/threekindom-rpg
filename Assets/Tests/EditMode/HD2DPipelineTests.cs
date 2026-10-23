@@ -68,7 +68,7 @@ public sealed class HD2DPipelineTests
             Assert.IsNotNull(texture, key);
             Assert.AreEqual(FilterMode.Point, texture.filterMode, key);
             Assert.AreEqual(1, texture.mipmapCount, key);
-            Assert.AreEqual(9 * HD2DSampleBuilder.FrameSize, texture.width, key);
+            Assert.AreEqual((WalkCycleImporter.PoseFrames + WalkCycleImporter.WalkFrames) * HD2DSampleBuilder.FrameSize, texture.width, key + ": 9 poses + 16 walk frames");
             Assert.AreEqual(HD2DSampleBuilder.FrameSize, texture.height, key);
         }
     }

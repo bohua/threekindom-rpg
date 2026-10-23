@@ -59,6 +59,7 @@ namespace ThreeKingdoms.EditorTools
             MiddleRow(env);
             SouthRows(env);
             Outside(env);
+            TownsfolkProps(env);
             EndSession();
 
             var sun = new GameObject("Late-afternoon sun").AddComponent<Light>();
@@ -75,7 +76,8 @@ namespace ThreeKingdoms.EditorTools
             // N13 / N14 (design §4): the two companions, standing where the player meets them.
             HD2DSampleBuilder.Character("Guan Yu", "GuanYu", new Vector3(-11.6f, 0, -5.4f), 0, isPlayer: false).transform.SetParent(people, true);
             HD2DSampleBuilder.Character("Zhang Fei", "ZhangFei", new Vector3(-9.6f, 0, -10.5f), 0, isPlayer: false).transform.SetParent(people, true);
-            NpcMarkers(people);
+            Residents(people, player.transform);
+            Townsfolk(people, player.transform);
 
             var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camGo.AddComponent<Camera>();
@@ -119,6 +121,112 @@ namespace ThreeKingdoms.EditorTools
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
             Debug.Log("ZHUOJUN_TOWN_BUILT");
+        }
+
+        // ---------- tavern interior (user 2026-10-22) ----------
+
+        public const string TavernScenePath = "Assets/_Project/Scenes/Zhuojun_Tavern.unity";
+        const string TavernMaterialDir = TownDir + "/TavernMaterials";
+        const string TavernMeshPath = TownDir + "/Tavern_Meshes.asset";
+
+        // The tavern's main room as an open-fronted diorama seen by a fixed camera (the C-batch interior textures:
+        // back wall with its altar and jars, plank floor, counter, jar shelf, stove, low tables, mats, lamp stands).
+        // Room x -6..6, z 0..8, the street door at the front left. Characters stand where TavernStage places them.
+        public static void BuildTavernInterior()
+        {
+            BeginSession(TavernMaterialDir, TavernMeshPath);
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            RenderSettings.ambientMode = AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.46f, 0.40f, 0.36f);
+            RenderSettings.ambientEquatorColor = new Color(0.40f, 0.32f, 0.24f);
+            RenderSettings.ambientGroundColor = new Color(0.20f, 0.15f, 0.11f);
+            RenderSettings.fog = false;
+
+            var room = new GameObject("Tavern room").transform;
+            var wallSize = Metres("interior_tavern_back_wall");   // 12 × 3.5
+            Quad(room, "Back wall", new Vector3(0, wallSize.y / 2f, 8f), Vector3.zero, wallSize, Mat("interior_tavern_back_wall"));
+            var side = new Vector2(8f, wallSize.y);
+            Quad(room, "Wall W", new Vector3(-6f, side.y / 2f, 4f), new Vector3(0, -90f, 0), side, Mat("wall_plaster_white"), Repeat("wall_plaster_white", side));
+            Quad(room, "Wall E", new Vector3(6f, side.y / 2f, 4f), new Vector3(0, 90f, 0), side, Mat("wall_plaster_white"), Repeat("wall_plaster_white", side));
+            var floor = new Vector2(12f, 9.5f);
+            Quad(room, "Floor", new Vector3(0, 0, 3.25f), new Vector3(90f, 0, 0), floor, Mat("floor_wood_planks"), Repeat("floor_wood_planks", floor), castShadows: false);
+            var mats = new Vector2(4.4f, 3f);
+            Quad(room, "Mats under the guests' table", new Vector3(-1.6f, 0.005f, 3.6f), new Vector3(90f, 0, 0), mats, Mat("floor_mats"), Repeat("floor_mats", mats), castShadows: false);
+            // A dark band outside the open front so the room reads as an interior.
+            var outside = new GameObject("Outside dark").transform; outside.SetParent(room, false);
+            Quad(outside, "Ground beyond the door", new Vector3(0, -0.01f, -5f), new Vector3(90f, 0, 0), new Vector2(40f, 10f), Mat("ground_packed_earth"), Repeat("ground_packed_earth", new Vector2(40f, 10f)), castShadows: false);
+
+            var props = Group(room, "Tavern furnishings");
+            Prop(props, "prop_tavern_counter", 3.6f, 6.4f, solid: true);
+            Prop(props, "prop_jar_shelf", 4.4f, 7.7f);
+            Prop(props, "prop_cooking_stove", -4.4f, 7.3f, glowMask: "prop_cooking_stove_glow_mask");
+            Prop(props, "prop_wine_jars", 1.6f, 7.5f);
+            Prop(props, "Guests' table", -1.6f, 3.6f, key: "prop_low_table");
+            Prop(props, "Seat W", -3.0f, 3.5f, key: "prop_seat_mat");
+            Prop(props, "Seat E", -0.2f, 3.5f, key: "prop_seat_mat");
+            Prop(props, "Seat S", -1.6f, 2.4f, key: "prop_seat_mat");
+            Prop(props, "Side table", 2.4f, 2.4f, key: "prop_low_table");
+            Prop(props, "Side seat", 2.4f, 1.4f, key: "prop_seat_mat");
+            Prop(props, "Lamp W", -5.3f, 4.6f, key: "prop_lamp_stand", glowMask: "prop_lamp_stand_glow_mask");
+            Prop(props, "Lamp E", 5.3f, 3.2f, key: "prop_lamp_stand", glowMask: "prop_lamp_stand_glow_mask");
+            PointLight(props, "Lamp W light", new Vector3(-5.3f, 1.3f, 4.4f), new Color(1f, 0.62f, 0.32f), 2.6f, 7f);
+            PointLight(props, "Lamp E light", new Vector3(5.3f, 1.3f, 3.0f), new Color(1f, 0.62f, 0.32f), 2.6f, 7f);
+            PointLight(props, "Stove glow", new Vector3(-4.4f, 0.8f, 7.0f), new Color(1f, 0.45f, 0.18f), 2.2f, 5f);
+            PointLight(props, "Room fill", new Vector3(0f, 3.2f, 3.5f), new Color(1f, 0.82f, 0.62f), 1.6f, 12f);
+
+            var window = new GameObject("Window light").AddComponent<Light>();
+            window.type = LightType.Directional;
+            window.color = new Color(1f, 0.86f, 0.70f);
+            window.intensity = 0.9f;
+            window.shadows = LightShadows.Soft;
+            window.shadowStrength = 0.6f;
+            window.transform.rotation = Quaternion.Euler(48f, 28f, 0f);
+            EndSession();
+
+            var people = new GameObject("People").transform;
+            Transform Person(string name, string key, Vector3 at)
+            {
+                var go = HD2DSampleBuilder.Character(name, key, at, 0, isPlayer: false);
+                go.transform.SetParent(people, true);
+                Object.DestroyImmediate(go.GetComponent<Collider>());   // staged: nobody pushes anybody
+                go.AddComponent<PixelWalkFrames>().Animator = go.GetComponentInChildren<SpriteFrameAnimator>();
+                return go.transform;
+            }
+            Person("Liu Bei", "LiuBei", new Vector3(-3.0f, 0, 3.3f));
+            Person("Zhang Fei", "ZhangFei", new Vector3(-0.2f, 0, 3.3f));
+            Person("Guan Yu", "GuanYu", new Vector3(-5f, 0, -2.5f));
+            // The waiter (Codex art/tavern-waiter); the grain porter's sheet stands in if his atlas is missing.
+            string waiterKey = File.Exists(HD2DSampleBuilder.AtlasPath(ResidentImporter.WaiterKey))
+                ? ResidentImporter.WaiterKey : ResidentImporter.Residents.First(r => r.Id == "N12").Key;
+            Person("酒保", waiterKey, new Vector3(2.6f, 0, 5.6f));
+
+            var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
+            var cam = camGo.AddComponent<Camera>();
+            cam.fieldOfView = HD2DSampleBuilder.CameraFov;
+            cam.nearClipPlane = 1f; cam.farClipPlane = 120f;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.06f, 0.05f, 0.05f);
+            var camData = camGo.AddComponent<UniversalAdditionalCameraData>();
+            camData.renderPostProcessing = true;
+            camData.antialiasing = AntialiasingMode.None;
+            Quaternion pitch = Quaternion.Euler(HD2DSampleBuilder.CameraPitch, 0f, 0f);
+            camGo.transform.rotation = pitch;
+            camGo.transform.position = new Vector3(0f, 0.8f, 3.4f) + pitch * new Vector3(0, 0, -HD2DSampleBuilder.CameraDistance);
+
+            var high = AssetDatabase.LoadAssetAtPath<VolumeProfile>(HD2DSampleBuilder.HighProfilePath);
+            var low = AssetDatabase.LoadAssetAtPath<VolumeProfile>(HD2DSampleBuilder.LowProfilePath);
+            var volumeGo = new GameObject("Global Volume");
+            var volume = volumeGo.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = high;
+            var tier = volumeGo.AddComponent<HD2DQualityTier>();
+            tier.Volume = volume; tier.High = high; tier.Low = low;
+
+            EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), TavernScenePath);
+            var scenes = EditorBuildSettings.scenes.ToList();
+            if (!scenes.Any(sc => sc.path == TavernScenePath)) scenes.Add(new EditorBuildSettingsScene(TavernScenePath, true));
+            EditorBuildSettings.scenes = scenes.ToArray();
+            AssetDatabase.SaveAssets();
         }
 
         public static void BuildFromCommandLine()
@@ -186,6 +294,11 @@ namespace ThreeKingdoms.EditorTools
         static Texture2D Tex(string key) =>
             AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png")
             ?? throw new FileNotFoundException("Missing town texture " + key);
+
+        // Null when a not-yet-delivered texture is missing (art still with Codex).
+        static Texture2D Tex(string key, bool optional) =>
+            AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png")
+            ?? (optional ? null : throw new FileNotFoundException("Missing town texture " + key));
 
         static Material Mat(string key, bool clip = false, bool twoSided = false, string emissionMask = null, Color? glow = null)
         {
@@ -273,6 +386,40 @@ namespace ThreeKingdoms.EditorTools
             g.localPosition = at;
             g.localRotation = Quaternion.Euler(0, yaw, 0);
             return g;
+        }
+
+        // Walkable stairs up to a landing in front of a door at doorBase (the wall plane), skinned with the Codex
+        // stone-steps delivery (STONE_STEPS_TEXTURES.md): pale treads, darker risers, the three-step side profile,
+        // dressed platform stones and a coursed platform edge. Each step is a solid block from the ground to its
+        // tread, so the character controller climbs it like any step.
+        internal static void Stairs(Transform parent, string name, Vector3 doorBase, float width, int count, float rise, float tread, float landing)
+        {
+            var g = Group(parent, name, doorBase);
+            float top = count * rise, front = -landing - count * tread;
+            for (int i = 0; i < count; i++)
+            {
+                float zFrom = front + i * tread, h = (i + 1) * rise;
+                var treadSize = new Vector2(width, tread);
+                Quad(g, $"Tread {i + 1}", new Vector3(0, h, zFrom + tread / 2f), new Vector3(90f, 0, 0), treadSize, Mat("steps_tread"),
+                    new Vector2(width / Metres("steps_tread").x, 1f), castShadows: false);
+                Quad(g, $"Riser {i + 1}", new Vector3(0, h - rise / 2f, zFrom), Vector3.zero, new Vector2(width, rise), Mat("steps_riser"),
+                    new Vector2(width / Metres("steps_riser").x, 1f));
+                Solid(g, new Vector3(0, h / 2f, zFrom + tread / 2f), new Vector3(width, h, tread));
+            }
+            var landingTop = new Vector2(width, landing);
+            Quad(g, "Landing", new Vector3(0, top, -landing / 2f), new Vector3(90f, 0, 0), landingTop, Mat("platform_top"), Repeat("platform_top", landingTop), castShadows: false);
+            Solid(g, new Vector3(0, top / 2f, -landing / 2f), new Vector3(width, top, landing));
+            // Sides: the stepped profile (low end toward the street) and the platform's coursed edge.
+            var profile = new Vector2(count * tread, top);
+            var landingSide = new Vector2(landing, top);
+            foreach (int s in new[] { -1, 1 })
+            {
+                var side = Quad(g, "Steps side", new Vector3(s * width / 2f, top / 2f, front + count * tread / 2f), new Vector3(0, s < 0 ? 90 : -90, 0), profile,
+                    Mat("steps_side", clip: true));
+                if (s < 0) side.transform.localScale = new Vector3(-1, 1, 1);   // keep the low step at the street end on both sides
+                Quad(g, "Platform side", new Vector3(s * width / 2f, top / 2f, -landing / 2f), new Vector3(0, s < 0 ? 90 : -90, 0), landingSide,
+                    Mat("platform_edge"), new Vector2(landing / Metres("platform_edge").x, 1f));
+            }
         }
 
         static void Solid(Transform parent, Vector3 center, Vector3 size)
@@ -517,11 +664,16 @@ namespace ThreeKingdoms.EditorTools
             var gate = Building(office, "Office gate", new Vector3(0, 0, 13f), 0f, "yamen_gate_front", "yamen_gate_side", null, collide: false);
             foreach (int s in new[] { -1, 1 }) Solid(gate, new Vector3(s * 2.1f, 2.25f, 2f), new Vector3(1.8f, 4.5f, 4f));
             EaveSign(gate, "plaque_yamen", "yamen_gate_front", "yamen_gate_side");
+            // Two low stone steps before the office gate, where the castle steward stands to be seen from the street
+            // (user 2026-10-22).
+            Stairs(office, "Gate steps", new Vector3(0, 0, 13f), 4.4f, 2, 0.175f, 0.4f, 0.6f);
             var hall = Building(office, "Office hall", new Vector3(0, 0, 22f), 0f, "yamen_hall_front", "yamen_hall_side", null);
             var op = Group(office, "Office props");
             Prop(op, "prop_banner_han", -4.2f, 12.2f);
             Prop(op, "prop_banner_han", 4.2f, 12.2f);
-            Prop(op, "steps_stone", 0f, 21.2f);
+            // Real stone steps and a landing before the hall door (user 2026-10-20: the flat step sprite let the party
+            // walk through it). Door sill about 1.05 m: three 0.35 m risers, under the controller's 0.4 m step offset.
+            Stairs(op, "Hall steps", new Vector3(0, 0, 22f), 3.2f, 3, 0.35f, 0.4f, 0.7f);   // 0.4 m treads = the 12 px tread texture
             Prop(op, "prop_lantern_red", -2.6f, 21.6f, y: 2.6f);
             Prop(op, "prop_lantern_red", 2.6f, 21.6f, y: 2.6f);
             Prop(op, "prop_potted_tree", -7.5f, 18f, key: "prop_tree_elm", scale: 0.7f);
@@ -575,6 +727,19 @@ namespace ThreeKingdoms.EditorTools
             Prop(sp, "prop_water_vat", 11.4f, -5.2f);
             PointLight(sp, "Forge light", new Vector3(15.3f, 1.0f, -4.4f), new Color(1f, 0.48f, 0.18f), 3.5f, 4.5f);
 
+            // 13 Gambling house east of the smithy (user 2026-10-22), fronting 中街. Stand-in house textures until the
+            // Codex casino delivery (art/zhuojun-casino); its ruffian and dealer stand at the door.
+            bool casinoArt = Tex("casino_front", optional: true);
+            var casino = Building(row, "13 Gambling house", new Vector3(31f, 0, -4f), 0f,
+                casinoArt ? "casino_front" : "house_b_front", casinoArt ? "casino_side" : "house_b_side", casinoArt ? "casino_back" : "house_b_back");
+            if (casinoArt && Tex("plaque_casino", optional: true)) EaveSign(casino, "plaque_casino", "casino_front", "casino_side");
+            var cg = Group(row, "Gambling house props");
+            Prop(cg, "prop_lantern_red", 27.4f, -4.4f, y: 2.2f);
+            Prop(cg, "prop_lantern_red", 34.6f, -4.4f, y: 2.2f);
+            if (Tex("prop_banner_casino", optional: true)) Prop(cg, "prop_banner_casino", 35.6f, -4.3f, y: 0.9f);
+            if (Tex("prop_dice_table", optional: true)) Prop(cg, "prop_dice_table", 31f, -6.2f, solid: true);
+            PointLight(cg, "Gambling house light", new Vector3(31f, 2.4f, -4.8f), new Color(1f, 0.55f, 0.3f), 1.8f, 5f);
+
             // 05 Market & notice board on the square (x -9..9, z -14..-2), stalls either side of the main axis.
             var mk = Group(row, "05 Market");
             Prop(mk, "prop_stall_cloth", -5.6f, -5.2f, solid: true);
@@ -593,15 +758,10 @@ namespace ThreeKingdoms.EditorTools
             // and gable ends along the main axis.
             var st = Group(row, "Middle streets");
             Building(st, "House 中街 W1", new Vector3(-24f, 0, -4f), 0f, "house_front", "house_side", "house_back");
-            Building(st, "House 中街 W2", new Vector3(-33f, 0, -4f), 0f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
             Building(st, "House 中街 E1", new Vector3(22f, 0, -4f), 0f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(st, "House 中街 E2", new Vector3(30f, 0, -4f), 0f, "house_front", "house_side", "house_back");
             Building(st, "House 北横街 W1", new Vector3(-14f, 0, 8f), 180f, "house_front", "house_side", "house_back");
             Building(st, "House 北横街 W2", new Vector3(-24f, 0, 8f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
-            Building(st, "House 北横街 W3", new Vector3(-32f, 0, 8f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
             Building(st, "House 北横街 E1", new Vector3(14f, 0, 8f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
-            Building(st, "House 北横街 E2", new Vector3(24f, 0, 8f), 180f, "house_front", "house_side", "house_back");
-            Building(st, "House 北横街 E3", new Vector3(32f, 0, 8f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
             Building(st, "House axis NW", new Vector3(-4f, 0, 5f), -90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
             Building(st, "House axis NE", new Vector3(4f, 0, 5f), 90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
         }
@@ -617,21 +777,11 @@ namespace ThreeKingdoms.EditorTools
             Building(row, "09 Post station", new Vector3(26f, 0, -20f), 0f, "post_station_front", "post_station_side", null);
             Building(row, "09 Stable", new Vector3(36f, 0, -20f), 0f, "stable_front", "stable_side", null, roofKey: "thatch");
             // Backs facing 中街 (fronts at z -11, 4 m deep: z -15..-11).
-            Building(row, "House 中街 S W", new Vector3(-14f, 0, -11f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(row, "House 中街 S E1", new Vector3(14f, 0, -11f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
+            // Nothing directly across 中街 from the tavern and the smithy, nor before the barracks gate: landmark doors
+            // keep open ground in front (user 2026-10-22).
             Building(row, "House 中街 S E2", new Vector3(24f, 0, -11f), 180f, "clinic_front", "clinic_side", "house_c_back");
-            Building(row, "House 中街 S E3", new Vector3(33f, 0, -11f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            // Gable ends along the main axis between 南回环街 and the market.
-            Building(row, "House axis SW", new Vector3(-4f, 0, -17.2f), -90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(row, "House axis SE", new Vector3(4f, 0, -17.2f), 90f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            // South band: backs facing 南回环街 (fronts at z -26).
-            Building(row, "House S band W1", new Vector3(-10f, 0, -26f), 180f, "house_front", "house_side", "house_back");
-            Building(row, "House S band W2", new Vector3(-19f, 0, -26f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
-            Building(row, "House S band W3", new Vector3(-28f, 0, -26f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(row, "House S band E1", new Vector3(10f, 0, -26f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
-            Building(row, "House S band E2", new Vector3(19f, 0, -26f), 180f, "house_front", "house_side", "house_back");
-            Building(row, "House S band E3", new Vector3(28f, 0, -26f), 180f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
-            Building(row, "House S band E4", new Vector3(38f, 0, -26f), 180f, "house_c_front", "house_c_side", "house_c_back", roofKey: "thatch");
+            // The south band of houses by the gate and the axis gable ends were taken out (user 2026-10-22): the way
+            // from the south gate to the market stays open and the landmark buildings are easy to pick out.
 
             var hp = Group(row, "House props");
             Prop(hp, "prop_mat_loom", -36.2f, -21.3f);
@@ -704,20 +854,111 @@ namespace ThreeKingdoms.EditorTools
             if (size.y > 3.5f) root.gameObject.AddComponent<Occluder>();
         }
 
-        // The 12 other residents of design §4 have no sprites yet; their posts are marked so dialogue can attach later.
-        static void NpcMarkers(Transform people)
+        // The 12 residents of design §4 (ZHUOJUN_RESIDENTS.md sprites). Root names keep the "N0x 职务" form the story
+        // controller looks up. The patrol soldier, the child and the grain porter walk their short routes; the rest
+        // hold their posts facing the street.
+        static void Residents(Transform people, Transform player)
         {
-            var g = Group(people, "NPC posts (no sprites yet)");
-            (string name, Vector3 at)[] posts =
+            var g = Group(people, "Residents");
+            (string id, string name, Vector3 at, Vector3[] route)[] posts =
             {
-                ("N01 南门守卫", new Vector3(3.6f, 0, -32.5f)), ("N02 巡城兵", new Vector3(6f, 0, -20f)),
-                ("N03 城主府掌士", new Vector3(-3f, 0, 18f)), ("N04 铁匠兼装备商", new Vector3(14f, 0, -5.4f)),
-                ("N05 酒馆掌柜", new Vector3(-14f, 0, -5.2f)), ("N06 医者", new Vector3(16f, 0, -21.2f)),
-                ("N07 驿卒", new Vector3(33f, 0, -21.6f)), ("N08 织席妇人", new Vector3(-35.4f, 0, -22f)),
-                ("N09 街坊老者", new Vector3(-21.2f, 0, -13.2f)), ("N10 孩童", new Vector3(-26f, 0, -12.6f)),
-                ("N11 粮贩", new Vector3(5.6f, 0, -12.6f)), ("N12 运粮脚夫", new Vector3(-26f, 0, 11f)),
+                ("N01", "N01 南门守卫", new Vector3(3.6f, 0, -32.5f), null),
+                ("N02", "N02 巡城兵", new Vector3(1.8f, 0, -27f), new[] { new Vector3(1.8f, 0, -27f), new Vector3(1.8f, 0, -17f) }),
+                ("N03", "N03 城主府掌士", new Vector3(-1.5f, 0.35f, 12.7f), null),   // on the office gate steps (user 2026-10-22)
+                ("N04", "N04 铁匠兼装备商", new Vector3(14f, 0, -5.4f), null),
+                ("N05", "N05 酒馆掌柜", new Vector3(-14f, 0, -5.2f), null),
+                ("N06", "N06 医者", new Vector3(16f, 0, -21.2f), null),
+                ("N07", "N07 驿卒", new Vector3(33f, 0, -21.6f), null),
+                ("N08", "N08 织席妇人", new Vector3(-35.4f, 0, -22f), null),
+                ("N09", "N09 街坊老者", new Vector3(-21.2f, 0, -13.2f), null),
+                ("N10", "N10 孩童", new Vector3(-26f, 0, -12.6f), new[] { new Vector3(-26f, 0, -12.6f), new Vector3(-24.2f, 0, -11f), new Vector3(-23.6f, 0, -14f) }),
+                ("N11", "N11 粮贩", new Vector3(5.6f, 0, -12.6f), null),
+                ("N12", "N12 运粮脚夫", new Vector3(-26f, 0, 11f), new[] { new Vector3(-26f, 0, 11f), new Vector3(-19f, 0, 10.5f) }),
             };
-            foreach (var (name, at) in posts) { var t = new GameObject(name).transform; t.SetParent(g, false); t.localPosition = at; }
+            foreach (var (id, name, at, route) in posts)
+            {
+                string key = ResidentImporter.Residents.First(r => r.Id == id).Key;
+                var npc = HD2DSampleBuilder.Character(name, key, at, 0, isPlayer: false);
+                npc.transform.SetParent(g, true);
+                if (route == null) continue;
+                var animator = npc.GetComponentInChildren<SpriteFrameAnimator>();
+                npc.AddComponent<PixelWalkFrames>().Animator = animator;
+                var patrol = npc.AddComponent<NpcPatrol>();
+                patrol.Waypoints = route;
+                patrol.Player = player;
+            }
+        }
+
+        // What the second batch of townsfolk works at (Codex art/zhuojun-casino street props), when delivered.
+        static void TownsfolkProps(Transform env)
+        {
+            var g = Group(env, "Townsfolk props");
+            void Opt(string key, float x, float z, bool solid = false) { if (Tex(key, optional: true)) Prop(g, key, x, z, solid: solid); }
+            Opt("prop_recruit_desk", 33.6f, 11.2f, solid: true);
+            Opt("prop_wash_basin", -27.2f, -22.5f);
+            Opt("prop_juggle_props", -7.8f, -9.2f);
+            Opt("prop_beggar_bowl", -4.6f, -16.8f);
+            Opt("prop_bookstand", -14.2f, -22.3f);
+            Opt("prop_hoe_field", -41.2f, -31.2f);
+        }
+
+        // The second batch of townsfolk (user 2026-10-22): soldiers drilling and an archer at the barracks, a recruiting
+        // clerk with young men queueing at its gate, readers at the notice board, performers and a cake seller on the
+        // square, laundry, children, a scholar, gossip and a farmer by the houses, a beggar, and the gambling house's
+        // ruffian and dealer. Root names keep the "N1x 职务" form. Frames: 0 front, 1 facing left, 2 facing right;
+        // busy ones cycle their action poses (PoseCycle). Landmark doors stay clear (memory: open space).
+        static void Townsfolk(Transform people, Transform player)
+        {
+            var g = Group(people, "Townsfolk");
+            (string id, string name, Vector3 at, int frame, int[] poses, Vector3[] route)[] posts =
+            {
+                ("N13", "N13 操练的兵卒 甲", new Vector3(28.6f, 0, 20.8f), 0, new[] { 5, 6, 7 }, null),
+                ("N13", "N13 操练的兵卒 乙", new Vector3(30.4f, 0, 20.8f), 0, new[] { 5, 6, 7 }, null),
+                ("N13", "N13 操练的兵卒 丙", new Vector3(32.2f, 0, 20.8f), 0, new[] { 5, 6, 7 }, null),
+                ("N15", "N15 教头", new Vector3(30.4f, 0, 23.4f), 0, new[] { 0, 6, 8 }, null),
+                ("N14", "N14 练射的弓手", new Vector3(35.2f, 0, 19.4f), 2, new[] { 2, 5, 6, 7 }, null),
+                ("N28", "N28 征兵小吏", new Vector3(33.6f, 0, 12.0f), 0, new[] { 0, 6 }, null),
+                ("N29", "N29 应募青年 甲", new Vector3(35.0f, 0, 11.8f), 1, null, null),
+                ("N29", "N29 应募青年 乙", new Vector3(36.4f, 0, 11.8f), 1, null, null),
+                ("N29", "N29 应募青年 丙", new Vector3(37.8f, 0, 11.8f), 1, null, null),
+                ("N16", "N16 看榜的汉子", new Vector3(2.0f, 0, -3.4f), 3, new[] { 3, 3, 8 }, null),
+                ("N17", "N17 看榜的妇人", new Vector3(5.2f, 0, -3.4f), 3, new[] { 3, 3, 6 }, null),
+                ("N18", "N18 杂耍艺人", new Vector3(-7.8f, 0, -8.4f), 0, new[] { 5, 6, 7, 6 }, null),
+                ("N19", "N19 卖艺汉子", new Vector3(7.8f, 0, -8.4f), 0, new[] { 5, 6, 7, 8 }, null),
+                ("N20", "N20 卖饼小贩", new Vector3(-6.8f, 0, -12.4f), 0, new[] { 0, 6 }, null),
+                ("N21", "N21 洗衣妇人", new Vector3(-27.2f, 0, -21.8f), 0, new[] { 5, 6, 7 }, null),
+                ("N22", "N22 顽童", new Vector3(-31f, 0, -23.4f), 0, null, new[] { new Vector3(-31f, 0, -23.4f), new Vector3(-28.6f, 0, -24.6f), new Vector3(-30.2f, 0, -25.4f) }),
+                ("N23", "N23 小姑娘", new Vector3(-20f, 0, -22.6f), 0, null, new[] { new Vector3(-20f, 0, -22.6f), new Vector3(-17.6f, 0, -23.8f) }),
+                ("N24", "N24 读书人", new Vector3(-14.2f, 0, -21.6f), 0, new[] { 0, 5 }, null),
+                ("N25", "N25 闲聊的汉子", new Vector3(-23.3f, 0, -24.6f), 2, new[] { 2, 6, 2, 7 }, null),
+                ("N26", "N26 闲聊的妇人", new Vector3(-21.9f, 0, -24.6f), 1, new[] { 1, 1, 6 }, null),
+                ("N27", "N27 农夫", new Vector3(-42.5f, 0, -29f), 0, null, new[] { new Vector3(-42.5f, 0, -29f), new Vector3(-39.8f, 0, -30.6f) }),
+                ("N30", "N30 乞丐", new Vector3(-4.6f, 0, -16.2f), 0, new[] { 0, 5 }, null),
+                ("N31", "N31 地痞", new Vector3(28.8f, 0, -5.2f), 0, new[] { 0, 6 }, null),
+                ("N32", "N32 赌坊庄家", new Vector3(33.2f, 0, -5.2f), 0, new[] { 5, 6, 7 }, null),
+            };
+            for (int i = 0; i < posts.Length; i++)
+            {
+                var (id, name, at, frame, poses, route) = posts[i];
+                var npc = HD2DSampleBuilder.Character(name, ResidentImporter.KeyFor(id), at, frame, isPlayer: false);
+                npc.transform.SetParent(g, true);
+                var animator = npc.GetComponentInChildren<SpriteFrameAnimator>();
+                if (route != null)
+                {
+                    npc.AddComponent<PixelWalkFrames>().Animator = animator;
+                    var patrol = npc.AddComponent<NpcPatrol>();
+                    patrol.Waypoints = route;
+                    patrol.Player = player;
+                }
+                else if (poses != null)
+                {
+                    var cycle = npc.AddComponent<PoseCycle>();
+                    cycle.Animator = animator;
+                    cycle.Frames = poses;
+                    cycle.Interval = id == "N13" ? 0.45f : 0.9f;
+                    cycle.Phase = i * 0.37f;
+                }
+            }
         }
 
         internal static void PointLight(Transform parent, string name, Vector3 at, Color color, float intensity, float range)

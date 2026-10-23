@@ -12,5 +12,14 @@ namespace ThreeKingdoms.App
             int i = Array.IndexOf(args, name);
             return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
         }
+
+        // Probes start in the first build scene (the title); wait until a -scene switch has actually loaded.
+        public static System.Collections.IEnumerator WaitForRequestedScene()
+        {
+            string scene = Get("-scene");
+            float deadline = UnityEngine.Time.realtimeSinceStartup + 20f;
+            while (scene != null && UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != scene && UnityEngine.Time.realtimeSinceStartup < deadline)
+                yield return null;
+        }
     }
 }

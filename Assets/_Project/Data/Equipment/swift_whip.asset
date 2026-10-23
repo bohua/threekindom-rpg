@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 932e5e09349e0494bb465702f0cd3364, type: 3}
+  m_Name: swift_whip
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Economy.EquipmentDefinition
+  Id: swift_whip
+  DisplayName: "\u5FEB\u9A6C\u97AD"
+  Slot: 2
+  LimitTroop: 0
+  Troop: 0
+  Troops: 0
+  Tech: 0
+  PhysicalAttack: 0
+  PhysicalDefense: 0
+  StrategyAttack: 0
+  StrategyDefense: 0
+  Speed: 1
+  BuyPrice: 0
+  GiftSellPrice: 30

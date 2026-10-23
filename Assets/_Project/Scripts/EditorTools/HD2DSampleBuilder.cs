@@ -275,6 +275,8 @@ namespace ThreeKingdoms.EditorTools
             {
                 var controller = root.AddComponent<CharacterController>();
                 controller.height = 1.4f; controller.radius = 0.3f; controller.center = new Vector3(0, 0.7f, 0);
+                controller.stepOffset = 0.4f;   // stone steps rise 0.35 m
+                controller.slopeLimit = 50f;
                 var mover = root.AddComponent<PlayerMover>();
                 mover.MoveAction = ProjectSetup.Action("Move");
                 root.AddComponent<PixelWalkFrames>().Animator = animator;

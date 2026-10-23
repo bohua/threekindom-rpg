@@ -12,6 +12,8 @@ using UnityEngine.TestTools;
 // walks in through the south gate, walls block, and walls between camera and player are cut away (design §6).
 public sealed class ZhuojunTownTests
 {
+    [SetUp] public void Fresh() => ThreeKingdoms.Gameplay.Story.GameRun.Clear();
+
     static IEnumerator Walk(PlayerMover mover, Vector2 input, float seconds)
     {
         for (float t = 0; t < seconds; t += 0.02f) { mover.Move(input, 0.02f); yield return null; }
@@ -29,7 +31,7 @@ public sealed class ZhuojunTownTests
         Assert.Less(mover.transform.position.z, -38f, "the player starts outside the south gate (design §5)");
 
         // Walk north through the gate passage into the main axis.
-        yield return Walk(mover, Vector2.up, 5f);   // 3.5 m/s: from z -46 to about -28.5
+        yield return Walk(mover, Vector2.up, 2.5f);   // 7 m/s: from z -46 to about -28.5
         Assert.Greater(mover.transform.position.z, -30f, "the south gate passage is open");
         Assert.AreEqual(0f, mover.transform.position.x, 0.3f);
 
@@ -40,9 +42,9 @@ public sealed class ZhuojunTownTests
         Assert.AreEqual(ShadowCastingMode.ShadowsOnly, r.shadowCastingMode, "the gate block hides while it covers the player");
 
         // Walk west along the south loop street into the west city wall: it blocks.
-        yield return Walk(mover, Vector2.up, 1.2f);
+        yield return Walk(mover, Vector2.up, 0.6f);
         float z = mover.transform.position.z;
-        yield return Walk(mover, Vector2.left, 18f);
+        yield return Walk(mover, Vector2.left, 9f);
         Assert.Greater(mover.transform.position.x, -46.5f, "the west city wall blocks");
         Assert.AreEqual(z, mover.transform.position.z, 1.5f);
     }
@@ -69,12 +71,56 @@ public sealed class ZhuojunTownTests
         var boxes = Object.FindObjectsByType<BoxCollider>(FindObjectsSortMode.None)
             .Where(b => b.transform.parent != null && b.transform.parent.Find("Front") != null)
             .Select(b => (name: b.transform.parent.name, bounds: b.bounds)).ToList();
-        Assert.Greater(boxes.Count, 30, "the town is lined with buildings");
+        Assert.Greater(boxes.Count, 20, "the town is lined with buildings (thinned out, user 2026-10-22)");
         for (int i = 0; i < boxes.Count; i++)
         for (int j = i + 1; j < boxes.Count; j++)
         {
             var a = boxes[i].bounds; a.Expand(-0.1f);
             Assert.IsFalse(a.Intersects(boxes[j].bounds), boxes[i].name + " overlaps " + boxes[j].name);
         }
+    }
+
+    // The commandery hall steps are solid and climbable (user 2026-10-20: the party used to walk through them).
+    [UnityTest] public IEnumerator PlayerClimbsTheHallSteps()
+    {
+        yield return SceneManager.LoadSceneAsync("Zhuojun_Town");
+        yield return null;
+        var mover = Object.FindFirstObjectByType<PlayerMover>();
+        var cc = mover.GetComponent<CharacterController>();
+        cc.enabled = false; mover.transform.position = new Vector3(0, 0, 18.5f); cc.enabled = true;
+        yield return null;
+        for (float t = 0; t < 1.2f; t += 0.02f) { mover.Move(Vector2.up, 0.02f); yield return null; }
+        Assert.Greater(mover.transform.position.y, 0.9f, "standing on the landing, not inside the steps");
+        Assert.Greater(mover.transform.position.z, 20.4f, "up at the door");
+        Assert.Less(mover.transform.position.z, 22f, "the hall wall still stops the player");
+        // And back down again, into the courtyard (short of the new gate steps further south).
+        for (float t = 0; t < 0.5f; t += 0.02f) { mover.Move(Vector2.down, 0.02f); yield return null; }
+        Assert.Less(mover.transform.position.y, 0.1f);
+    }
+
+    // Speed doubled (user 2026-10-20) and walking plays the drawn 4-frame cycle for the facing direction.
+    [UnityTest] public IEnumerator PlayerWalksFastWithTheDrawnCycle()
+    {
+        yield return SceneManager.LoadSceneAsync("Zhuojun_Town");
+        yield return null;
+        var mover = Object.FindFirstObjectByType<PlayerMover>();
+        var walk = mover.GetComponent<PixelWalkFrames>();
+        Assert.AreEqual(9f, mover.Speed, 0.01f);
+        Assert.IsTrue(walk.HasWalkCycle, "Liu Bei's atlas carries the 16 walk frames");
+        float z0 = mover.transform.position.z;
+        var seen = new System.Collections.Generic.HashSet<int>();
+        for (float t = 0; t < 1f; t += 0.02f)
+        {
+            mover.Move(Vector2.up, 0.02f);
+            yield return null;
+            if (walk.Walking) seen.Add(walk.CurrentFrame);
+        }
+        Assert.Greater(mover.transform.position.z - z0, 8f, "about 9 m in a second");
+        int upRow = PixelWalkFrames.WalkStart + 3 * PixelWalkFrames.WalkFramesPerRow;
+        Assert.That(seen, Is.EquivalentTo(new[] { upRow, upRow + 1, upRow + 2, upRow + 3 }), "all four back-view frames play");
+        Assert.IsFalse(walk.Mirrored, "the drawn cycle needs no mirroring");
+        for (int i = 0; i < 3; i++) yield return null;
+        Assert.IsFalse(walk.Walking, "standing still stops the cycle");
+        Assert.AreEqual(upRow + 1, walk.CurrentFrame, "idle stands on the passing frame of the last direction");
     }
 }

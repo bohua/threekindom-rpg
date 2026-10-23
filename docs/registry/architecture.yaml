@@ -78,21 +78,53 @@ state_ownership:
     status: active
     owner_system: story-events
     adr: docs/architecture/adr-0002-battle-core.md
-    interface: "battle_1_done / battle_2_done / battle_3_done, set from BattleResult.EncounterId on victory; gates reward-once"
+    # revised 2026-10-20 (ADR-0006): was "battle_1_done / battle_2_done / battle_3_done, set from BattleResult.EncounterId on victory; gates reward-once"
+    interface: "StoryState.BattlesDone (battle_N_done <=> BattlesDone >= N); StoryState.RecordVictory(encounterId) is the single reward-once gate"
     write_access: story-events-only
     referenced_by:
       - docs/architecture/adr-0002-battle-core.md
     added: 2026-10-19
     revised: ""
+  - state: story_state
+    status: active
+    owner_system: story-events
+    adr: docs/architecture/adr-0006-scene-flow-story-flags.md
+    interface: "StoryState (Core): read-only flags/Phase/NextBattleId; written only through Join, BeginOath/CompleteOath, RecordVictory, BeginEnding/CompleteEnding, ToSafeState; held across scenes by GameRun (Gameplay)"
+    write_access: story-events-only
+    referenced_by:
+      - docs/architecture/adr-0006-scene-flow-story-flags.md
+    added: 2026-10-20
+    revised: ""
+  - state: party_inventory
+    status: active
+    owner_system: equipment-items
+    adr: docs/architecture/adr-0008-party-inventory-shop.md
+    interface: "Inventory (Core.Economy): Copper, Rations, Bag, Worn(general, slot), Bonus(general); written only through Buy/Sell/BuyRation/SellRation/Equip/Unequip, and by the battle result owner through SpendRations/AddCopper; Clone is the retry snapshot"
+    write_access: equipment-items-only
+    referenced_by:
+      - docs/architecture/adr-0008-party-inventory-shop.md
+    added: 2026-10-20
+    revised: ""
   - state: pre_battle_snapshot
     status: active
     owner_system: save-system
     adr: docs/architecture/adr-0002-battle-core.md
-    interface: "Format and persistence decided by ADR-0004; combat never writes out-of-battle state, so defeat discards the session"
+    interface: "Rolling auto slot written when a play-through battle starts (ADR-0004); combat never writes out-of-battle state, so defeat discards the session and retry starts from the same state"
     write_access: save-system-only
     referenced_by:
       - docs/architecture/adr-0002-battle-core.md
+      - docs/architecture/adr-0004-save-system.md
     added: 2026-10-19
+    revised: "2026-10-20"
+  - state: save_files
+    status: active
+    owner_system: save-system
+    adr: docs/architecture/adr-0004-save-system.md
+    interface: "SaveSlots (Save): manual_1..N and auto JSON files under persistentDataPath/saves; Write is temp-then-replace, Read never modifies a file; SaveCodec copies Core state, owners rebuild through StoryState.Restore / Inventory.Restore"
+    write_access: save-system-only
+    referenced_by:
+      - docs/architecture/adr-0004-save-system.md
+    added: 2026-10-20
     revised: ""
 
 # Example:
@@ -306,3 +338,27 @@ forbidden_patterns:
 #       ownership model. The owning system must be the sole writer."
 #     adr: docs/architecture/adr-0000-architecture-principles.md
 #     added: 2026-03-26
+  - pattern: scene_composes_story_conditions
+    status: active
+    description: "Scene scripts must not build main-line conditions (who has joined, may the player leave town, which battle is next) themselves; they ask StoryState."
+    why: "One rule set, testable in EditMode; scattered conditions drift from the story-events GDD."
+    adr: docs/architecture/adr-0006-scene-flow-story-flags.md
+    added: 2026-10-20
+  - pattern: game_run_static_in_core
+    status: active
+    description: "ThreeKingdoms.Core must not read the static GameRun; only Gameplay and App layers may."
+    why: "Core stays engine- and scene-free; the static is a runtime container until the save system (ADR-0004)."
+    adr: docs/architecture/adr-0006-scene-flow-story-flags.md
+    added: 2026-10-20
+  - pattern: inventory_written_outside_owner
+    status: active
+    description: "Copper, rations, bag counts and equipped slots change only through Inventory's methods; UI and scene scripts never keep their own copies."
+    why: "Every trade rule (prices, sell-half, worn items, troop limits) lives in one testable place; the retry snapshot is one Clone."
+    adr: docs/architecture/adr-0008-party-inventory-shop.md
+    added: 2026-10-20
+  - pattern: save_file_mutated_on_read
+    status: active
+    description: "Reading a save must never rewrite, repair or delete the file, even when it is damaged or from another format version."
+    why: "save-system GDD rule 7: report and keep the original file."
+    adr: docs/architecture/adr-0004-save-system.md
+    added: 2026-10-20

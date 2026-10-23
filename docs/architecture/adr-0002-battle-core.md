@@ -384,3 +384,9 @@ namespace ThreeKingdoms.Core.Battle
 - forbidden_patterns：Core 引用 UnityEngine 或 ScriptableObject；规则层使用随机数、时间或 I/O；敌方 AI 读取我方本回合指令；战斗改写战斗外状态
 - interfaces：`battle_event_playback`（规则层产出 `BattleEvent` 列表，Gameplay 回放、UI 显示）；`battle_result`（`BattleResult` 由成长、装备与道具、剧情系统消费）
 - state_ownership：战斗只拥有单场内的单位状态；经验归成长系统，库存与铜钱归装备与道具系统，完成标志归剧情系统，快照归存档系统
+
+### 后续修订（2026-10-20，ADR-0006）
+
+- “每场只发一次奖励”的关口移到剧情系统的 `StoryState.RecordVictory`；`DevPartyProgress` 不再自带完成标志与跨场景静态副本，只按该结果入账，临时例外延续到成长、装备系统落地。
+- 出战名单由剧情入队标志推出（`Lineup(HasJoined)`）。
+
