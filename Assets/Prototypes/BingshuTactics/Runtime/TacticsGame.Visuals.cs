@@ -151,6 +151,7 @@ namespace Prototype.BingshuTactics
                 rig.R.GetPropertyBlock(block);
                 if (rig.DuelCol >= 0 && rig.DuelTex)
                 {
+                    if (rig.DuelCol <= 1) rig.DuelCol = (int)(Time.time * 3f) % 2;   // 对峙架势两帧交替
                     int idx = DirIndex(rig); bool upRow = idx >= 3 && idx <= 5; bool flip = idx >= 5;
                     float w = 0.1f, h = 0.5f, row = upRow ? 1 : 0;
                     block.SetTexture("_BaseMap", rig.DuelTex);

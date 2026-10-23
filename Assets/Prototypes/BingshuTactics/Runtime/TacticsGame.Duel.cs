@@ -83,6 +83,7 @@ namespace Prototype.BingshuTactics
             duel = new DuelState { Hero = hero, LuBu = lubu };
             Face(hero, Tile(lubu.Pos) - Tile(hero.Pos)); Face(lubu, Tile(hero.Pos) - Tile(lubu.Pos));
             camFocus = (Tile(hero.Pos) + Tile(lubu.Pos)) / 2f;
+            ClearDuelPose(hero); ClearDuelPose(lubu);
             Log($"单挑：{hero.Name} 对 吕布");
             yield return new WaitForSeconds(0.5f);
             foreach (var (who, line) in Intro[hero.Name]) yield return Say(who, line);
@@ -128,6 +129,9 @@ namespace Prototype.BingshuTactics
             }
 
             // 结算：体力低者落败，损兵四分之一（不致死）；吕布落败则动摇、行动推后
+            // 胜者亮相
+            var winner = duel.HpH > duel.HpL ? hero : duel.HpH < duel.HpL ? lubu : null;
+            if (winner != null && rigs[winner].DuelTex) rigs[winner].DuelCol = 9;
             if (duel.HpH > duel.HpL)
             {
                 yield return Say(hero.Name, WinLine[hero.Name]);
@@ -159,6 +163,7 @@ namespace Prototype.BingshuTactics
             }
 
             camFocus = null; duel = null;
+            rigs[hero].DuelCol = -1; rigs[lubu].DuelCol = -1;
             mode = prevMode == Mode.Duel ? Mode.Busy : prevMode;
         }
 
@@ -198,7 +203,8 @@ namespace Prototype.BingshuTactics
             rig.DuelCol = phase == 2 ? 6 : m == DuelMove.Guard ? 5 : m == DuelMove.Special ? (phase == 0 ? 7 : 8) : (phase == 0 ? 2 : 3);
         }
 
-        void ClearDuelPose(Unit u) { if (rigs.TryGetValue(u, out var rig)) rig.DuelCol = -1; }
+        // 单挑进行中回到对峙架势（0/1 两帧交替），结束后恢复普通帧
+        void ClearDuelPose(Unit u) { if (rigs.TryGetValue(u, out var rig)) rig.DuelCol = duel != null && rig.DuelTex ? (int)(Time.time * 3f) % 2 : -1; }
 
         // ---------------- 界面与输入 ----------------
         void DuelInput(Vector2Int pulse, bool ok)
