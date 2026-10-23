@@ -24,6 +24,7 @@ namespace ThreeKingdoms.EditorTools
         [MenuItem("JRPG/Build Main Line (town + battles 1-3)")]
         public static void Build()
         {
+            CodexArtImporter.Import();    // gambling house, street props, dice and archery art (2026-10-22 deliveries)
             WalkCycleImporter.Import();   // 9 poses + 16 walk frames per character atlas (CHARACTER_WALK_CYCLES.md)
             ResidentImporter.Import();    // the 12 Zhuojun residents (ZHUOJUN_RESIDENTS.md)
             BattleSceneBuilder.Build();
@@ -239,6 +240,10 @@ namespace ThreeKingdoms.EditorTools
             if (!doc.panelSettings) throw new System.InvalidOperationException("Town HUD has no PanelSettings");
             var townHud = hudGo.AddComponent<TownHud>(); townHud.Controller = c; townHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             townHud.Portraits = AssetDatabase.LoadAssetAtPath<DialoguePortraitSet>(DialoguePortraitImporter.SetPath);
+            townHud.DiceFaces = Enumerable.Range(1, 6).Select(i => CodexArtImporter.Load(CodexArtImporter.CasinoUiDir, "dice_" + i)).ToArray();
+            if (townHud.DiceFaces.Any(t => !t)) townHud.DiceFaces = new Texture2D[0];
+            townHud.DiceMat = CodexArtImporter.Load(CodexArtImporter.CasinoUiDir, "dice_mat");
+            townHud.DiceCup = CodexArtImporter.Load(CodexArtImporter.CasinoUiDir, "dice_cup");
 
             // The shop sits above the town HUD; menus need an EventSystem for gamepad and keyboard navigation.
             var shopGo = new GameObject("Shop HUD");
@@ -255,7 +260,7 @@ namespace ThreeKingdoms.EditorTools
             var archeryDoc = archeryGo.AddComponent<UIDocument>();
             archeryDoc.panelSettings = doc.panelSettings;
             archeryDoc.sortingOrder = 10;
-            var archeryHud = archeryGo.AddComponent<ThreeKingdoms.UI.Town.ArcheryHud>(); archeryHud.Controller = c; archeryHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
+            var archeryHud = archeryGo.AddComponent<ThreeKingdoms.UI.Town.ArcheryHud>(); archeryHud.Controller = c; archeryHud.Art = CodexArtImporter.Archery.Select(n => CodexArtImporter.Load(CodexArtImporter.ArcheryDir, n)).Where(t => t).ToArray(); archeryHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             var menuGo = new GameObject("Main Menu HUD");
             var menuDoc = menuGo.AddComponent<UIDocument>();
             menuDoc.panelSettings = doc.panelSettings;

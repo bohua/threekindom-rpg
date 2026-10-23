@@ -64,6 +64,7 @@ namespace ThreeKingdoms.EditorTools
             var icons = BuildTroopIcons();
             var panel = BuildPanelSettings();
             ConvertEnemySheets();
+            vfxSheets = CodexArtImporter.VfxSheets();   // art/battle-vfx
             DialoguePortraitImporter.Import();   // speakers' illustrations for the lines after a victory
             if (!File.Exists(BattleBackdropBaker.ScenePath)) BattleBackdropBaker.Build();
             foreach (var battle in Battles) BuildScene(battle, catalog, icons, panel);
@@ -155,6 +156,9 @@ namespace ThreeKingdoms.EditorTools
             vfx.Controller = controller;
             vfx.Additive = VfxMaterial();
             vfx.ShakeTarget = Camera.main ? Camera.main.transform : null;
+            vfx.Sheets = vfxSheets;
+            vfx.SheetAlpha = SheetMaterial("VfxSheetAlpha", additive: false);
+            vfx.SheetAdditive = SheetMaterial("VfxSheetAdditive", additive: true);
 
             var tutor = controller.gameObject.AddComponent<ThreeKingdoms.Gameplay.Battle.BattleTutor>();
             tutor.Controller = controller;
@@ -219,6 +223,27 @@ namespace ThreeKingdoms.EditorTools
         }
 
         const string VfxMaterialPath = "Assets/_Project/Art/Battle/Vfx/VfxAdditive.mat";
+        static BattleVfx.Sheet[] vfxSheets = new BattleVfx.Sheet[0];
+
+        // Template materials for the effect sheets: unlit, transparent, alpha or additive; each effect copies one and
+        // sets its strip and frame.
+        static Material SheetMaterial(string name, bool additive)
+        {
+            string path = $"Assets/_Project/Art/Battle/Vfx/{name}.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(path)) AssetDatabase.DeleteAsset(path);
+            var m = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit")) { name = name };
+            m.SetFloat("_Surface", 1f);
+            m.SetFloat("_Blend", additive ? 2f : 0f);
+            m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            m.SetFloat("_DstBlend", (float)(additive ? UnityEngine.Rendering.BlendMode.One : UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha));
+            m.SetFloat("_ZWrite", 0f);
+            m.SetFloat("_Cull", 0f);   // mirrored quads stay visible
+            m.SetColor("_BaseColor", Color.white);
+            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent + 10;
+            AssetDatabase.CreateAsset(m, path);
+            return m;
+        }
 
         // Additive URP particle material for the effect strokes and sparks (vertex colour, no texture: square pixels).
         static Material VfxMaterial()

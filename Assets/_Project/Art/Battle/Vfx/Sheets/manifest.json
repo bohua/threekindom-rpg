@@ -1,0 +1,454 @@
+{
+  "task": "battle-vfx",
+  "planned": 17,
+  "available": 17,
+  "complete": true,
+  "files": [
+    {
+      "filename": "vfx_slash_infantry.png",
+      "native_size": [
+        576,
+        96
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_slash_infantry: Whitegold diagonal crescent sword slash, evolves thin windup glint->large slash arc->brightcentral impact->fragmented arc->sparks->fading tiny sparks. EXACTLY6 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe96x96 native, finalstrip576x96. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 6frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "6e1d15244f019d3a5aa082fb88898c46cd83243626828f73c69f0599176d589f",
+      "frames": 6,
+      "frame_size": [
+        96,
+        96
+      ],
+      "fps": 12,
+      "duration_seconds": 0.5,
+      "anchor": [
+        48.0,
+        48.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_slash_infantry.png"
+      ]
+    },
+    {
+      "filename": "vfx_thrust_cavalry.png",
+      "native_size": [
+        576,
+        96
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_thrust_cavalry: Whitegold straight horizontal thrust streak and centred impact ring, buildup->long thrust->flash ring expands->sparks->small fading fragments. EXACTLY6 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe96x96 native, finalstrip576x96. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 6frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "02ec721d1f1cdc9b7b1214c83533506dc1c9614412855f083396b43037a7ee59",
+      "frames": 6,
+      "frame_size": [
+        96,
+        96
+      ],
+      "fps": 12,
+      "duration_seconds": 0.5,
+      "anchor": [
+        48.0,
+        48.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_thrust_cavalry.png"
+      ]
+    },
+    {
+      "filename": "vfx_arrow_hit.png",
+      "native_size": [
+        320,
+        64
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_arrow_hit: Small physical arrow striking rightward with wooden splinters and warm sparks at centre, arrow enters->impact->splinters->scatter->fade. No bodies. EXACTLY5 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe64x64 native, finalstrip320x64. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 5frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "666913452265aa1c845be6d900e8fd340e09eb1098c7b2a8af732d4bda6dc65f",
+      "frames": 5,
+      "frame_size": [
+        64,
+        64
+      ],
+      "fps": 12,
+      "duration_seconds": 0.4166666666666667,
+      "anchor": [
+        32.0,
+        32.0
+      ],
+      "additive": false,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_arrow_hit.png"
+      ]
+    },
+    {
+      "filename": "vfx_arrow_trail.png",
+      "native_size": [
+        256,
+        64
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_arrow_trail: Arrow flight trail pointing RIGHT, tail LEFT, brief pale streak with arrowshaft; four advancing and dissipating trail phases. No target. EXACTLY4 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe64x64 native, finalstrip256x64. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 4frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "be5fb6d0dea6815c578d9883e054994b4ce220b97a0108838ff59903f0fa77bd",
+      "frames": 4,
+      "frame_size": [
+        64,
+        64
+      ],
+      "fps": 12,
+      "duration_seconds": 0.3333333333333333,
+      "anchor": [
+        32.0,
+        32.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_arrow_trail.png"
+      ]
+    },
+    {
+      "filename": "vfx_hit_spark.png",
+      "native_size": [
+        192,
+        48
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_hit_spark: Compact whitegold physical hit sparks, tinyflash->sharpstarburst->scatteredshortstreaks->fadingtinyflecks. EXACTLY4 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe48x48 native, finalstrip192x48. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 4frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "7b542286cdb32eb96df159bb436f51cadefe910094c154fd5219c9ac27c9bc00",
+      "frames": 4,
+      "frame_size": [
+        48,
+        48
+      ],
+      "fps": 12,
+      "duration_seconds": 0.3333333333333333,
+      "anchor": [
+        24.0,
+        24.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_hit_spark.png"
+      ]
+    },
+    {
+      "filename": "vfx_charge_guan.png",
+      "native_size": [
+        896,
+        128
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_charge_guan: Jade green blade rush followed by large crescent slash. Swellinggreenstreak->rush->twinblade arc->centredimpact->arcfragments->greenflecks->fade. No character/no magic runes. EXACTLY7 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe128x128 native, finalstrip896x128. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 7frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "2f45664c4e4c47dd289da675827181b8e366ad8499d0d55ddfd78d0048a0d4c9",
+      "frames": 7,
+      "frame_size": [
+        128,
+        128
+      ],
+      "fps": 12,
+      "duration_seconds": 0.5833333333333334,
+      "anchor": [
+        64.0,
+        64.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_charge_guan.png"
+      ]
+    },
+    {
+      "filename": "vfx_break_guan.png",
+      "native_size": [
+        896,
+        128
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_break_guan: Cracked armour plates in jade-green strike flash, cracks spread->impact greenburst->metal fragments separate->flecks->fade. No text or debuff symbol yet. EXACTLY7 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe128x128 native, finalstrip896x128. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 7frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "68ad56a7bfb9248f37316db0a1713088021ff8915f7b7847d554bf778af247a5",
+      "frames": 7,
+      "frame_size": [
+        128,
+        128
+      ],
+      "fps": 12,
+      "duration_seconds": 0.5833333333333334,
+      "anchor": [
+        64.0,
+        64.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_break_guan.png"
+      ]
+    },
+    {
+      "filename": "vfx_sweep_zhang.png",
+      "native_size": [
+        1280,
+        160
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_sweep_zhang: Wide horizontal whitegold halfmoon shockwave sweeping across with dusty earth plume. windup->crescentexpands->hugelefttorightarc->dustburst->dustring->dustfragments->flecks->fade. Centre hitanchor. EXACTLY8 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe160x160 native, finalstrip1280x160. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 8frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "4339c9a47cd905838086d78d333a44171dbd9d39ae33867cb1fdb52f52fc4462",
+      "frames": 8,
+      "frame_size": [
+        160,
+        160
+      ],
+      "fps": 14,
+      "duration_seconds": 0.5714285714285714,
+      "anchor": [
+        80.0,
+        80.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_sweep_zhang.png"
+      ]
+    },
+    {
+      "filename": "vfx_roar_zhang.png",
+      "native_size": [
+        1120,
+        160
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_roar_zhang: Martial intimidation soundwave rings, dark vermilion. Small compressedring->multipleexpandingrings->large ringpulse->brokenrings->dimshortarcs->flecks->fade. No mouth/face/no mysticalrunes. EXACTLY7 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe160x160 native, finalstrip1120x160. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 7frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "aa2f62b20a49ba28767ea2348e7a8c57b4028e3ecdc2e958ebff42b9beecbf35",
+      "frames": 7,
+      "frame_size": [
+        160,
+        160
+      ],
+      "fps": 12,
+      "duration_seconds": 0.5833333333333334,
+      "anchor": [
+        80.0,
+        80.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_roar_zhang.png"
+      ]
+    },
+    {
+      "filename": "vfx_fire_arrow.png",
+      "native_size": [
+        1024,
+        128
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_fire_arrow: Physical burning arrow descends diagonally to centre, then brilliant orangegold brief ignition burst and embers. arrowapproach->contact->ignition->largeflameburst->shrinkingflame->embers->fewembers->fade. No characters. EXACTLY8 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe128x128 native, finalstrip1024x128. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 8frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "1ac897bc9fd184808520483719e9c13a1db8e8d462667d603090c78775a57812",
+      "frames": 8,
+      "frame_size": [
+        128,
+        128
+      ],
+      "fps": 14,
+      "duration_seconds": 0.5714285714285714,
+      "anchor": [
+        64.0,
+        64.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_fire_arrow.png"
+      ]
+    },
+    {
+      "filename": "vfx_rally_heal.png",
+      "native_size": [
+        1024,
+        128
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_rally_heal: Gold military-banner-shaped rally halo rises bottom to top with green restorative glints, NO numbers/letters/text, centre reservedempty for numberoverlay. sproutglints->rising banneroutline->greenpulse->goldtopflare->fadingribbons->glints->fewflecks->fade. EXACTLY8 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe128x128 native, finalstrip1024x128. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 8frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "8fe11d07cfef8f38768f710f61cacd5823fd66936143becdb42ddf797616538f",
+      "frames": 8,
+      "frame_size": [
+        128,
+        128
+      ],
+      "fps": 14,
+      "duration_seconds": 0.5714285714285714,
+      "anchor": [
+        64.0,
+        64.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_rally_heal.png"
+      ]
+    },
+    {
+      "filename": "vfx_ration_heal.png",
+      "native_size": [
+        576,
+        96
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_ration_heal: Small linen grainricebag silhouette appears with warmgold grains and green recoveryglints, bagappears->greenpulse->upwardgoldgrains->sparkles->dimflecks->fade. No numbers. EXACTLY6 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe96x96 native, finalstrip576x96. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 6frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "daa5ee03f5c4d7bec08397b4d9a8778bd25426bbf05a74b74f51582d92cd3c7c",
+      "frames": 6,
+      "frame_size": [
+        96,
+        96
+      ],
+      "fps": 12,
+      "duration_seconds": 0.5,
+      "anchor": [
+        48.0,
+        48.0
+      ],
+      "additive": false,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_ration_heal.png"
+      ]
+    },
+    {
+      "filename": "vfx_defend.png",
+      "native_size": [
+        480,
+        96
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_defend: Simple shield-shaped pale bronze translucent-looking HARD OPAQUE DITHERED outline guard, emergingoutline->fullshield->brightrim->fragmentingrim->smallflecks. No letters. EXACTLY5 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe96x96 native, finalstrip480x96. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 5frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "27a72d9d873a6bd6d4417a39a60bb719df020121725ce28961a652c1cf458e37",
+      "frames": 5,
+      "frame_size": [
+        96,
+        96
+      ],
+      "fps": 12,
+      "duration_seconds": 0.4166666666666667,
+      "anchor": [
+        48.0,
+        48.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_defend.png"
+      ]
+    },
+    {
+      "filename": "vfx_debuff_atk.png",
+      "native_size": [
+        288,
+        48
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_debuff_atk: Small RED downwardarrow plus broken sword icon, materializes->flashes->settles->dim->briefpulse->dim. No words. Clearly arrow downward and snappedblade. EXACTLY6 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe48x48 native, finalstrip288x48. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 6frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "03139c6554e903c678734fd47bf63903a610a10dc2231571570f678612eeded7",
+      "frames": 6,
+      "frame_size": [
+        48,
+        48
+      ],
+      "fps": 12,
+      "duration_seconds": 0.5,
+      "anchor": [
+        24.0,
+        24.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_debuff_atk.png"
+      ]
+    },
+    {
+      "filename": "vfx_debuff_def.png",
+      "native_size": [
+        288,
+        48
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_debuff_def: Small rustred downwardarrow plus cracked shield icon, materializes->flashes->settles->dim->briefpulse->dim. No words. EXACTLY6 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe48x48 native, finalstrip288x48. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 6frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "08e28289daa753d9bf720586bd095424c98d355c4556ccff9451e485745adc62",
+      "frames": 6,
+      "frame_size": [
+        48,
+        48
+      ],
+      "fps": 12,
+      "duration_seconds": 0.5,
+      "anchor": [
+        24.0,
+        24.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_debuff_def.png"
+      ]
+    },
+    {
+      "filename": "vfx_rout_dust.png",
+      "native_size": [
+        576,
+        96
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_rout_dust: Retreat dust and a plain fallen banner silhouette, no corpses. Dustpuff->dustswells with fallingflag->lowerflaganddust->thincloud->flecks->fade. EXACTLY6 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe96x96 native, finalstrip576x96. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 6frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "1f4f5836e563d3128edaf64dd79a54ec6163b97b069f37aa8322e0c9827bdb20",
+      "frames": 6,
+      "frame_size": [
+        96,
+        96
+      ],
+      "fps": 12,
+      "duration_seconds": 0.5,
+      "anchor": [
+        48.0,
+        48.0
+      ],
+      "additive": false,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_rout_dust.png"
+      ]
+    },
+    {
+      "filename": "vfx_screen_flash.png",
+      "native_size": [
+        192,
+        64
+      ],
+      "purpose": "Usecase:stylized-concept. Production PIXEL ART COMBAT VFX SPRITE STRIP. vfx_screen_flash: Screenflash texture THREE fullyopaque square swatches: warmwhite first, paleyellowgold second, dark gold final; subtlepixel dithertexture. No text, frameborders or objects. These squareframes stretch full screen. EXACTLY3 equallyspaced SQUAREframesinONEhorizontalrow, no secondrow. Eachframe64x64 native, finalstrip192x64. Keep effectscentredineachframesamehitanchorcentre. Smallbeginning, fastbuild, biggestimpactmiddle, naturaldissipationend; no identicalframes. Fullytransparentbackground, no colouredsquarebackdrops/castshadow, no characters, no words/numbers, no magicrunes. Brightopaquehardpixelclusters with crispdither optional, no blurryhalos/halfalpha. Isolated eachframe with cleargutters, no VFX crossing cellboundary. Match HD2DJRPGphysicalmartialeffects andpalettejadegoldvermilion; no smoothvectorart. Need ALL 3frames, evenlyspaced with eachframecentreinvisibleevenlysizedslot.",
+      "sha256": "2ab3d5a45fc565c6f47e1b4fac6c429079860bfbf6b0f3bf4c414a1a06d42099",
+      "frames": 3,
+      "frame_size": [
+        64,
+        64
+      ],
+      "fps": 10,
+      "duration_seconds": 0.3,
+      "anchor": [
+        32.0,
+        32.0
+      ],
+      "additive": true,
+      "nine_slice": null,
+      "tile": false,
+      "source_candidates": [
+        "_sources\\vfx_screen_flash-fullscreen.png",
+        "_sources\\vfx_screen_flash.png"
+      ]
+    }
+  ],
+  "errors": [],
+  "evidence_boundary": "Art files and mockup only; not Unity import/game/runtime acceptance.",
+  "integration_notes": "多数12fps；8帧特效建议14fps以满足0.6秒上限；3帧全屏闪10fps。总时长0.3–0.583秒。GIF按10ms粒度显示，精确时长以manifest为准。加色混合为建议值，实际亮度与叠加须游戏内调整。全屏闪三帧为不透明色块，适用短时全屏叠加。"
+}

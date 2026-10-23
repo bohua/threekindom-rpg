@@ -372,7 +372,9 @@ namespace ThreeKingdoms.Gameplay.Story
             foreach (var r in Residents.Concat(Ambient))
             {
                 if (!r) continue;
-                bool near = !Busy && r.gameObject.activeInHierarchy && Vector3.Distance(Flat(r.position), Flat(p)) <= BubbleRange;
+                bool near = !Busy && r.gameObject.activeInHierarchy && Vector3.Distance(Flat(r.position), Flat(p)) <= BubbleRange
+                    // Of several townsfolk alike (the drilling soldiers, the recruits) only one says the shared line.
+                    && !speaking.Any(o => o != r && ResidentId(o) == ResidentId(r));
                 if (near == speaking.Contains(r)) continue;
                 if (near) { speaking.Add(r); Face(r); }
                 else speaking.Remove(r);

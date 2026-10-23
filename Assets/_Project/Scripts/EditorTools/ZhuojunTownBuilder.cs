@@ -59,6 +59,7 @@ namespace ThreeKingdoms.EditorTools
             MiddleRow(env);
             SouthRows(env);
             Outside(env);
+            TownsfolkProps(env);
             EndSession();
 
             var sun = new GameObject("Late-afternoon sun").AddComponent<Light>();
@@ -886,6 +887,19 @@ namespace ThreeKingdoms.EditorTools
                 patrol.Waypoints = route;
                 patrol.Player = player;
             }
+        }
+
+        // What the second batch of townsfolk works at (Codex art/zhuojun-casino street props), when delivered.
+        static void TownsfolkProps(Transform env)
+        {
+            var g = Group(env, "Townsfolk props");
+            void Opt(string key, float x, float z, bool solid = false) { if (Tex(key, optional: true)) Prop(g, key, x, z, solid: solid); }
+            Opt("prop_recruit_desk", 33.6f, 11.2f, solid: true);
+            Opt("prop_wash_basin", -27.2f, -22.5f);
+            Opt("prop_juggle_props", -7.8f, -9.2f);
+            Opt("prop_beggar_bowl", -4.6f, -16.8f);
+            Opt("prop_bookstand", -14.2f, -22.3f);
+            Opt("prop_hoe_field", -41.2f, -31.2f);
         }
 
         // The second batch of townsfolk (user 2026-10-22): soldiers drilling and an archer at the barracks, a recruiting

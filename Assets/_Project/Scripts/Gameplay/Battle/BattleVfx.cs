@@ -11,10 +11,23 @@ namespace ThreeKingdoms.Gameplay.Battle
     //   attack: infantry a slash arc, cavalry a thrust streak with a ring, archers an arrow with a trail;
     //   skills: 突击 a green blade rush, 破阵 a cracking ring, 横扫 a crescent wave over all enemies, 威慑 red roar
     //   rings, 火矢 a fire arrow bursting into flame, 整队 a rising golden ring; plus hit sparks, heals, debuff
-    //   marks, the guard shield and dust when a unit falls back. The Codex sprite-sheet effects (art/battle-vfx)
-    //   replace these strokes when delivered.
+    //   marks, the guard shield and dust when a unit falls back. The Codex sprite-sheet effects (art/battle-vfx) play
+    //   instead wherever a sheet exists (Sheets); the strokes stay as the fallback.
     public sealed class BattleVfx : MonoBehaviour
     {
+        // A horizontal strip of square frames (art/battle-vfx manifest), drawn at the battle's pixel scale (30 px a unit).
+        [System.Serializable]
+        public struct Sheet
+        {
+            public string Key;          // "slash_infantry", "fire_arrow", ...
+            public Texture2D Texture;
+            public int Frames;
+            public float Fps;
+            public bool Additive;
+        }
+        public Sheet[] Sheets = new Sheet[0];
+        [Tooltip("URP Particles/Unlit, alpha and additive, for the sheets")] public Material SheetAlpha, SheetAdditive;
+        public const float PixelsPerUnit = 30f;
         public BattleController Controller;
         [Tooltip("Additive particle material (URP Particles/Unlit) for strokes and sparks")] public Material Additive;
         public Transform ShakeTarget;
@@ -43,13 +56,97 @@ namespace ThreeKingdoms.Gameplay.Battle
             switch (e.Kind)
             {
                 case BattleEventKind.ActionStarted: StartCoroutine(Action(e)); break;
-                case BattleEventKind.Damage: Spark(At(e.Target), e.Advantage); break;
+                case BattleEventKind.Damage:
+                    if (!Play("hit_spark", At(e.Target), e.Advantage ? 1.6f : 1.2f)) Spark(At(e.Target), e.Advantage);
+                    else if (e.Advantage) Shake(0.1f, 0.05f);
+                    break;
                 case BattleEventKind.Heal:
-                case BattleEventKind.ItemUsed: HealGlow(At(e.Target), e.Kind == BattleEventKind.ItemUsed); break;
-                case BattleEventKind.ModifierApplied: Debuff(At(e.Target)); break;
-                case BattleEventKind.Defend: Shield(At(e.Actor)); break;
-                case BattleEventKind.Retreated: Dust(At(e.Target)); break;
+                    if (Play("rally_heal", At(e.Target) + Vector3.down * 0.3f)) Played.Add("heal");
+                    else HealGlow(At(e.Target), false);
+                    break;
+                case BattleEventKind.ItemUsed:
+                    if (Play("ration_heal", At(e.Target))) Played.Add("ration");
+                    else HealGlow(At(e.Target), true);
+                    break;
+                case BattleEventKind.ModifierApplied:
+                    bool defence = e.Modifier != null && e.Modifier.Stat == BattleStat.PhysicalDefense;
+                    if (Play(defence ? "debuff_def" : "debuff_atk", At(e.Target) + Vector3.up * 0.9f, 1.4f)) Played.Add("debuff");
+                    else Debuff(At(e.Target));
+                    break;
+                case BattleEventKind.Defend:
+                    if (Play("defend", At(e.Actor))) Played.Add("defend");
+                    else Shield(At(e.Actor));
+                    break;
+                case BattleEventKind.Retreated:
+                    if (!Play("rout_dust", At(e.Target) + Vector3.down * 0.4f, 1.3f)) Dust(At(e.Target));
+                    break;
             }
+        }
+
+        // ---------- sprite sheets ----------
+
+        bool Has(string key) => Sheets.Any(x => x.Key == key && x.Texture);
+
+        // Plays a sheet once at a point (mirrored when the attack goes right to left); false when there is no sheet.
+        public bool Play(string key, Vector3 at, float scale = 1f, bool mirror = false)
+        {
+            int i = System.Array.FindIndex(Sheets, x => x.Key == key && x.Texture);
+            if (i < 0 || !SheetAlpha) return false;
+            StartCoroutine(PlaySheet(Sheets[i], at, scale, mirror));
+            return true;
+        }
+
+        GameObject SheetQuad(Sheet sheet, float scale, bool mirror, out Material m)
+        {
+            var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            Destroy(quad.GetComponent<Collider>());
+            quad.name = "Vfx " + sheet.Key;
+            quad.transform.SetParent(transform, false);
+            float size = sheet.Texture.height / PixelsPerUnit * scale;
+            quad.transform.localScale = new Vector3(mirror ? -size : size, size, 1f);
+            var r = quad.GetComponent<MeshRenderer>();
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            m = new Material(sheet.Additive && SheetAdditive ? SheetAdditive : SheetAlpha);
+            m.SetTexture("_BaseMap", sheet.Texture);
+            m.SetTextureScale("_BaseMap", new Vector2(1f / sheet.Frames, 1f));
+            m.SetTextureOffset("_BaseMap", Vector2.zero);
+            r.sharedMaterial = m;
+            return quad;
+        }
+
+        IEnumerator PlaySheet(Sheet sheet, Vector3 at, float scale, bool mirror)
+        {
+            var quad = SheetQuad(sheet, scale, mirror, out var m);
+            quad.transform.position = at + Vector3.back * 0.2f;
+            float frameTime = 1f / Mathf.Max(1f, sheet.Fps * Rate);
+            for (int f = 0; f < sheet.Frames; f++)
+            {
+                m.SetTextureOffset("_BaseMap", new Vector2((float)f / sheet.Frames, 0f));
+                yield return new WaitForSeconds(frameTime);
+            }
+            Destroy(m);
+            Destroy(quad);
+        }
+
+        // A sheet carried from a to b along a shallow arc (the arrow trail), cycling its frames.
+        IEnumerator FlySheet(string key, Vector3 from, Vector3 to, float duration, float scale)
+        {
+            int i = System.Array.FindIndex(Sheets, x => x.Key == key && x.Texture);
+            if (i < 0) yield break;
+            var sheet = Sheets[i];
+            var quad = SheetQuad(sheet, scale, to.x < from.x, out var m);
+            duration /= Rate;
+            for (float t = 0f; t < duration; t += Time.deltaTime)
+            {
+                float k = t / duration;
+                quad.transform.position = Vector3.Lerp(from, to, k) + Vector3.up * Mathf.Sin(k * Mathf.PI) * 0.8f + Vector3.back * 0.2f;
+                int f = Mathf.FloorToInt(t * sheet.Fps * Rate) % sheet.Frames;
+                m.SetTextureOffset("_BaseMap", new Vector2((float)f / sheet.Frames, 0f));
+                yield return null;
+            }
+            Destroy(m);
+            Destroy(quad);
         }
 
         // Screenshots (-vfx): play one effect between the first general and the first enemy.
@@ -60,7 +157,7 @@ namespace ThreeKingdoms.Gameplay.Battle
                 : what == "thrust" ? s.Players.First(u => u.Troop == TroopType.Cavalry) : s.Players.First(u => u.Troop == TroopType.Archer);
             var target = s.Enemies.First(u => u.Active);
             var skill = actor.Skills.Concat(s.Players.SelectMany(p => p.Skills)).FirstOrDefault(k => k.Id == what);
-            if (what == "heal") { HealGlow(At(actor), false); return; }
+            if (what == "heal") { if (!Play("rally_heal", At(actor))) HealGlow(At(actor), false); return; }
             StartCoroutine(Action(actor, target, skill != null ? CommandKind.Skill : CommandKind.Attack, skill));
         }
 
@@ -70,6 +167,14 @@ namespace ThreeKingdoms.Gameplay.Battle
         {
             var e = (Actor: actorUnit, Target: targetUnit, Command: command, Skill: skill);
             Vector3 from = At(e.Actor), to = e.Target != null ? At(e.Target) : from;
+            bool mirror = to.x < from.x;
+            if (SheetAction(e.Actor, e.Command, e.Skill, from, to, mirror) is IEnumerator sheetAction)
+            {
+                Played.Add(e.Command == CommandKind.Attack ? AttackName(e.Actor.Troop) : e.Skill.Id);
+                if (e.Command == CommandKind.Skill) Shake(0.12f, 0.06f);
+                yield return sheetAction;
+                yield break;
+            }
             if (e.Command == CommandKind.Attack)
             {
                 switch (e.Actor.Troop)
@@ -137,6 +242,62 @@ namespace ThreeKingdoms.Gameplay.Battle
                     Burst(from, Gold, White, 24, 3f, 0.24f, 0.3f);
                     break;
             }
+        }
+
+        static string AttackName(TroopType t) => t == TroopType.Archer ? "arrow" : t == TroopType.Cavalry ? "thrust" : "slash";
+
+        // The sheet version of an attack or skill, or null when its sheet is missing (the strokes play instead).
+        IEnumerator SheetAction(BattleUnit actor, CommandKind command, SkillSpec skill, Vector3 from, Vector3 to, bool mirror)
+        {
+            if (command == CommandKind.Attack)
+            {
+                switch (actor.Troop)
+                {
+                    case TroopType.Archer:
+                        if (!Has("arrow_trail") || !Has("arrow_hit")) return null;
+                        return Sequence(FlySheet("arrow_trail", from, to, 0.22f, 1f), () => Play("arrow_hit", to, 1.2f, mirror));
+                    case TroopType.Cavalry:
+                        if (!Has("thrust_cavalry")) return null;
+                        return Sequence(Wait(0.1f), () => Play("thrust_cavalry", to, 1.2f, mirror));
+                    default:
+                        if (!Has("slash_infantry")) return null;
+                        return Sequence(Wait(0.1f), () => Play("slash_infantry", to, 1.2f, mirror));
+                }
+            }
+            if (command != CommandKind.Skill || skill == null) return null;
+            switch (skill.Id)
+            {
+                case "charge":
+                case "enemy_assault":
+                    return Has("charge_guan") ? Sequence(Wait(0.08f), () => Play("charge_guan", to, 1.1f, mirror)) : null;
+                case "break_formation":
+                    return Has("break_guan") ? Sequence(Wait(0.1f), () => Play("break_guan", to, 1.1f, mirror)) : null;
+                case "sweep":
+                case "enemy_rampage":
+                    if (!Has("sweep_zhang")) return null;
+                    return Sequence(null, () => { foreach (var f in Foes(actor)) Play("sweep_zhang", At(f), 0.9f, mirror); });
+                case "intimidate":
+                case "enemy_rumour":
+                    if (!Has("roar_zhang")) return null;
+                    return Sequence(null, () => { Play("roar_zhang", from, 1.2f, mirror); foreach (var f in Foes(actor)) Play("roar_zhang", At(f), 0.6f, mirror); });
+                case "fire_arrows":
+                case "enemy_arson":
+                    if (!Has("fire_arrow")) return null;
+                    return Sequence(Has("arrow_trail") ? FlySheet("arrow_trail", from + Vector3.up * 0.4f, to, 0.22f, 1.2f) : null,
+                        () => Play("fire_arrow", to, 1.2f, mirror));
+                case "regroup":
+                    return Has("rally_heal") ? Sequence(null, () => { }) : null;   // the Heal event plays it on the target
+            }
+            return null;
+        }
+
+        IEnumerable<BattleUnit> Foes(BattleUnit actor) =>
+            (actor.Side == Side.Player ? Controller.Session.State.Enemies : Controller.Session.State.Players).Where(u => u.Active).ToList();
+
+        static IEnumerator Sequence(object first, System.Action then)
+        {
+            if (first != null) yield return first;
+            then();
         }
 
         WaitForSeconds Wait(float seconds) => new WaitForSeconds(seconds / Rate);

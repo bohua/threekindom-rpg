@@ -18,6 +18,15 @@ namespace ThreeKingdoms.UI.Town
     {
         public TownStoryController Controller;
         [Tooltip("Pixel skin (BATTLE_UI_SKIN.md); empty keeps the flat style")] public BattleUiSkin Skin;
+        [Tooltip("Codex range art (art/archery-minigame), by file name; empty draws the range in code")] public Texture2D[] Art = new Texture2D[0];
+
+        Texture2D T(string name) => System.Array.Find(Art, t => t && t.name == name);
+        bool HasArt => T("range_ground") && T("target_straw") && T("archer_liubei_aim") && T("arrow");
+        const float ArtScale = 3f;   // 640 × 360 native → 1920 × 1080
+        VisualElement front, sprites, archer, flyingArrow, arrowIcons;
+        readonly List<(VisualElement root, VisualElement straw, VisualElement burst)> targetViews = new List<(VisualElement, VisualElement, VisualElement)>();
+        readonly Dictionary<ArcheryGame.Target, float> hitAt = new Dictionary<ArcheryGame.Target, float>();
+        float releasedAt = -10f;
 
         const float PxPerMetre = 40f, OriginX = 200f, GroundY = 860f;
         const float AngleStep = 1f, PowerStep = 0.02f, FlightSpeed = 1.6f;   // path samples are 0.01 s apart
@@ -52,11 +61,22 @@ namespace ThreeKingdoms.UI.Town
             panel.style.backgroundColor = new Color(0.55f, 0.70f, 0.82f);
             root.Add(panel);
 
+            if (HasArt)
+            {
+                // Painted range: sky, far camp, ground behind everything; the front layer over the sprites.
+                foreach (var layer in new[] { "range_bg_sky", "range_bg_far", "range_ground" })
+                    if (T(layer)) panel.Add(Layer(T(layer)));
+            }
             range = new VisualElement { pickingMode = PickingMode.Ignore };
             range.style.position = Position.Absolute;
             range.style.left = range.style.top = range.style.right = range.style.bottom = 0;
             range.generateVisualContent += Draw;
             panel.Add(range);
+            sprites = new VisualElement { pickingMode = PickingMode.Ignore };
+            sprites.style.position = Position.Absolute;
+            sprites.style.left = sprites.style.top = sprites.style.right = sprites.style.bottom = 0;
+            panel.Add(sprites);
+            if (HasArt && T("range_front")) { front = Layer(T("range_front")); panel.Add(front); }
 
             var top = new VisualElement { pickingMode = PickingMode.Ignore };
             top.style.position = Position.Absolute; top.style.left = 40; top.style.top = 30; top.style.right = 40;
@@ -71,7 +91,7 @@ namespace ThreeKingdoms.UI.Town
             scoreLabel = MenuKit.Text(stats, "", 28, Color.white);
 
             var gauges = new VisualElement { pickingMode = PickingMode.Ignore };
-            gauges.style.position = Position.Absolute; gauges.style.left = 40; gauges.style.bottom = 40;
+            gauges.style.position = Position.Absolute; gauges.style.left = 320; gauges.style.bottom = 30;   // clear of the archer
             gauges.style.width = 520;
             MenuKit.Frame(gauges);
             panel.Add(gauges);
@@ -116,7 +136,9 @@ namespace ThreeKingdoms.UI.Town
         {
             if (p != TownStoryController.ArcheryPanel) return;
             panel.style.display = DisplayStyle.Flex;
-            flight = null; lastShot = null; spent.Clear();
+            flight = null; lastShot = null; spent.Clear(); hitAt.Clear();
+            foreach (var v in targetViews) v.root.RemoveFromHierarchy();
+            targetViews.Clear();
             Flash("三箭定输赢！");
             Refresh();
             pad.Focus();
@@ -146,6 +168,12 @@ namespace ThreeKingdoms.UI.Town
             lastShot = Game.Shoot(Angle, Power);
             flight = lastShot.Path;
             flightT = 0f;
+            releasedAt = Time.unscaledTime;
+            foreach (var t in lastShot.Hits)
+            {
+                int k = flight.FindIndex(pt => (pt.x - t.X) * (pt.x - t.X) + (pt.y - t.Y) * (pt.y - t.Y) <= ArcheryGame.TargetRadius * ArcheryGame.TargetRadius * 1.2f);
+                hitAt[t] = Time.unscaledTime + Mathf.Max(0, k) / (100f * FlightSpeed);
+            }
             Refresh();
         }
 
@@ -172,6 +200,7 @@ namespace ThreeKingdoms.UI.Town
                 }
                 range.MarkDirtyRepaint();
             }
+            UpdateSprites();
             if (banner.text != "" && Time.unscaledTime > bannerUntil && !(Game != null && Game.Finished)) banner.text = "";
         }
 
@@ -187,12 +216,115 @@ namespace ThreeKingdoms.UI.Town
             range.MarkDirtyRepaint();
         }
 
+        static VisualElement Layer(Texture2D tex)
+        {
+            var e = new VisualElement { pickingMode = PickingMode.Ignore };
+            e.style.position = Position.Absolute;
+            e.style.left = e.style.top = e.style.right = e.style.bottom = 0;
+            e.style.backgroundImage = new StyleBackground(tex);
+            return e;
+        }
+
+        static VisualElement Sprite(VisualElement parent, Texture2D tex, float scale)
+        {
+            var e = new VisualElement { pickingMode = PickingMode.Ignore };
+            e.style.position = Position.Absolute;
+            if (tex) { e.style.backgroundImage = new StyleBackground(tex); e.style.width = tex.width * scale; e.style.height = tex.height * scale; }
+            parent.Add(e);
+            return e;
+        }
+
+        // The painted range: targets on posts (struck straw once hit, with a burst), Liu Bei drawing the bow, the arrow
+        // in flight along its arc, and the arrows left. Rebuilt when the set of targets changes.
+        void UpdateSprites()
+        {
+            var g = Game;
+            if (!HasArt || g == null) return;
+            if (targetViews.Count != g.Targets.Count || targetViews.Count == 0 || targetViews[0].root.userData != g.Targets[0])
+            {
+                foreach (var v in targetViews) v.root.RemoveFromHierarchy();
+                targetViews.Clear();
+                foreach (var t in g.Targets)
+                {
+                    var c = Screen((t.X, t.Y));
+                    var root = new VisualElement { pickingMode = PickingMode.Ignore, userData = t };
+                    root.style.position = Position.Absolute;
+                    root.style.left = 0; root.style.top = 0;
+                    sprites.Add(root);
+                    var post = Sprite(root, T(GroundY - c.y > 150 ? "target_post_tall" : "target_post_short"), 2f);
+                    post.style.left = c.x - 8; post.style.top = c.y + 20; post.style.height = GroundY - c.y - 20;
+                    var straw = Sprite(root, T("target_straw"), 2f);
+                    straw.style.left = c.x - 28; straw.style.top = c.y - 36;
+                    var burst = Sprite(root, T("hit_burst_1"), 3f);
+                    burst.style.left = c.x - 48; burst.style.top = c.y - 72;
+                    burst.style.display = DisplayStyle.None;
+                    targetViews.Add((root, straw, burst));
+                }
+            }
+            for (int i = 0; i < targetViews.Count; i++)
+            {
+                var t = g.Targets[i];
+                var v = targetViews[i];
+                bool shownHit = t.Hit && (!hitAt.TryGetValue(t, out float when) || Time.unscaledTime >= when);
+                v.straw.style.backgroundImage = new StyleBackground(T(shownHit && T("target_straw_hit") ? "target_straw_hit" : "target_straw"));
+                // Four burst frames over 0.32 s once the arrow reaches it.
+                float since = hitAt.TryGetValue(t, out float at) ? Time.unscaledTime - at : 99f;
+                int frame = Mathf.FloorToInt(since / 0.08f);
+                bool bursting = since >= 0f && frame < 4 && T("hit_burst_" + (frame + 1));
+                v.burst.style.display = bursting ? DisplayStyle.Flex : DisplayStyle.None;
+                if (bursting) v.burst.style.backgroundImage = new StyleBackground(T("hit_burst_" + (frame + 1)));
+            }
+
+            // Liu Bei: draw (aiming), full draw while the arrow is loosed, release just after.
+            var sheet = T("archer_liubei_aim");
+            if (archer == null)
+            {
+                archer = Sprite(sprites, sheet, ArtScale);
+                archer.style.width = 64 * ArtScale; archer.style.height = 64 * ArtScale;
+                archer.style.backgroundSize = new BackgroundSize(sheet.width * ArtScale, sheet.height * ArtScale);
+                var release = Screen(ArcheryGame.Release);
+                archer.style.left = release.x - 40 * ArtScale; archer.style.top = release.y - 30 * ArtScale;
+            }
+            int pose = Flying ? 3 : Time.unscaledTime - releasedAt < 0.3f ? 3 : g.Finished ? 0 : 2;
+            archer.style.backgroundPositionX = new BackgroundPosition(BackgroundPositionKeyword.Left, -pose * 64 * ArtScale);
+
+            if (flyingArrow == null) { flyingArrow = Sprite(sprites, T("arrow"), ArtScale); flyingArrow.style.transformOrigin = new TransformOrigin(0, Length.Percent(50)); }
+            flyingArrow.style.display = Flying ? DisplayStyle.Flex : DisplayStyle.None;
+            if (Flying)
+            {
+                int n = Mathf.Min(flight.Count - 1, Mathf.FloorToInt(flightT));
+                var head = Screen(flight[n]);
+                var prev = Screen(flight[Mathf.Max(0, n - 3)]);
+                var dir = (head - prev).sqrMagnitude > 0.01f ? (head - prev).normalized : Vector2.right;
+                float len = 24 * ArtScale;
+                var tail = head - dir * len;
+                flyingArrow.style.left = tail.x; flyingArrow.style.top = tail.y - 2.5f * ArtScale;
+                flyingArrow.style.rotate = new Rotate(Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+            }
+
+            if (arrowIcons == null)
+            {
+                arrowIcons = new VisualElement { pickingMode = PickingMode.Ignore };
+                arrowIcons.style.position = Position.Absolute; arrowIcons.style.left = 40; arrowIcons.style.top = 120;
+                arrowIcons.style.flexDirection = FlexDirection.Row;
+                panel.Add(arrowIcons);
+            }
+            if (arrowIcons.childCount != ArcheryGame.Arrows)
+            {
+                arrowIcons.Clear();
+                for (int i = 0; i < ArcheryGame.Arrows; i++) Sprite(arrowIcons, T("arrow_icon"), ArtScale).style.position = Position.Relative;
+            }
+            for (int i = 0; i < ArcheryGame.Arrows; i++)
+                arrowIcons[i].style.backgroundImage = new StyleBackground(T(i < g.ArrowsLeft ? "arrow_icon" : (T("arrow_icon_used") ? "arrow_icon_used" : "arrow_icon")));
+        }
+
         static Vector2 Screen((float x, float y) m) => new Vector2(OriginX + m.x * PxPerMetre, GroundY - m.y * PxPerMetre);
 
         void Draw(MeshGenerationContext mgc)
         {
             var p = mgc.painter2D;
             var size = range.contentRect.size;
+            if (HasArt) { DrawArcs(p); return; }
             // Ground, a far fence line and the archer's mark.
             p.fillColor = new Color(0.46f, 0.38f, 0.24f);
             p.BeginPath(); p.MoveTo(new Vector2(0, GroundY)); p.LineTo(new Vector2(size.x, GroundY)); p.LineTo(new Vector2(size.x, size.y)); p.LineTo(new Vector2(0, size.y)); p.ClosePath(); p.Fill();
@@ -241,6 +373,33 @@ namespace ThreeKingdoms.UI.Town
                 var dir = (head - prev).sqrMagnitude > 0.01f ? (head - prev).normalized : Vector2.right;
                 p.strokeColor = new Color(0.3f, 0.2f, 0.1f); p.lineWidth = 4;
                 p.BeginPath(); p.MoveTo(head - dir * 30); p.LineTo(head); p.Stroke();
+            }
+        }
+
+        // Over the painted range: a short dotted aim guide from the bow, and the arcs already flown.
+        void DrawArcs(Painter2D p)
+        {
+            var g = Game;
+            if (g == null) return;
+            var release = Screen(ArcheryGame.Release);
+            if (!Flying && !g.Finished)
+            {
+                float a = Angle * Mathf.Deg2Rad;
+                var aim = new Vector2(Mathf.Cos(a), -Mathf.Sin(a));
+                p.strokeColor = new Color(1f, 0.95f, 0.75f, 0.9f); p.lineWidth = 4;
+                for (int i = 1; i <= 6; i++)
+                {
+                    float d = 40 + i * (14 + 22 * Power);
+                    p.BeginPath(); p.MoveTo(release + aim * d); p.LineTo(release + aim * (d + 10)); p.Stroke();
+                }
+            }
+            p.lineWidth = 2;
+            p.strokeColor = new Color(1f, 1f, 1f, 0.3f);
+            foreach (var path in spent) StrokePath(p, path, path.Count);
+            if (flight != null)
+            {
+                p.strokeColor = new Color(1f, 0.95f, 0.7f, 0.6f); p.lineWidth = 3;
+                StrokePath(p, flight, Mathf.Min(flight.Count, Mathf.FloorToInt(flightT) + 1));
             }
         }
 

@@ -25,6 +25,10 @@ namespace ThreeKingdoms.UI.Story
         VisualElement diceMat;
         readonly VisualElement[] dieFaces = new VisualElement[3];
         public int[] ShownDice { get; private set; }
+        [Header("Dice art (Codex art/zhuojun-casino); empty draws the pips in code")]
+        public Texture2D[] DiceFaces = new Texture2D[0];
+        public Texture2D DiceMat, DiceCup, DiceCupLifted;
+        VisualElement cup;
         public IReadOnlyList<Button> ChoiceButtons => choiceList.Query<Button>().ToList();
         // The speaker whose illustration is up, or null.
         public string PortraitSpeaker => dialogue?.PortraitSpeaker;
@@ -89,6 +93,23 @@ namespace ThreeKingdoms.UI.Story
                 diceMat.Add(die);
                 dieFaces[i] = die;
             }
+            if (DiceMat)
+            {
+                BattleUiSkin.Apply(diceMat, DiceMat, 8, 8, 8, 8);
+                diceMat.style.unitySliceScale = 4f;
+                diceMat.style.paddingLeft = diceMat.style.paddingRight = 48; diceMat.style.paddingTop = diceMat.style.paddingBottom = 40;
+            }
+            if (DiceCup)
+            {
+                // The cup covers the dice while they shake.
+                cup = new VisualElement { pickingMode = PickingMode.Ignore };
+                cup.style.position = Position.Absolute;
+                cup.style.width = DiceCup.width * 4; cup.style.height = DiceCup.height * 4;
+                cup.style.left = new Length(50, LengthUnit.Percent); cup.style.top = 10;
+                cup.style.translate = new Translate(new Length(-50, LengthUnit.Percent), 0);
+                cup.style.backgroundImage = new StyleBackground(DiceCup);
+                diceMat.Add(cup);
+            }
             diceMat.style.display = DisplayStyle.None;
             root.Add(diceMat);
 
@@ -138,10 +159,23 @@ namespace ThreeKingdoms.UI.Story
             ShownDice = dice;
             diceMat.style.display = dice == null ? DisplayStyle.None : DisplayStyle.Flex;
             if (dice == null) return;
+            bool rolling = Controller && Controller.DiceRolling;
+            if (cup != null)
+            {
+                cup.style.display = rolling ? DisplayStyle.Flex : DisplayStyle.None;
+                foreach (var d in dieFaces) d.style.visibility = rolling ? Visibility.Hidden : Visibility.Visible;
+            }
             for (int i = 0; i < 3; i++)
             {
                 var die = dieFaces[i];
                 die.Clear();
+                if (DiceFaces.Length == 6 && DiceFaces[Mathf.Clamp(dice[i], 1, 6) - 1])
+                {
+                    // 24 px pixel dice at 4×.
+                    die.style.backgroundImage = new StyleBackground(DiceFaces[Mathf.Clamp(dice[i], 1, 6) - 1]);
+                    die.style.backgroundColor = Color.clear;
+                    continue;
+                }
                 int v = Mathf.Clamp(dice[i], 1, 6);
                 foreach (var (x, y) in Pips[v - 1])
                 {
