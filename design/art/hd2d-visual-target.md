@@ -41,12 +41,12 @@
 
 ## 3. 像素贴图规格（新增素材统一遵守，战斗场景同样适用）
 
-- 密度：每米 30 像素（ADR-0005 不变），精确原生尺寸，最近邻缩放，无抖动。
+- 密度：环境贴图每米 60 像素（用户 2026-10-23 指出歧路旅人的背景像素密度高；人物仍按 ADR-0005 的 32×48、每米 30 像素），精确原生尺寸，最近邻缩放，无抖动。同屏人物像素约是背景的 2 倍大，正是“复古人物＋高清背景”的 HD-2D 对比。
 - 调色板：以 `art/battle-outskirts/palette_outskirts.png`（64 色，前 48 色是涿郡街角原表）为基础，前 64 色顺序不变，最多追加 32 色（深暗部和暖亮部色阶），输出新 `palette_showcase.png`。追加色只为色阶，不引入霓虹或高饱和色。
 - 透明：alpha 只有 0 或 255。
 - 贴图只画固有色和材质本身的局部明暗（例如瓦片之间的缝），不烘焙定向日光、投影或光晕；光影全部交给引擎。
 - 每张环境贴图（地面、墙、屋面、石栏、台阶）必须配一张同名 `_height.png`：同尺寸灰度，白高黑低（卵石顶面白、石缝黑；瓦垄白、瓦沟黑），边缘与原图同样可平铺。道具贴图不需要高度图。
-- 地面卵石尺寸 0.25–0.5 m（8–15 像素），大小混排，有土缝、磨损和零星草。
+- 地面卵石尺寸 0.25–0.5 m（15–30 像素），大小混排，有土缝、磨损和零星草。
 - 历史边界：汉代城镇屋面以青灰瓦和茅草为主，不照搬参考图的红瓦；暖感由光照提供。
 
 ## 4. 样张场景构图（涿郡市集一角）
@@ -65,16 +65,16 @@
 
 | 批次 | 文件 | 尺寸（像素） | 平铺 | 高度图 |
 | --- | --- | --- | --- | --- |
-| A 地面与石作 | ground_cobble_small | 240×240 | xy | 有 |
-| | ground_dirt_worn | 240×240 | xy | 有 |
-| | decal_dirt_patch（地面磨损贴花） | 120×90 | 否，透明 | 无 |
-| | retaining_wall_stone（挡土墙，高 2 m） | 240×60 | x | 有 |
-| | balustrade_stone（石栏，高 1.1 m，栏杆间透明） | 180×33 | x | 有 |
-| | terrace_paving（高台铺地） | 120×120 | xy | 有 |
-| B 屋面与墙 | roof_tiles_grey_v2（青灰筒瓦） | 120×120 | xy | 有 |
-| | roof_eave_tile_ends（檐口瓦当一排，透明） | 120×18 | x | 有 |
-| | roof_thatch_v2 | 120×120 | xy | 有 |
-| | wall_timber_plaster（木构夯土墙） | 120×120 | xy | 有 |
+| A 地面与石作 | ground_cobble_small | 480×480 | xy | 有 |
+| | ground_dirt_worn | 480×480 | xy | 有 |
+| | decal_dirt_patch（地面磨损贴花） | 240×180 | 否，透明 | 无 |
+| | retaining_wall_stone（挡土墙，高 2 m） | 480×120 | x | 有 |
+| | balustrade_stone（石栏，高 1.1 m，栏杆间透明） | 360×66 | x | 有 |
+| | terrace_paving（高台铺地） | 240×240 | xy | 有 |
+| B 屋面与墙 | roof_tiles_grey_v2（青灰筒瓦） | 240×240 | xy | 有 |
+| | roof_eave_tile_ends（檐口瓦当一排，透明） | 240×36 | x | 有 |
+| | roof_thatch_v2 | 240×240 | xy | 有 |
+| | wall_timber_plaster（木构夯土墙） | 240×240 | xy | 有 |
 | C 陈设 | prop_jars_cluster、prop_crates_stack、prop_mat_produce、prop_lantern_red（＋发光遮罩）、prop_awning_cloth、prop_potted_plants、prop_cart_hand | 各自原生尺寸，约 30° 斜视，底部中心落点 | 否 | 无 |
 
 ## 7. 验收

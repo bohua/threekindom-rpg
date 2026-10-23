@@ -378,11 +378,16 @@ namespace ThreeKingdoms.EditorTools
 
         internal static Vector2 Repeat(string key, Vector2 size)
         {
-            var t = Tex(key);
-            return new Vector2(size.x * Ppm / t.width, size.y * Ppm / t.height);
+            var t = Tex(key); float ppm = PpmOf(t);
+            return new Vector2(size.x * ppm / t.width, size.y * ppm / t.height);
         }
 
-        internal static Vector2 Metres(string key) { var t = Tex(key); return new Vector2(t.width / Ppm, t.height / Ppm); }
+        internal static Vector2 Metres(string key) { var t = Tex(key); float ppm = PpmOf(t); return new Vector2(t.width / ppm, t.height / ppm); }
+
+        // Override art is drawn at twice the town density (user 2026-10-23: high-density HD-2D backgrounds).
+        internal const float OverridePpm = 60f;
+        static float PpmOf(Texture2D t) =>
+            OverrideDir != null && AssetDatabase.GetAssetPath(t).StartsWith(OverrideDir + "/") ? OverridePpm : Ppm;
 
         internal static Transform Group(Transform parent, string name, Vector3 at = default, float yaw = 0f)
         {
@@ -847,7 +852,7 @@ namespace ThreeKingdoms.EditorTools
         {
             key ??= name;
             var t = Tex(key);
-            var size = new Vector2(t.width / Ppm, t.height / Ppm) * scale;
+            var size = new Vector2(t.width / PpmOf(t), t.height / PpmOf(t)) * scale;
             var root = new GameObject(name).transform;
             root.SetParent(parent, false);
             root.localPosition = new Vector3(x, y, z);
