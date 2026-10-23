@@ -44,8 +44,9 @@ namespace Prototype.BingshuTactics
         bool actionDone; float now;
         int circuitUnit, circuitSlot = -1;
         Texture2D plate;
-        // 连线用传统颜料色：朱红、石青、藤黄
-        static readonly Color[] lineCols = { new Color(0.80f, 0.22f, 0.16f), new Color(0.22f, 0.50f, 0.66f), new Color(0.88f, 0.68f, 0.16f) };
+        // 连线用传统颜料色：朱红、石青、藤黄、石绿、赭石、胭脂
+        static readonly Color[] lineCols = { new Color(0.80f, 0.22f, 0.16f), new Color(0.22f, 0.50f, 0.66f), new Color(0.88f, 0.68f, 0.16f),
+                                             new Color(0.30f, 0.62f, 0.42f), new Color(0.66f, 0.40f, 0.22f), new Color(0.70f, 0.20f, 0.42f) };
 
         static readonly string[] RingItems = { "攻击", "策略", "移动", "待机", "防御", "武技" };
 
@@ -90,6 +91,11 @@ namespace Prototype.BingshuTactics
             yield return new WaitForSeconds(0.5f); yield return Shot("2-circuit-guanyu");
             circuitUnit = 0; circuitSlot = -1;
             yield return new WaitForSeconds(0.3f); yield return Shot("3-circuit-liubei");
+            circuitUnit = 2;
+            yield return new WaitForSeconds(0.3f); yield return Shot("3b-circuit-zhangfei-int48");
+            var zf = units.First(x => x.Name == "张飞"); int keep = zf.Int; zf.Int = 100;
+            yield return new WaitForSeconds(0.3f); yield return Shot("3c-circuit-zhangfei-int100");
+            zf.Int = keep; circuitUnit = 0;
             mode = Mode.Deploy; StartCoroutine(BattleLoop());
             while (mode != Mode.Menu) yield return null;
             yield return new WaitForSeconds(0.6f); yield return Shot("4-ring-menu");
@@ -196,17 +202,20 @@ namespace Prototype.BingshuTactics
         void BuildUnits()
         {
             var liu = NewUnit("刘备", "LiuBei", Team.Player, Troop.Archer, School.Ru, 160, 50, 35, 56, 35, 8, 3, 3, 60, new Vector2Int(1, 5));
+            liu.Int = 81;
             liu.Crafts.Add(Craft("整队", "单体友军回复30%兵力", Effect.Heal, Area.Single, 3, 0, 0.30f, 20));
             liu.Crafts.Add(Craft("火矢", "单体计策1.3倍（射程4）", Effect.Damage, Area.Single, 4, 0, 1.3f, 25));
             liu.Slots[0] = L("《管子·度地》"); liu.Slots[1] = L("《三略》"); liu.Slots[2] = L("《司马法》"); liu.Slots[3] = L("《墨子·备水》");
 
             var guan = NewUnit("关羽", "GuanYu", Team.Player, Troop.Cavalry, School.Bing, 170, 64, 36, 47, 29, 10, 5, 1, 40, new Vector2Int(2, 7));
+            guan.Int = 63;
             guan.Crafts.Add(Craft("突击", "近战单体物理1.5倍", Effect.Damage, Area.Single, -1, 0, 1.5f, 25, might: true));
             guan.Crafts.Add(Craft("破阵", "近战单体1.1倍，物防-20% 2回合", Effect.Debuff, Area.Single, -1, 0, 1.1f, 30, might: true, turns: 2, amount: 0.2f));
             guan.Slots[0] = L("《孙子·火攻》"); guan.Slots[3] = L("《六韬·火战》"); guan.Slots[4] = L("《火攻》残卷");
             guan.Slots[1] = L("《尉缭子》"); guan.Slots[2] = L("《管子·牧民》");
 
             var zhang = NewUnit("张飞", "ZhangFei", Team.Player, Troop.Infantry, School.Fa, 190, 66, 40, 40, 24, 6, 3, 1, 30, new Vector2Int(2, 3));
+            zhang.Int = 48;
             zhang.Crafts.Add(Craft("横扫", "自身周围2格内敌军物理0.65倍", Effect.Damage, Area.SelfCircle, 0, 2, 0.65f, 30, might: true));
             zhang.Crafts.Add(Craft("威慑", "自身周围3格内敌军物攻-20% 2回合", Effect.Debuff, Area.SelfCircle, 0, 3, 0f, 25, turns: 2, amount: 0.2f));
             zhang.Slots[0] = L("《孙膑兵法·八阵》"); zhang.Slots[1] = L("《墨子·备城门》"); zhang.Slots[5] = L("《六韬·龙韬》"); zhang.Slots[2] = L("《吴子》");
@@ -480,7 +489,7 @@ namespace Prototype.BingshuTactics
         {
             if (u.Name == "张角")
                 return Strategies.All.Where(s => s.Name == "引火" || s.Name == "火烧营寨").Select(s => new LitStrategy(s, 0, 0)).ToList();
-            return CircuitMath.Lit(u.Circuit, u.Slots);
+            return CircuitMath.Lit(u.Circuit, u.Slots, u.Int);
         }
 
         // ---------------- 战斗主循环 ----------------
@@ -977,7 +986,7 @@ namespace Prototype.BingshuTactics
             Rect(r, new Color(0.04f, 0.06f, 0.1f, 0.88f));
             string troop = u.Troop switch { Troop.Infantry => "步兵", Troop.Cavalry => "骑兵", Troop.Archer => "弓兵", Troop.Rebel => "黄巾军", _ => "文官／军师" };
             GUI.Label(new Rect(r.x + 10, r.y + 6, 220, 22), $"<b>{u.Name}</b>  {troop}", text);
-            GUI.Label(new Rect(r.x + 10, r.y + 30, 220, 20), $"兵力 {u.Hp}/{u.MaxHp}   速度 {u.Speed}  移动 {u.Move}", small);
+            GUI.Label(new Rect(r.x + 10, r.y + 30, 220, 20), $"兵力 {u.Hp}/{u.MaxHp}  速度 {u.Speed}  移动 {u.Move}  智力 {u.Int}", small);
             GUI.Label(new Rect(r.x + 10, r.y + 50, 220, 20), $"物攻 {u.Atk} 物防 {u.Def} 计攻 {u.Mat} 计防 {u.Mdef}", small);
             GUI.Label(new Rect(r.x + 10, r.y + 70, 220, 20), $"五行 <color=#{ColorUtility.ToHtmlStringRGB(Wuxing.Tint(u.Element))}>{Wuxing.Name(u.Element)}</color>（被{Wuxing.Name(Wuxing.All.First(x => Wuxing.Overcomes(x) == u.Element))}克）", small);
             GUI.Label(new Rect(r.x + 10, r.y + 90, 220, 20), u.Statuses.Count > 0 ? "状态：" + string.Join("、", u.Statuses.Select(s => $"{s.Name}{s.Turns}")) : "状态：无", small);
@@ -1044,13 +1053,21 @@ namespace Prototype.BingshuTactics
                 GUI.Label(new Rect(lp.x - 30, lp.y - 10, 60, 20), $"{g.Name}·{Wuxing.Name(g.Element)}", gs);
             }
             Vector2 SP(int i) => hub + new Vector2(c.Slots[i].Pos.x, -c.Slots[i].Pos.y) * R;
-            for (int l = 0; l < c.Lines.Length; l++)
-                for (int k = 1; k < c.Lines[l].Length; k++)
+            var segs = CircuitMath.Segments(c, u.Int, out var edges);
+            foreach (var ed in edges)
+            {
+                Vector2 p0 = SP(ed.A), p1 = SP(ed.B);
+                if (ed.Line < 0)
                 {
-                    Vector2 off = Vector2.one * (l * 3 - 3), p0 = SP(c.Lines[l][k - 1]) + off, p1 = SP(c.Lines[l][k]) + off;
-                    Line(p0, p1, 9, new Color(0.08f, 0.06f, 0.04f, 0.9f));
-                    Line(p0, p1, 5, lineCols[l]);
+                    // 智力不足处绳路断开：只留一道暗痕
+                    var mid = (p0 + p1) / 2f; var dir = (p1 - p0).normalized * 8f;
+                    Line(p0, mid - dir, 2, new Color(0.45f, 0.38f, 0.28f, 0.6f));
+                    Line(mid + dir, p1, 2, new Color(0.45f, 0.38f, 0.28f, 0.6f));
+                    continue;
                 }
+                Line(p0, p1, 9, new Color(0.08f, 0.06f, 0.04f, 0.9f));
+                Line(p0, p1, 5, lineCols[ed.Line % lineCols.Length]);
+            }
             for (int i = 0; i < c.Slots.Length; i++)
             {
                 var p = SP(i); var book = u.Slots[i]; var lockE = c.Slots[i].Locked;
@@ -1072,15 +1089,22 @@ namespace Prototype.BingshuTactics
             GUI.Label(new Rect(hub.x - 150, hub.y + PR + 22, 300, 20), "点空槽再点右侧兵书镶嵌；再点一次已镶嵌槽卸下", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
 
             // 线路合计（对应参考图3右上）
-            float ly = 470;
-            GUI.Label(new Rect(230, ly, 300, 20), "线路五行合计（策略看单条线）", small);
-            for (int l = 0; l < c.Lines.Length; l++)
+            float ly = 462;
+            GUI.Label(new Rect(230, ly, 330, 20), "线路五行合计（策略看单条线）", small);
+            for (int l = 0; l < segs.Length; l++)
             {
-                var t = CircuitMath.LineTotals(c, u.Slots, l);
-                Rect(new Rect(230, ly + 24 + l * 26, 14, 14), lineCols[l]);
+                var t = CircuitMath.LineTotals(c, u.Slots, segs[l]);
+                Rect(new Rect(230, ly + 26 + l * 24, 14, 14), lineCols[l % lineCols.Length]);
                 string s = string.Join("  ", Wuxing.All.Select(e => $"<color=#{ColorUtility.ToHtmlStringRGB(Wuxing.Tint(e))}>{Wuxing.Name(e)}{t[e]}</color>"));
-                GUI.Label(new Rect(252, ly + 20 + l * 26, 300, 22), $"线{l + 1}  {s}", text);
+                GUI.Label(new Rect(252, ly + 22 + l * 24, 320, 22), $"线{l + 1}<size=11>（{segs[l].Length}槽）</size>  {s}", text);
             }
+
+            // 智力决定连线长短（原型可临时调整智力对比）
+            int cap = CircuitMath.SegmentCap(u.Int);
+            GUI.Label(new Rect(20, 572, 200, 20), $"智力 {u.Int} → {(cap >= c.Slots.Length ? "全盘贯通" : $"每段最多连 {cap} 槽")}", text);
+            if (GUI.Button(new Rect(20, 598, 56, 26), "−10")) u.Int = Mathf.Max(10, u.Int - 10);
+            if (GUI.Button(new Rect(82, 598, 56, 26), "+10")) u.Int = Mathf.Min(100, u.Int + 10);
+            if (GUI.Button(new Rect(144, 598, 60, 26), "孔明")) u.Int = 100;
 
             // 兵书库
             float bx = 580;
@@ -1101,7 +1125,7 @@ namespace Prototype.BingshuTactics
             }
 
             // 策略一览
-            float sx = 960; var lit = CircuitMath.Lit(c, u.Slots);
+            float sx = 960; var lit = CircuitMath.Lit(c, u.Slots, u.Int);
             GUI.Label(new Rect(sx, 44, 300, 22), "策略（亮＝已点亮）", text);
             int k2 = 0;
             foreach (var s in Strategies.All)

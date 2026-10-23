@@ -59,11 +59,11 @@ public class TacticsRulesTests
         var dao = Circuits.Of(School.Dao);   // 三条三位短线：0-1-2, 0-3-4, 0-5-6
         var slots = new Book[7];
         slots[1] = B(Element.Fire, 2); slots[3] = B(Element.Fire, 2);   // 火分在两条线上，各 2
-        var lit = CircuitMath.Lit(dao, slots);
+        var lit = CircuitMath.Lit(dao, slots, 60);
         Assert.IsTrue(Has(lit, "引火"));
         Assert.IsFalse(Has(lit, "火烧营寨"));    // 合计 4 但不在同一条线
         slots[0] = B(Element.Wood, 1); slots[2] = B(Element.Fire, 2);   // 中枢（锁木）计入每条线：火4、木2
-        lit = CircuitMath.Lit(dao, slots);
+        lit = CircuitMath.Lit(dao, slots, 60);
         Assert.IsTrue(Has(lit, "火烧营寨"));
     }
 
@@ -73,10 +73,10 @@ public class TacticsRulesTests
         var bing = Circuits.Of(School.Bing);
         var slots = new Book[6];
         slots[0] = B(Element.Fire, 1);        // 火 2
-        var l1 = CircuitMath.Lit(bing, slots).First(x => x.Def.Name == "引火");
+        var l1 = CircuitMath.Lit(bing, slots, 100).First(x => x.Def.Name == "引火");
         Assert.AreEqual(1f, l1.PowerMul, 1e-4);
         slots[2] = B(Element.Fire, 3); slots[4] = B(Element.Fire, 3); slots[1] = B(Element.Fire, 3);   // 火 2+4+4+4=14
-        var l2 = CircuitMath.Lit(bing, slots).First(x => x.Def.Name == "引火");
+        var l2 = CircuitMath.Lit(bing, slots, 100).First(x => x.Def.Name == "引火");
         Assert.AreEqual(1f + CircuitMath.OverflowStep * CircuitMath.OverflowCap, l2.PowerMul, 1e-4);
     }
 
@@ -151,5 +151,41 @@ public class TacticsRulesTests
         Assert.AreEqual(0.8f, u.AtkMul, 1e-4);
         u.TickStatuses();
         Assert.AreEqual(1f, u.AtkMul, 1e-4);
+    }
+
+    [Test]
+    public void Intelligence_SetsSegmentCap_AndFullBoardAtTop()
+    {
+        Assert.AreEqual(2, CircuitMath.SegmentCap(30));
+        Assert.AreEqual(3, CircuitMath.SegmentCap(48));     // 张飞
+        Assert.AreEqual(4, CircuitMath.SegmentCap(63));     // 关羽
+        Assert.AreEqual(5, CircuitMath.SegmentCap(81));     // 刘备
+        var bing = Circuits.Of(School.Bing);                 // 一条六位绳路
+        var segs = CircuitMath.Segments(bing, 63, out var edges);
+        CollectionAssert.AreEqual(new[] { 4, 2 }, segs.Select(x => x.Length).ToArray());
+        Assert.AreEqual(1, edges.Count(e => e.Line < 0));   // 一处断开
+        Assert.AreEqual(3, CircuitMath.Segments(bing, 30).Length);
+        foreach (var c in Circuits.All)
+        {
+            var full = CircuitMath.Segments(c, 100, out var fe);
+            Assert.AreEqual(1, full.Length, c.Name);
+            Assert.AreEqual(c.Slots.Length, full[0].Length, c.Name);
+            Assert.IsTrue(fe.All(e => e.Line == 0), c.Name);
+            // 每个槽都在某段里，任何智力下都不丢槽
+            foreach (int intel in new[] { 10, 48, 63, 81, 95 })
+                CollectionAssert.AreEquivalent(Enumerable.Range(0, c.Slots.Length), CircuitMath.Segments(c, intel).SelectMany(x => x).Distinct(), c.Name + intel);
+        }
+    }
+
+    [Test]
+    public void LowIntelligence_CutsHighTierStrategy()
+    {
+        var bing = Circuits.Of(School.Bing);
+        var slots = new Book[6];
+        slots[0] = B(Element.Fire, 3); slots[1] = B(Element.Fire, 2); slots[2] = B(Element.Wood, 2); slots[4] = B(Element.Fire, 1);
+        // 全线：火 4+3+2=9、木 2 → 火海；智力48每段3槽：首段 火7 木2 仍可火海；智力30每段2槽：火海不成
+        Assert.IsTrue(CircuitMath.Lit(bing, slots, 100).Any(x => x.Def.Name == "火海"));
+        Assert.IsTrue(CircuitMath.Lit(bing, slots, 48).Any(x => x.Def.Name == "火海"));
+        Assert.IsFalse(CircuitMath.Lit(bing, slots, 30).Any(x => x.Def.Name == "火海"));
     }
 }

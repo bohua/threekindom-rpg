@@ -208,10 +208,45 @@ namespace Prototype.BingshuTactics
         // 一本书在该学派回路中的五行值：品级，若与学派偏向五行相同再 +1。
         public static int Value(CircuitDef c, Book b) => b == null ? 0 : b.Grade + (b.Element == c.Affinity ? 1 : 0);
 
-        public static Dictionary<Element, int> LineTotals(CircuitDef c, Book[] slots, int line)
+        // 智力决定一段连线最多串几个槽（用户 2026-10-23）：智力低只能连成几段短线，智力极高可全盘贯通（如诸葛亮）
+        public static readonly (int MinInt, int Cap)[] CapTable = { (0, 2), (40, 3), (60, 4), (75, 5), (90, 6), (98, 99) };
+        public static int SegmentCap(int intel) => CapTable.Last(t => intel >= t.MinInt).Cap;
+
+        public readonly struct Edge { public readonly int A, B, Line; public Edge(int a, int b, int line) { A = a; B = b; Line = line; } }
+
+        // 学派绳路（c.Lines，从中枢出发）按智力上限切段：超长的绳路断成几段，中枢只属于每条绳路的首段；
+        // 上限不小于槽位总数时，全盘所有槽连成一条线。Line = -1 的边表示断开处。
+        public static int[][] Segments(CircuitDef c, int intel, out List<Edge> edges)
+        {
+            int cap = SegmentCap(intel);
+            edges = new List<Edge>();
+            if (cap >= c.Slots.Length)
+            {
+                foreach (var cord in c.Lines)
+                    for (int k = 1; k < cord.Length; k++) edges.Add(new Edge(cord[k - 1], cord[k], 0));
+                return new[] { Enumerable.Range(0, c.Slots.Length).ToArray() };
+            }
+            var lines = new List<int[]>();
+            foreach (var cord in c.Lines)
+            {
+                for (int start = 0; start < cord.Length; start += cap)
+                {
+                    int line = lines.Count;
+                    var seg = cord.Skip(start).Take(cap).ToArray();
+                    lines.Add(seg);
+                    for (int k = 1; k < seg.Length; k++) edges.Add(new Edge(seg[k - 1], seg[k], line));
+                    if (start + cap < cord.Length) edges.Add(new Edge(cord[start + cap - 1], cord[start + cap], -1));
+                }
+            }
+            return lines.ToArray();
+        }
+
+        public static int[][] Segments(CircuitDef c, int intel) => Segments(c, intel, out _);
+
+        public static Dictionary<Element, int> LineTotals(CircuitDef c, Book[] slots, int[] line)
         {
             var t = Wuxing.All.ToDictionary(e => e, e => 0);
-            foreach (int i in c.Lines[line])
+            foreach (int i in line)
                 if (i < slots.Length && slots[i] != null) t[slots[i].Element] += Value(c, slots[i]);
             return t;
         }
@@ -219,10 +254,10 @@ namespace Prototype.BingshuTactics
         public static float PowerMul(int overflow) => 1f + OverflowStep * Mathf.Min(overflow, OverflowCap);
 
         // 每个策略取能点亮它、且主五行溢出最多的那条线；溢出（超出门槛的点数）提高威力。
-        public static List<LitStrategy> Lit(CircuitDef c, Book[] slots)
+        public static List<LitStrategy> Lit(CircuitDef c, Book[] slots, int intel)
         {
             var result = new List<LitStrategy>();
-            var totals = Enumerable.Range(0, c.Lines.Length).Select(l => LineTotals(c, slots, l)).ToArray();
+            var totals = Segments(c, intel).Select(l => LineTotals(c, slots, l)).ToArray();
             foreach (var s in Strategies.All)
             {
                 int best = -1, bestOver = -1;
@@ -243,7 +278,7 @@ namespace Prototype.BingshuTactics
     public sealed class Unit
     {
         public string Name, Key; public Team Team; public Troop Troop; public Element Element; public School School;
-        public int MaxHp, Hp, Atk, Def, Mat, Mdef, Speed, Move, AtkRange, MaxEp, Ep, Cp;
+        public int MaxHp, Hp, Atk, Def, Mat, Mdef, Speed, Move, AtkRange, MaxEp, Ep, Cp, Int;
         public Vector2Int Pos; public float At; public bool Defending;
         public List<Status> Statuses = new List<Status>();
         public List<SkillDef> Crafts = new List<SkillDef>();
