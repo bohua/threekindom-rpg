@@ -12,8 +12,8 @@ namespace ThreeKingdoms.Core.Town
     {
         public const int Arrows = 3, TargetCount = 5;
         public const float MinAngle = 0f, MaxAngle = 60f, MinPower = 0.2f, MaxPower = 1f;
-        public const float Gravity = 9.8f, MinSpeed = 12f, MaxSpeed = 30f, TargetRadius = 0.6f;
-        public const float NearestTarget = 12f, FarthestTarget = 36f, LowestTarget = 0.8f, HighestTarget = 7f;
+        public const float Gravity = 9.8f, MinSpeed = 12f, MaxSpeed = 30f, TargetRadius = 1.2f;   // doubled after playtest (user 2026-10-23)
+        public const float NearestTarget = 12f, FarthestTarget = 36f, LowestTarget = 1f, HighestTarget = 9f;
         public static readonly (float x, float y) Release = (0f, 1.4f);
 
         public sealed class Target
@@ -37,20 +37,41 @@ namespace ThreeKingdoms.Core.Town
             StandTargets();
         }
 
-        // Five targets spread along the range, each at its own height band so no two stand alike.
+        // Five targets that can be cleared in one or two arrows (user 2026-10-23): most stand along one flyable arc,
+        // the rest along a second; each at its own place along the range.
         void StandTargets()
         {
             targets.Clear();
-            var heights = Enumerable.Range(0, TargetCount).OrderBy(_ => rng.Next()).ToList();
-            float span = (FarthestTarget - NearestTarget) / TargetCount;
-            float band = (HighestTarget - LowestTarget) / TargetCount;
-            for (int i = 0; i < TargetCount; i++)
+            int onFirst = rng.Next(3, TargetCount + 1);
+            PlaceAlongArc(onFirst);
+            if (targets.Count < TargetCount) PlaceAlongArc(TargetCount - targets.Count);
+            // Never fewer than five, even if no second arc fitted.
+            while (targets.Count < TargetCount) PlaceAlongArc(1);
+        }
+
+        void PlaceAlongArc(int count)
+        {
+            for (int attempt = 0; attempt < 60; attempt++)
             {
-                targets.Add(new Target
+                float angle = 6f + 36f * (float)rng.NextDouble(), power = 0.45f + 0.5f * (float)rng.NextDouble();
+                var usable = Path(angle, power).Where(p => p.x >= NearestTarget && p.x <= FarthestTarget && p.y >= LowestTarget && p.y <= HighestTarget)
+                    .Where(p => targets.All(t => Math.Abs(t.X - p.x) > TargetRadius * 2.6f)).ToList();
+                if (usable.Count < count) continue;
+                float span = usable[usable.Count - 1].x - usable[0].x;
+                if (span < TargetRadius * 2.6f * count) continue;
+                // Evenly spaced along the usable stretch, nudged a little so sets differ.
+                var picked = new List<Target>();
+                for (int i = 0; i < count; i++)
                 {
-                    X = NearestTarget + span * (i + 0.2f + 0.6f * (float)rng.NextDouble()),
-                    Y = LowestTarget + band * (heights[i] + 0.2f + 0.6f * (float)rng.NextDouble()),
-                });
+                    float x = usable[0].x + span * (i + 0.5f) / count + (float)(rng.NextDouble() - 0.5) * span / count * 0.4f;
+                    var p = usable.OrderBy(q => Math.Abs(q.x - x)).First();
+                    if (picked.Concat(targets).Any(t => Math.Abs(t.X - p.x) < TargetRadius * 2.6f)) { picked = null; break; }
+                    picked.Add(new Target { X = p.x, Y = p.y });
+                }
+                if (picked == null) continue;
+                targets.AddRange(picked);
+                targets.Sort((a, b) => a.X.CompareTo(b.X));
+                return;
             }
         }
 

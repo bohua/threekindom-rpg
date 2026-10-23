@@ -76,8 +76,16 @@ public sealed class TownLifeTests
     {
         var game = new ArcheryGame(new Random(11));
         Assert.AreEqual(5, game.Targets.Count);
-        Assert.AreEqual(5, game.Targets.Select(t => (int)((t.Y - ArcheryGame.LowestTarget) / ((ArcheryGame.HighestTarget - ArcheryGame.LowestTarget) / 5))).Distinct().Count(),
-            "five different heights");
+        Assert.IsTrue(game.Targets.Zip(game.Targets.Skip(1), (l, r) => r.X - l.X).All(d => d > ArcheryGame.TargetRadius * 2), "five targets apart along the range");
+        // Laid out along one or two flyable arcs (user 2026-10-23): some single arrow passes through three or more.
+        int best = 0;
+        for (float ang = ArcheryGame.MinAngle; ang <= ArcheryGame.MaxAngle; ang += 1f)
+        for (float pw = ArcheryGame.MinPower; pw <= ArcheryGame.MaxPower; pw += 0.02f)
+        {
+            var path = ArcheryGame.Path(ang, pw);
+            best = System.Math.Max(best, game.Targets.Count(t => path.Any(q => (q.x - t.X) * (q.x - t.X) + (q.y - t.Y) * (q.y - t.Y) <= ArcheryGame.TargetRadius * ArcheryGame.TargetRadius)));
+        }
+        Assert.GreaterOrEqual(best, 3, "one arrow can take at least three");
         var first = game.Targets[0];
         var (a, p) = AimAt(first);
         var shot = game.Shoot(a, p);

@@ -23,6 +23,9 @@ namespace ThreeKingdoms.UI.Town
         Texture2D T(string name) => System.Array.Find(Art, t => t && t.name == name);
         bool HasArt => T("range_ground") && T("target_straw") && T("archer_liubei_aim") && T("arrow");
         const float ArtScale = 3f;   // 640 × 360 native → 1920 × 1080
+        // Bigger than the backdrop's scale so they read well (user 2026-10-23): archer ×4, straw targets ×4, arrow ×6.
+        const float ArcherScale = 4f, TargetScale = 4f, ArrowScale = 6f;
+        const float Horizon = 450f;
         VisualElement front, sprites, archer, flyingArrow, arrowIcons;
         readonly List<(VisualElement root, VisualElement straw, VisualElement burst)> targetViews = new List<(VisualElement, VisualElement, VisualElement)>();
         readonly Dictionary<ArcheryGame.Target, float> hitAt = new Dictionary<ArcheryGame.Target, float>();
@@ -64,8 +67,9 @@ namespace ThreeKingdoms.UI.Town
             if (HasArt)
             {
                 // Painted range: sky, far camp, ground behind everything; the front layer over the sprites.
-                foreach (var layer in new[] { "range_bg_sky", "range_bg_far", "range_ground" })
-                    if (T(layer)) panel.Add(Layer(T(layer)));
+                if (T("range_bg_sky")) panel.Add(Layer(T("range_bg_sky")));
+                if (T("ground_grass")) Camp();
+                else foreach (var layer in new[] { "range_bg_far", "range_ground" }) if (T(layer)) panel.Add(Layer(T(layer)));
             }
             range = new VisualElement { pickingMode = PickingMode.Ignore };
             range.style.position = Position.Absolute;
@@ -91,7 +95,8 @@ namespace ThreeKingdoms.UI.Town
             scoreLabel = MenuKit.Text(stats, "", 28, Color.white);
 
             var gauges = new VisualElement { pickingMode = PickingMode.Ignore };
-            gauges.style.position = Position.Absolute; gauges.style.left = 320; gauges.style.bottom = 30;   // clear of the archer
+            gauges.style.position = Position.Absolute; gauges.style.top = 24; gauges.style.left = new Length(50, LengthUnit.Percent);
+            gauges.style.translate = new Translate(new Length(-50, LengthUnit.Percent), 0);   // top centre, clear of the range (user 2026-10-23)
             gauges.style.width = 520;
             MenuKit.Frame(gauges);
             panel.Add(gauges);
@@ -111,7 +116,7 @@ namespace ThreeKingdoms.UI.Town
             help.style.marginTop = 10;
 
             banner = MenuKit.Text(panel, "", 40, MenuKit.Gold);
-            banner.style.position = Position.Absolute; banner.style.left = 0; banner.style.right = 0; banner.style.top = 160;
+            banner.style.position = Position.Absolute; banner.style.left = 0; banner.style.right = 0; banner.style.top = 230;
             banner.style.unityTextAlign = TextAnchor.MiddleCenter;
             banner.style.unityTextOutlineWidth = 2; banner.style.unityTextOutlineColor = Color.black;
 
@@ -216,6 +221,43 @@ namespace ThreeKingdoms.UI.Town
             range.MarkDirtyRepaint();
         }
 
+        // Green grass from the horizon down, a palisade along it with tents and Han banners (user 2026-10-23: the
+        // yellow straw targets must stand out from the ground).
+        void Camp()
+        {
+            var grass = new VisualElement { pickingMode = PickingMode.Ignore };
+            grass.style.position = Position.Absolute;
+            grass.style.left = 0; grass.style.right = 0; grass.style.top = Horizon; grass.style.bottom = 0;
+            grass.style.backgroundImage = new StyleBackground(T("ground_grass"));
+            grass.style.backgroundRepeat = new BackgroundRepeat(Repeat.Repeat, Repeat.Repeat);
+            grass.style.backgroundSize = new BackgroundSize(T("ground_grass").width * ArtScale, T("ground_grass").height * ArtScale);
+            panel.Add(grass);
+            var stakes = T("palisade_stakes");
+            if (stakes)
+            {
+                var wall = new VisualElement { pickingMode = PickingMode.Ignore };
+                wall.style.position = Position.Absolute;
+                wall.style.left = 0; wall.style.right = 0;
+                wall.style.height = stakes.height * 2; wall.style.top = Horizon - stakes.height * 2 + 16;
+                wall.style.backgroundImage = new StyleBackground(stakes);
+                wall.style.backgroundRepeat = new BackgroundRepeat(Repeat.Repeat, Repeat.NoRepeat);
+                wall.style.backgroundSize = new BackgroundSize(stakes.width * 2, stakes.height * 2);
+                panel.Add(wall);
+            }
+            void Stand(string key, float x, float scale)
+            {
+                var t = T(key);
+                if (!t) return;
+                var e = Sprite(panel, t, scale);
+                e.style.left = x - t.width * scale / 2f; e.style.top = Horizon + 20 - t.height * scale;
+            }
+            Stand("prop_army_tent", 1180, 2f);
+            Stand("prop_army_tent", 1560, 2f);
+            Stand("prop_banner_han", 980, 2f);
+            Stand("prop_banner_han", 1380, 2f);
+            Stand("prop_banner_han", 1780, 2f);
+        }
+
         static VisualElement Layer(Texture2D tex)
         {
             var e = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -251,12 +293,12 @@ namespace ThreeKingdoms.UI.Town
                     root.style.position = Position.Absolute;
                     root.style.left = 0; root.style.top = 0;
                     sprites.Add(root);
-                    var post = Sprite(root, T(GroundY - c.y > 150 ? "target_post_tall" : "target_post_short"), 2f);
-                    post.style.left = c.x - 8; post.style.top = c.y + 20; post.style.height = GroundY - c.y - 20;
-                    var straw = Sprite(root, T("target_straw"), 2f);
-                    straw.style.left = c.x - 28; straw.style.top = c.y - 36;
-                    var burst = Sprite(root, T("hit_burst_1"), 3f);
-                    burst.style.left = c.x - 48; burst.style.top = c.y - 72;
+                    var post = Sprite(root, T(GroundY - c.y > 150 ? "target_post_tall" : "target_post_short"), 3f);
+                    post.style.left = c.x - 12; post.style.top = c.y + 14 * TargetScale; post.style.height = Mathf.Max(0, GroundY - c.y - 14 * TargetScale);
+                    var straw = Sprite(root, T("target_straw"), TargetScale);
+                    straw.style.left = c.x - 14 * TargetScale; straw.style.top = c.y - 14 * TargetScale;
+                    var burst = Sprite(root, T("hit_burst_1"), TargetScale);
+                    burst.style.left = c.x - 16 * TargetScale; burst.style.top = c.y - 24 * TargetScale;
                     burst.style.display = DisplayStyle.None;
                     targetViews.Add((root, straw, burst));
                 }
@@ -279,16 +321,16 @@ namespace ThreeKingdoms.UI.Town
             var sheet = T("archer_liubei_aim");
             if (archer == null)
             {
-                archer = Sprite(sprites, sheet, ArtScale);
-                archer.style.width = 64 * ArtScale; archer.style.height = 64 * ArtScale;
-                archer.style.backgroundSize = new BackgroundSize(sheet.width * ArtScale, sheet.height * ArtScale);
+                archer = Sprite(sprites, sheet, ArcherScale);
+                archer.style.width = 64 * ArcherScale; archer.style.height = 64 * ArcherScale;
+                archer.style.backgroundSize = new BackgroundSize(sheet.width * ArcherScale, sheet.height * ArcherScale);
                 var release = Screen(ArcheryGame.Release);
-                archer.style.left = release.x - 40 * ArtScale; archer.style.top = release.y - 30 * ArtScale;
+                archer.style.left = release.x - 40 * ArcherScale; archer.style.top = release.y - 30 * ArcherScale;
             }
             int pose = Flying ? 3 : Time.unscaledTime - releasedAt < 0.3f ? 3 : g.Finished ? 0 : 2;
-            archer.style.backgroundPositionX = new BackgroundPosition(BackgroundPositionKeyword.Left, -pose * 64 * ArtScale);
+            archer.style.backgroundPositionX = new BackgroundPosition(BackgroundPositionKeyword.Left, -pose * 64 * ArcherScale);
 
-            if (flyingArrow == null) { flyingArrow = Sprite(sprites, T("arrow"), ArtScale); flyingArrow.style.transformOrigin = new TransformOrigin(0, Length.Percent(50)); }
+            if (flyingArrow == null) { flyingArrow = Sprite(sprites, T("arrow"), ArrowScale); flyingArrow.style.transformOrigin = new TransformOrigin(0, Length.Percent(50)); }
             flyingArrow.style.display = Flying ? DisplayStyle.Flex : DisplayStyle.None;
             if (Flying)
             {
@@ -296,9 +338,9 @@ namespace ThreeKingdoms.UI.Town
                 var head = Screen(flight[n]);
                 var prev = Screen(flight[Mathf.Max(0, n - 3)]);
                 var dir = (head - prev).sqrMagnitude > 0.01f ? (head - prev).normalized : Vector2.right;
-                float len = 24 * ArtScale;
+                float len = 24 * ArrowScale;
                 var tail = head - dir * len;
-                flyingArrow.style.left = tail.x; flyingArrow.style.top = tail.y - 2.5f * ArtScale;
+                flyingArrow.style.left = tail.x; flyingArrow.style.top = tail.y - 2.5f * ArrowScale;
                 flyingArrow.style.rotate = new Rotate(Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
             }
 
