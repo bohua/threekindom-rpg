@@ -99,6 +99,34 @@ public sealed class ZhuojunTownTests
         Assert.That(mover.transform.position.y, Is.InRange(1.95f, 2.3f), "standing on the platform");
     }
 
+    // Each district has its own shot (user 2026-10-24): the camera eases low and close at the commandery steps and
+    // high and wide over the square, turns toward the side streets, and keeps looking at the player throughout.
+    [UnityTest] public IEnumerator CameraEasesIntoDistrictShots()
+    {
+        yield return SceneManager.LoadSceneAsync("Zhuojun_Town");
+        yield return null;
+        var mover = Object.FindFirstObjectByType<PlayerMover>();
+        var cc = mover.GetComponent<CharacterController>();
+        var follow = Object.FindFirstObjectByType<FollowCamera>();
+        Assert.IsTrue(follow.UseRig);
+        IEnumerator Stand(Vector3 at) { cc.enabled = false; mover.transform.position = at; cc.enabled = true; yield return new WaitForSeconds(2.5f); }
+
+        yield return Stand(new Vector3(0, 0, 12.5f));
+        Assert.AreEqual("Commandery steps", follow.ActiveZone.name);
+        Assert.AreEqual(17f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "low angle up at the hall");
+        float stepsDistance = Vector3.Distance(follow.transform.position, mover.transform.position);
+
+        yield return Stand(new Vector3(0, 0, -15f));
+        Assert.AreEqual("Main axis and square", follow.ActiveZone.name);
+        Assert.AreEqual(32f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "high over the square");
+        Assert.Greater(Vector3.Distance(follow.transform.position, mover.transform.position), stepsDistance + 8f, "pulled back");
+
+        yield return Stand(new Vector3(30f, 0, -8f));
+        Assert.AreEqual(12f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.y), 1f, "turned toward the smithy street");
+        var toPlayer = (mover.transform.position + Vector3.up - follow.transform.position).normalized;
+        Assert.Greater(Vector3.Dot(follow.transform.forward, toPlayer), 0.99f, "the player stays in the middle of the shot");
+    }
+
     // Speed doubled (user 2026-10-20) and walking plays the drawn 4-frame cycle for the facing direction.
     [UnityTest] public IEnumerator PlayerWalksFastWithTheDrawnCycle()
     {

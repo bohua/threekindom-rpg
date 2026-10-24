@@ -98,6 +98,9 @@ namespace ThreeKingdoms.EditorTools
             follow.Target = player.transform;
             follow.Offset = new Vector3(0, 0.8f, 0) + pitch * new Vector3(0, 0, -HD2DSampleBuilder.CameraDistance);
             camGo.transform.position = player.transform.position + follow.Offset;
+            // Shot rig: the same default framing, eased toward each district's own shot (user 2026-10-24).
+            follow.UseRig = true;
+            follow.Pitch = HD2DSampleBuilder.CameraPitch; follow.Distance = HD2DSampleBuilder.CameraDistance; follow.Fov = HD2DSampleBuilder.CameraFov;
             camGo.AddComponent<SeeThroughOccluders>().Target = player.transform;
 
             var high = AssetDatabase.LoadAssetAtPath<VolumeProfile>(HD2DSampleBuilder.HighProfilePath);
@@ -108,6 +111,8 @@ namespace ThreeKingdoms.EditorTools
             volume.sharedProfile = high;
             var tier = volumeGo.AddComponent<HD2DQualityTier>();
             tier.Volume = volume; tier.High = high; tier.Low = low;
+            follow.FocusVolume = volume;
+            CameraZones();
 
             // Review cameras for screenshots (-camera <name>): one per district.
             ReviewCamera("Review South Gate", new Vector3(0, 0, -46f));
@@ -1262,6 +1267,33 @@ namespace ThreeKingdoms.EditorTools
             cam.fieldOfView = 30f;
             cam.farClipPlane = 400f;
             cam.transform.SetPositionAndRotation(new Vector3(0f, 118f, -128f), Quaternion.Euler(40f, 0f, 0f));
+        }
+
+        // Each district's shot (user 2026-10-24: closer, swinging and other angles at different places). Low and close
+        // where the player looks up at something (the gate, the commandery), high and wide over open ground (the
+        // square, the drill yard), turned a little toward the frontage in the side streets. Yaw stays within 20 degrees.
+        static void CameraZones()
+        {
+            var g = new GameObject("Camera zones").transform;
+            void Zone(string name, float x0, float x1, float z0, float z1, float pitch, float distance, float yaw = 0f, float fov = 20f, float lookUp = 0.8f, float sway = 0f, int priority = 0)
+            {
+                var z = new GameObject(name).AddComponent<CameraZone>();
+                z.transform.SetParent(g, false);
+                z.transform.position = new Vector3((x0 + x1) / 2f, 0, (z0 + z1) / 2f);
+                z.Size = new Vector2(x1 - x0, z1 - z0);
+                z.Pitch = pitch; z.Distance = distance; z.Yaw = yaw; z.Fov = fov; z.LookOffset = new Vector3(0, lookUp, 0); z.Sway = sway; z.Priority = priority;
+            }
+            Zone("Outside the south gate", -20f, 20f, -80f, -37f, 15f, 27f, fov: 22f, lookUp: 1.6f);
+            Zone("Inside the south gate", -10f, 10f, -34f, -23f, 22f, 30f);
+            Zone("Main axis and square", -10f, 10f, -23f, 11f, 32f, 40f, sway: 0.6f);
+            Zone("Commandery steps", -12f, 12f, 11f, 34f, 17f, 26f, lookUp: 2.2f, priority: 1);
+            Zone("Tavern front", -28f, -11f, -13f, -2f, 24f, 24f, yaw: -12f);
+            Zone("Smithy and gambling house", 20f, 46f, -13f, -2f, 24f, 26f, yaw: 12f);
+            Zone("South-west houses", -46f, -11f, -34f, -13f, 30f, 28f, yaw: -8f);
+            Zone("Clinic and post station", 20f, 46f, -34f, -13f, 28f, 28f, yaw: 8f);
+            Zone("Barracks", 18f, 46f, 11f, 34f, 36f, 40f, yaw: 10f, sway: 0.8f);
+            Zone("Granaries", -46f, -13f, 11f, 34f, 26f, 30f, yaw: -10f);
+            Zone("West gate and peach grove", -80f, -38f, -14f, 14f, 20f, 30f, yaw: -15f);
         }
 
         // A disabled camera preset (-camera) plus a "Spot …" marker for -teleport, which moves the player there so the
