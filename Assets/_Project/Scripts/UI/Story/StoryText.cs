@@ -39,6 +39,7 @@ namespace ThreeKingdoms.UI.Story
             ["zhang.wait.2"] = "哎呀，还等什么时机！贼兵都快到城下了。俺出钱，你出力，还怕大事不成？",
             ["zhang.wait.3"] = "……翼德说得是。好，便依你！",
             ["zhang.joined"] = "张飞加入了队伍。",
+            ["guan.joined"] = "关羽加入了队伍。",
             ["zhang.tavern"] = "走！前面酒店喝上几碗，细细商议！",
             // In the tavern: Guan Yu arrives (演义 第1回).
             ["tavern.1"] = "二位客官，酒来了！慢用。",
