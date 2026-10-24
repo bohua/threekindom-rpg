@@ -28,6 +28,8 @@ namespace Prototype.BingshuTactics
             public Texture BaseTex, DuelTex; public int DuelCol = -1;   // 单挑动作帧：10 列×2 行（左下、左上）
         }
 
+        // 用户 2026-10-24：人物太大、显得臃肿，缩小到一半；头顶血条、飘字等高度随之乘 HeadK
+        const float SpriteScale = 0.5f, HeadK = 0.55f;
         readonly Dictionary<Unit, Rig> rigs = new Dictionary<Unit, Rig>();
         Material shadowMat;
         float hitStop, yawVel;
@@ -52,8 +54,8 @@ namespace Prototype.BingshuTactics
             float footRows = rig.Kind == SheetKind.Eight ? (px >= 96f ? 2f : 6f) : 0f;
             // 新图本身就按角色体型画好了，放大只保留一点，避免吕布过大；也不再叠加占位用的偏色
             if (rig.Kind == SheetKind.Eight) { scale = scale > 1f ? 1.08f : 1f; rig.Tint = Color.white; }
-            rig.Size = px / ppu * scale;
-            rig.PivotLift = -footRows / ppu * scale;
+            rig.Size = px / ppu * scale * SpriteScale;
+            rig.PivotLift = -footRows / ppu * scale * SpriteScale;
             r.transform.localScale = new Vector3(rig.Size, rig.Size, 1f);
             r.shadowCastingMode = ShadowCastingMode.Off;   // 人物不投实时阴影，改用圆片
             // 圆片阴影
@@ -62,7 +64,7 @@ namespace Prototype.BingshuTactics
             Destroy(sh.GetComponent<Collider>());
             sh.name = "Shadow"; sh.transform.SetParent(root, false);
             sh.transform.localRotation = Quaternion.Euler(90, 0, 0);
-            sh.transform.localScale = new Vector3(T * 0.7f, T * 0.42f, 1);
+            sh.transform.localScale = new Vector3(T * 0.5f, T * 0.3f, 1);
             var sr = sh.GetComponent<MeshRenderer>(); sr.sharedMaterial = shadowMat; sr.shadowCastingMode = ShadowCastingMode.Off; sr.receiveShadows = false;
             rig.Shadow = sh.transform;
             rig.Dir = u.Team == Team.Player ? new Vector3(0, 0, 1) : new Vector3(0, 0, -1);
@@ -147,7 +149,7 @@ namespace Prototype.BingshuTactics
                                   + up * (rig.Size / 2f + rig.PivotLift) * 0.98f;
                 rig.Shadow.position = new Vector3(rig.Root.position.x + rig.Step.x, rig.Root.position.y - rig.Jump * 0f + 0.03f, rig.Root.position.z + rig.Step.z);
                 float shrink = 1f / (1f + rig.Jump * 2f);
-                rig.Shadow.localScale = new Vector3(T * 0.7f * shrink, T * 0.42f * shrink, 1);
+                rig.Shadow.localScale = new Vector3(T * 0.5f * shrink, T * 0.3f * shrink, 1);
 
                 rig.R.GetPropertyBlock(block);
                 if (rig.DuelCol >= 0 && rig.DuelTex)

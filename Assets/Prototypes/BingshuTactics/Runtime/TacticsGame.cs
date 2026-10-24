@@ -762,11 +762,11 @@ namespace Prototype.BingshuTactics
             HitFx(a, t);
             t.Hp = Mathf.Max(0, t.Hp - dmg);
             a.Cp = Mathf.Min(100, a.Cp + 8); t.Cp = Mathf.Min(100, t.Cp + 5);
-            popups.Add((views[t].position + Vector3.up * 1.8f, dmg.ToString(), new Color(1f, 0.95f, 0.8f), 0f));
+            popups.Add((views[t].position + Vector3.up * (1.8f * HeadK), dmg.ToString(), new Color(1f, 0.95f, 0.8f), 0f));
             if (!t.Alive)
             {
                 t.PendingCast = null; t.PendingFollow = null;
-                popups.Add((views[t].position + Vector3.up * 2.3f, "撤退", new Color(1f, 0.5f, 0.4f), 0f));
+                popups.Add((views[t].position + Vector3.up * (2.3f * HeadK), "撤退", new Color(1f, 0.5f, 0.4f), 0f));
             }
         }
 
@@ -781,7 +781,7 @@ namespace Prototype.BingshuTactics
         IEnumerator DoCraft(Unit u, SkillDef s, Vector2Int targetTile)
         {
             u.Cp -= s.Cost;
-            popups.Add((views[u].position + Vector3.up * 2.4f, "武技·" + s.Name, new Color(1f, 0.85f, 0.3f), 0f));
+            popups.Add((views[u].position + Vector3.up * (2.4f * HeadK), "武技·" + s.Name, new Color(1f, 0.85f, 0.3f), 0f));
             if (s.Range < 0)
             {
                 var target = At(targetTile);
@@ -809,7 +809,7 @@ namespace Prototype.BingshuTactics
                         if (s.AtDelay > 0 && t.Alive)
                         {
                             t.At += s.AtDelay * mul;
-                            popups.Add((views[t].position + Vector3.up * 2.6f, "迟滞", new Color(0.5f, 0.75f, 1f), 0f));
+                            popups.Add((views[t].position + Vector3.up * (2.6f * HeadK), "迟滞", new Color(0.5f, 0.75f, 1f), 0f));
                         }
                         if (s.Effect == Effect.Debuff && t.Alive) t.AddStatus(new Status { Name = "破阵", DefMul = 1f - s.Amount, Turns = s.Turns });
                         break;
@@ -820,7 +820,7 @@ namespace Prototype.BingshuTactics
                     case Effect.Heal:
                         int h = Combat.Heal(t, Mathf.Min(0.6f, s.Power * mul));
                         t.Hp += h;
-                        popups.Add((views[t].position + Vector3.up * 1.8f, "+" + h, new Color(0.5f, 1f, 0.5f), 0f));
+                        popups.Add((views[t].position + Vector3.up * (1.8f * HeadK), "+" + h, new Color(0.5f, 1f, 0.5f), 0f));
                         if (s.Amount > 0) t.AddStatus(new Status { Name = "鼓舞", AtkMul = 1f + s.Amount, Turns = s.Turns });
                         break;
                     case Effect.Guard:
@@ -838,7 +838,7 @@ namespace Prototype.BingshuTactics
             if (u.Ep < s.Cost) { Log($"{u.Name}：策力不足，{s.Name}未能发动"); yield break; }
             u.Ep -= s.Cost;
             Log($"{u.Name} 发动策略「{s.Name}」{(u.PendingMul > 1f ? $"（威力×{u.PendingMul:0.00}）" : "")}");
-            popups.Add((views[u].position + Vector3.up * 2.4f, "策略·" + s.Name, Wuxing.Tint(s.Element), 0f));
+            popups.Add((views[u].position + Vector3.up * (2.4f * HeadK), "策略·" + s.Name, Wuxing.Tint(s.Element), 0f));
             yield return Lunge(u, u.Pos + Grid.DirTo(u.Pos, u.PendingTarget));
             yield return Apply(u, s, CastArea(u), u.PendingMul);
         }
@@ -866,7 +866,7 @@ namespace Prototype.BingshuTactics
                 {
                     var craft = u.Crafts[0];
                     Log($"吕布 武技「{craft.Name}」！");
-                    popups.Add((views[u].position + Vector3.up * 2.6f, "天下无双", new Color(1f, 0.4f, 0.3f), 0f));
+                    popups.Add((views[u].position + Vector3.up * (2.6f * HeadK), "天下无双", new Color(1f, 0.4f, 0.3f), 0f));
                     yield return Lunge(u, foe.Pos);
                     yield return Apply(u, craft, grid.LineArea(u.Pos, Grid.DirTo(u.Pos, foe.Pos), craft.Length, 1).ToList(), 1f);
                     u.At = now + AtClock.Delay(110, u.Speed);
@@ -1079,13 +1079,13 @@ namespace Prototype.BingshuTactics
                 var lb = units.FirstOrDefault(x => x.Name == "吕布" && x.Alive);
                 if (lb != null)
                 {
-                    var g2 = ToGui(views[lb].position + Vector3.up * 2.25f);
+                    var g2 = ToGui(views[lb].position + Vector3.up * (2.25f * HeadK));
                     GUI.Label(new Rect(g2.x - 40, g2.y - 10, 80, 20), "<color=#ff8a70><b>吕布</b></color>", new GUIStyle(center) { fontSize = 15 });
                 }
             }
             foreach (var u in units.Where(u => u.Alive))
             {
-                var g = ToGui(views[u].position + Vector3.up * 1.75f);
+                var g = ToGui(views[u].position + Vector3.up * (1.75f * HeadK));
                 Bar(new Rect(g.x - 24, g.y, 48, 6), u.Hp / (float)u.MaxHp, u.Team == Team.Player ? new Color(0.4f, 0.85f, 0.4f) : new Color(0.95f, 0.35f, 0.3f));
                 if (u.PendingCast != null)
                     GUI.Label(new Rect(g.x - 50, g.y - 22, 100, 20), $"咏唱·{u.PendingCast.Name}", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, normal = { textColor = Wuxing.Tint(u.PendingCast.Element) } });

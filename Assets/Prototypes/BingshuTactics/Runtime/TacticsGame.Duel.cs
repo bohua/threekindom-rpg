@@ -142,9 +142,9 @@ namespace Prototype.BingshuTactics
                 // 得胜：立即再行动一次，进入“昂扬”攻防 +50%，3 回合（本回合结束时的结算会先减 1，故记 4）（用户 2026-10-23）
                 hero.AddStatus(new Status { Name = "昂扬", AtkMul = 1.5f, DefMul = 1.5f, Turns = 4 });
                 hero.At = now - 0.01f;
-                popups.Add((views[hero].position + Vector3.up * 2.4f, "昂扬！再行动", new Color(1f, 0.85f, 0.3f), 0f));
+                popups.Add((views[hero].position + Vector3.up * (2.4f * HeadK), "昂扬！再行动", new Color(1f, 0.85f, 0.3f), 0f));
                 yield return Say("", $"{hero.Name}士气昂扬，立即再次行动！（攻防 +50%，3 回合）");
-                popups.Add((views[lubu].position + Vector3.up * 2.4f, "动摇", new Color(0.8f, 0.7f, 1f), 0f));
+                popups.Add((views[lubu].position + Vector3.up * (2.4f * HeadK), "动摇", new Color(0.8f, 0.7f, 1f), 0f));
             }
             else if (duel.HpH < duel.HpL)
             {
@@ -178,16 +178,16 @@ namespace Prototype.BingshuTactics
             SetDuelPose(hero, hm, 0); SetDuelPose(lubu, lm, 0);
             if (hm == DuelMove.Special || lm == DuelMove.Special)
             {
-                if (hm == DuelMove.Special) popups.Add((views[hero].position + Vector3.up * 2.6f, "绝招！", new Color(1f, 0.85f, 0.3f), 0f));
-                if (lm == DuelMove.Special) popups.Add((views[lubu].position + Vector3.up * 2.6f, "绝招！", new Color(1f, 0.4f, 0.3f), 0f));
+                if (hm == DuelMove.Special) popups.Add((views[hero].position + Vector3.up * (2.6f * HeadK), "绝招！", new Color(1f, 0.85f, 0.3f), 0f));
+                if (lm == DuelMove.Special) popups.Add((views[lubu].position + Vector3.up * (2.6f * HeadK), "绝招！", new Color(1f, 0.4f, 0.3f), 0f));
                 yield return new WaitForSeconds(0.35f);
             }
             SetDuelPose(hero, hm, 1); SetDuelPose(lubu, lm, 1);
             var a = StartCoroutine(hm == DuelMove.Guard ? Brace(hero, lubu) : Lunge(hero, lubu.Pos));
             yield return lm == DuelMove.Guard ? Brace(lubu, hero) : Lunge(lubu, hero.Pos);
-            if (toL > 0) { HitFx(hero, lubu); popups.Add((views[lubu].position + Vector3.up * 1.9f, toL.ToString(), new Color(1f, 0.95f, 0.8f), 0f)); SetDuelPose(lubu, lm, 2); }
-            if (toH > 0) { HitFx(lubu, hero); popups.Add((views[hero].position + Vector3.up * 1.9f, toH.ToString(), new Color(1f, 0.95f, 0.8f), 0f)); SetDuelPose(hero, hm, 2); }
-            if (toH == 0 && toL == 0) popups.Add(((views[hero].position + views[lubu].position) / 2 + Vector3.up * 2.2f, "叮！", Color.white, 0f));
+            if (toL > 0) { HitFx(hero, lubu); popups.Add((views[lubu].position + Vector3.up * (1.9f * HeadK), toL.ToString(), new Color(1f, 0.95f, 0.8f), 0f)); SetDuelPose(lubu, lm, 2); }
+            if (toH > 0) { HitFx(lubu, hero); popups.Add((views[hero].position + Vector3.up * (1.9f * HeadK), toH.ToString(), new Color(1f, 0.95f, 0.8f), 0f)); SetDuelPose(hero, hm, 2); }
+            if (toH == 0 && toL == 0) popups.Add(((views[hero].position + views[lubu].position) / 2 + Vector3.up * (2.2f * HeadK), "叮！", Color.white, 0f));
             yield return new WaitForSeconds(0.45f);
             ClearDuelPose(hero); ClearDuelPose(lubu);
         }

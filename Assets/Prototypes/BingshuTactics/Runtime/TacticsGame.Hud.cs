@@ -188,7 +188,7 @@ namespace Prototype.BingshuTactics
                 }
             // 地图上的当前单位指示
             var arrow = UI("cursor_arrow");
-            var ap = ToGui(views[active].position + Vector3.up * 2.2f);
+            var ap = ToGui(views[active].position + Vector3.up * (2.2f * HeadK));
             if (arrow) GUI.DrawTexture(new Rect(ap.x - 14, ap.y - 14 + Mathf.Sin(Time.time * 5f) * 3f, 28, 28), arrow);
             DrawSidePanel(false);
             DrawHintBar();
