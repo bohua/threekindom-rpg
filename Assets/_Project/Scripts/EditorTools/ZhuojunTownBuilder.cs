@@ -1140,7 +1140,7 @@ namespace ThreeKingdoms.EditorTools
             // The peach-garden oath (user 2026-10-24): the altar with incense, offerings and wine in front of the
             // three, and petals drifting down; both shown only while the oath plays (TownStoryController.Oath).
             var altar = Group(o, "Oath altar");
-            if (Tex("oath_altar", optional: true)) Prop(altar, "oath_altar", -66f, -2.4f);
+            if (Tex("oath_altar", optional: true)) Prop(altar, "oath_altar", -66f, -1.7f, scale: 0.6f);   // a low table, so Liu Bei kneeling behind it stays in view
             altar.gameObject.SetActive(false);
             var petals = new GameObject("Oath petals").AddComponent<ThreeKingdoms.Gameplay.PetalFall>();
             petals.transform.SetParent(o, false);

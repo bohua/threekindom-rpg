@@ -237,7 +237,7 @@ namespace ThreeKingdoms.EditorTools
             oathShot.transform.SetParent(spots, false);
             oathShot.transform.position = new Vector3(-66f, 0, -0.6f);
             oathShot.Size = new Vector2(30f, 20f);
-            oathShot.Pitch = 16f; oathShot.Distance = 17f; oathShot.Yaw = 0f; oathShot.Fov = 20f; oathShot.LookOffset = new Vector3(0, 1.1f, 0); oathShot.Priority = 5;
+            oathShot.Pitch = 28f; oathShot.Distance = 17f; oathShot.Yaw = 0f; oathShot.Fov = 20f; oathShot.LookOffset = new Vector3(0, 1.1f, 0); oathShot.Priority = 5;
             oathShot.gameObject.SetActive(false);
             c.OathShot = oathShot;
             c.OathEntrance = new Vector3(-57f, 0, -0.6f);
@@ -254,7 +254,7 @@ namespace ThreeKingdoms.EditorTools
             }
             c.GroveSpots = new[]
             {
-                Spot("Grove Liu Bei", new Vector3(-66f, 0, -1.2f)),
+                Spot("Grove Liu Bei", new Vector3(-66f, 0, 0.6f)),
                 Spot("Grove Guan Yu", new Vector3(-67.8f, 0, 0.2f)),
                 Spot("Grove Zhang Fei", new Vector3(-64.2f, 0, 0.2f)),
             };
