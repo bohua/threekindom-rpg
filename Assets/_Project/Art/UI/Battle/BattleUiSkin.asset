@@ -42,6 +42,8 @@ MonoBehaviour:
   BubbleTail: {fileID: 2800000, guid: b6ee3db9130f34f4f8ca208cfa189fa5, type: 3}
   BubbleAlert: {fileID: 2800000, guid: 53585d7677d57a945b11122d7afa1493, type: 3}
   BubbleAlertGlint: {fileID: 2800000, guid: 920943ad6e1b0e64bae73a249be94621, type: 3}
+  BubbleQuestion: {fileID: 2800000, guid: 9dca1903775deb64284d1ad19e9c2567, type: 3}
+  BubbleQuestionGlint: {fileID: 2800000, guid: 31cc5184ca81a5b42ac081192421a06e, type: 3}
   OptionNormal: {fileID: 2800000, guid: cc58bd9bbc354b9468d33e618ccfae52, type: 3}
   OptionSelected: {fileID: 2800000, guid: ddab7dd1bb6af034b9b3a239b773e3ed, type: 3}
   OptionDisabled: {fileID: 2800000, guid: 1d9ca6a185588a64ebb3681b4fd0100a, type: 3}

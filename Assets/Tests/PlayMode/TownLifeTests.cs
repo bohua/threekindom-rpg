@@ -41,6 +41,25 @@ public sealed class TownLifePlayTests
         }
     }
 
+    // Townsfolk with a mini-game wear a "?" (user 2026-10-24): the scholar, the ruffian and the archer, not the beggar;
+    // it goes away while a mini-game panel is open.
+    [UnityTest] public IEnumerator MiniGameTownsfolkWearQuestionMarks()
+    {
+        yield return SceneManager.LoadSceneAsync("Zhuojun_Town");
+        yield return null;
+        var c = Object.FindFirstObjectByType<TownStoryController>();
+        var hud = Object.FindFirstObjectByType<TownHud>();
+        Teleport(c, new Vector3(0, 0, -29f));
+        float deadline = Time.realtimeSinceStartup + 10f;
+        while (hud.GameBubbles.Count < 3 && Time.realtimeSinceStartup < deadline) yield return null;
+        CollectionAssert.AreEquivalent(new[] { c.Scholar, c.Ruffian, c.Archer }, hud.GameBubbles.ToArray());
+        Assert.IsFalse(hud.GameBubbles.Contains(c.Beggar));
+
+        c.OpenArchery();
+        yield return null; yield return null;
+        Assert.AreEqual(0, hud.GameBubbles.Count, "no marks over an open mini-game");
+    }
+
     [UnityTest] public IEnumerator BeggarScholarCasinoAndRange()
     {
         yield return SceneManager.LoadSceneAsync("Zhuojun_Town");

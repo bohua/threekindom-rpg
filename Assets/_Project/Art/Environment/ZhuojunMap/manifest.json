@@ -1,0 +1,61 @@
+{
+  "note": "Reworked Zhuojun textures (Codex art/zhuojun-map-b1..b5, 2026-10-23). Keys shared with ZhuojunCorner/ZhuojunTown keep their tile axes from those manifests; new keys are listed here.",
+  "files": [
+    {
+      "filename": "grass_border.png",
+      "tile_axes": "x"
+    },
+    {
+      "filename": "grass_border_corner.png",
+      "tile_axes": "none"
+    },
+    {
+      "filename": "ground_earth_ruts.png",
+      "tile_axes": "xy"
+    },
+    {
+      "filename": "ground_earth_gravel.png",
+      "tile_axes": "xy"
+    },
+    {
+      "filename": "decal_pebbles.png",
+      "tile_axes": "none"
+    },
+    {
+      "filename": "prop_hedge.png",
+      "tile_axes": "x"
+    },
+    {
+      "filename": "watchtower_front.png",
+      "tile_axes": "none"
+    },
+    {
+      "filename": "watchtower_side.png",
+      "tile_axes": "none"
+    },
+    {
+      "filename": "platform_corner.png",
+      "tile_axes": "none"
+    },
+    {
+      "filename": "platform_coping.png",
+      "tile_axes": "x"
+    },
+    {
+      "filename": "courtyard_wall_post.png",
+      "tile_axes": "none"
+    },
+    {
+      "filename": "curb_top.png",
+      "tile_axes": "x"
+    },
+    {
+      "filename": "curb_side.png",
+      "tile_axes": "x"
+    },
+    {
+      "filename": "curb_corner.png",
+      "tile_axes": "none"
+    }
+  ]
+}

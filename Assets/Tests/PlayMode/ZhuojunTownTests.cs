@@ -71,7 +71,7 @@ public sealed class ZhuojunTownTests
         var boxes = Object.FindObjectsByType<BoxCollider>(FindObjectsSortMode.None)
             .Where(b => b.transform.parent != null && b.transform.parent.Find("Front") != null)
             .Select(b => (name: b.transform.parent.name, bounds: b.bounds)).ToList();
-        Assert.Greater(boxes.Count, 20, "the town is lined with buildings (thinned out, user 2026-10-22)");
+        Assert.GreaterOrEqual(boxes.Count, 12, "the 13 buildings of the concept map (user 2026-10-23)");
         for (int i = 0; i < boxes.Count; i++)
         for (int j = i + 1; j < boxes.Count; j++)
         {
@@ -80,22 +80,51 @@ public sealed class ZhuojunTownTests
         }
     }
 
-    // The commandery hall steps are solid and climbable (user 2026-10-20: the party used to walk through them).
+    // The commandery stands on a 2.1 m platform (concept map, user 2026-10-23): the six platform steps and the three
+    // hall steps are solid and climbable all the way from the square (user 2026-10-20: the party used to walk through them).
     [UnityTest] public IEnumerator PlayerClimbsTheHallSteps()
     {
         yield return SceneManager.LoadSceneAsync("Zhuojun_Town");
         yield return null;
         var mover = Object.FindFirstObjectByType<PlayerMover>();
         var cc = mover.GetComponent<CharacterController>();
-        cc.enabled = false; mover.transform.position = new Vector3(0, 0, 18.5f); cc.enabled = true;
+        cc.enabled = false; mover.transform.position = new Vector3(0, 0, 13.5f); cc.enabled = true;
         yield return null;
-        for (float t = 0; t < 1.2f; t += 0.02f) { mover.Move(Vector2.up, 0.02f); yield return null; }
-        Assert.Greater(mover.transform.position.y, 0.9f, "standing on the landing, not inside the steps");
-        Assert.Greater(mover.transform.position.z, 20.4f, "up at the door");
-        Assert.Less(mover.transform.position.z, 22f, "the hall wall still stops the player");
-        // And back down again, into the courtyard (short of the new gate steps further south).
-        for (float t = 0; t < 0.5f; t += 0.02f) { mover.Move(Vector2.down, 0.02f); yield return null; }
-        Assert.Less(mover.transform.position.y, 0.1f);
+        for (float t = 0; t < 2.5f; t += 0.02f) { mover.Move(Vector2.up, 0.02f); yield return null; }
+        Assert.Greater(mover.transform.position.y, 3.0f, "up on the hall landing, not inside the platform");
+        Assert.Greater(mover.transform.position.z, 22.4f, "up at the door");
+        Assert.Less(mover.transform.position.z, 24f, "the hall wall still stops the player");
+        // And back down onto the platform court.
+        for (float t = 0; t < 0.25f; t += 0.02f) { mover.Move(Vector2.down, 0.02f); yield return null; }
+        Assert.That(mover.transform.position.y, Is.InRange(1.95f, 2.3f), "standing on the platform");
+    }
+
+    // Each district has its own shot (user 2026-10-24): the camera eases low and close at the commandery steps and
+    // high and wide over the square, turns toward the side streets, and keeps looking at the player throughout.
+    [UnityTest] public IEnumerator CameraEasesIntoDistrictShots()
+    {
+        yield return SceneManager.LoadSceneAsync("Zhuojun_Town");
+        yield return null;
+        var mover = Object.FindFirstObjectByType<PlayerMover>();
+        var cc = mover.GetComponent<CharacterController>();
+        var follow = Object.FindFirstObjectByType<FollowCamera>();
+        Assert.IsTrue(follow.UseRig);
+        IEnumerator Stand(Vector3 at) { cc.enabled = false; mover.transform.position = at; cc.enabled = true; yield return new WaitForSeconds(2.5f); }
+
+        yield return Stand(new Vector3(0, 0, 12.5f));
+        Assert.AreEqual("Commandery steps", follow.ActiveZone.name);
+        Assert.AreEqual(17f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "low angle up at the hall");
+        float stepsDistance = Vector3.Distance(follow.transform.position, mover.transform.position);
+
+        yield return Stand(new Vector3(0, 0, -15f));
+        Assert.AreEqual("Main axis and square", follow.ActiveZone.name);
+        Assert.AreEqual(32f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "high over the square");
+        Assert.Greater(Vector3.Distance(follow.transform.position, mover.transform.position), stepsDistance + 8f, "pulled back");
+
+        yield return Stand(new Vector3(30f, 0, -8f));
+        Assert.AreEqual(12f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.y), 1f, "turned toward the smithy street");
+        var toPlayer = (mover.transform.position + Vector3.up - follow.transform.position).normalized;
+        Assert.Greater(Vector3.Dot(follow.transform.forward, toPlayer), 0.99f, "the player stays in the middle of the shot");
     }
 
     // Speed doubled (user 2026-10-20) and walking plays the drawn 4-frame cycle for the facing direction.
