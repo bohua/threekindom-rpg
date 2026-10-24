@@ -485,7 +485,7 @@ namespace ThreeKingdoms.EditorTools
                 Mat("grass_border", clip: true), new Vector2(length / Metres("grass_border").x, 1f), castShadows: false);
         }
 
-        const float CurbH = 0.15f, CurbW = 0.3f;
+        const float CurbH = 0.2f, CurbW = 0.3f;   // curb_side is 6 px tall, curb_top 9 px deep
 
         // A low stone curb along a paved edge from a to b (along X or Z), lying on the paving; `outward` (+1/-1) is the
         // side the earth is on (+x/+z or -x/-z). Dedicated curb art when delivered, else the stone-step treads and risers.
