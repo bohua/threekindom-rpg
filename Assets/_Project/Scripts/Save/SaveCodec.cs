@@ -12,7 +12,8 @@ namespace ThreeKingdoms.Save
     public static class SaveCodec
     {
         public static SaveData Capture(StoryState story, Inventory inventory, IReadOnlyDictionary<string, int> exp,
-            string location, int leaderLevel, string chapter, string gameVersion, DateTime now, TownLife life = null)
+            string location, int leaderLevel, string chapter, string gameVersion, DateTime now, TownLife life = null,
+            ChronicleState chronicle = null)
         {
             story.ToSafeState();   // never save the middle of a sequence (rule 5)
             return new SaveData
@@ -35,6 +36,9 @@ namespace ThreeKingdoms.Save
                 reputation = life?.Reputation ?? 0,
                 quizTakenAt = life?.QuizTakenAt ?? -1,
                 archeryRewardedAt = life?.ArcheryRewardedAt ?? -1,
+                chronicleNode = chronicle?.NodeId ?? "",
+                openRegions = chronicle?.OpenRegions.OrderBy(r => r).ToArray() ?? Array.Empty<string>(),
+                dangerAreas = chronicle?.DangerAreas.OrderBy(d => d).ToArray() ?? Array.Empty<string>(),
             };
         }
 
@@ -45,6 +49,7 @@ namespace ThreeKingdoms.Save
             public IReadOnlyList<(string general, int exp)> Exp;
             public string Location;
             public TownLife Life;
+            public ChronicleState Chronicle;
         }
 
         // False (with a reason) for anything the current game cannot use; the file itself is never touched.
@@ -53,11 +58,16 @@ namespace ThreeKingdoms.Save
             restored = null; error = null;
             try
             {
-                if (data.location != SaveData.TownLocation && !data.location.StartsWith("battle_"))
+                bool inRegion = data.location.StartsWith(SaveData.RegionPrefix);
+                if (data.location != SaveData.TownLocation && !data.location.StartsWith("battle_") && !inRegion)
                     throw new ArgumentException($"未知落点 {data.location}");
                 var story = StoryState.Restore(data.guanYuJoined, data.zhangFeiJoined, (SequenceState)data.oath, data.battlesDone, (SequenceState)data.ending);
+                var chronicle = ChronicleState.Restore(data.chronicleNode, data.openRegions, data.dangerAreas);
+                // A post-station save must be in a region the chronicle has open.
+                if (inRegion && !chronicle.IsOpen(data.location.Substring(SaveData.RegionPrefix.Length)))
+                    throw new ArgumentException($"区域落点 {data.location} 尚未开放");
                 // A pre-battle save must be for the battle the story expects next (no Xuzhou or skipped battles, rule 8).
-                if (data.location != SaveData.TownLocation && data.location != story.NextBattleId)
+                if (data.location != SaveData.TownLocation && !inRegion && data.location != story.NextBattleId)
                     throw new ArgumentException($"战前落点 {data.location} 与进度不符");
                 var inventory = Inventory.Restore(economy, data.copper, data.rations,
                     (data.bag ?? Array.Empty<BagEntry>()).Select(b => (b.item, b.count)),
@@ -69,6 +79,7 @@ namespace ThreeKingdoms.Save
                     Exp = (data.exp ?? Array.Empty<ExpEntry>()).Select(e => (e.general, e.exp)).ToList(),
                     Location = data.location,
                     Life = new TownLife(data.reputation, data.quizTakenAt, data.archeryRewardedAt),
+                    Chronicle = chronicle,
                 };
                 return true;
             }
