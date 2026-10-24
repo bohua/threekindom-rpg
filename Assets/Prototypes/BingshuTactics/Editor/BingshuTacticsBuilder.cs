@@ -44,6 +44,7 @@ namespace Prototype.BingshuTactics.EditorTools
             var zhang8 = ImportArt("char_zhangfei_idlewalk_8dir_96.png", game.LiuBeiMat); if (zhang8) game.ZhangFeiMat = zhang8;
             game.LuBuBust = ImportTexture("char_lubu_bust.png", false);
             game.UiTextures = ImportUiSlices();
+            game.DestinyTextures = ImportDestinySlices();
             game.EnvTextures = ImportEnvTextures();
             // 单挑立绘与动作帧
             game.LiuBeiPortrait = Load<Texture2D>($"{Busts}/Full/LIU_BEI_MAIN_POSE.png");
@@ -179,6 +180,33 @@ namespace Prototype.BingshuTactics.EditorTools
                 list.Add(AssetDatabase.LoadAssetAtPath<Texture2D>(dst));
             }
             Debug.Log("BINGSHU_ENV_TEXTURES " + list.Count);
+            return list.ToArray();
+        }
+
+        // 兵书回路界面切图（Codex：art/battle-poc-destiny-ui-slices）：高清 UI，双线性＋多级纹理，缩小时不起锯齿
+        const string DestinySource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-poc-destiny-ui-slices";
+
+        static Texture2D[] ImportDestinySlices()
+        {
+            if (!Directory.Exists(DestinySource)) return new Texture2D[0];
+            var dir = Dir + "/Art/Destiny";
+            Directory.CreateDirectory(dir);
+            var list = new System.Collections.Generic.List<Texture2D>();
+            foreach (var src in Directory.GetFiles(DestinySource, "*.png"))
+            {
+                var file = Path.GetFileName(src);
+                if (file.StartsWith("contact") || file.StartsWith("mockup") || file.StartsWith("preview")) continue;
+                var dst = $"{dir}/{file}";
+                File.Copy(src, dst, true);
+                AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceUpdate);
+                var imp = (TextureImporter)AssetImporter.GetAtPath(dst);
+                imp.textureType = TextureImporterType.Default; imp.mipmapEnabled = true; imp.alphaIsTransparency = true;
+                imp.npotScale = TextureImporterNPOTScale.None; imp.filterMode = FilterMode.Trilinear;
+                imp.textureCompression = TextureImporterCompression.Uncompressed; imp.wrapMode = TextureWrapMode.Clamp;
+                imp.SaveAndReimport();
+                list.Add(AssetDatabase.LoadAssetAtPath<Texture2D>(dst));
+            }
+            Debug.Log("BINGSHU_DESTINY_SLICES " + list.Count);
             return list.ToArray();
         }
 

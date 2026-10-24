@@ -70,6 +70,7 @@ namespace Prototype.BingshuTactics
             BuildWorld();
             BuildLibrary();
             BuildUnits();
+            BuildBench();
             font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "Microsoft YaHei UI", "SimHei", "SimSun", "DengXian" }, 18);
             white = Texture2D.whiteTexture;
             Log("布阵：点选我方武将，再点蓝色格子调整站位。可先打开「兵书回路」配书。");
@@ -105,6 +106,8 @@ namespace Prototype.BingshuTactics
             yield return new WaitForSeconds(0.5f); yield return Shot("2-circuit-guanyu");
             circuitUnit = 0; circuitSlot = -1;
             yield return new WaitForSeconds(0.3f); yield return Shot("3-circuit-liubei");
+            circuitSlot = 5; circuitFocus = 1; bookSel = 4; yield return new WaitForSeconds(0.3f); yield return Shot("3d-circuit-choose-book");
+            circuitFocus = 0; circuitUnit = 3; yield return new WaitForSeconds(0.3f); yield return Shot("3e-circuit-zhaoyun"); circuitUnit = 0;
             circuitUnit = 2;
             yield return new WaitForSeconds(0.3f); yield return Shot("3b-circuit-zhangfei-int48");
             var zf = units.First(x => x.Name == "张飞"); int keep = zf.Int; zf.Int = 100;
@@ -246,7 +249,7 @@ namespace Prototype.BingshuTactics
         {
             void B(string n, Element e, int g) => library.Add(new Book(n, e, g));
             B("《尉缭子》", Element.Metal, 2); B("《吴子》", Element.Metal, 3); B("《六韬·虎韬》", Element.Metal, 1); B("《尉缭子》残卷", Element.Metal, 1);
-            B("《三略》", Element.Wood, 3); B("《司马法》", Element.Wood, 2); B("《管子·牧民》", Element.Wood, 1); B("《司马法》残卷", Element.Wood, 1);
+            B("《三略》", Element.Wood, 2); B("《司马法》", Element.Wood, 2); B("《管子·牧民》", Element.Wood, 1); B("《司马法》残卷", Element.Wood, 1);
             B("《管子·度地》", Element.Water, 3); B("《墨子·备水》", Element.Water, 2); B("《孙子·行军》", Element.Water, 1);
             B("《孙子·火攻》", Element.Fire, 3); B("《六韬·火战》", Element.Fire, 2); B("《火攻》残卷", Element.Fire, 1); B("《火攻》残卷", Element.Fire, 1);
             B("《孙膑兵法·八阵》", Element.Earth, 3); B("《墨子·备城门》", Element.Earth, 2); B("《六韬·龙韬》", Element.Earth, 1);
@@ -557,43 +560,6 @@ namespace Prototype.BingshuTactics
         }
 
         List<Book> ShelfOrder() => library.OrderBy(b => b.Element).ThenByDescending(b => b.Grade).ToList();
-
-        // 兵书回路：LB/RB 换武将，Y/Tab 换学派；左栏选槽，确认进书库，书库里确认镶嵌；X 卸下；B 返回
-        void CircuitInput(Vector2Int pulse, bool ok, bool cancel, bool lb, bool rb)
-        {
-            var party = units.Where(x => x.Team == Team.Player).ToList();
-            if (lb || rb) { circuitUnit = (circuitUnit + (rb ? 1 : party.Count - 1)) % party.Count; circuitSlot = 0; circuitFocus = 0; }
-            var u = party[circuitUnit]; var c = u.Circuit;
-            if (Pressed(Kb?.tabKey, Pad?.buttonNorth))
-            {
-                int si = System.Array.FindIndex(Circuits.All, x => x.School == u.School);
-                SetSchool(u, Circuits.All[(si + 1) % Circuits.All.Length].School);
-                circuitSlot = Mathf.Clamp(circuitSlot, 0, u.Circuit.Slots.Length - 1);
-                return;
-            }
-            if (Pressed(Kb?.fKey, Pad?.startButton)) { mode = Mode.Deploy; return; }
-            if (circuitFocus == 0)
-            {
-                if (circuitSlot < 0) circuitSlot = 0;
-                int step = pulse.y != 0 ? -pulse.y : pulse.x;
-                if (step != 0) circuitSlot = (circuitSlot + step + c.Slots.Length) % c.Slots.Length;
-                if (Pressed(Kb?.deleteKey, Kb?.cKey, Pad?.buttonWest)) u.Slots[circuitSlot] = null;
-                if (ok) { circuitFocus = 1; bookSel = Mathf.Max(0, ShelfOrder().FindIndex(b => CircuitMath.Fits(c, circuitSlot, b) && Owner(b) == null)); }
-                if (cancel) { mode = Mode.Deploy; circuitSlot = -1; }
-            }
-            else
-            {
-                var shelf = ShelfOrder();
-                if (pulse.y != 0) bookSel = Mathf.Clamp(bookSel - pulse.y * 2, 0, shelf.Count - 1);
-                if (pulse.x != 0) bookSel = Mathf.Clamp(bookSel + pulse.x, 0, shelf.Count - 1);
-                if (ok)
-                {
-                    var b = shelf[bookSel];
-                    if (CircuitMath.Fits(c, circuitSlot, b) && Owner(b) == null) { u.Slots[circuitSlot] = b; circuitFocus = 0; }
-                }
-                if (cancel) circuitFocus = 0;
-            }
-        }
 
         void RebuildOverlay()
         {
@@ -1023,7 +989,8 @@ namespace Prototype.BingshuTactics
         {
             var m = GUI.matrix; var o = GUI.color; GUI.color = col;
             float ang = Mathf.Atan2(b.y - a.y, b.x - a.x) * Mathf.Rad2Deg;
-            GUIUtility.RotateAroundPivot(ang, a);
+            // 在当前 GUI 矩阵（界面缩放）之内绕 a 旋转；RotateAroundPivot 按屏幕坐标取轴心，缩放不为 1 时会偏
+            GUI.matrix = m * Matrix4x4.TRS(a, Quaternion.Euler(0, 0, ang), Vector3.one) * Matrix4x4.TRS(-(Vector3)a, Quaternion.identity, Vector3.one);
             GUI.DrawTexture(new Rect(a.x, a.y - w / 2, Vector2.Distance(a, b), w), white);
             GUI.matrix = m; GUI.color = o;
         }
@@ -1045,7 +1012,7 @@ namespace Prototype.BingshuTactics
 
             DrawWorldLabels();
             DrawAtBarV();
-            if (mode != Mode.Duel) DrawPartyV(sw);
+            if (mode != Mode.Duel && mode != Mode.Circuit) DrawPartyV(sw);
             DrawTopBarV(sw);
             DrawMinimap(sw);
 
@@ -1227,7 +1194,7 @@ namespace Prototype.BingshuTactics
         }
 
         // ---------------- 兵书回路界面 ----------------
-        Unit Owner(Book b) => units.FirstOrDefault(u => u.Team == Team.Player && u.Slots.Contains(b));
+        Unit Owner(Book b) => units.Concat(bench).FirstOrDefault(u => u.Team == Team.Player && u.Slots.Contains(b));
 
         void SetSchool(Unit u, School s)
         {
@@ -1235,136 +1202,6 @@ namespace Prototype.BingshuTactics
             var c = u.Circuit;
             for (int i = 0; i < u.Slots.Length; i++)
                 if (u.Slots[i] != null && (i >= c.Slots.Length || !CircuitMath.Fits(c, i, u.Slots[i]))) u.Slots[i] = null;
-        }
-
-        void DrawCircuit(float sw)
-        {
-            var party = units.Where(u => u.Team == Team.Player).ToList();
-            var u = party[circuitUnit];
-            var c = u.Circuit;
-            Rect(new Rect(0, 30, sw, RefH - 30), new Color(0.03f, 0.04f, 0.07f, 0.94f));
-
-            // 武将页签
-            for (int i = 0; i < party.Count; i++)
-                if (GUI.Toggle(new Rect(20, 44 + i * 64, 180, 58), i == circuitUnit, GUIContent.none, GUI.skin.button) && i != circuitUnit) { circuitUnit = i; circuitSlot = -1; }
-            for (int i = 0; i < party.Count; i++)
-            {
-                var b = Bust(party[i]);
-                if (b) GUI.DrawTexture(new Rect(24, 48 + i * 64, 50, 50), b, ScaleMode.ScaleAndCrop);
-                GUI.Label(new Rect(82, 52 + i * 64, 120, 22), party[i].Name, text);
-                GUI.Label(new Rect(82, 74 + i * 64, 120, 20), $"{party[i].Circuit.Name}·偏{Wuxing.Name(party[i].Circuit.Affinity)}", small);
-            }
-
-            // 学派
-            GUI.Label(new Rect(20, 250, 180, 20), "学派（原型可切换比较）", small);
-            for (int i = 0; i < Circuits.All.Length; i++)
-            {
-                var cd = Circuits.All[i];
-                if (GUI.Toggle(new Rect(20, 274 + i * 34, 180, 30), cd.School == u.School, $"{cd.Name}·偏{Wuxing.Name(cd.Affinity)}·包容{cd.Inclusivity}", GUI.skin.button) && cd.School != u.School)
-                { SetSchool(u, cd.School); circuitSlot = -1; }
-            }
-            GUI.Label(new Rect(20, 450, 190, 120), c.Note, new GUIStyle(small) { wordWrap = true });
-
-            // 回路图：五行八卦盘（太极中枢、外圈八卦爻、方孔钱槽、彩绳连线）
-            var hub = new Vector2(370, 250); const float PR = 160f; float R = PR * 0.6f;
-            if (!plate) plate = MakeBaguaPlate(400);
-            GUI.DrawTexture(new Rect(hub.x - PR, hub.y - PR, PR * 2, PR * 2), plate);
-            foreach (var g in Bagua.All)
-            {
-                var lp = hub + new Vector2(g.Dir.x, -g.Dir.y) * (PR * 1.1f);
-                var gs = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontSize = 13 };
-                gs.normal.textColor = Wuxing.Tint(g.Element);
-                GUI.Label(new Rect(lp.x - 30, lp.y - 10, 60, 20), $"{g.Name}·{Wuxing.Name(g.Element)}", gs);
-            }
-            Vector2 SP(int i) => hub + new Vector2(c.Slots[i].Pos.x, -c.Slots[i].Pos.y) * R;
-            var segs = CircuitMath.Segments(c, u.Int, out var edges);
-            foreach (var ed in edges)
-            {
-                Vector2 p0 = SP(ed.A), p1 = SP(ed.B);
-                if (ed.Line < 0)
-                {
-                    // 智力不足处绳路断开：只留一道暗痕
-                    var mid = (p0 + p1) / 2f; var dir = (p1 - p0).normalized * 8f;
-                    Line(p0, mid - dir, 2, new Color(0.45f, 0.38f, 0.28f, 0.6f));
-                    Line(mid + dir, p1, 2, new Color(0.45f, 0.38f, 0.28f, 0.6f));
-                    continue;
-                }
-                Line(p0, p1, 9, new Color(0.08f, 0.06f, 0.04f, 0.9f));
-                Line(p0, p1, 5, lineCols[ed.Line % lineCols.Length]);
-            }
-            for (int i = 0; i < c.Slots.Length; i++)
-            {
-                var p = SP(i); var book = u.Slots[i]; var lockE = c.Slots[i].Locked;
-                // 方孔钱：铜边、五行色钱面；空槽露出方孔
-                Disc(p, 27, i == circuitSlot ? new Color(1f, 0.92f, 0.6f) : new Color(0.62f, 0.48f, 0.24f));
-                Disc(p, 23, book != null ? Wuxing.Tint(book.Element) : (lockE != Element.None ? Wuxing.Tint(lockE) * 0.55f + new Color(0, 0, 0, 0.45f) : new Color(0.22f, 0.18f, 0.13f)));
-                if (book == null) Rect(new Rect(p.x - 6, p.y - 6, 12, 12), new Color(0.06f, 0.05f, 0.04f, 0.9f));
-                var lab = book != null ? $"{Wuxing.Name(book.Element)}{CircuitMath.Value(c, book)}" : (lockE != Element.None ? $"限{Wuxing.Name(lockE)}" : "");
-                var st = new GUIStyle(center) { fontSize = 14 };
-                st.normal.textColor = book != null && (book.Element == Element.Metal || book.Element == Element.Earth) ? new Color(0.1f, 0.08f, 0.05f) : Color.white;
-                var rr = new Rect(p.x - 26, p.y - 26, 52, 52);
-                if (GUI.Button(rr, GUIContent.none, GUIStyle.none))
-                {
-                    if (Event.current.button == 1 || (circuitSlot == i && book != null)) u.Slots[i] = null;
-                    circuitSlot = i;
-                }
-                GUI.Label(new Rect(rr.x, rr.y + (book == null && lockE != Element.None ? 14 : 0), rr.width, rr.height), lab, st);
-            }
-            GUI.Label(new Rect(hub.x - 150, hub.y + PR + 22, 300, 20), "点空槽再点右侧兵书镶嵌；再点一次已镶嵌槽卸下", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
-
-            // 线路合计（对应参考图3右上）
-            float ly = 462;
-            GUI.Label(new Rect(230, ly, 330, 20), "线路五行合计（策略看单条线）", small);
-            for (int l = 0; l < segs.Length; l++)
-            {
-                var t = CircuitMath.LineTotals(c, u.Slots, segs[l]);
-                Rect(new Rect(230, ly + 26 + l * 24, 14, 14), lineCols[l % lineCols.Length]);
-                string s = string.Join("  ", Wuxing.All.Select(e => $"<color=#{ColorUtility.ToHtmlStringRGB(Wuxing.Tint(e))}>{Wuxing.Name(e)}{t[e]}</color>"));
-                GUI.Label(new Rect(252, ly + 22 + l * 24, 320, 22), $"线{l + 1}<size=11>（{segs[l].Length}槽）</size>  {s}", text);
-            }
-
-            // 智力决定连线长短（原型可临时调整智力对比）
-            int cap = CircuitMath.SegmentCap(u.Int);
-            GUI.Label(new Rect(20, 572, 200, 20), $"智力 {u.Int} → {(cap >= c.Slots.Length ? "全盘贯通" : $"每段最多连 {cap} 槽")}", text);
-            if (GUI.Button(new Rect(20, 598, 56, 26), "−10")) u.Int = Mathf.Max(10, u.Int - 10);
-            if (GUI.Button(new Rect(82, 598, 56, 26), "+10")) u.Int = Mathf.Min(100, u.Int + 10);
-            if (GUI.Button(new Rect(144, 598, 60, 26), "孔明")) u.Int = 100;
-
-            // 兵书库
-            float bx = 580;
-            GUI.Label(new Rect(bx, 44, 300, 22), circuitSlot >= 0 ? $"选择镶嵌到 {circuitSlot + 1} 号槽的兵书" : "兵书库（先点回路上的槽位）", text);
-            int row = 0;
-            foreach (var b in library.OrderBy(b => b.Element).ThenByDescending(b => b.Grade))
-            {
-                var owner = Owner(b);
-                bool fits = circuitSlot >= 0 && CircuitMath.Fits(c, circuitSlot, b) && owner == null;
-                var r = new Rect(bx + (row % 2) * 186, 72 + (row / 2) * 34, 180, 30);
-                if (padMode && circuitFocus == 1 && row == bookSel) Rect(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), new Color(1f, 0.85f, 0.3f, 0.95f));
-                GUI.enabled = fits;
-                if (GUI.Button(r, GUIContent.none)) { u.Slots[circuitSlot] = b; circuitSlot = -1; }
-                GUI.enabled = true;
-                Rect(new Rect(r.x + 4, r.y + 6, 18, 18), Wuxing.Tint(b.Element));
-                string who = owner != null ? $"<color=#999999>（{owner.Name}）</color>" : "";
-                GUI.Label(new Rect(r.x + 26, r.y + 4, 160, 22), $"{b.Name}<size=11>{b.Grade}</size>{who}", new GUIStyle(small) { fontSize = 12 });
-                row++;
-            }
-
-            // 策略一览
-            float sx = 960; var lit = CircuitMath.Lit(c, u.Slots, u.Int);
-            GUI.Label(new Rect(sx, 44, 300, 22), "策略（亮＝已点亮）", text);
-            int k2 = 0;
-            foreach (var s in Strategies.All)
-            {
-                var l = lit.FirstOrDefault(x => x.Def == s); bool on = l.Def != null;
-                string req = string.Join("", s.Req.Select(kv => $"{Wuxing.Name(kv.Key)}{kv.Value}"));
-                var col = on ? Wuxing.Tint(s.Element) : new Color(0.55f, 0.55f, 0.55f);
-                GUI.Label(new Rect(sx, 72 + k2 * 40, 320, 20), $"<color=#{ColorUtility.ToHtmlStringRGB(col)}>{s.Name}</color>  <size=12>需{req}{(on ? $" · 线{l.Line + 1} · 威力×{l.PowerMul:0.00}" : "")}</size>", text);
-                GUI.Label(new Rect(sx + 10, 93 + k2 * 40, 320, 18), s.Desc, new GUIStyle(small) { fontSize = 11, normal = { textColor = on ? Color.white : Color.gray } });
-                k2++;
-            }
-
-            if (GUI.Button(new Rect(20, RefH - 60, 180, 36), "完成（回到布阵）")) mode = Mode.Deploy;
-            GUI.Label(new Rect(230, RefH - 52, 720, 20), "手柄／键盘：LB RB（Q E）换武将 · Y（Tab）换学派 · 方向选槽 · A（回车）进书库/镶嵌 · X（C）卸下 · B（Esc）返回", small);
         }
     }
 }
