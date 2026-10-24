@@ -485,6 +485,52 @@ namespace ThreeKingdoms.EditorTools
                 Mat("grass_border", clip: true), new Vector2(length / Metres("grass_border").x, 1f), castShadows: false);
         }
 
+        const float CurbH = 0.15f, CurbW = 0.3f;
+
+        // A low stone curb along a paved edge from a to b (along X or Z), lying on the paving; `outward` (+1/-1) is the
+        // side the earth is on (+x/+z or -x/-z). Dedicated curb art when delivered, else the stone-step treads and risers.
+        static void Curb(Transform parent, Vector3 a, Vector3 b, int outward)
+        {
+            bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
+            float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
+            string top = Tex("curb_top", optional: true) ? "curb_top" : "steps_tread";
+            string side = Tex("curb_side", optional: true) ? "curb_side" : "steps_riser";
+            var mid = (a + b) / 2f;
+            // Local frame: x along the run, -z toward the earth side.
+            float yaw = alongX ? (outward > 0 ? 180f : 0f) : (outward > 0 ? -90f : 90f);
+            var c = Group(parent, "Curb", mid, yaw);
+            var topSize = new Vector2(len, CurbW);
+            Quad(c, "Curb top", new Vector3(0, CurbH, CurbW / 2f - CurbW), new Vector3(90f, 0, 0), topSize, Mat(top), new Vector2(len / Metres(top).x, 1f), castShadows: false);
+            Quad(c, "Curb face", new Vector3(0, CurbH / 2f, -CurbW), Vector3.zero, new Vector2(len, CurbH), Mat(side), new Vector2(len / Metres(side).x, 1f), castShadows: false);
+            Quad(c, "Curb back", new Vector3(0, CurbH / 2f, 0), new Vector3(0, 180f, 0), new Vector2(len, CurbH), Mat(side), new Vector2(len / Metres(side).x, 1f), castShadows: false);
+        }
+
+        // A square curb stone covering the meeting of two curb runs.
+        static void CurbCorner(Transform parent, Vector3 at)
+        {
+            string key = Tex("curb_corner", optional: true) ? "curb_corner" : "steps_tread";
+            var c = Group(parent, "Curb corner", at);
+            float w = CurbW + 0.06f;
+            Quad(c, "Corner top", new Vector3(0, CurbH + 0.006f, 0), new Vector3(90f, 0, 0), new Vector2(w, w), Mat(key), key == "curb_corner" ? Vector2.one : new Vector2(w / Metres(key).x, w / Metres(key).y), castShadows: false);
+            foreach (float yaw in new[] { 0f, 90f, 180f, 270f })
+                Quad(c, "Corner face", Quaternion.Euler(0, yaw, 0) * new Vector3(0, CurbH / 2f, -w / 2f), new Vector3(0, yaw, 0), new Vector2(w, CurbH),
+                    Mat(Tex("curb_side", optional: true) ? "curb_side" : "steps_riser"), new Vector2(w / 4f, 1f), castShadows: false);
+        }
+
+        // A square post or quoin column at a corner, `size` across and `height` tall, with a top cap. `face` stretches
+        // over each side when it is dedicated corner art, else tiles.
+        static void Column(Transform parent, string name, Vector3 baseCentre, float size, float height, string face, string cap)
+        {
+            var c = Group(parent, name, baseCentre);
+            bool tiled = axes.TryGetValue(face, out string ax) && ax != "none";
+            var faceSize = new Vector2(size, height);
+            foreach (float yaw in new[] { 0f, 90f, 180f, 270f })
+                Quad(c, name + " face", Quaternion.Euler(0, yaw, 0) * new Vector3(0, height / 2f, -size / 2f), new Vector3(0, yaw, 0), faceSize, Mat(face),
+                    tiled ? Repeat(face, faceSize) : Vector2.one);
+            var capSize = new Vector2(size + 0.1f, size + 0.1f);
+            Quad(c, name + " cap", new Vector3(0, height + 0.01f, 0), new Vector3(90f, 0, 0), capSize, Mat(cap), Repeat(cap, capSize), castShadows: false);
+        }
+
         static void Ground(Transform env)
         {
             var g = Group(env, "Ground");
@@ -543,12 +589,18 @@ namespace ThreeKingdoms.EditorTools
             else Patch(g, "Earth edge at the road", "ground_earth_to_grass", -9f, 9f, -46f, -38f, 0.001f);
             Patch(g, "Peach grove petals", "ground_petals", -78f, -55f, -14f, 14f, 0.001f);
             Patch(g, "Vegetable plot", "ground_vegetable_plot", -45.5f, -41.5f, -32f, -27.5f, 0.004f);
-            // Curb and drain along both sides of the main axis.
-            foreach (float x in new[] { -3.15f, 3.15f })
-            {
-                var size = new Vector2(0.6f, 25f);
-                Quad(g, "Drain", new Vector3(x, 0.008f, -21.5f), new Vector3(90f, 0, 0), size, Mat("ground_transition"), Repeat("ground_transition", size), castShadows: false);
-            }
+            // Raised curbs round every paved edge (user 2026-10-24): the main axis and the market square.
+            var curbs = Group(g, "Curbs");
+            Curb(curbs, new Vector3(-3f, 0, -34f), new Vector3(-3f, 0, -9f), -1);
+            Curb(curbs, new Vector3(3f, 0, -34f), new Vector3(3f, 0, -9f), 1);
+            Curb(curbs, new Vector3(-10f, 0, -9f), new Vector3(-10f, 0, 14.5f), -1);
+            Curb(curbs, new Vector3(10f, 0, -9f), new Vector3(10f, 0, 14.5f), 1);
+            Curb(curbs, new Vector3(-10f, 0, -9f), new Vector3(-3f, 0, -9f), -1);
+            Curb(curbs, new Vector3(3f, 0, -9f), new Vector3(10f, 0, -9f), -1);
+            Curb(curbs, new Vector3(-10f, 0, 14.5f), new Vector3(-3f, 0, 14.5f), 1);
+            Curb(curbs, new Vector3(3f, 0, 14.5f), new Vector3(10f, 0, 14.5f), 1);
+            foreach (var (x, z) in new[] { (-10f, -9f), (10f, -9f), (-10f, 14.5f), (10f, 14.5f), (-3f, -9f), (3f, -9f) })
+                CurbCorner(curbs, new Vector3(x, 0, z));
             var floor = new GameObject("Ground collider").AddComponent<BoxCollider>();
             floor.transform.SetParent(g, false);
             floor.center = new Vector3(-10f, -0.05f, 0f); floor.size = new Vector3(200f, 0.1f, 160f);
@@ -792,8 +844,6 @@ namespace ThreeKingdoms.EditorTools
             Prop(gp, "prop_grain_measure", -28.5f, 18.0f);
             Prop(gp, "prop_carry_pole", -35.5f, 17.6f);
             Prop(gp, "prop_handcart", -21.5f, 17.4f, solid: true);
-            // A low wattle fence closes the dead ground behind the granaries, hidden from the camera.
-            Strip(gp, "Granary back fence", "fence_wattle", new Vector3(-44f, 0, 24.5f), new Vector3(-22f, 0, 24.5f), Metres("fence_wattle").y);
 
             // 01 Commandery office: a 2.1 m stone platform (x -12..12, z 17.5..33.5) reached by six steps in line
             // with the main axis, walled on three sides, the hall at the back.
@@ -820,6 +870,28 @@ namespace ThreeKingdoms.EditorTools
             Strip(office, "Parapet E", "courtyard_wall", new Vector3(3.5f, Terrace, 17.8f), new Vector3(12f, Terrace, 17.8f), 1.0f, capKey: "courtyard_wall_cap");
             Strip(office, "Courtyard wall side W", "courtyard_wall", new Vector3(-11.8f, Terrace, 17.8f), new Vector3(-11.8f, Terrace, 33.5f), wallH, capKey: "courtyard_wall_cap");
             Strip(office, "Courtyard wall side E", "courtyard_wall", new Vector3(11.8f, Terrace, 17.8f), new Vector3(11.8f, Terrace, 33.5f), wallH, capKey: "courtyard_wall_cap");
+            // Corners (user 2026-10-24: two faces simply meeting looked rough): quoin columns on the platform's front
+            // corners and either side of the steps, posts where the courtyard walls turn and where the parapet ends.
+            string quoin = Tex("platform_corner", optional: true) ? "platform_corner" : "platform_top";
+            foreach (var (n, x) in new[] { ("W", -12f), ("E", 12f) })
+                Column(office, "Platform corner " + n, new Vector3(x, 0, 17.5f), 0.7f, Terrace + 0.05f, quoin, "platform_top");
+            foreach (var (n, x) in new[] { ("W", -3f), ("E", 3f) })
+                Column(office, "Step cheek " + n, new Vector3(x, 0, 17.5f), 0.5f, Terrace + 0.05f, quoin, "platform_top");
+            if (Tex("platform_coping", optional: true))
+            {
+                float copeH = Metres("platform_coping").y;
+                foreach (var (n, x0, x1) in new[] { ("W", -12f, -3f), ("E", 3f, 12f) })
+                    Quad(office, "Platform coping " + n, new Vector3((x0 + x1) / 2f, Terrace - copeH / 2f + 0.02f, 17.45f), Vector3.zero, new Vector2(x1 - x0, copeH),
+                        Mat("platform_coping", clip: true), new Vector2((x1 - x0) / Metres("platform_coping").x, 1f));
+                foreach (var (n, x, yaw) in new[] { ("W", -12.05f, 90f), ("E", 12.05f, -90f) })
+                    Quad(office, "Platform coping side " + n, new Vector3(x, Terrace - copeH / 2f + 0.02f, 25.5f), new Vector3(0, yaw, 0), new Vector2(16f, copeH),
+                        Mat("platform_coping", clip: true), new Vector2(16f / Metres("platform_coping").x, 1f));
+            }
+            string post = Tex("courtyard_wall_post", optional: true) ? "courtyard_wall_post" : "courtyard_wall";
+            foreach (var (n, x) in new[] { ("W", -11.8f), ("E", 11.8f) })
+                Column(office, "Wall corner post " + n, new Vector3(x, Terrace, 17.8f), 0.6f, wallH + 0.2f, post, "courtyard_wall_cap");
+            foreach (var (n, x) in new[] { ("W", -3.5f), ("E", 3.5f) })
+                Column(office, "Parapet end post " + n, new Vector3(x, Terrace, 17.8f), 0.5f, 1.2f, post, "courtyard_wall_cap");
             var hall = Building(office, "Office hall", new Vector3(0, Terrace, 24f), 0f, "yamen_hall_front", "yamen_hall_side", null);
             EaveSign(hall, "plaque_yamen", "yamen_hall_front", "yamen_hall_side");
             var op = Group(office, "Office props");
