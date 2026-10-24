@@ -70,4 +70,26 @@ public sealed class RegionHudTests
         Assert.AreEqual(ride.WalkSpeed, ride.Mover.Speed);
         Assert.IsTrue(ride.Mover.InputEnabled);
     }
+
+    // A signpost at a fork shows a bubble with each way and its place (user 2026-10-24); woods, hills and rivers
+    // block the way, bridges do not.
+    [UnityTest] public IEnumerator SignpostsAndImpassableTerrain()
+    {
+        yield return SceneManager.LoadSceneAsync("Bohai_Plain");
+        yield return null;
+        var hud = Object.FindFirstObjectByType<RegionHud>();
+        var player = Object.FindFirstObjectByType<Jrpg.PlayerMover>().transform;
+        yield return At(player, GameObject.Find("Spot Sign west").transform.position);
+        yield return null;
+        Assert.AreEqual(4, hud.BubbleLines.Count, string.Join(" / ", hud.BubbleLines));
+        Assert.IsTrue(hud.BubbleLines.Exists(l => l.Contains("西村")) && hud.BubbleLines.Exists(l => l.Contains("平原城")));
+        yield return At(player, new Vector3(200f, 0, 150f));
+        Assert.AreEqual(0, hud.BubbleLines.Count, "no bubble away from the signs");
+
+        bool Blocked(Vector3 at) => Physics.CheckBox(at + Vector3.up * 1f, new Vector3(0.3f, 0.6f, 0.3f));
+        Assert.IsTrue(Blocked(new Vector3(-180f, 0, 0f)), "the 曲陌 wood is impassable");
+        Assert.IsTrue(Blocked(new Vector3(-135f, 0, 95f)), "the 笃马河 is impassable");
+        Assert.IsTrue(Blocked(new Vector3(-150f, 0, 320f)), "the northern hills are impassable");
+        Assert.IsFalse(Blocked(new Vector3(-2.9f, 0, 59.9f)), "the road bridge is open");
+    }
 }

@@ -22,12 +22,16 @@ namespace ThreeKingdoms.UI.Region
             Ivory = new Color32(0xF4, 0xF1, 0xE8, 0xFF), Mist = new Color32(0xB5, 0xC8, 0xD5, 0xFF),
             Silver = new Color32(0x8C, 0xA7, 0xBA, 0xFF), Cyan = new Color32(0x62, 0xD7, 0xE8, 0xFF);
 
-        VisualElement sign, minorRow, marker;
+        VisualElement sign, minorRow, marker, bubble, bubbleRows;
+        Signpost shownSign;
+        float bubbleFade;
         Label major;
         LocationZone current;
         float fade;
 
         public string SignText { get; private set; }
+        // The signpost bubble's lines while one is shown ("↑ 北村 约 120 步"), for tests.
+        public System.Collections.Generic.List<string> BubbleLines { get; } = new System.Collections.Generic.List<string>();
 
         void OnEnable()
         {
@@ -96,7 +100,75 @@ namespace ThreeKingdoms.UI.Region
                 marker.style.rotate = new Rotate(45f);   // a diamond pointer, as in the unified style
                 map.Add(marker);
             }
+            BuildBubble(root);
             current = null; SignText = null;
+        }
+
+        // Signpost bubble after art/bohai-road-design/SIGNPOST_BUBBLE_UI.png: 360 px wide, 22 × 16 padding, 44 px rows
+        // split by hairlines, cyan arrow 26 px, ivory place name 24 px, mist distance 16 px, a 20 × 16 tail to the sign.
+        void BuildBubble(VisualElement root)
+        {
+            bubble = Panel(root);
+            bubble.style.position = Position.Absolute; bubble.style.width = 360;
+            bubble.style.paddingLeft = 22; bubble.style.paddingRight = 22; bubble.style.paddingTop = 8; bubble.style.paddingBottom = 8;
+            bubble.style.display = DisplayStyle.None;
+            bubbleRows = new VisualElement();
+            bubble.Add(bubbleRows);
+            foreach (var (l, t) in new[] { (true, true), (false, true), (true, false), (false, false) })
+            {
+                var tick = new VisualElement();
+                tick.style.position = Position.Absolute; tick.style.width = 8; tick.style.height = 8;
+                if (l) tick.style.left = 5; else tick.style.right = 5;
+                if (t) tick.style.top = 5; else tick.style.bottom = 5;
+                if (l) { tick.style.borderLeftWidth = 1; tick.style.borderLeftColor = Silver; } else { tick.style.borderRightWidth = 1; tick.style.borderRightColor = Silver; }
+                if (t) { tick.style.borderTopWidth = 1; tick.style.borderTopColor = Silver; } else { tick.style.borderBottomWidth = 1; tick.style.borderBottomColor = Silver; }
+                bubble.Add(tick);
+            }
+            var tail = new VisualElement();
+            tail.style.position = Position.Absolute; tail.style.width = 14; tail.style.height = 14;
+            tail.style.left = Length.Percent(50); tail.style.bottom = -8; tail.style.translate = new Translate(-7, 0);
+            tail.style.backgroundColor = Base; tail.style.rotate = new Rotate(45f);
+            tail.style.borderRightWidth = 1; tail.style.borderBottomWidth = 1; tail.style.borderRightColor = Silver; tail.style.borderBottomColor = Silver;
+            bubble.Add(tail);
+        }
+
+        void ShowBubble(Signpost s)
+        {
+            bubbleRows.Clear();
+            BubbleLines.Clear();
+            int i = 0;
+            foreach (var (arrow, name, distance) in s.Lines())
+            {
+                var row = new VisualElement();
+                row.style.flexDirection = FlexDirection.Row; row.style.alignItems = Align.Center; row.style.height = 44;
+                if (i++ > 0) { row.style.borderTopWidth = 1; row.style.borderTopColor = new Color(Silver.r, Silver.g, Silver.b, 0.35f); }
+                var a = Text(row, arrow, 26, Cyan); a.style.width = 30;
+                var n = Text(row, name, 24, Ivory); n.style.flexGrow = 1; n.style.marginLeft = 12;
+                Text(row, distance, 16, Mist);
+                bubbleRows.Add(row);
+                BubbleLines.Add($"{arrow} {name} {distance}".Trim());
+            }
+        }
+
+        void UpdateBubble()
+        {
+            var s = Player ? Signpost.Nearest(Player.position) : null;
+            if (s != shownSign) { shownSign = s; if (s) { ShowBubble(s); bubbleFade = 0f; } else BubbleLines.Clear(); }
+            if (!shownSign) { bubble.style.display = DisplayStyle.None; return; }
+            var cam = Camera.main;
+            if (!cam || bubble.panel == null) return;
+            Vector3 sp = cam.WorldToScreenPoint(shownSign.transform.position + Vector3.up * shownSign.BubbleHeight);
+            if (sp.z <= 0f) { bubble.style.display = DisplayStyle.None; return; }
+            bubble.style.display = DisplayStyle.Flex;
+            var pos = RuntimePanelUtils.ScreenToPanel(bubble.panel, new Vector2(sp.x, Screen.height - sp.y));
+            float w = 360f, h = bubble.resolvedStyle.height;
+            if (float.IsNaN(h) || h <= 0f) h = 44f * 3f + 16f;
+            var size = bubble.panel.visualTree.layout.size;
+            // Keep clear of the signboard and the mini map (16 px), the tail still pointing at the sign.
+            float left = Mathf.Clamp(pos.x - w / 2f, 16f, Mathf.Max(16f, size.x - w - 16f)), top = Mathf.Max(130f, pos.y - h - 8f);
+            bubble.style.left = left; bubble.style.top = top;
+            bubbleFade = Mathf.Min(1f, bubbleFade + Time.unscaledDeltaTime * 5f);
+            bubble.style.opacity = bubbleFade;
         }
 
         void Update()
@@ -106,6 +178,7 @@ namespace ThreeKingdoms.UI.Region
             var zone = LocationZone.Find(Player.position);
             if (zone != current) { current = zone; Show(zone); fade = 0f; }
             if (fade < 1f) { fade = Mathf.Min(1f, fade + Time.unscaledDeltaTime * 4f); sign.style.opacity = fade; }
+            UpdateBubble();
             if (marker != null)
             {
                 float u = Mathf.InverseLerp(MapBounds.x, MapBounds.z, Player.position.x), v = Mathf.InverseLerp(MapBounds.y, MapBounds.w, Player.position.z);

@@ -1,0 +1,96 @@
+{
+ "purpose": "Bohai plain wild textures (Codex bohai-wild-b1, approved 2026-10-24)",
+ "pixel_density": 30,
+ "files": [
+  {
+   "filename": "bridge_deck.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "bridge_rail.png",
+   "tile_axes": "x",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "cliff_face.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "farm_field.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "forest_floor.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "hill_slope.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "hill_top.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "prop_rock_large.png",
+   "tile_axes": "none",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "prop_rock_small.png",
+   "tile_axes": "none",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "prop_signpost.png",
+   "tile_axes": "none",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "prop_tree_dense_cluster.png",
+   "tile_axes": "none",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "prop_tree_jujube.png",
+   "tile_axes": "none",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "prop_tree_oak.png",
+   "tile_axes": "none",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "prop_tree_pine.png",
+   "tile_axes": "none",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "prop_tree_poplar.png",
+   "tile_axes": "none",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "prop_undergrowth.png",
+   "tile_axes": "none",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "river_bank.png",
+   "tile_axes": "x",
+   "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "saline_flat.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-wild-b1"
+  }
+ ]
+}

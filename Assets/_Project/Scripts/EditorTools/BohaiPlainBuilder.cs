@@ -29,6 +29,8 @@ namespace ThreeKingdoms.EditorTools
         public const string ArtDir = "Assets/_Project/Art/Environment/BohaiPlain";
         // Pingyuan's own textures (Codex pingyuan-b1/-b2), searched first.
         public const string PingyuanDir = ArtDir + "/Pingyuan";
+        // Open-country textures and props (Codex bohai-wild-b1).
+        public const string WildDir = ArtDir + "/Wild";
         const string MaterialDir = ArtDir + "/Materials";
         const string MeshPath = ArtDir + "/Bohai_Meshes.asset";
 
@@ -47,7 +49,7 @@ namespace ThreeKingdoms.EditorTools
         {
             greys.Clear(); water = null;
             MountedImporter.Import();
-            T.BeginSession(MaterialDir, MeshPath, PingyuanDir, ArtDir);
+            T.BeginSession(MaterialDir, MeshPath, PingyuanDir, WildDir, ArtDir);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
@@ -61,6 +63,7 @@ namespace ThreeKingdoms.EditorTools
 
             var env = new GameObject("Environment").transform;
             Ground(env);
+            LoadMask();
             Roads(env);
             River(env);
             Levee(env);
@@ -74,6 +77,8 @@ namespace ThreeKingdoms.EditorTools
             Village(env, labels, "北村", new Vector3(40f, 0, 200f), 17);
             Explore(env, labels);
             Exits(env, labels);
+            Terrain(env, labels);
+            Signposts(env, labels);
             Scatter(env);
             T.EndSession();
 
@@ -244,10 +249,10 @@ namespace ThreeKingdoms.EditorTools
         {
             var g = T.Group(env, "Roads");
             // Main roads 8 m (ruts down the middle), spurs to villages and wild spots 5 m.
-            Road(g, "West road", 8f, new Vector3(XMin, 0, 40f), new Vector3(-380f, 0, 40f), new Vector3(-250f, 0, -100f), WestGate + new Vector3(-6f, 0, 0));
-            Road(g, "North road", 8f, NorthGate + new Vector3(0, 0, 6f), new Vector3(CityCx, 0, -20f), new Vector3(40f, 0, 120f), new Vector3(40f, 0, 200f), new Vector3(40f, 0, ZMax));
-            Road(g, "East road", 8f, EastGate + new Vector3(6f, 0, 0), new Vector3(150f, 0, -170f), new Vector3(310f, 0, -182f), GaotangFront);
-            Road(g, "Gaotang to the post station", 7f, GaotangFront + new Vector3(18f, 0, 0), new Vector3(420f, 0, -100f), PostFront, new Vector3(XMax, 0, 20f));
+            StoneRoad(g, "West road", 8f, WestRoad);
+            StoneRoad(g, "North road", 8f, NorthRoad);
+            StoneRoad(g, "East road", 8f, EastRoad);
+            StoneRoad(g, "Gaotang to the post station", 8f, PostRoad);
             Road(g, "Spur to the beacon", 5f, new Vector3(-250f, 0, -100f), new Vector3(-330f, 0, -165f));
             Road(g, "Spur to the reeds", 5f, new Vector3(150f, 0, -170f), new Vector3(215f, 0, -88f));
             Road(g, "Spur to the tomb", 5f, new Vector3(-380f, 0, 40f), new Vector3(-300f, 0, 160f), new Vector3(-224f, 0, 244f));
@@ -796,6 +801,8 @@ namespace ThreeKingdoms.EditorTools
         // Clear of the city, the villages, the wild spots, the post station and every road.
         static bool Near(float x, float z)
         {
+            var cell = At(x, z);
+            if (Blocked(cell) || cell == Cell.Town || cell == Cell.Bridge) return true;
             (float x, float z, float r)[] keepOut =
             {
                 (CityCx, -155f, 70f), (330f, -140f, 55f), (460f, 0f, 35f), (545f, 20f, 25f), (-380f, 40f, 48f), (40f, 200f, 48f),
@@ -976,6 +983,22 @@ namespace ThreeKingdoms.EditorTools
                 Rect(x - bw / 2f, x + bw / 2f, z - bd / 2f, z + bd / 2f, field);
             }
             Rect(XMin, XMax, ZMin, WaterN, river);
+            // Hills, woods, rivers and marsh from the terrain mask.
+            if (mask != null)
+            {
+                Color32 hill = new Color32(0x4E, 0x4A, 0x44, 255), foot = new Color32(0x3E, 0x44, 0x46, 255), wood = new Color32(0x1E, 0x3E, 0x36, 255),
+                    stream = new Color32(0x3A, 0x6E, 0x8E, 255), marsh = new Color32(0x2E, 0x4A, 0x52, 255);
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                    {
+                        var c = At(XMin + (x + 0.5f) / ppm, ZMin + (y + 0.5f) / ppm);
+                        if (c == Cell.Mountain) px[y * w + x] = hill;
+                        else if (c == Cell.Foothill) px[y * w + x] = foot;
+                        else if (c == Cell.Forest) px[y * w + x] = wood;
+                        else if (c == Cell.River || c == Cell.Bridge) px[y * w + x] = stream;
+                        else if (c == Cell.Marsh) px[y * w + x] = marsh;
+                    }
+            }
             Rect(XMin, XMax, LeveeSouth, LeveeNorth, new Color32(0x4A, 0x55, 0x48, 255));
             Rect(XMin, XMax, LeveeCrestS, LeveeCrestN, levee);
             float rw = 7f;
@@ -1035,6 +1058,498 @@ namespace ThreeKingdoms.EditorTools
             hud.MapBounds = new Vector4(XMin, ZMin, XMax, ZMax);
             hud.PlaceNames = MapNames.Select(n => n.name).ToArray();
             hud.PlacePositions = MapNames.Select(n => n.at).ToArray();
+        }
+
+        // ---------- the post road (user 2026-10-24) ----------
+        // Stone-slab paving (Zhuojun's ground_street_stone) with Zhuojun's stone curbs on both edges, a tree every
+        // 10 m on each side, and a signpost at every fork.
+
+        const float CurbHeight = 0.2f, CurbWidth = 0.3f, AvenueSpacing = 10f;
+
+        static void StoneRoad(Transform parent, string name, float width, params Vector3[] points)
+        {
+            var g = T.Group(parent, name);
+            string top = K("curb_top", "steps_tread"), side = K("curb_side", "steps_riser");
+            for (int i = 0; i + 1 < points.Length; i++)
+            {
+                Vector3 a = points[i], b = points[i + 1];
+                Strip(g, "Stone paving", "ground_street_stone", a, b, width, 0.005f + i * 0.0002f);
+                var d = (b - a); d.y = 0f; float len = d.magnitude; d /= len;
+                float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
+                var right = new Vector3(d.z, 0, -d.x);
+                foreach (int s in new[] { -1, 1 })
+                {
+                    var mid = (a + b) / 2f + right * s * (width / 2f + CurbWidth / 2f);
+                    var c = T.Group(g, "Curb", mid);
+                    T.Quad(c, "Curb top", new Vector3(0, CurbHeight, 0), new Vector3(90f, yaw, 0), new Vector2(CurbWidth, len), T.Mat(top), new Vector2(1f, len / T.Metres(top).x), castShadows: false);
+                    foreach (int f in new[] { -1, 1 })
+                        T.Quad(c, "Curb face", right * f * CurbWidth / 2f + new Vector3(0, CurbHeight / 2f, 0), new Vector3(0, yaw + (f > 0 ? -90f : 90f), 0), new Vector2(len, CurbHeight),
+                            T.Mat(side, twoSided: true), new Vector2(len / T.Metres(side).x, 1f), castShadows: false);
+                }
+            }
+            Avenue(g, width, points);
+        }
+
+        // A tree every 10 m on both sides of the road, species alternating; none in towns, at places, on other roads,
+        // over water or in a wood.
+        static void Avenue(Transform parent, float width, Vector3[] points)
+        {
+            var g = T.Group(parent, "Avenue trees");
+            string[] species = new[] { "prop_tree_poplar", "prop_tree_willow", "prop_tree_locust" }.Where(k => T.Tex(k, optional: true)).ToArray();
+            int n = 0;
+            float carry = AvenueSpacing / 2f;
+            for (int i = 0; i + 1 < points.Length; i++)
+            {
+                Vector3 a = points[i], b = points[i + 1];
+                var d = (b - a); d.y = 0f; float len = d.magnitude; d /= len;
+                var right = new Vector3(d.z, 0, -d.x);
+                for (float t = carry; t < len; t += AvenueSpacing)
+                {
+                    foreach (int s in new[] { -1, 1 })
+                    {
+                        var p = a + d * t + right * s * (width / 2f + 2.6f);
+                        if (AvenueBlocked(p, a, b)) continue;
+                        T.Prop(g, species[(n + (s > 0 ? 1 : 0)) % species.Length], p.x, p.z, scale: 0.9f, solid: true);
+                    }
+                    n++;
+                    carry = t + AvenueSpacing - len;
+                }
+            }
+        }
+
+        static bool AvenueBlocked(Vector3 p, Vector3 a, Vector3 b)
+        {
+            var cell = At(p.x, p.z);
+            if (Blocked(cell) || cell == Cell.Town || cell == Cell.Bridge || cell == Cell.Levee || cell == Cell.YellowRiver) return true;
+            if (p.z < LeveeNorth + 2f) return true;
+            (float x, float z, float r)[] places =
+            {
+                (CityCx, -155f, 62f), (330f, -130f, 52f), (460f, 0f, 26f), (545f, 20f, 16f), (-380f, 40f, 44f), (40f, 200f, 44f),
+                (-330f, -170f, 20f), (220f, -70f, 32f), (-220f, 252f, 32f),
+            };
+            foreach (var k in places) if ((p.x - k.x) * (p.x - k.x) + (p.z - k.z) * (p.z - k.z) < k.r * k.r) return true;
+            // Clear of every road but this segment (forks and crossings stay open for the signposts).
+            var q = new Vector2(p.x, p.z);
+            foreach (var road in AllRoads)
+                for (int i = 0; i + 1 < road.Length; i++)
+                {
+                    if ((road[i] == a && road[i + 1] == b)) continue;
+                    var ra = new Vector2(road[i].x, road[i].z); var rb = new Vector2(road[i + 1].x, road[i + 1].z);
+                    float t = Mathf.Clamp01(Vector2.Dot(q - ra, rb - ra) / (rb - ra).sqrMagnitude);
+                    if ((ra + t * (rb - ra) - q).sqrMagnitude < 8.5f * 8.5f) return true;
+                }
+            return false;
+        }
+
+        static readonly Vector3[] WestRoad = { new Vector3(XMin, 0, 40f), new Vector3(-380f, 0, 40f), new Vector3(-250f, 0, -100f), WestGate + new Vector3(-6f, 0, 0) };
+        static readonly Vector3[] NorthRoad = { NorthGate + new Vector3(0, 0, 6f), new Vector3(CityCx, 0, -20f), new Vector3(40f, 0, 120f), new Vector3(40f, 0, 200f), new Vector3(40f, 0, ZMax) };
+        static readonly Vector3[] EastRoad = { EastGate + new Vector3(6f, 0, 0), new Vector3(150f, 0, -170f), new Vector3(310f, 0, -182f), GaotangFront };
+        static readonly Vector3[] PostRoad = { GaotangFront + new Vector3(18f, 0, 0), new Vector3(420f, 0, -100f), PostFront, new Vector3(XMax, 0, 20f) };
+        static readonly Vector3[] BeaconSpur = { new Vector3(-250f, 0, -100f), new Vector3(-330f, 0, -165f) };
+        static readonly Vector3[] ReedSpur = { new Vector3(150f, 0, -170f), new Vector3(215f, 0, -88f) };
+        static readonly Vector3[] TombSpur = { new Vector3(-380f, 0, 40f), new Vector3(-300f, 0, 160f), new Vector3(-224f, 0, 244f) };
+        static readonly Vector3[][] AllRoads = { WestRoad, NorthRoad, EastRoad, PostRoad, BeaconSpur, ReedSpur, TombSpur };
+
+        // Signposts at the forks: each way points a little along its road and names where it leads.
+        static void Signposts(Transform env, Transform labels)
+        {
+            var g = T.Group(env, "Signposts");
+            void Sign(string name, Vector3 at, params (string to, Vector3 toward, float metres)[] ways)
+            {
+                var root = T.Group(g, "Signpost " + name, at);
+                root.position = at;
+                if (T.Tex("prop_signpost", optional: true)) T.Prop(root, "prop_signpost", 0f, 0f, solid: true);
+                else T.Prop(root, "Signpost (stand-in)", 0f, 0f, key: "prop_notice_board", solid: true);
+                var s = root.gameObject.AddComponent<Signpost>();
+                s.Names = ways.Select(w => w.to).ToArray();
+                s.Toward = ways.Select(w => w.toward).ToArray();
+                s.Metres = ways.Select(w => w.metres).ToArray();
+            }
+            Sign("西村口", new Vector3(-392f, 0, 29f),
+                ("西村", new Vector3(-380f, 0, 40f), 20f), ("往清河", new Vector3(-420f, 0, 40f), 200f),
+                ("古冢石阙", new Vector3(-370f, 0, 66f), 330f), ("平原城", new Vector3(-350f, 0, 8f), 330f));
+            Sign("烽燧岔口", new Vector3(-242f, 0, -110f),
+                ("废烽燧", new Vector3(-270f, 0, -122f), 105f), ("平原城", new Vector3(-220f, 0, -112f), 150f), ("西村", new Vector3(-262f, 0, -86f), 190f));
+            Sign("苇塘岔口", new Vector3(158f, 0, -180f),
+                ("芦苇荡", new Vector3(170f, 0, -145f), 105f), ("平原城", new Vector3(120f, 0, -167f), 160f), ("高唐", new Vector3(190f, 0, -173f), 185f));
+            Sign("北村口", new Vector3(52f, 0, 186f),
+                ("北村", new Vector3(40f, 0, 205f), 15f), ("往南皮", new Vector3(40f, 0, 240f), 140f), ("平原城", new Vector3(30f, 0, 160f), 370f));
+            Sign("高唐道口", new Vector3(352f, 0, -190f),
+                ("高唐", new Vector3(330f, 0, -160f), 30f), ("驿站", new Vector3(370f, 0, -160f), 150f), ("平原城", new Vector3(300f, 0, -182f), 345f));
+            Spot("Sign west", new Vector3(-390f, 0, 24f));
+            Spot("Sign north", new Vector3(52f, 0, 181f));
+            Spot("Bridge", new Vector3(-5f, 0, 46f));
+            Spot("Forest edge", new Vector3(-180f, 0, -58f));
+            Spot("Hill pass", new Vector3(40f, 0, 286f));
+            Spot("Hills", new Vector3(-100f, 0, 262f));
+            // On the levee crest above the ferry (terrain plan sign_dike).
+            Sign("大堤渡口", new Vector3(CityCx + 10f, LeveeH, LeveeCrestN - 0.8f),
+                ("平原城", new Vector3(CityCx, 0, CityZ0), 40f), ("平原津", new Vector3(CityCx, 0, -258f), 30f),
+                ("大堤西段", new Vector3(CityCx - 40f, 0, -228f), 300f), ("大堤东段", new Vector3(CityCx + 60f, 0, -228f), 300f));
+        }
+
+        // ---------- terrain from the Codex mask (user 2026-10-24: mountains, plains, rivers, forests) ----------
+        // art/bohai-terrain-map/BOHAI_TERRAIN_MASK.png: 1 px per metre, north up, exact colours per terrain class.
+        // Mountains become a raised mesh (height grows with the distance from the foot) with pines and rocks; forests
+        // dense mixed trees; rivers and marsh flat water; all three impassable through merged box colliders. Bridges
+        // stay walkable. Without the mask the region keeps its plain whitebox ground.
+
+        public const string TerrainDir = ArtDir + "/Terrain";
+        enum Cell : byte { Plain, Road, Mountain, Foothill, Forest, River, Bridge, YellowRiver, Levee, Town, Marsh, Unknown }
+
+        static readonly (Color32 c, Cell cell)[] MaskColours =
+        {
+            (new Color32(0x7F, 0xA0, 0x5A, 255), Cell.Plain), (new Color32(0xC8, 0xA0, 0x60, 255), Cell.Road),
+            (new Color32(0x6E, 0x5A, 0x46, 255), Cell.Mountain), (new Color32(0x8C, 0x7A, 0x5E, 255), Cell.Foothill),
+            (new Color32(0x2E, 0x5A, 0x32, 255), Cell.Forest), (new Color32(0x3C, 0x78, 0xA0, 255), Cell.River),
+            (new Color32(0xD2, 0xB4, 0x8C, 255), Cell.Bridge), (new Color32(0x28, 0x5A, 0x82, 255), Cell.YellowRiver),
+            (new Color32(0xB4, 0x9A, 0x6E, 255), Cell.Levee), (new Color32(0xA0, 0x8C, 0x78, 255), Cell.Town),
+            (new Color32(0x4A, 0x6E, 0x5A, 255), Cell.Marsh),
+        };
+
+        static Cell[,] mask;   // [x, z] in metres from (XMin, ZMin)
+
+        static bool LoadMask()
+        {
+            mask = null;
+            string path = TerrainDir + "/bohai_terrain_mask.png";
+            if (!File.Exists(path)) return false;
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            tex.LoadImage(File.ReadAllBytes(path));
+            int w = tex.width, h = tex.height;
+            var px = tex.GetPixels32();
+            Object.DestroyImmediate(tex);
+            mask = new Cell[w, h];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    var p = px[y * w + x];   // LoadImage rows run bottom-up, so y already counts northward from ZMin
+                    var cell = Cell.Unknown; int best = int.MaxValue;
+                    foreach (var (c, k) in MaskColours)
+                    {
+                        int d = Mathf.Abs(c.r - p.r) + Mathf.Abs(c.g - p.g) + Mathf.Abs(c.b - p.b);
+                        if (d < best) { best = d; cell = k; }
+                    }
+                    mask[x, y] = best <= 24 ? cell : Cell.Plain;
+                }
+            return true;
+        }
+
+        static Cell At(float x, float z)
+        {
+            if (mask == null) return Cell.Plain;
+            int ix = Mathf.FloorToInt(x - XMin), iz = Mathf.FloorToInt(z - ZMin);
+            if (ix < 0 || iz < 0 || ix >= mask.GetLength(0) || iz >= mask.GetLength(1)) return Cell.Plain;
+            return mask[ix, iz];
+        }
+
+        static bool Blocked(Cell c) => c == Cell.Mountain || c == Cell.Foothill || c == Cell.Forest || c == Cell.River || c == Cell.Marsh;
+
+        // Rectangles covering every cell of a class: runs along x, then stacked rows with the same run merged.
+        static List<RectInt> Rects(System.Func<Cell, bool> want, int step = 1) => Rects((x, z) => want(mask[x, z]), step);
+
+        static List<RectInt> Rects(System.Func<int, int, bool> want, int step = 1)
+        {
+            int w = mask.GetLength(0), h = mask.GetLength(1);
+            var open = new Dictionary<(int, int), RectInt>();
+            var done = new List<RectInt>();
+            for (int z = 0; z < h; z += step)
+            {
+                var runs = new List<(int, int)>();
+                for (int x = 0; x < w;)
+                {
+                    if (!want(x, z)) { x++; continue; }
+                    int x0 = x; while (x < w && want(x, z)) x++;
+                    runs.Add((x0, x));
+                }
+                var next = new Dictionary<(int, int), RectInt>();
+                foreach (var run in runs)
+                {
+                    if (open.TryGetValue(run, out var r)) { r.height += step; next[run] = r; open.Remove(run); }
+                    else next[run] = new RectInt(run.Item1, z, run.Item2 - run.Item1, step);
+                }
+                done.AddRange(open.Values);
+                open = next;
+            }
+            done.AddRange(open.Values);
+            return done;
+        }
+
+        static void Terrain(Transform env, Transform labels)
+        {
+            if (!LoadMask()) return;
+            var g = T.Group(env, "Terrain (mask)");
+            var walls = T.Group(g, "Impassable");
+            foreach (var r in Rects(Blocked))
+                Solid(walls, new Vector3(XMin + r.x + r.width / 2f, 3f, ZMin + r.y + r.height / 2f), new Vector3(r.width, 6f, r.height));
+
+            // Ponds and marsh from the mask (the rivers are drawn from the plan's centre lines below).
+            string water = K("water_channel", "water_yellow_river");
+            var wg = T.Group(g, "Ponds and marsh");
+            foreach (var r in Rects(c => c == Cell.River || c == Cell.Marsh))
+            {
+                float cx = XMin + r.x + r.width / 2f, cz = ZMin + r.y + r.height / 2f;
+                if (RiverDistance(cx, cz, out _) < Mathf.Max(r.width, r.height)) continue;
+                var size = new Vector2(r.width, r.height);
+                T.Quad(wg, "Water", new Vector3(cx, 0.011f, cz), new Vector3(90f, 0, 0), size, T.Mat(water), T.Repeat(water, size), castShadows: false);
+            }
+            RiverStrips(g);
+            Forests(g);
+            Mountains(g);
+            Fields(g);
+        }
+
+        // Rivers and bridges after the approved terrain plan (art/bohai-terrain-map/terrain_layout.json): centre lines and
+        // widths, drawn as smooth strips with banks; the mask still supplies their colliders, the pond and the marsh.
+        static readonly (string name, float width, Vector3[] points)[] Rivers =
+        {
+            ("笃马河", 24f, new[] { new Vector3(-520f, 0, 255f), new Vector3(-420f, 0, 235f), new Vector3(-355f, 0, 205f), new Vector3(-285f, 0, 175f), new Vector3(-210f, 0, 125f), new Vector3(-135f, 0, 95f), new Vector3(-50f, 0, 72f), new Vector3(20f, 0, 54f), new Vector3(125f, 0, 56f), new Vector3(210f, 0, 90f), new Vector3(305f, 0, 125f), new Vector3(410f, 0, 155f), new Vector3(560f, 0, 170f) }),
+            ("西苇汊", 10f, new[] { new Vector3(-355f, 0, 205f), new Vector3(-410f, 0, 150f), new Vector3(-470f, 0, 125f), new Vector3(-560f, 0, 100f) }),
+            ("盐苇汊", 10f, new[] { new Vector3(250f, 0, 104.74f), new Vector3(285f, 0, 65f), new Vector3(302f, 0, 15f), new Vector3(285f, 0, -30f), new Vector3(285f, 0, -60f) }),
+        };
+        static readonly (Vector3 a, Vector3 b, float width)[] Bridges =
+        {
+            (new Vector3(-14.56f, 0, 43.62f), new Vector3(8.69f, 0, 76.17f), 10f),
+            (new Vector3(-299.45f, 0, 160.61f), new Vector3(-272.61f, 0, 190.27f), 7f),
+        };
+
+        static float RiverDistance(float x, float z, out float halfWidth)
+        {
+            float best = float.MaxValue; halfWidth = 0f;
+            var q = new Vector2(x, z);
+            foreach (var (_, width, pts) in Rivers)
+                for (int i = 0; i + 1 < pts.Length; i++)
+                {
+                    var a = new Vector2(pts[i].x, pts[i].z); var b = new Vector2(pts[i + 1].x, pts[i + 1].z);
+                    float t = Mathf.Clamp01(Vector2.Dot(q - a, b - a) / (b - a).sqrMagnitude);
+                    float d = (a + t * (b - a) - q).magnitude - width / 2f;
+                    if (d < best) { best = d; halfWidth = width / 2f; }
+                }
+            return best;
+        }
+
+        static void RiverStrips(Transform g)
+        {
+            var rg = T.Group(g, "Rivers (plan)");
+            string water = K("water_channel", "water_yellow_river");
+            string bank = T.Tex("river_bank", optional: true) ? "river_bank" : T.Tex("grass_border", optional: true) ? "grass_border" : null;
+            foreach (var (name, width, pts) in Rivers)
+            {
+                var r = T.Group(rg, name);
+                for (int i = 0; i + 1 < pts.Length; i++)
+                {
+                    Strip(r, "Water", water, pts[i], pts[i + 1], width, 0.012f + i * 0.0002f);
+                    if (bank == null) continue;
+                    var d = pts[i + 1] - pts[i]; d.y = 0f; float len = d.magnitude; d /= len;
+                    float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
+                    var right = new Vector3(d.z, 0, -d.x);
+                    float depth = T.Metres(bank).y;
+                    foreach (int s in new[] { -1, 1 })
+                    {
+                        // A ragged strip lying over the water's edge, its rough side toward the water.
+                        var mid = (pts[i] + pts[i + 1]) / 2f + right * s * (width / 2f - depth * 0.25f) + new Vector3(0, 0.016f + i * 0.0002f, 0);
+                        T.Quad(r, "Bank", mid, new Vector3(90f, yaw + (s > 0 ? -90f : 90f), 0), new Vector2(len + 1f, depth), T.Mat(bank, clip: true), new Vector2((len + 1f) / T.Metres(bank).x, 1f), castShadows: false);
+                    }
+                }
+                // Reeds along the banks.
+                var rng = new System.Random(name.GetHashCode());
+                string reeds = K("prop_reeds", "prop_grass_tuft");
+                for (int i = 0; i + 1 < pts.Length; i++)
+                {
+                    var d = pts[i + 1] - pts[i]; float len = d.magnitude; d /= len;
+                    var right = new Vector3(d.z, 0, -d.x);
+                    for (float t = 4f; t < len; t += 9f + (float)rng.NextDouble() * 8f)
+                    {
+                        int s = rng.Next(2) == 0 ? -1 : 1;
+                        var p = pts[i] + d * t + right * s * (width / 2f + 0.6f);
+                        if (Near(p.x, p.z) && At(p.x, p.z) != Cell.River) continue;
+                        if (Bridges.Any(b => Vector3.Distance(p, (b.a + b.b) / 2f) < 26f)) continue;
+                        T.Prop(r, reeds, p.x, p.z);
+                    }
+                }
+            }
+            string deck = K("bridge_deck", "dock_planks"), rail = T.Tex("bridge_rail", optional: true) ? "bridge_rail" : null;
+            foreach (var (a, b, width) in Bridges)
+            {
+                var bg = T.Group(rg, "Bridge");
+                var d = b - a; float len = d.magnitude; d /= len;
+                float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
+                Strip(bg, "Bridge deck", deck, a, b, width, 0.04f);
+                if (rail == null) continue;
+                var right = new Vector3(d.z, 0, -d.x);
+                float h = T.Metres(rail).y;
+                foreach (int s in new[] { -1, 1 })
+                {
+                    var mid = (a + b) / 2f + right * s * (width / 2f) + new Vector3(0, h / 2f, 0);
+                    T.Quad(bg, "Bridge rail", mid, new Vector3(0, yaw - 90f, 0), new Vector2(len, h), T.Mat(rail, clip: true, twoSided: true), new Vector2(len / T.Metres(rail).x, 1f));
+                    Solid(bg, mid, new Vector3(0.4f, 2f, len), yaw);
+                }
+            }
+        }
+
+        // Dense mixed woods: a tree every 3–4 m with jitter, clusters on the edge so the wood reads as a wall.
+        static void Forests(Transform g)
+        {
+            var fg = T.Group(g, "Forests");
+            string floor = K("forest_floor", "ground_grass");
+            // Floor only well inside the wood (3 m in), so its stepped edge hides under the trees.
+            bool Inner(int x, int z)
+            {
+                for (int dz = -3; dz <= 3; dz += 3) for (int dx = -3; dx <= 3; dx += 3)
+                    if (At(XMin + x + dx + 0.5f, ZMin + z + dz + 0.5f) != Cell.Forest) return false;
+                return true;
+            }
+            foreach (var r in Rects(Inner))
+            {
+                var size = new Vector2(r.width, r.height);
+                T.Quad(fg, "Forest floor", new Vector3(XMin + r.x + r.width / 2f, 0.009f, ZMin + r.y + r.height / 2f), new Vector3(90f, 0, 0), size, T.Mat(floor), T.Repeat(floor, size), castShadows: false);
+            }
+            string[] trees = new[] { "prop_tree_oak", "prop_tree_poplar", "prop_tree_jujube", "prop_tree_willow", "prop_tree_elm", "prop_tree_locust" }
+                .Where(k => T.Tex(k, optional: true)).ToArray();
+            string cluster = T.Tex("prop_tree_dense_cluster", optional: true) ? "prop_tree_dense_cluster" : null;
+            string under = K("prop_undergrowth", "prop_bush");
+            var rng = new System.Random(71);
+            int w = mask.GetLength(0), h = mask.GetLength(1);
+            for (int z = 1; z < h - 1; z += 4)
+                for (int x = 1; x < w - 1; x += 4)
+                {
+                    float fx = x + (float)rng.NextDouble() * 3f, fz = z + (float)rng.NextDouble() * 3f;
+                    if (At(XMin + fx, ZMin + fz) != Cell.Forest) continue;
+                    bool edge = At(XMin + fx, ZMin + fz - 5f) != Cell.Forest || At(XMin + fx - 5f, ZMin + fz) != Cell.Forest || At(XMin + fx + 5f, ZMin + fz) != Cell.Forest;
+                    string key = edge && cluster != null && rng.Next(3) == 0 ? cluster : trees[rng.Next(trees.Length)];
+                    T.Prop(fg, key, XMin + fx, ZMin + fz, scale: 0.85f + (float)rng.NextDouble() * 0.35f);
+                    if (edge && rng.Next(2) == 0) T.Prop(fg, under, XMin + fx + 1.2f, ZMin + fz - 1.6f);
+                }
+        }
+
+        // Hills: a height field over the mountain and foothill cells, rising with the distance from the hill foot,
+        // skinned with the slope texture; pines and rocks on the slopes.
+        static void Mountains(Transform g)
+        {
+            var mg = T.Group(g, "Hills");
+            int w = mask.GetLength(0), h = mask.GetLength(1);
+            const int s = 2;   // metres per vertex
+            int gw = w / s + 1, gh = h / s + 1;
+            // Distance (in cells) from the nearest non-hill cell, by two chamfer passes.
+            var dist = new float[w, h];
+            for (int z = 0; z < h; z++) for (int x = 0; x < w; x++) dist[x, z] = mask[x, z] == Cell.Mountain || mask[x, z] == Cell.Foothill ? 9999f : 0f;
+            for (int z = 0; z < h; z++) for (int x = 0; x < w; x++)
+            {
+                if (dist[x, z] == 0f) continue;
+                float d = dist[x, z];
+                if (x > 0) d = Mathf.Min(d, dist[x - 1, z] + 1f);
+                if (z > 0) d = Mathf.Min(d, dist[x, z - 1] + 1f);
+                if (x > 0 && z > 0) d = Mathf.Min(d, dist[x - 1, z - 1] + 1.414f);
+                if (x < w - 1 && z > 0) d = Mathf.Min(d, dist[x + 1, z - 1] + 1.414f);
+                dist[x, z] = d;
+            }
+            for (int z = h - 1; z >= 0; z--) for (int x = w - 1; x >= 0; x--)
+            {
+                if (dist[x, z] == 0f) continue;
+                float d = dist[x, z];
+                if (x < w - 1) d = Mathf.Min(d, dist[x + 1, z] + 1f);
+                if (z < h - 1) d = Mathf.Min(d, dist[x, z + 1] + 1f);
+                if (x < w - 1 && z < h - 1) d = Mathf.Min(d, dist[x + 1, z + 1] + 1.414f);
+                if (x > 0 && z < h - 1) d = Mathf.Min(d, dist[x - 1, z + 1] + 1.414f);
+                dist[x, z] = d;
+            }
+            float Height(int x, int z)
+            {
+                x = Mathf.Clamp(x, 0, w - 1); z = Mathf.Clamp(z, 0, h - 1);
+                float d = dist[x, z];
+                if (d <= 0f) return -0.6f;   // just under the ground, so the hill meets the plain along a sloped line, not a stepped edge
+                float noise = Mathf.PerlinNoise(x * 0.035f, z * 0.035f);
+                return Mathf.Min(26f, Mathf.Pow(d, 0.8f) * 0.9f) * (0.75f + 0.5f * noise);
+            }
+            var verts = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
+            var index = new int[gw, gh];
+            for (int gz = 0; gz < gh; gz++)
+                for (int gx = 0; gx < gw; gx++)
+                {
+                    index[gx, gz] = -1;
+                    int x = gx * s, z = gz * s;
+                    bool near = false;
+                    for (int dz = -s; dz <= s && !near; dz++) for (int dx = -s; dx <= s && !near; dx++)
+                    {
+                        int cx = Mathf.Clamp(x + dx, 0, w - 1), cz = Mathf.Clamp(z + dz, 0, h - 1);
+                        near = dist[cx, cz] > 0f;
+                    }
+                    if (!near) continue;
+                    index[gx, gz] = verts.Count;
+                    verts.Add(new Vector3(XMin + x, Height(x, z) - 0.05f, ZMin + z));
+                    uvs.Add(new Vector2(x / 4f, z / 4f));   // hill_slope is 4 m per tile
+                }
+            for (int gz = 0; gz + 1 < gh; gz++)
+                for (int gx = 0; gx + 1 < gw; gx++)
+                {
+                    int a = index[gx, gz], b = index[gx + 1, gz], c = index[gx + 1, gz + 1], d = index[gx, gz + 1];
+                    if (a < 0 || b < 0 || c < 0 || d < 0) continue;
+                    tris.AddRange(new[] { a, d, c, a, c, b });
+                }
+            if (verts.Count == 0) return;
+            var mesh = new Mesh { name = "Bohai hills", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            mesh.SetVertices(verts); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            string meshPath = TerrainDir + "/Bohai_Hills.asset";
+            if (AssetDatabase.LoadAssetAtPath<Mesh>(meshPath)) AssetDatabase.DeleteAsset(meshPath);
+            AssetDatabase.CreateAsset(mesh, meshPath);
+            var go = new GameObject("Hill mesh");
+            go.transform.SetParent(mg, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            var slope = K("hill_slope", "wb_levee_face");
+            var mat = new Material(T.Mat(slope)) { name = "bohai_hills" };
+            mat.SetTextureScale("_BaseMap", Vector2.one);
+            string mp = $"{MaterialDir}/bohai_hills.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(mp)) AssetDatabase.DeleteAsset(mp);
+            AssetDatabase.CreateAsset(mat, mp);
+            mr.sharedMaterial = mat;
+            // Undergrowth and rocks along the foot, every few metres, so the line between hill and plain reads natural.
+            var footRng = new System.Random(89);
+            string bush = K("prop_undergrowth", "prop_bush");
+            for (int z = 1; z < h - 1; z += 3)
+                for (int x = 1; x < w - 1; x += 3)
+                {
+                    if (dist[x, z] <= 0f || dist[x, z] > 2.5f) continue;
+                    if (footRng.Next(3) == 0) continue;
+                    float fx = x + (float)footRng.NextDouble() * 2f - 1f, fz = z - 1.5f;
+                    if (Near(XMin + fx, ZMin + fz) && At(XMin + fx, ZMin + fz) != Cell.Mountain && At(XMin + fx, ZMin + fz) != Cell.Foothill) continue;
+                    T.Prop(mg, footRng.Next(4) == 0 ? K("prop_rock_large", "prop_bush") : bush, XMin + fx, ZMin + fz, scale: 0.9f + (float)footRng.NextDouble() * 0.4f);
+                }
+            // Pines on the hills, rocks scattered along the foot.
+            var rng = new System.Random(83);
+            string pine = K("prop_tree_pine", "prop_tree_cypress"), rock = K("prop_rock_large", "prop_bush"), pebble = K("prop_rock_small", "prop_grass_tuft");
+            for (int z = 2; z < h - 2; z += 7)
+                for (int x = 2; x < w - 2; x += 7)
+                {
+                    float fx = x + (float)rng.NextDouble() * 5f, fz = z + (float)rng.NextDouble() * 5f;
+                    int ix = Mathf.Clamp((int)fx, 0, w - 1), iz = Mathf.Clamp((int)fz, 0, h - 1);
+                    float d = dist[ix, iz];
+                    if (d <= 0f) continue;
+                    float y = Height(ix, iz);
+                    if (d < 6f) { if (rng.Next(2) == 0) T.Prop(mg, rng.Next(3) == 0 ? rock : pebble, XMin + fx, ZMin + fz, y: Mathf.Max(0f, y)); }
+                    else if (rng.Next(3) != 0) T.Prop(mg, pine, XMin + fx, ZMin + fz, y: y, scale: 0.9f + (float)rng.NextDouble() * 0.4f);
+                }
+        }
+
+        // Farmland and saline flats in open plain cells away from roads (texture variety only, still walkable).
+        static void Fields(Transform g)
+        {
+            var fg = T.Group(g, "Fields and saline flats");
+            string farm = K("farm_field", "ground_vegetable_plot"), salt = K("saline_flat", "wb_sand_bank");
+            var rng = new System.Random(97);
+            for (int i = 0; i < 40; i++)
+            {
+                float x = XMin + 30f + (float)rng.NextDouble() * (XMax - XMin - 60f), z = LeveeNorth + 20f + (float)rng.NextDouble() * (ZMax - LeveeNorth - 40f);
+                float bw = 24f + (float)rng.NextDouble() * 40f, bd = 16f + (float)rng.NextDouble() * 26f;
+                bool clear = true;
+                for (float sx = -bw / 2f; sx <= bw / 2f && clear; sx += 4f)
+                    for (float sz = -bd / 2f; sz <= bd / 2f && clear; sz += 4f)
+                        clear = At(x + sx, z + sz) == Cell.Plain && !Near(x + sx, z + sz);
+                if (!clear) continue;
+                string key = z < -100f && rng.Next(2) == 0 ? salt : farm;
+                T.Patch(fg, key == farm ? "Field" : "Saline flat", key, x - bw / 2f, x + bw / 2f, z - bd / 2f, z + bd / 2f, 0.0055f + i * 0.00002f);
+            }
         }
 
         // ---------- people ----------
