@@ -84,6 +84,9 @@ namespace ThreeKingdoms.EditorTools
             sun.shadowStrength = 0.8f;
             sun.transform.rotation = Quaternion.Euler(42f, -32f, 0f);
 
+            var map = BakeMinimap();
+            Locations();
+
             var people = new GameObject("People").transform;
             var player = HD2DSampleBuilder.Character("Liu Bei", "LiuBei", PlayerStart, 3, isPlayer: true);
             player.transform.SetParent(people, true);
@@ -101,6 +104,7 @@ namespace ThreeKingdoms.EditorTools
             People(people);
 
             Camera(player.transform);
+            Hud(map, player.transform);
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ScenePath);
             var scenes = EditorBuildSettings.scenes.ToList();
             if (!scenes.Any(s => s.path == ScenePath)) scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
@@ -442,6 +446,8 @@ namespace ThreeKingdoms.EditorTools
             Label(labels, "兵营", new Vector3(-26f, 0, -134f), 7f);
             Spot("Square", PlayerStart);
             Spot("Main street", new Vector3(CityCx, 0, -180f));
+            Spot("East road", new Vector3(150f, 0, -170f));
+            Spot("North road", new Vector3(-10f, 0, 50f));
             Spot("Barracks", new Vector3(-26f, 0, -149f));
         }
 
@@ -805,6 +811,190 @@ namespace ThreeKingdoms.EditorTools
                     if ((a + t * (b - a) - p).sqrMagnitude < 9f * 9f) return true;
                 }
             return false;
+        }
+
+        // ---------- location signboard and mini map (user 2026-10-24) ----------
+
+        // Named places for the signboard: town spots inside Pingyuan and Gaotang, road segments "A ↔ B" outside,
+        // villages, wild spots, the post station and checkpoint; "渤海 · 野外" everywhere else.
+        static void Locations()
+        {
+            var g = new GameObject("Location zones").transform;
+            void Box(string major, string minor, float x0, float x1, float z0, float z1, int priority)
+            {
+                var z = new GameObject($"{major} · {minor}").AddComponent<LocationZone>();
+                z.transform.SetParent(g, false);
+                z.transform.position = new Vector3((x0 + x1) / 2f, 0, (z0 + z1) / 2f);
+                z.Major = major; z.Minor = minor; z.Priority = priority; z.Size = new Vector2(x1 - x0, z1 - z0);
+            }
+            void Road(string minor, params Vector3[] pts) => RoadAt(minor, 2, pts);
+            void Spur(string minor, params Vector3[] pts) => RoadAt(minor, 1, pts);
+            void RoadAt(string minor, int priority, Vector3[] pts)
+            {
+                for (int i = 0; i + 1 < pts.Length; i++)
+                {
+                    var z = new GameObject($"渤海 · {minor}").AddComponent<LocationZone>();
+                    z.transform.SetParent(g, false);
+                    z.Major = "渤海"; z.Minor = minor; z.Priority = priority; z.IsSegment = true; z.A = pts[i]; z.B = pts[i + 1]; z.HalfWidth = 12f;
+                }
+            }
+            void Place(string minor, float x, float z, float r) => Box("渤海", minor, x - r, x + r, z - r, z + r, 3);
+
+            Box("渤海", "野外", XMin - 50f, XMax + 50f, ZMin - 50f, ZMax + 50f, 0);
+            Box("渤海", "黄河大堤", XMin - 50f, XMax + 50f, LeveeSouth, LeveeNorth, 1);
+            // Pingyuan
+            Box("平原", "城内", CityX0, CityX1, CityZ0, CityZ1, 2);
+            Box("平原", "县衙", CityCx - 15f, CityCx + 15f, -163f, -128f, 3);
+            Box("平原", "主街", CityCx - 6f, CityCx + 6f, -189f, -163f, 3);
+            Box("平原", "兵营", -40f, -12f, -150f, -116f, 3);
+            Box("平原", "市集", -109f, -78f, -163f, -140f, 3);
+            Box("平原", "南城门", CityCx - 10f, CityCx + 10f, CityZ0 - 10f, CityZ0 + 6f, 4);
+            Box("平原", "北城门", CityCx - 8f, CityCx + 8f, CityZ1 - 6f, CityZ1 + 8f, 4);
+            Box("平原", "西城门", CityX0 - 8f, CityX0 + 6f, WestGate.z - 8f, WestGate.z + 8f, 4);
+            Box("平原", "东城门", CityX1 - 6f, CityX1 + 8f, EastGate.z - 8f, EastGate.z + 8f, 4);
+            Box("平原", "黄河大堤", CityCx - 70f, CityCx + 70f, LeveeSouth, CityZ0 - 10f, 3);
+            Box("平原", "望河亭", CityCx - 27f, CityCx - 13f, LeveeCrestS - 1f, LeveeCrestN + 1f, 5);
+            Box("平原", "码头", CityCx - 12f, CityCx + 12f, -270f, LeveeSouth, 5);
+            // Gaotang
+            Box("高唐", "城门", GaotangFront.x - 14f, GaotangFront.x + 14f, -180f, -146f, 4);
+            Box("高唐", "县府", GaotangFront.x - 38f, GaotangFront.x + 38f, -146f, -98f, 4);
+            // Roads: the two ends name what lies at each end.
+            Road("西村 ↔ 往清河", new Vector3(XMin, 0, 40f), new Vector3(-380f, 0, 40f));
+            Road("平原西 ↔ 西村", new Vector3(-380f, 0, 40f), new Vector3(-250f, 0, -100f), WestGate);
+            Road("平原北 ↔ 北村", NorthGate, new Vector3(CityCx, 0, -20f), new Vector3(40f, 0, 120f), new Vector3(40f, 0, 200f));
+            Road("北村 ↔ 往南皮", new Vector3(40f, 0, 200f), new Vector3(40f, 0, ZMax));
+            Road("平原东 ↔ 高唐", EastGate, new Vector3(150f, 0, -170f), new Vector3(310f, 0, -182f), GaotangFront);
+            Road("高唐 ↔ 驿站", GaotangFront, new Vector3(420f, 0, -100f), PostFront);
+            Road("驿站 ↔ 济南哨卡", PostFront, new Vector3(XMax, 0, 20f));
+            Spur("西路 ↔ 废烽燧", new Vector3(-250f, 0, -100f), new Vector3(-330f, 0, -165f));
+            Spur("东路 ↔ 芦苇荡", new Vector3(150f, 0, -170f), new Vector3(215f, 0, -88f));
+            Spur("西村 ↔ 古冢", new Vector3(-380f, 0, 40f), new Vector3(-300f, 0, 160f), new Vector3(-224f, 0, 244f));
+            // Places
+            Place("西村", -380f, 40f, 40f);
+            Place("北村", 40f, 200f, 40f);
+            Place("废烽燧", -330f, -170f, 18f);
+            Place("芦苇荡", 220f, -70f, 30f);
+            Place("古冢石阙", -220f, 252f, 30f);
+            Place("驿站", PostFront.x, PostFront.z + 4f, 22f);
+            Place("济南哨卡", 545f, 20f, 18f);
+        }
+
+        // The region's mini map, drawn as a clean 2D chart in the unified UI palette (UI_STYLE_GUIDE.md) from the same
+        // layout data as the scene: land, the river and its levee, roads, the two walled towns, villages and wild spots.
+        // 2 px per metre; the HUD lays the place names over it.
+        static Texture2D BakeMinimap()
+        {
+            string dir = ArtDir + "/Minimap", path = dir + "/bohai_minimap.png";
+            Directory.CreateDirectory(dir);
+            const float ppm = 1f;
+            int w = Mathf.RoundToInt((XMax - XMin) * ppm), h = Mathf.RoundToInt((ZMax - ZMin) * ppm);
+            var px = new Color32[w * h];
+            Color32 land = new Color32(0x1F, 0x34, 0x48, 255), field = new Color32(0x26, 0x3E, 0x52, 255),
+                river = new Color32(0x3A, 0x5E, 0x78, 255), levee = new Color32(0xC4, 0xA3, 0x6D, 255), road = new Color32(0x8C, 0xA7, 0xBA, 255),
+                wall = new Color32(0xD6, 0xBA, 0x78, 255), town = new Color32(0x3B, 0x4C, 0x5A, 255), spot = new Color32(0xD6, 0xBA, 0x78, 255),
+                dock = new Color32(0xB5, 0xC8, 0xD5, 255);
+            int X(float x) => Mathf.RoundToInt((x - XMin) * ppm);
+            int Y(float z) => Mathf.RoundToInt((z - ZMin) * ppm);
+            void Rect(float x0, float x1, float z0, float z1, Color32 c)
+            {
+                for (int y = Mathf.Max(0, Y(z0)); y < Mathf.Min(h, Y(z1)); y++)
+                    for (int x = Mathf.Max(0, X(x0)); x < Mathf.Min(w, X(x1)); x++) px[y * w + x] = c;
+            }
+            void Disc(float cx, float cz, float r, Color32 c)
+            {
+                for (int y = Y(cz - r); y <= Y(cz + r); y++)
+                    for (int x = X(cx - r); x <= X(cx + r); x++)
+                    {
+                        if (x < 0 || y < 0 || x >= w || y >= h) continue;
+                        float dx = (x - X(cx)) / ppm, dz = (y - Y(cz)) / ppm;
+                        if (dx * dx + dz * dz <= r * r) px[y * w + x] = c;
+                    }
+            }
+            void Line(float width, Color32 c, params Vector3[] pts)
+            {
+                for (int i = 0; i + 1 < pts.Length; i++)
+                {
+                    float len = Vector3.Distance(pts[i], pts[i + 1]);
+                    for (float t = 0; t <= len; t += 1f / ppm)
+                    {
+                        var p = Vector3.Lerp(pts[i], pts[i + 1], t / len);
+                        Disc(p.x, p.z, width / 2f, c);
+                    }
+                }
+            }
+            void Frame(float x0, float x1, float z0, float z1, float t, Color32 c)
+            {
+                Rect(x0, x1, z0, z0 + t, c); Rect(x0, x1, z1 - t, z1, c); Rect(x0, x0 + t, z0, z1, c); Rect(x1 - t, x1, z0, z1, c);
+            }
+
+            for (int i = 0; i < px.Length; i++) px[i] = land;
+            var rng = new System.Random(5);   // the same dry-plain bands as Ground()
+            for (int i = 0; i < 26; i++)
+            {
+                float x = XMin + (float)rng.NextDouble() * (XMax - XMin), z = -200f + (float)rng.NextDouble() * 520f;
+                float bw = 40f + (float)rng.NextDouble() * 90f, bd = 25f + (float)rng.NextDouble() * 50f;
+                Rect(x - bw / 2f, x + bw / 2f, z - bd / 2f, z + bd / 2f, field);
+            }
+            Rect(XMin, XMax, ZMin, WaterN, river);
+            Rect(XMin, XMax, LeveeSouth, LeveeNorth, new Color32(0x4A, 0x55, 0x48, 255));
+            Rect(XMin, XMax, LeveeCrestS, LeveeCrestN, levee);
+            float rw = 7f;
+            Line(rw, road, new Vector3(XMin, 0, 40f), new Vector3(-380f, 0, 40f), new Vector3(-250f, 0, -100f), WestGate);
+            Line(rw, road, NorthGate, new Vector3(CityCx, 0, -20f), new Vector3(40f, 0, 120f), new Vector3(40f, 0, 200f), new Vector3(40f, 0, ZMax));
+            Line(rw, road, EastGate, new Vector3(150f, 0, -170f), new Vector3(310f, 0, -182f), GaotangFront, new Vector3(420f, 0, -100f), PostFront, new Vector3(XMax, 0, 20f));
+            Line(rw * 0.6f, road, new Vector3(-250f, 0, -100f), new Vector3(-330f, 0, -165f));
+            Line(rw * 0.6f, road, new Vector3(150f, 0, -170f), new Vector3(215f, 0, -88f));
+            Line(rw * 0.6f, road, new Vector3(-380f, 0, 40f), new Vector3(-300f, 0, 160f), new Vector3(-224f, 0, 244f));
+            Line(rw, road, SouthGate, new Vector3(CityCx, 0, LeveeSouth));
+            // Towns: filled blocks inside a gold wall line.
+            Rect(CityX0, CityX1, CityZ0, CityZ1, town);
+            Frame(CityX0 - 2f, CityX1 + 2f, CityZ0 - 2f, CityZ1 + 2f, 5f, wall);
+            Rect(CityCx - 14f, CityCx + 14f, -162f, -140f, new Color32(0x5A, 0x63, 0x66, 255));
+            Rect(GaotangFront.x - 38f, GaotangFront.x + 38f, -150f, -98f, town);
+            Frame(GaotangFront.x - 40f, GaotangFront.x + 40f, -152f, -96f, 5f, wall);
+            Rect(CityCx - 4f, CityCx + 4f, -266f, LeveeSouth, dock);   // the ferry dock
+            Rect(536f, 552f, -50f, 90f, new Color32(0x2E, 0x4A, 0x5C, 255));   // checkpoint marsh
+            Line(4f, wall, new Vector3(545f, 0, -50f), new Vector3(545f, 0, 90f));
+            foreach (var (x, z) in new[] { (-380f, 40f), (40f, 200f) }) { Disc(x, z, 22f, town); Disc(x, z, 9f, spot); }
+            foreach (var (x, z) in new[] { (-330f, -170f), (220f, -70f), (-220f, 252f), (PostFront.x, PostFront.z + 4f) }) Disc(x, z, 9f, spot);
+
+            var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+            tex.SetPixels32(px);
+            tex.Apply();
+            File.WriteAllBytes(path, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(path);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.textureType = TextureImporterType.Default;
+            importer.mipmapEnabled = true;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
+        // Names laid over the mini map by the HUD.
+        static readonly (string name, Vector3 at)[] MapNames =
+        {
+            ("平原", new Vector3(CityCx, 0, CityZ1 + 22f)), ("平原津", new Vector3(CityCx + 34f, 0, -262f)), ("高唐", new Vector3(330f, 0, -80f)),
+            ("驿站", new Vector3(460f, 0, 36f)), ("哨卡", new Vector3(498f, 0, 108f)), ("西村", new Vector3(-380f, 0, 74f)),
+            ("北村", new Vector3(40f, 0, 236f)), ("废烽燧", new Vector3(-330f, 0, -138f)), ("芦苇荡", new Vector3(220f, 0, -36f)), ("古冢", new Vector3(-220f, 0, 286f)),
+            ("黄河", new Vector3(-420f, 0, -282f)),
+        };
+
+        static void Hud(Texture2D map, Transform player)
+        {
+            var go = new GameObject("Region HUD");
+            var doc = go.AddComponent<UnityEngine.UIElements.UIDocument>();
+            doc.panelSettings = AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.PanelSettings>("Assets/_Project/Settings/BattlePanelSettings.asset");
+            if (!doc.panelSettings) throw new System.InvalidOperationException("Region HUD has no PanelSettings");
+            var hud = go.AddComponent<ThreeKingdoms.UI.Region.RegionHud>();
+            hud.Map = map; hud.Player = player; hud.RegionName = "渤海平原";
+            hud.MapBounds = new Vector4(XMin, ZMin, XMax, ZMax);
+            hud.PlaceNames = MapNames.Select(n => n.name).ToArray();
+            hud.PlacePositions = MapNames.Select(n => n.at).ToArray();
         }
 
         // ---------- people ----------
