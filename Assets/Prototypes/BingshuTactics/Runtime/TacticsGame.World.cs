@@ -163,6 +163,8 @@ namespace Prototype.BingshuTactics
         Material LitMat(string key, Texture2D tex, Color? tint = null)
         {
             if (mats.TryGetValue(key, out var m)) return m;
+            var over = EnvOverride(key);   // Codex 贴图包优先
+            if (over) tex = over;
             m = new Material(GroundMat) { mainTexture = tex, color = tint ?? Color.white };
             m.SetTexture("_BaseMap", tex);
             mats[key] = m;
@@ -301,7 +303,7 @@ namespace Prototype.BingshuTactics
         float TopOf(Vector2Int p)
         {
             var t = grid.TerrainAt(p);
-            return t == Terrain.River ? -0.15f : t == Terrain.Ford ? -0.06f : grid.HeightAt(p) * HS;
+            return t == Terrain.River ? -0.15f : t == Terrain.Ford ? -0.06f : grid.HeightAt(p) * HS + (t == Terrain.Wall || t == Terrain.Gate ? WallExtra : 0f);
         }
 
         float TopOrBorder(Vector2Int p) => grid.In(p) ? TopOf(p) : Border;
@@ -425,6 +427,7 @@ namespace Prototype.BingshuTactics
                 Flag(Tile(new Vector2Int(2, 10)) + new Vector3(-0.4f, 0, 0.4f));
                 Flag(Tile(new Vector2Int(11, 10)) + new Vector3(0.4f, 0, 0.4f));
             }
+            BuildDetails();
             Scenery();
             FlushMeshes("Props");
         }
@@ -432,7 +435,7 @@ namespace Prototype.BingshuTactics
         // 拒马：横木上斜插三组 X 形削尖木桩
         void JuMa(Vector3 c)
         {
-            var b = B(Wood);
+            var b = B(LogWood);
             b.Box(c + Vector3.up * 0.45f, new Vector3(T * 0.98f, 0.12f, 0.12f), 2f);
             for (int k = -1; k <= 1; k++)
                 foreach (float ang in new[] { 38f, -38f })
@@ -446,7 +449,7 @@ namespace Prototype.BingshuTactics
 
         void Palisade(Vector2Int p, Vector3 c)
         {
-            var b = B(Wood);
+            var b = B(LogWood);
             foreach (var d in Dirs4)
             {
                 var nb = p + d;
@@ -486,10 +489,14 @@ namespace Prototype.BingshuTactics
         {
             float zf = p.y * T - 0.01f;
             var door = B(DoorMat);
-            door.Quad(new Vector3(c.x - T * 0.38f, 0, zf), new Vector3(c.x - T * 0.38f, 1.15f, zf), new Vector3(c.x + T * 0.38f, 1.15f, zf), new Vector3(c.x + T * 0.38f, 0, zf),
+            // 深门洞（暗色内壁）＋包铁双扇门＋平顶木过梁
+            B(Stone).Box(new Vector3(c.x, 1.1f, zf + 0.25f), new Vector3(T * 0.86f, 2.2f, 0.5f), 1f);
+            door.Quad(new Vector3(c.x - T * 0.40f, 0, zf), new Vector3(c.x - T * 0.40f, 2.0f, zf), new Vector3(c.x, 2.0f, zf), new Vector3(c.x, 0, zf),
                 new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0));
-            B(Wood).Box(new Vector3(c.x, 1.2f, zf - 0.04f), new Vector3(T * 0.9f, 0.12f, 0.1f), 2f);
-            foreach (float s in new[] { -1f, 1f }) B(Wood).Box(new Vector3(c.x + s * T * 0.42f, 0.6f, zf - 0.04f), new Vector3(0.1f, 1.2f, 0.1f), 2f);
+            door.Quad(new Vector3(c.x, 0, zf), new Vector3(c.x, 2.0f, zf), new Vector3(c.x + T * 0.40f, 2.0f, zf), new Vector3(c.x + T * 0.40f, 0, zf),
+                new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 1), new Vector2(0, 0));
+            B(Wood).Box(new Vector3(c.x, 2.1f, zf - 0.05f), new Vector3(T * 1.0f, 0.18f, 0.14f), 2f);
+            foreach (float s in new[] { -1f, 1f }) B(Pillar).Box(new Vector3(c.x + s * T * 0.46f, 1.05f, zf - 0.05f), new Vector3(0.12f, 2.1f, 0.12f), 2f);
         }
 
         // 城楼：参照汉代陶楼——下层木柱与平坐栏杆，上层粉墙，庑殿顶，屋檐平直
@@ -501,14 +508,15 @@ namespace Prototype.BingshuTactics
             // 柱与平坐
             for (int i = 0; i < 4; i++)
                 foreach (float sz in new[] { -1f, 1f })
-                    wood.Box(new Vector3(cx - w * 0.42f + i * w * 0.28f, y0 + 0.4f, cz + sz * dz * 0.4f), new Vector3(0.1f, 0.8f, 0.1f), 2f);
+                    B(Pillar).Box(new Vector3(cx - w * 0.42f + i * w * 0.28f, y0 + 0.4f, cz + sz * dz * 0.4f), new Vector3(0.12f, 0.8f, 0.12f), 2f);
             wood.Box(new Vector3(cx, y0 + 0.85f, cz), new Vector3(w * 0.96f, 0.1f, dz * 0.96f), 2f);
             foreach (float sz in new[] { -1f, 1f })
             {
                 wood.Box(new Vector3(cx, y0 + 1.05f, cz + sz * dz * 0.47f), new Vector3(w * 0.96f, 0.05f, 0.05f), 2f);
                 for (int i = 0; i <= 8; i++) wood.Box(new Vector3(cx - w * 0.47f + i * w * 0.1175f, y0 + 0.97f, cz + sz * dz * 0.47f), new Vector3(0.04f, 0.2f, 0.04f), 2f);
             }
-            // 上层粉墙
+            // 下层腰檐（重檐），上层粉墙
+            SkirtRoof(new Vector3(cx, y0 + 0.95f, cz), w * 0.36f, dz * 0.31f, w * 0.56f, dz * 0.6f, 0.28f);
             B(Whitewash).Box(new Vector3(cx, y0 + 1.3f, cz), new Vector3(w * 0.72f, 0.8f, dz * 0.62f), 1.2f);
             // 庑殿顶：四坡，正脊沿 x 方向，出檐平直
             float eave = y0 + 1.66f, ridge = y0 + 2.25f, ox = w * 0.56f, oz = dz * 0.62f, rx = w * 0.30f;
@@ -543,7 +551,9 @@ namespace Prototype.BingshuTactics
         }
 
         // 旗帜：旗杆＋背对背两片旗面，顶点按 1 像素取整飘动
-        void Flag(Vector3 basePos)
+        void Flag(Vector3 basePos) => Flag(basePos, FlagMat);
+
+        void Flag(Vector3 basePos, Material face)
         {
             B(Wood).Box(basePos + Vector3.up * 1.0f, new Vector3(0.05f, 2.0f, 0.05f), 2f);
             float w = 0.6f, h = 0.9f; var o = basePos + new Vector3(0.03f, 1.05f, 0);
@@ -554,7 +564,7 @@ namespace Prototype.BingshuTactics
             mesh.triangles = new[] { 0, 1, 2, 0, 2, 3, 4, 6, 5, 4, 7, 6 };
             mesh.RecalculateNormals();
             var go = new GameObject("Flag"); go.AddComponent<MeshFilter>().sharedMesh = mesh;
-            var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterial = FlagMat;
+            var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterial = face;
             flags.Add((mesh, verts, Hash((int)(basePos.x * 10), (int)(basePos.z * 10), 1) * 6f));
         }
 
@@ -632,7 +642,7 @@ namespace Prototype.BingshuTactics
             }
             if (!treeMats.TryGetValue(kind, out var m))
             {
-                var tex = TreeTexture(kind);
+                var tex = Env(kind == 0 ? "sprite_tree_cypress" : kind == 1 ? "sprite_tree_locust" : "sprite_tree_willow") ?? TreeTexture(kind);
                 m = new Material(LiuBeiMat) { mainTexture = tex };
                 m.SetTexture("_BaseMap", tex); m.SetVector("_BaseMap_ST", new Vector4(1, 1, 0, 0));
                 treeMats[kind] = m;
@@ -672,6 +682,7 @@ namespace Prototype.BingshuTactics
         {
             foreach (var (t, _) in treeCrowns) t.rotation = cam.transform.rotation;
             AnimateFlags();
+            UpdateBillboards();
             if (waterMat != null)
             {
                 int f = (int)(Time.time / 0.25f) % 4;
@@ -682,9 +693,23 @@ namespace Prototype.BingshuTactics
 
         Texture2D[] waterFrames;
 
+        // 贴图包的河水是 4 帧横排；把第 f 帧重复 4 次拼成与地面相同的“4 变体”条带
+        static Texture2D WaterStrip(Texture2D src, int f)
+        {
+            int n = src.height;
+            var px = src.GetPixels(f * n, 0, n, n);
+            var t = new Texture2D(n * 4, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Repeat };
+            for (int k = 0; k < 4; k++) t.SetPixels(k * n, 0, n, n, px);
+            t.Apply(false, false);
+            return t;
+        }
+
         void BuildWorld3D()
         {
-            waterFrames = Enumerable.Range(0, 4).Select(f => TopStrip(Terrain.River, f)).ToArray();
+            var wt = Env("top_water");
+            waterFrames = wt && wt.isReadable && wt.width == wt.height * 4
+                ? Enumerable.Range(0, 4).Select(f => WaterStrip(wt, f)).ToArray()
+                : Enumerable.Range(0, 4).Select(f => TopStrip(Terrain.River, f)).ToArray();
             waterMat = LitMat("water", waterFrames[0]);
             BuildTerrain();
             BuildProps();

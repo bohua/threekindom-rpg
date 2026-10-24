@@ -124,6 +124,7 @@ namespace Prototype.BingshuTactics
             pendingSkill = null; forcedHover = null; ringSel = DefaultRing(); mode = Mode.Menu;
             Debug.Log($"POC_RING_DEFAULT start={RingItems[ringSel]} attackUsable={RingUsable("攻击")}");
             var vpad = InputSystem.AddDevice<Gamepad>(); vpad.MakeCurrent();
+            yield return new WaitForSeconds(0.3f);   // 等新设备生效
             for (int k = 0; k < 6 && RingItems[ringSel] != "移动"; k++) yield return Tap(vpad, GamepadButton.DpadDown);
             yield return new WaitForSeconds(0.4f); yield return Shot("4c-pad-ring");
             bool ringOk = RingItems[ringSel] == "移动";

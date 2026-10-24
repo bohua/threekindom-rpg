@@ -44,6 +44,7 @@ namespace Prototype.BingshuTactics.EditorTools
             var zhang8 = ImportArt("char_zhangfei_idlewalk_8dir_96.png", game.LiuBeiMat); if (zhang8) game.ZhangFeiMat = zhang8;
             game.LuBuBust = ImportTexture("char_lubu_bust.png", false);
             game.UiTextures = ImportUiSlices();
+            game.EnvTextures = ImportEnvTextures();
             // 单挑立绘与动作帧
             game.LiuBeiPortrait = Load<Texture2D>($"{Busts}/Full/LIU_BEI_MAIN_POSE.png");
             game.GuanYuPortrait = Load<Texture2D>($"{Busts}/Full/GUAN_YU_MAIN_POSE.png");
@@ -148,6 +149,34 @@ namespace Prototype.BingshuTactics.EditorTools
 
         // 战斗界面切图（Codex：art/battle-poc-ui-slices-blue），全部按双线性、无压缩导入
         const string UiSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-poc-ui-slices-blue";
+
+        // 虎牢关战场贴图包（Codex：art/battle-poc-hulao-texpack）：点采样、可读（河水帧要拆）、平铺
+        const string EnvSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-poc-hulao-texpack";
+
+        static Texture2D[] ImportEnvTextures()
+        {
+            if (!Directory.Exists(EnvSource)) return new Texture2D[0];
+            var dir = Dir + "/Art/Env";
+            Directory.CreateDirectory(dir);
+            var list = new System.Collections.Generic.List<Texture2D>();
+            foreach (var src in Directory.GetFiles(EnvSource, "*.png"))
+            {
+                var file = Path.GetFileName(src);
+                if (file.StartsWith("contact") || file.StartsWith("tile_preview")) continue;
+                var dst = $"{dir}/{file}";
+                File.Copy(src, dst, true);
+                AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceUpdate);
+                var imp = (TextureImporter)AssetImporter.GetAtPath(dst);
+                imp.textureType = TextureImporterType.Default; imp.mipmapEnabled = false; imp.alphaIsTransparency = true; imp.isReadable = true;
+                imp.npotScale = TextureImporterNPOTScale.None; imp.filterMode = FilterMode.Point;
+                imp.textureCompression = TextureImporterCompression.Uncompressed;
+                imp.wrapMode = file.StartsWith("sprite_") || file.StartsWith("fx_") || file.StartsWith("banner_") ? TextureWrapMode.Clamp : TextureWrapMode.Repeat;
+                imp.SaveAndReimport();
+                list.Add(AssetDatabase.LoadAssetAtPath<Texture2D>(dst));
+            }
+            Debug.Log("BINGSHU_ENV_TEXTURES " + list.Count);
+            return list.ToArray();
+        }
 
         static Texture2D[] ImportUiSlices()
         {
