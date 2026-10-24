@@ -46,6 +46,7 @@ namespace ThreeKingdoms.EditorTools
         public static void Build()
         {
             greys.Clear(); water = null;
+            MountedImporter.Import();
             T.BeginSession(MaterialDir, MeshPath, PingyuanDir, ArtDir);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -92,6 +93,7 @@ namespace ThreeKingdoms.EditorTools
             player.transform.SetParent(people, true);
             var trail = player.AddComponent<PartyTrail>();
             int slot = 1;
+            var companions = new List<MountRider>();
             foreach (var (name, key) in new[] { ("Guan Yu (follower)", "GuanYu"), ("Zhang Fei (follower)", "ZhangFei") })
             {
                 var go = HD2DSampleBuilder.Character(name, key, PlayerStart + new Vector3(0, 0, -1.5f * slot), 0, isPlayer: false);
@@ -100,7 +102,13 @@ namespace ThreeKingdoms.EditorTools
                 var f = go.AddComponent<PartyFollower>();
                 f.Trail = trail; f.Slot = slot++;
                 go.transform.SetParent(people, true);
+                companions.Add(AddRider(go, key));
             }
+            // Mount on roads and open country, dismount in towns and at places (user 2026-10-24).
+            var ride = player.AddComponent<RideController>();
+            ride.Mover = player.GetComponent<PlayerMover>();
+            ride.Leader = AddRider(player, "LiuBei");
+            ride.Companions = companions.ToArray();
             People(people);
 
             Camera(player.transform);
@@ -877,6 +885,37 @@ namespace ThreeKingdoms.EditorTools
             Place("古冢石阙", -220f, 252f, 30f);
             Place("驿站", PostFront.x, PostFront.z + 4f, 22f);
             Place("济南哨卡", 545f, 20f, 18f);
+            // The party rides on roads, the levee and open country of the region, and walks in towns and at places.
+            foreach (var zone in g.GetComponentsInChildren<LocationZone>())
+                zone.Ride = zone.Major == "渤海" && (zone.IsSegment || zone.Minor == "野外" || zone.Minor == "黄河大堤");
+        }
+
+        // A character's horse: the mounted pixel quad (hidden until mounting) and the MountRider that swaps sprites.
+        static MountRider AddRider(GameObject character, string key)
+        {
+            var rider = character.AddComponent<MountRider>();
+            var walkAnimator = character.GetComponentInChildren<SpriteFrameAnimator>();
+            rider.WalkSprite = walkAnimator.gameObject;
+            rider.Walk = character.GetComponent<PixelWalkFrames>();
+            var atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(MountedImporter.AtlasPath(key));
+            if (!atlas) return rider;
+            var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            Object.DestroyImmediate(quad.GetComponent<Collider>());
+            quad.name = "Mounted sprite";
+            quad.transform.SetParent(character.transform, false);
+            float size = MountedImporter.FrameSize / HD2DSampleBuilder.PixelsPerUnit;
+            quad.transform.localPosition = new Vector3(0, size / 2f, 0);
+            quad.transform.localScale = new Vector3(size, size, 1);
+            var r = quad.GetComponent<MeshRenderer>();
+            Directory.CreateDirectory($"Assets/_Project/Art/Sprites/Characters/{key}Mounted");
+            r.sharedMaterial = HD2DSampleBuilder.PixelMaterial(key + "Mounted", atlas);
+            r.shadowCastingMode = ShadowCastingMode.On;
+            quad.AddComponent<PixelBillboard>().BaseSize = new Vector2(size, size);
+            var anim = quad.AddComponent<SpriteFrameAnimator>();
+            anim.Target = r; anim.Columns = MountedImporter.Columns * MountedImporter.Rows; anim.Rows = 1; anim.Frame = MountRider.MountStart;
+            rider.RideAnimator = anim;
+            quad.SetActive(false);
+            return rider;
         }
 
         // The region's mini map, drawn as a clean 2D chart in the unified UI palette (UI_STYLE_GUIDE.md) from the same

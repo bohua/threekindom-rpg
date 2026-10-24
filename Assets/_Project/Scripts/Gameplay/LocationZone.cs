@@ -17,6 +17,7 @@ namespace ThreeKingdoms.Gameplay
         public bool IsSegment;
         public Vector3 A, B;
         public float HalfWidth = 8f;
+        [Tooltip("Roads and open country: the party rides here (user 2026-10-24)")] public bool Ride;
 
         void OnEnable() => All.Add(this);
         void OnDisable() => All.Remove(this);
