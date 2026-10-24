@@ -21,6 +21,7 @@ namespace ThreeKingdoms.UI.Battle
 
         [Header("Bubbles and blank option bars (art/ui-bubbles-bars)")]
         public Texture2D BubbleSpeech, BubbleTail, BubbleAlert, BubbleAlertGlint;
+        [Tooltip("\"?\" over townsfolk with a mini-game (art/ui-bubble-question)")] public Texture2D BubbleQuestion, BubbleQuestionGlint;
         public Texture2D OptionNormal, OptionSelected, OptionDisabled;
 
         public bool HasEnemyPlates => EnemyPlate && EnemyBarFrame && EnemyBarFill;

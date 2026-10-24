@@ -13,6 +13,7 @@ namespace ThreeKingdoms.EditorTools
         const string EnemySource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-ui-enemy";
         const string CommandSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-ui-commands";
         const string BubbleSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\ui-bubbles-bars";
+        const string QuestionSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\ui-bubble-question";
         public const string Dir = "Assets/_Project/Art/UI/Battle";
         public const string SkinPath = Dir + "/BattleUiSkin.asset";
 
@@ -54,6 +55,8 @@ namespace ThreeKingdoms.EditorTools
 
             foreach (var f in BubbleFiles)
                 if (!Import(Path.Combine(BubbleSource, f + ".png"), f)) Debug.Log($"Bubble / option bar {f} not found; that element keeps its fallback.");
+            foreach (var f in new[] { "bubble_question", "bubble_question_glint" })
+                if (!Import(Path.Combine(QuestionSource, f + ".png"), f)) Debug.Log($"Question bubble {f} not found; mini-game townsfolk show a drawn \"?\".");
 
             Texture2D T(string f) => AssetDatabase.LoadAssetAtPath<Texture2D>($"{Dir}/{f}.png");
 
@@ -75,6 +78,7 @@ namespace ThreeKingdoms.EditorTools
             skin.CommandDisabled = System.Array.ConvertAll(keys, k => T($"cmd_{k}_disabled"));
             skin.BubbleSpeech = T("bubble_speech"); skin.BubbleTail = T("bubble_tail");
             skin.BubbleAlert = T("bubble_alert"); skin.BubbleAlertGlint = T("bubble_alert_glint");
+            skin.BubbleQuestion = T("bubble_question"); skin.BubbleQuestionGlint = T("bubble_question_glint");
             skin.OptionNormal = T("bar_option_normal"); skin.OptionSelected = T("bar_option_selected"); skin.OptionDisabled = T("bar_option_disabled");
             if (created) AssetDatabase.CreateAsset(skin, SkinPath);
             EditorUtility.SetDirty(skin);

@@ -26,6 +26,17 @@ namespace ThreeKingdoms.Gameplay.Story
 
         int lastChoice;
 
+        // Townsfolk who offer a mini-game wear a "?" (user 2026-10-24): the scholar's quiz, the ruffian's dice and the
+        // archer's range. Hidden while the town is busy with a scene or a panel.
+        public IEnumerable<Transform> GameMarks
+        {
+            get
+            {
+                if (Run == null || Busy || Panel != null) yield break;
+                foreach (var t in new[] { Scholar, Ruffian, Archer }) if (t) yield return t;
+            }
+        }
+
         string LifePrompt(Vector3 p)
         {
             if (Near(Beggar, p)) return "beggar";

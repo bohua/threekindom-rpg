@@ -41,6 +41,7 @@ namespace ThreeKingdoms.UI.Story
         VisualElement root, fade, bubbleLayer, markLayer;
         readonly Dictionary<Transform, VisualElement> speech = new Dictionary<Transform, VisualElement>();
         readonly Dictionary<Transform, VisualElement> marks = new Dictionary<Transform, VisualElement>();
+        readonly Dictionary<Transform, VisualElement> games = new Dictionary<Transform, VisualElement>();
 
         static readonly Color BubbleFill = new Color(0.97f, 0.93f, 0.84f, 0.97f);
         static readonly Color BubbleEdge = new Color(0.35f, 0.24f, 0.14f);
@@ -225,6 +226,7 @@ namespace ThreeKingdoms.UI.Story
 
         public IReadOnlyCollection<Transform> SpeechBubbles => speech.Keys;
         public IReadOnlyCollection<Transform> MarkBubbles => marks.Keys;
+        public IReadOnlyCollection<Transform> GameBubbles => games.Keys;
 
         void LateUpdate()
         {
@@ -235,12 +237,18 @@ namespace ThreeKingdoms.UI.Story
             var alerts = Controller.StoryMarks.ToList();
             if (Controller.PlayerAlert) alerts.Add(Controller.Player.transform);
             Sync(marks, markLayer, visible ? alerts : Enumerable.Empty<Transform>(), _ => MarkBubble());
+            // "?" over townsfolk with a mini-game, unless a "!" or their own speech bubble is showing.
+            var gameMarks = visible ? Controller.GameMarks.Where(t => !marks.ContainsKey(t) && !speech.ContainsKey(t)) : Enumerable.Empty<Transform>();
+            Sync(games, markLayer, gameMarks, _ => QuestionBubble());
             float bob = Mathf.Sin(Time.unscaledTime * 4f) * 4f;
             // The pixel "!" glints for a moment once per second.
             var alertFrame = Skin && Skin.BubbleAlertGlint && Mathf.Repeat(Time.unscaledTime, 1f) < 0.18f ? Skin.BubbleAlertGlint : Skin ? Skin.BubbleAlert : null;
             if (alertFrame) foreach (var e in marks.Values) if (e.Q(className: "alert-frame") is VisualElement f) f.style.backgroundImage = new StyleBackground(alertFrame);
+            var questionFrame = Skin && Skin.BubbleQuestionGlint && Mathf.Repeat(Time.unscaledTime + 0.5f, 1f) < 0.18f ? Skin.BubbleQuestionGlint : Skin ? Skin.BubbleQuestion : null;
+            if (questionFrame) foreach (var e in games.Values) if (e.Q(className: "alert-frame") is VisualElement f) f.style.backgroundImage = new StyleBackground(questionFrame);
             foreach (var pair in speech) Anchor(pair.Value, pair.Key, cam, 0f);
             foreach (var pair in marks) Anchor(pair.Value, pair.Key, cam, bob);
+            foreach (var pair in games) Anchor(pair.Value, pair.Key, cam, bob * 0.5f);
         }
 
         void Sync(Dictionary<Transform, VisualElement> shown, VisualElement layer, IEnumerable<Transform> wanted, System.Func<Transform, VisualElement> make)
@@ -332,6 +340,24 @@ namespace ThreeKingdoms.UI.Story
                 return m;
             }
             var l = new Label("!") { pickingMode = PickingMode.Ignore };
+            l.style.fontSize = 30; l.style.color = Alert; l.style.unityFontStyleAndWeight = FontStyle.Bold;
+            l.style.width = 40; l.style.height = 40; l.style.unityTextAlign = TextAnchor.MiddleCenter;
+            l.style.marginLeft = l.style.marginRight = l.style.marginTop = l.style.marginBottom = 0;
+            return Bubble(l, 20);
+        }
+
+        VisualElement QuestionBubble()
+        {
+            if (Skin && Skin.BubbleQuestion)
+            {
+                var m = Anchored();
+                var img = new VisualElement { pickingMode = PickingMode.Ignore };
+                img.AddToClassList("alert-frame");
+                ThreeKingdoms.UI.Battle.BattleUiSkin.Image(img, Skin.BubbleQuestion);
+                m.Add(img);
+                return m;
+            }
+            var l = new Label("?") { pickingMode = PickingMode.Ignore };
             l.style.fontSize = 30; l.style.color = Alert; l.style.unityFontStyleAndWeight = FontStyle.Bold;
             l.style.width = 40; l.style.height = 40; l.style.unityTextAlign = TextAnchor.MiddleCenter;
             l.style.marginLeft = l.style.marginRight = l.style.marginTop = l.style.marginBottom = 0;

@@ -327,6 +327,11 @@ namespace ThreeKingdoms.UI.Town
                 var v = targetViews[i];
                 bool shownHit = t.Hit && (!hitAt.TryGetValue(t, out float when) || Time.unscaledTime >= when);
                 v.straw.style.backgroundImage = new StyleBackground(T(shownHit && T("target_straw_hit") ? "target_straw_hit" : "target_straw"));
+                // A struck target topples over on its post and dulls (user 2026-10-24: the hit straw alone looked like a
+                // fresh target, so the set seemed to refresh after every arrow). A new set only stands when all five fall.
+                v.straw.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(100));
+                v.straw.style.rotate = new Rotate(shownHit ? 78f : 0f);
+                v.straw.style.unityBackgroundImageTintColor = shownHit ? new Color(0.62f, 0.54f, 0.46f) : Color.white;
                 // Four burst frames over 0.32 s once the arrow reaches it.
                 float since = hitAt.TryGetValue(t, out float at) ? Time.unscaledTime - at : 99f;
                 int frame = Mathf.FloorToInt(since / 0.08f);
