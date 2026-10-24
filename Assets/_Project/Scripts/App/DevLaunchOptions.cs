@@ -51,7 +51,7 @@ namespace ThreeKingdoms.App
                 Object.DontDestroyOnLoad(go);
             }
 
-            // -talk notice:3 / tavern:5 / gate2:0 — play a story scene and advance that many lines (screenshots).
+            // -talk notice:3 / tavern:5 / gate2:0 / oath / scroll.taoyuan — play a story scene and advance that many lines (screenshots).
             string talk = LaunchArgs.Get("-talk");
             if (talk != null)
             {
@@ -207,6 +207,20 @@ namespace ThreeKingdoms.App
                 yield return new WaitForSecondsRealtime(0.5f);
                 if (Advances < 0) yield break;
                 for (int i = 0; i < Advances; i++) { yield return new WaitForSecondsRealtime(0.4f); town.Advance(); }
+                yield break;
+            }
+            // oath: both brothers in, the peach-garden oath plays by itself (user 2026-10-24).
+            if (Who == "oath")
+            {
+                town.Run.Story.Join(ThreeKingdoms.Core.Story.StoryState.GuanYu);
+                town.Run.Story.Join(ThreeKingdoms.Core.Story.StoryState.ZhangFei);
+                UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+                yield break;
+            }
+            // scroll.taoyuan / scroll.huangjin: the ink scroll over the town as it stands.
+            if (Who.StartsWith("scroll."))
+            {
+                town.StartCoroutine(ThreeKingdoms.Gameplay.Story.StoryCinematics.Scroll(Who.Substring(7)));
                 yield break;
             }
             // tavern: Zhang Fei already in the party, straight into the tavern scene where Guan Yu joins.

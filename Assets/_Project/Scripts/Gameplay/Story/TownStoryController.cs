@@ -158,13 +158,6 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             new DialogueLine("system", "zhang.joined"), new DialogueLine("zhang_fei", "zhang.tavern"),
         };
-        static readonly DialogueLine[] OathScene =
-        {
-            new DialogueLine("narrator", "oath.1"), new DialogueLine("zhang_fei", "oath.2"),
-            new DialogueLine("liu_bei", "oath.3"), new DialogueLine("guan_yu", "oath.4"),
-            new DialogueLine("narrator", "oath.5"),
-        };
-
         void OnEnable()
         {
             if (InteractAction) InteractAction.action.Enable();
@@ -227,7 +220,11 @@ namespace ThreeKingdoms.Gameplay.Story
 
         // ---------- public entry points (input and tests) ----------
 
-        public void Advance() { if (Busy) advance = true; }
+        public void Advance()
+        {
+            if (Cinematic) StoryCinematics.Advance();
+            else if (Busy) advance = true;
+        }
 
         public void Interact()
         {
@@ -481,53 +478,6 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return FadeTo(1f);
             Run.NextArrival = GameRun.Arrival.FromTavernInside;
             SceneManager.LoadScene(GameRun.TavernScene);
-        }
-
-        // Simplified peach-garden oath (V1_SPEC §2.1): the game moves the three to the grove outside the west gate,
-        // plays a few lines that cannot be skipped (GDD answer 9), and returns control inside the west gate (answer 7).
-        IEnumerator PlayOath()
-        {
-            if (!Run.Story.BeginOath()) yield break;
-            Busy = true;
-            SetControl(false);
-            Prompt = null;
-            Changed?.Invoke();
-            try
-            {
-                yield return FadeTo(1f);
-                SetFollowers(false);
-                Place(Player.transform, GroveSpots.Length > 0 ? GroveSpots[0] : GroveFocus);
-                if (GuanYu && GroveSpots.Length > 1) { Place(GuanYu, GroveSpots[1]); GuanYu.gameObject.SetActive(true); }
-                if (ZhangFei && GroveSpots.Length > 2) { Place(ZhangFei, GroveSpots[2]); ZhangFei.gameObject.SetActive(true); }
-                if (Camera && GroveFocus) Camera.Target = GroveFocus;
-                yield return FadeTo(0f);
-                foreach (var line in OathScene)
-                {
-                    Line = line; advance = false;
-                    Changed?.Invoke();
-                    yield return null;
-                    while (!advance) yield return null;
-                }
-                Line = null;
-                yield return FadeTo(1f);
-                if (GuanYu) GuanYu.gameObject.SetActive(false);
-                if (ZhangFei) ZhangFei.gameObject.SetActive(false);
-                Place(Player.transform, OathEndSpot);
-                if (Camera) Camera.Target = Player.transform;
-                ShowFollowers(Vector3.left);   // control resumes inside the west gate, the brothers behind
-                Run.Story.CompleteOath();
-                ShowBlockers();
-                yield return FadeTo(0f);
-            }
-            finally
-            {
-                Line = null;
-                Fade = 0f;
-                if (Camera) Camera.Target = Player.transform;
-                Busy = false;
-                SetControl(true);
-                Changed?.Invoke();
-            }
         }
 
         // ---------- gates (user 2026-10-22) ----------

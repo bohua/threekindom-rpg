@@ -20,6 +20,7 @@ namespace ThreeKingdoms.UI.Story
             ["npc.N23"] = "小姑娘", ["npc.N24"] = "读书人", ["npc.N25"] = "闲聊的汉子", ["npc.N26"] = "闲聊的妇人", ["npc.N27"] = "农夫",
             ["npc.N28"] = "征兵小吏", ["npc.N29"] = "应募青年", ["npc.N30"] = "乞丐", ["npc.N31"] = "地痞", ["npc.N32"] = "赌坊庄家",
             ["guard"] = "守城卫兵", ["waiter"] = "酒保", ["cheng_yuanzhi"] = "程远志", ["zhang_liang"] = "张梁", ["zhang_jiao"] = "张角", ["zhang_bao"] = "张宝",
+            ["brothers"] = "刘备・关羽・张飞",
         };
 
         static readonly Dictionary<string, string> Lines = new Dictionary<string, string>
@@ -54,11 +55,17 @@ namespace ThreeKingdoms.UI.Story
             ["tavern.10"] = "在下刘备，与这位张翼德正要聚义破贼。壮士何不与我等同举大事？",
             ["tavern.11"] = "若蒙不弃，关某愿随兄长同行！",
             ["tavern.12"] = "好！俺庄后有一桃园，花开正盛。明日便在园中祭告天地，结为兄弟！",
-            ["oath.1"] = "城西桃园，桃花正盛。三人备下香案。",
-            ["oath.2"] = "今日在此结为兄弟，同心协力！",
-            ["oath.3"] = "上报国家，下安黎庶。",
-            ["oath.4"] = "不求同年同月同日生，但愿同年同月同日死。",
-            ["oath.5"] = "桃园结义已成。三人整备兵马，准备出城迎敌。",
+            // The peach-garden oath, about 30 s on its own (user 2026-10-24); the oath words follow 演义 第1回.
+            ["oath.1"] = "城西桃园，桃花正盛。香案已备，三牲俱全。",
+            ["oath.2"] = "二位贤弟，今日焚香告天，结为兄弟。",
+            ["oath.3"] = "痛快！俺盼这一天好久了！",
+            ["oath.4"] = "兄长在上，关某愿同生死，共扶汉室。",
+            ["oath.5"] = "三人焚香，再拜。",
+            ["oath.6"] = "念刘备、关羽、张飞，虽然异姓，既结为兄弟，则同心协力，救困扶危；上报国家，下安黎庶。",
+            ["oath.7"] = "不求同年同月同日生，但愿同年同月同日死。皇天后土，实鉴此心！",
+            ["oath.8"] = "饮此一碗，从今往后，我等便是兄弟！",
+            ["oath.9"] = "大哥在上，二哥在上，受小弟一拜！",
+            ["oath.10"] = "好！自今日起，我三人同心破贼，共图大业！",
             // Residents (ZHUOJUN_TOWN_DESIGN.md §4). 暂定 wording; ".after" after the oath, ".won" after the first victory.
             ["npc.N01"] = "这里是涿郡南门。往北直走是市集，再往北便是郡署。黄巾贼就在城外，出入多加小心。",
             ["npc.N01.after"] = "诸位整备妥当，便可从这道门出城迎敌。",
@@ -171,6 +178,14 @@ namespace ThreeKingdoms.UI.Story
             ["won.battle_3.1"] = "天时未至……众军，随我撤！",
             ["won.battle_3.2"] = "大哥快走，我来断后！",
             ["won.battle_3.3"] = "黄巾主力已溃，涿郡总算保住了。",
+            // The brothers after the third victory, leading into the opening film (user 2026-10-24).
+            ["aspire.1"] = "哈哈！大哥、二哥，黄巾贼被咱们杀得屁滚尿流！",
+            ["aspire.2"] = "张角虽败，天下流民未安。此一战，不过是开端。",
+            ["aspire.3"] = "云长说得是。黄巾易破，人心难安。我等起兵，本为上报国家、下安黎庶。",
+            ["aspire.4"] = "那还等什么！大哥指到哪里，俺的蛇矛就杀到哪里！",
+            ["aspire.5"] = "兄长胸怀天下，关某愿执刀相随，万死不辞。",
+            ["aspire.6"] = "好！愿我兄弟三人同心同德，匡扶汉室，还天下一个太平！",
+            ["aspire.7"] = "志在天下！",
         };
 
         public static string Speaker(string key) => key != null && Speakers.TryGetValue(key, out var s) ? s : "";

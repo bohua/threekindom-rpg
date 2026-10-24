@@ -45,6 +45,16 @@ namespace ThreeKingdoms.Gameplay.Story
             },
         };
 
+        // After the third victory (user 2026-10-24): the brothers cheer each other on and set their sights on the
+        // realm; the opening film follows.
+        public static readonly DialogueLine[] Aspiration =
+        {
+            new DialogueLine("zhang_fei", "aspire.1"), new DialogueLine("guan_yu", "aspire.2"),
+            new DialogueLine("liu_bei", "aspire.3"), new DialogueLine("zhang_fei", "aspire.4"),
+            new DialogueLine("guan_yu", "aspire.5"), new DialogueLine("liu_bei", "aspire.6"),
+            new DialogueLine("brothers", "aspire.7"),
+        };
+
         public static IReadOnlyList<DialogueLine> BeforeBattle(string battleId) =>
             battleId != null && Before.TryGetValue(battleId, out var l) ? l : Array.Empty<DialogueLine>();
 

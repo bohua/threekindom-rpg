@@ -26,3 +26,7 @@ production/session-logs/
 production/session-state/*
 !production/session-state/.gitkeep
 docs/consistency-failures.md
+
+# Opening film copied from the art delivery at build time (63 MB; CinematicsArtImporter)
+/Assets/StreamingAssets/
+/Assets/StreamingAssets.meta

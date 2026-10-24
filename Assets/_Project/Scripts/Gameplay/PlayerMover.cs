@@ -25,7 +25,7 @@ namespace Jrpg
         {
             Vector2 bounded = Vector2.ClampMagnitude(input, 1);
             CurrentSpeed = bounded.magnitude * Speed;
-            controller.Move(new Vector3(bounded.x * Speed, -9.81f, bounded.y * Speed) * seconds);
+            if (controller.enabled) controller.Move(new Vector3(bounded.x * Speed, -9.81f, bounded.y * Speed) * seconds);   // off while a story scene walks him
         }
     }
 }
