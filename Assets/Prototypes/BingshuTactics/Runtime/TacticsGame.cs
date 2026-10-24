@@ -97,6 +97,10 @@ namespace Prototype.BingshuTactics
             yield return Shot("1-deploy");
             yawTarget = 135f; yield return new WaitForSeconds(0.8f); yield return Shot("1b-deploy-rotated");
             yawTarget = 45f; yield return new WaitForSeconds(0.8f);
+            // 全景与关门近景，对照 Codex 效果图
+            zoomLevel = 1.9f; FocusOn(new Vector3(W * T / 2f, 0, H * T / 2f)); yield return new WaitForSeconds(1.0f); yield return Shot("1c-overview");
+            zoomLevel = 0.8f; FocusOn(Tile(new Vector2Int(7, 11))); yield return new WaitForSeconds(1.0f); yield return Shot("1d-gate");
+            zoomLevel = 1f; manual = false; yield return new WaitForSeconds(0.5f);
             mode = Mode.Circuit; circuitUnit = 1; circuitSlot = 3;
             yield return new WaitForSeconds(0.5f); yield return Shot("2-circuit-guanyu");
             circuitUnit = 0; circuitSlot = -1;
@@ -123,7 +127,7 @@ namespace Prototype.BingshuTactics
             // 用虚拟手柄走一遍：十字键下两次转到“移动”，A 确认，十字键移动光标，A 移动
             pendingSkill = null; forcedHover = null; ringSel = DefaultRing(); mode = Mode.Menu;
             Debug.Log($"POC_RING_DEFAULT start={RingItems[ringSel]} attackUsable={RingUsable("攻击")}");
-            var vpad = InputSystem.AddDevice<Gamepad>(); vpad.MakeCurrent();
+            var vpad = InputSystem.AddDevice<Gamepad>(); vpad.MakeCurrent(); testPad = vpad;
             yield return new WaitForSeconds(0.3f);   // 等新设备生效
             for (int k = 0; k < 6 && RingItems[ringSel] != "移动"; k++) yield return Tap(vpad, GamepadButton.DpadDown);
             yield return new WaitForSeconds(0.4f); yield return Shot("4c-pad-ring");
@@ -147,6 +151,7 @@ namespace Prototype.BingshuTactics
             // 取消键退回原位
             var moveSpot = active.Pos;
             yield return Tap(vpad, GamepadButton.East);
+            testPad = null;
             Debug.Log($"POC_UNDO_MOVE back={active.Pos == startPos} from={moveSpot} to={active.Pos} moved={moved}");
             mode = Mode.Menu; ChooseRing(System.Array.IndexOf(RingItems, "移动"));
             var dest2 = reach.Keys.Where(p => p != active.Pos && CanStop(active, p)).OrderByDescending(p => p.y).First();
@@ -446,7 +451,8 @@ namespace Prototype.BingshuTactics
         int circuitFocus, bookSel;
 
         static Keyboard Kb => Keyboard.current;
-        static Gamepad Pad => Gamepad.current;
+        static Gamepad testPad;   // 自检用虚拟手柄（机器上接着真手柄时，Gamepad.current 可能仍是真手柄）
+        static Gamepad Pad => testPad ?? Gamepad.current;
         static bool Pressed(params ButtonControl[] bs) => bs.Any(b => b != null && b.wasPressedThisFrame);
 
         bool ConfirmPressed => Pressed(Kb?.enterKey, Kb?.numpadEnterKey, Kb?.spaceKey, Kb?.zKey, PadButton("Submit"));

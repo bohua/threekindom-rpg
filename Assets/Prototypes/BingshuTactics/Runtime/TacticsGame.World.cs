@@ -490,7 +490,7 @@ namespace Prototype.BingshuTactics
             float zf = p.y * T - 0.01f;
             var door = B(DoorMat);
             // 深门洞（暗色内壁）＋包铁双扇门＋平顶木过梁
-            B(Stone).Box(new Vector3(c.x, 1.1f, zf + 0.25f), new Vector3(T * 0.86f, 2.2f, 0.5f), 1f);
+            B(LitMat("passage", Env("side_rammed") ?? (Texture2D)Stone.mainTexture, new Color(0.45f, 0.40f, 0.36f))).Box(new Vector3(c.x, 1.1f, zf + 0.25f), new Vector3(T * 0.86f, 2.2f, 0.5f), 1f);
             door.Quad(new Vector3(c.x - T * 0.40f, 0, zf), new Vector3(c.x - T * 0.40f, 2.0f, zf), new Vector3(c.x, 2.0f, zf), new Vector3(c.x, 0, zf),
                 new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0));
             door.Quad(new Vector3(c.x, 0, zf), new Vector3(c.x, 2.0f, zf), new Vector3(c.x + T * 0.40f, 2.0f, zf), new Vector3(c.x + T * 0.40f, 0, zf),
