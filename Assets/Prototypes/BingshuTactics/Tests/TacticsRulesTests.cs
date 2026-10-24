@@ -217,14 +217,16 @@ public class TacticsRulesTests
     public void Hulao_OnlyOneTileCanFaceLuBu()
     {
         var g = TacticsGame.HulaoGrid();
-        var lubu = new Vector2Int(7, 11);
+        var lubu = new Vector2Int(7, 10);
+        Assert.AreEqual(Terrain.Road, g.TerrainAt(new Vector2Int(7, 11)));   // 门道空出一格
         Assert.AreEqual(Terrain.Gate, g.TerrainAt(new Vector2Int(7, 12)));
         var open = new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right }
             .Select(d => lubu + d).Where(p => g.In(p) && !Grid.Impassable(g.TerrainAt(p))).ToList();
-        CollectionAssert.AreEqual(new[] { new Vector2Int(7, 10) }, open);
+        CollectionAssert.AreEquivalent(new[] { new Vector2Int(7, 9), new Vector2Int(7, 11) }, open);
         // 从南面出阵区能走到吕布面前（过桥或浅滩）
         var r = g.Reachable(new Vector2Int(7, 1), 99, p => p == lubu);
-        Assert.IsTrue(r.ContainsKey(new Vector2Int(7, 10)));
+        Assert.IsTrue(r.ContainsKey(new Vector2Int(7, 9)));
+        Assert.IsFalse(r.ContainsKey(new Vector2Int(7, 11)));   // 门道被拒马封住，绕不到吕布背后
         Assert.IsTrue(r.ContainsKey(new Vector2Int(3, 5)));      // 浅滩可渡
         Assert.IsFalse(r.ContainsKey(new Vector2Int(4, 12)));    // 关墙上去不了
         Assert.AreEqual(3, g.HeightAt(new Vector2Int(4, 12)));

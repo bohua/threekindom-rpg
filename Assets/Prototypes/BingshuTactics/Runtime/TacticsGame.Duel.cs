@@ -235,7 +235,7 @@ namespace Prototype.BingshuTactics
             if (lp) GUI.DrawTextureWithTexCoords(new Rect(sw - 270, py - 140, 260, 390), lp, new Rect(1, 0, -1, 1));
             // 体力与回合
             float cx = sw / 2;
-            GUI.Label(new Rect(cx - 200, py + 8, 400, 26), $"单挑　{hero.Name} VS 吕布　第 {Mathf.Min(duel.Round, DuelRules.Rounds)}/{DuelRules.Rounds} 回合", new GUIStyle(big) { fontSize = 20, alignment = TextAnchor.MiddleCenter });
+            GUI.Label(new Rect(cx - 200, py + 8, 400, 26), $"单挑　{hero.Name} VS 吕布　第 {Mathf.Clamp(duel.Round, 1, DuelRules.Rounds)}/{DuelRules.Rounds} 回合", new GUIStyle(big) { fontSize = 20, alignment = TextAnchor.MiddleCenter });
             GUI.Label(new Rect(290, py + 40, 80, 20), hero.Name, text);
             Bar(new Rect(350, py + 44, 240, 14), duel.HpH / (float)DuelRules.Hp, new Color(0.4f, 0.85f, 0.4f));
             GUI.Label(new Rect(sw - 360, py + 40, 80, 20), "吕布", text);

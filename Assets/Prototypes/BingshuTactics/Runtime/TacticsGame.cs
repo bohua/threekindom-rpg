@@ -157,7 +157,7 @@ namespace Prototype.BingshuTactics
                 if (units.Any(u => u.Alive && u.PendingCast != null && u.Team == Team.Enemy) && !shotCast) { shotCast = true; yield return Shot("7-enemy-casting"); }
                 if (!shotRing && castRings.Any(r => r.enabled)) { shotRing = true; yield return new WaitForSeconds(0.3f); yield return Shot("7b-cast-ring"); }
                 if (mode == Mode.Duel && duel != null && duel.Choosing && shotDuel < 2) { shotDuel++; yield return Shot("10-duel-" + shotDuel); }
-                if (stage == 1 && !shotFace && units.Any(u => u.Alive && u.Team == Team.Player && u.Pos == new Vector2Int(7, 10))) { shotFace = true; yield return new WaitForSeconds(0.8f); yield return Shot("9-face-lubu"); }
+                if (stage == 1 && !shotFace && units.Any(u => u.Alive && u.Team == Team.Player && u.Pos == new Vector2Int(7, 9))) { shotFace = true; yield return new WaitForSeconds(0.8f); yield return Shot("9-face-lubu"); }
                 yield return null;
             }
             yield return new WaitForSeconds(0.5f); yield return Shot("8-end");
@@ -174,13 +174,13 @@ namespace Prototype.BingshuTactics
             yield return null; yield return null;
         }
 
-        // 虎牢关：北面关墙（三层高），吕布守在关门前；左右拒马，只有正前方一格能与他近身交锋。
+        // 虎牢关：北面关墙（三层高），吕布守在关门前一格（2026-10-24 前移一排，关门前留出一格门道）；左右拒马两排，只有正前方一格能与他近身交锋。
         // 两侧营寨驻西凉铁骑，关墙上有弓手；中段河流只有两处浅滩和一座桥可过；东西两侧有山坡。
         public static readonly string[] HulaoRows =
         {
             "WWWWWWWGWWWWWW",
+            "cccxxxx:xxxxcc",
             "ccc.xxx:xxx.cc",
-            "ccc....:...ccc",
             "^^.,...:.,..^^",
             "A^.,,..:..,,^A",
             "A^..,,.:.,,.^A",
@@ -273,7 +273,7 @@ namespace Prototype.BingshuTactics
             {
                 liu.Pos = new Vector2Int(5, 0); guan.Pos = new Vector2Int(7, 1); zhang.Pos = new Vector2Int(9, 0);
                 foreach (var pu in new[] { liu, guan, zhang }) views[pu].position = Tile(pu.Pos);
-                var lubu = NewUnit("吕布", "LuBu", Team.Enemy, Troop.Cavalry, School.Bing, 700, 92, 45, 30, 22, 11, 0, 1, 0, new Vector2Int(7, 11), 1.25f, new Color(1f, 0.78f, 0.78f));
+                var lubu = NewUnit("吕布", "LuBu", Team.Enemy, Troop.Cavalry, School.Bing, 700, 92, 45, 30, 22, 11, 0, 1, 0, new Vector2Int(7, 10), 1.25f, new Color(1f, 0.78f, 0.78f));
                 lubu.Int = 26; lubu.Wu = 100;
                 lubu.Crafts.Add(Craft("天下无双", "方天画戟直劈：正前方2格物理1.3倍", Effect.Damage, Area.Line, 1, 0, 1.3f, 0, might: true));
                 lubu.Crafts[0].Length = 2;
@@ -409,12 +409,7 @@ namespace Prototype.BingshuTactics
         void Update()
         {
             UpdateCameraYaw();
-            var rot = Quaternion.Euler(45f, yaw, 0f);
-            // 单挑时镜头拉近到两人之间
-            camZoom = Mathf.MoveTowards(camZoom, camFocus.HasValue ? 1f : 0f, Time.deltaTime * 2.5f);
-            if (camFocus.HasValue) duelLook = camFocus.Value;
-            var look = Vector3.Lerp(lookAt, duelLook, Mathf.SmoothStep(0, 1, camZoom));
-            cam.transform.SetPositionAndRotation(look - rot * Vector3.forward * (38f * Mathf.Max(W, H) / 12f * (1f - 0.55f * Mathf.SmoothStep(0, 1, camZoom))), rot);
+            UpdateCamera();   // 跟随、自由查看、对准人物、单挑拉近（TacticsGame.Camera.cs）
 
             UpdateRigs();
             UpdateScenery();
@@ -1045,6 +1040,7 @@ namespace Prototype.BingshuTactics
             DrawAtBar();
             if (mode != Mode.Duel) DrawParty(sw);
             DrawTopBar(sw);
+            DrawMinimap(sw);
 
             if (mode == Mode.Deploy) DrawDeploy(sw);
             if (mode == Mode.Circuit) DrawCircuit(sw);
@@ -1126,6 +1122,7 @@ namespace Prototype.BingshuTactics
                 Rect(r, u == active ? new Color(1f, 0.85f, 0.3f, 0.8f) : (u.Team == Team.Player ? new Color(0.2f, 0.35f, 0.6f, 0.85f) : new Color(0.55f, 0.18f, 0.15f, 0.85f)));
                 var b = Bust(u);
                 if (b) GUI.DrawTexture(new Rect(r.x + 2, r.y + 2, 42, 42), b, ScaleMode.ScaleAndCrop);
+                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) FocusOn(u);   // 点行动条头像对准此人
                 GUI.Label(new Rect(r.x + (b ? 44 : 4), r.y + 2, 60, 22), u.Name, small);
                 GUI.Label(new Rect(r.x + (b ? 44 : 4), r.y + 22, 60, 22), u.PendingCast != null ? "<color=#d9a6ff>咏唱</color>" : $"{u.At - now:0}", small);
                 y += 50;
