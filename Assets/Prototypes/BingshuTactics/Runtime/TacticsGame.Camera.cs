@@ -24,7 +24,12 @@ namespace Prototype.BingshuTactics
         {
             bool targeting = mode == Mode.TargetMove || mode == Mode.TargetAttack || mode == Mode.TargetSkill || mode == Mode.Deploy;
             if (targeting && padMode && grid.In(cursor)) return Tile(cursor);
-            if (active != null && mode != Mode.Deploy && mode != Mode.Circuit) return views[active].position;
+            if (active != null && mode != Mode.Deploy && mode != Mode.Circuit)
+            {
+                // 菜单打开时把行动者放在画面中间偏左，转轮不被右侧面板挡住
+                var right = Vector3.ProjectOnPlane(cam.transform.right, Vector3.up).normalized;
+                return views[active].position + (mode == Mode.Menu || mode == Mode.SkillList ? right * 2.2f : Vector3.zero);
+            }
             var party = units.Where(u => u.Team == Team.Player && u.Alive).ToList();
             if (party.Count == 0) return lookAt;
             var c = Vector3.zero; foreach (var u in party) c += views[u].position;
@@ -107,10 +112,10 @@ namespace Prototype.BingshuTactics
 
         void DrawMinimap(float sw)
         {
-            if (mode == Mode.Circuit || mode == Mode.Duel) return;
+            if (mode == Mode.Circuit || mode == Mode.Duel || mode == Mode.Menu || mode == Mode.SkillList) return;   // 右侧面板出现时让位
             if (!minimapTex) BuildMinimap();
             const float cell = 9f;
-            minimapRect = new Rect(sw - W * cell - 14, RefH - H * cell - 112, W * cell, H * cell);
+            minimapRect = new Rect(sw - W * cell - 18, 100, W * cell, H * cell);
             Rect(new Rect(minimapRect.x - 4, minimapRect.y - 20, minimapRect.width + 8, minimapRect.height + 24), new Color(0.03f, 0.04f, 0.06f, 0.85f));
             GUI.Label(new Rect(minimapRect.x, minimapRect.y - 19, 120, 18), "全局（点击跳转）", small);
             // 纹理 y 向上，GUI y 向下：上下翻转绘制，使北在上

@@ -1037,16 +1037,16 @@ namespace Prototype.BingshuTactics
             float sw = Screen.width / S;
 
             DrawWorldLabels();
-            DrawAtBar();
-            if (mode != Mode.Duel) DrawParty(sw);
-            DrawTopBar(sw);
+            DrawAtBarV();
+            if (mode != Mode.Duel) DrawPartyV(sw);
+            DrawTopBarV(sw);
             DrawMinimap(sw);
 
             if (mode == Mode.Deploy) DrawDeploy(sw);
             if (mode == Mode.Circuit) DrawCircuit(sw);
-            if (mode == Mode.Menu) DrawRing();
+            if (mode == Mode.Menu) DrawRingV();
             if (mode == Mode.Duel) DrawDuel(sw);
-            if (mode == Mode.SkillList) DrawSkillList();
+            if (mode == Mode.SkillList) DrawSidePanel(true);
             if (mode == Mode.TargetSkill || mode == Mode.TargetAttack || mode == Mode.TargetMove) DrawHoverInfo(sw);
             if (mode == Mode.Idle || mode == Mode.Busy || mode == Mode.Deploy) DrawHoverInfo(sw);
             if (mode == Mode.Victory || mode == Mode.Defeat)
@@ -1058,13 +1058,6 @@ namespace Prototype.BingshuTactics
                 if (e.button == 0 && grid.In(hover)) { ClickTile(hover); e.Use(); }
                 else if (e.button == 1) { Back(); e.Use(); }
             }
-        }
-
-        void DrawTopBar(float sw)
-        {
-            Rect(new Rect(0, 0, sw, 30), new Color(0, 0, 0, 0.55f));
-            GUI.Label(new Rect(110, 4, sw - 420, 24), log, text);
-            GUI.Label(new Rect(sw - 420, 6, 420, 24), "方向键/摇杆 光标 · 回车/A 确认 · Esc/B 返回 · Q E/LB RB 转镜头", small);
         }
 
         void DrawWorldLabels()
@@ -1109,80 +1102,6 @@ namespace Prototype.BingshuTactics
         }
 
         Texture2D Bust(Unit u) => u.Key switch { "LiuBei" => LiuBeiBust, "GuanYu" => GuanYuBust, "ZhangFei" => ZhangFeiBust, "LuBu" => LuBuBust, _ => null };
-
-        void DrawAtBar()
-        {
-            if (mode == Mode.Deploy || mode == Mode.Circuit) return;
-            Rect(new Rect(0, 30, 96, 440), new Color(0, 0, 0, 0.45f));
-            GUI.Label(new Rect(8, 34, 90, 20), "行动顺序", small);
-            float y = 56;
-            foreach (var u in units.Where(x => x.Alive).OrderBy(x => x.At).ThenBy(x => x.Team == Team.Player ? 0 : 1))
-            {
-                var r = new Rect(8, y, 80, 46);
-                Rect(r, u == active ? new Color(1f, 0.85f, 0.3f, 0.8f) : (u.Team == Team.Player ? new Color(0.2f, 0.35f, 0.6f, 0.85f) : new Color(0.55f, 0.18f, 0.15f, 0.85f)));
-                var b = Bust(u);
-                if (b) GUI.DrawTexture(new Rect(r.x + 2, r.y + 2, 42, 42), b, ScaleMode.ScaleAndCrop);
-                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) FocusOn(u);   // 点行动条头像对准此人
-                GUI.Label(new Rect(r.x + (b ? 44 : 4), r.y + 2, 60, 22), u.Name, small);
-                GUI.Label(new Rect(r.x + (b ? 44 : 4), r.y + 22, 60, 22), u.PendingCast != null ? "<color=#d9a6ff>咏唱</color>" : $"{u.At - now:0}", small);
-                y += 50;
-            }
-        }
-
-        void DrawParty(float sw)
-        {
-            var party = units.Where(u => u.Team == Team.Player).ToList();
-            float w = 260, x0 = (sw - w * party.Count) / 2f, y = RefH - 100;
-            foreach (var u in party)
-            {
-                var r = new Rect(x0, y, w - 8, 96);
-                Rect(r, new Color(0.05f, 0.07f, 0.12f, u == active ? 0.95f : 0.8f));
-                if (u == active) Rect(new Rect(r.x, r.y, r.width, 3), new Color(1f, 0.85f, 0.3f));
-                var b = Bust(u);
-                if (b) GUI.DrawTexture(new Rect(r.x + 4, r.y + 8, 80, 80), b, ScaleMode.ScaleAndCrop);
-                float bx = r.x + 92;
-                GUI.Label(new Rect(bx, r.y + 4, 160, 20), $"{u.Name} <size=12><color=#bbbbbb>{u.Circuit.Name}·{Wuxing.Name(u.Element)}</color></size>", text);
-                void Row(float dy, string label, int v, int max, Color c)
-                {
-                    GUI.Label(new Rect(bx, r.y + dy, 34, 18), label, small);
-                    Bar(new Rect(bx + 34, r.y + dy + 4, 84, 10), v / (float)Mathf.Max(1, max), c);
-                    GUI.Label(new Rect(bx + 124, r.y + dy, 40, 18), v.ToString(), small);
-                }
-                Row(28, "兵力", u.Hp, u.MaxHp, new Color(0.95f, 0.6f, 0.25f));
-                Row(50, "策力", u.Ep, u.MaxEp, new Color(0.35f, 0.6f, 1f));
-                Row(72, "气势", u.Cp, 100, new Color(0.4f, 0.85f, 0.4f));
-                if (!u.Alive) Rect(r, new Color(0, 0, 0, 0.6f));
-                x0 += w;
-            }
-        }
-
-        void DrawRing()
-        {
-            var c = ToGui(views[active].position + Vector3.up * 0.8f);
-            float target = -ringSel * 60f;
-            ringAngle = Mathf.LerpAngle(ringAngle, target, 0.25f);
-            Disc(c, 112, new Color(0.15f, 0.12f, 0.08f, 0.35f));
-            for (int i = 0; i < RingItems.Length; i++)
-            {
-                float ang = (i * 60f + ringAngle) * Mathf.Deg2Rad;      // 0° 在右侧，为当前选项
-                var p = c + new Vector2(Mathf.Cos(ang), -Mathf.Sin(ang)) * 100f;
-                bool sel = i == ringSel;
-                bool usable = RingUsable(RingItems[i]);
-                Disc(p, sel ? 34 : 26, sel ? new Color(0.95f, 0.75f, 0.3f, 0.95f) : new Color(0.12f, 0.12f, 0.14f, 0.9f));
-                Disc(p, sel ? 28 : 21, usable ? new Color(0.3f, 0.3f, 0.33f, 0.95f) : new Color(0.2f, 0.2f, 0.2f, 0.9f));
-                var st = new GUIStyle(center) { fontSize = sel ? 18 : 15 };
-                if (!usable) st.normal.textColor = new Color(0.55f, 0.55f, 0.55f);
-                var r = new Rect(p.x - 34, p.y - 34, 68, 68);
-                if (usable && GUI.Button(r, GUIContent.none, GUIStyle.none)) { ringSel = i; ChooseRing(i); }   // 鼠标单击直接触发；置灰的选项点不中
-                GUI.Label(r, RingItems[i], st);
-                if (sel)
-                {
-                    Rect(new Rect(p.x + 36, p.y - 18, 120, 36), new Color(0.35f, 0.22f, 0.08f, 0.92f));
-                    GUI.Label(new Rect(p.x + 44, p.y - 16, 110, 32), RingItems[i], new GUIStyle(big) { fontSize = 20 });
-                }
-            }
-            GUI.Label(new Rect(c.x - 140, c.y + 120, 280, 20), "↑↓／摇杆 转动 · 回车／A 确定 · 鼠标单击直接选", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter });
-        }
 
         // 选项不成立就置灰、不能选：没有可攻击的敌人、气势或策力不够、已移动过（策略须原地咏唱）
         bool RingUsable(string item) => item switch
@@ -1258,36 +1177,11 @@ namespace Prototype.BingshuTactics
                 s.IsStrategy ? $"「{s.Name}」：选择施放位置（橙色为范围）" : $"「{s.Name}」：选择目标");
         }
 
-        void DrawSkillList()
-        {
-            var c = ToGui(views[active].position);
-            var r = new Rect(Mathf.Min(c.x + 60, Screen.width / S - 380), Mathf.Clamp(c.y - 160, 40, RefH - 420), 360, 0);
-            var rows = SkillRows();
-            listSel = Mathf.Clamp(listSel, 0, Mathf.Max(0, rows.Count - 1));
-            r.height = 34 + rows.Count * 46;
-            Rect(r, new Color(0.04f, 0.06f, 0.1f, 0.92f));
-            GUI.Label(new Rect(r.x + 10, r.y + 6, 300, 22), showCraftList ? "武技（个人固有）" : "策略（兵书回路点亮）", text);
-            float y = r.y + 32;
-            for (int ri = 0; ri < rows.Count; ri++)
-            {
-                var (s, mul, extra, ok) = rows[ri];
-                var row = new Rect(r.x + 6, y, r.width - 12, 42);
-                if (ri == listSel) Rect(new Rect(row.x - 3, row.y - 2, row.width + 6, row.height + 4), new Color(1f, 0.85f, 0.3f, 0.9f));
-                GUI.enabled = ok;
-                if (GUI.Button(row, GUIContent.none)) { listSel = ri; ChooseSkill(rows[ri]); }
-                GUI.enabled = true;
-                string el = s.IsStrategy ? $"<color=#{ColorUtility.ToHtmlStringRGB(Wuxing.Tint(s.Element))}>【{Wuxing.Name(s.Element)}】</color>" : "";
-                GUI.Label(new Rect(row.x + 8, row.y + 2, 340, 20), $"{el}{s.Name}  <size=12>{extra}</size>", ok ? text : new GUIStyle(text) { normal = { textColor = Color.gray } });
-                GUI.Label(new Rect(row.x + 8, row.y + 21, 340, 20), s.Desc, small);
-                y += 46;
-            }
-        }
-
         void DrawHoverInfo(float sw)
         {
             if (grid.In(hover))
             {
-                var tr = new Rect(sw - 250, 196, 240, 44);
+                var tr = new Rect(sw - 250, 400, 240, 44);
                 Rect(tr, new Color(0.04f, 0.06f, 0.1f, 0.85f));
                 var tt = grid.TerrainAt(hover);
                 string fx = tt switch
@@ -1300,7 +1194,7 @@ namespace Prototype.BingshuTactics
             }
             var u = At(hover);
             if (u == null) return;
-            var r = new Rect(sw - 250, 40, 240, 150);
+            var r = new Rect(sw - 250, 244, 240, 150);
             Rect(r, new Color(0.04f, 0.06f, 0.1f, 0.88f));
             string troop = u.Troop switch { Troop.Infantry => "步兵", Troop.Cavalry => "骑兵", Troop.Archer => "弓兵", Troop.Rebel => "黄巾军", _ => "文官／军师" };
             GUI.Label(new Rect(r.x + 10, r.y + 6, 220, 22), $"<b>{u.Name}</b>  {troop}", text);

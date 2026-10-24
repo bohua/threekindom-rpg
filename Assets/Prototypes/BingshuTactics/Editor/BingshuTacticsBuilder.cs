@@ -43,6 +43,7 @@ namespace Prototype.BingshuTactics.EditorTools
             var guan8 = ImportArt("char_guanyu_idlewalk_8dir_96.png", game.LiuBeiMat); if (guan8) game.GuanYuMat = guan8;
             var zhang8 = ImportArt("char_zhangfei_idlewalk_8dir_96.png", game.LiuBeiMat); if (zhang8) game.ZhangFeiMat = zhang8;
             game.LuBuBust = ImportTexture("char_lubu_bust.png", false);
+            game.UiTextures = ImportUiSlices();
             // 单挑立绘与动作帧
             game.LiuBeiPortrait = Load<Texture2D>($"{Busts}/Full/LIU_BEI_MAIN_POSE.png");
             game.GuanYuPortrait = Load<Texture2D>($"{Busts}/Full/GUAN_YU_MAIN_POSE.png");
@@ -143,6 +144,33 @@ namespace Prototype.BingshuTactics.EditorTools
             imp.SaveAndReimport();
             Debug.Log("BINGSHU_DUEL_IMPORTED " + file);
             return AssetDatabase.LoadAssetAtPath<Texture2D>(dst);
+        }
+
+        // 战斗界面切图（Codex：art/battle-poc-ui-slices-blue），全部按双线性、无压缩导入
+        const string UiSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-poc-ui-slices-blue";
+
+        static Texture2D[] ImportUiSlices()
+        {
+            if (!Directory.Exists(UiSource)) return new Texture2D[0];
+            var dir = Dir + "/Art/UI";
+            Directory.CreateDirectory(dir);
+            var list = new System.Collections.Generic.List<Texture2D>();
+            foreach (var src in Directory.GetFiles(UiSource, "*.png"))
+            {
+                var file = Path.GetFileName(src);
+                if (file.StartsWith("contact") || file.StartsWith("mockup")) continue;
+                var dst = $"{dir}/{file}";
+                File.Copy(src, dst, true);
+                AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceUpdate);
+                var imp = (TextureImporter)AssetImporter.GetAtPath(dst);
+                imp.textureType = TextureImporterType.Default; imp.mipmapEnabled = false; imp.alphaIsTransparency = true;
+                imp.npotScale = TextureImporterNPOTScale.None; imp.filterMode = FilterMode.Bilinear;
+                imp.textureCompression = TextureImporterCompression.Uncompressed; imp.wrapMode = TextureWrapMode.Clamp;
+                imp.SaveAndReimport();
+                list.Add(AssetDatabase.LoadAssetAtPath<Texture2D>(dst));
+            }
+            Debug.Log("BINGSHU_UI_SLICES " + list.Count);
+            return list.ToArray();
         }
 
         // 用旧像素材质（Lit、alpha clip）做模板，换上新图
