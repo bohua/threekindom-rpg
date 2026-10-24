@@ -12,6 +12,7 @@ namespace ThreeKingdoms.UI.Region
     public sealed class RegionHud : MonoBehaviour
     {
         public Texture2D Map;
+        [Tooltip("The full region map (labelled), opened with M")] public Texture2D FullMap;
         public string RegionName = "渤海平原";
         [Tooltip("World bounds the map image covers: x min, z min, x max, z max")] public Vector4 MapBounds;
         public Transform Player;
@@ -22,7 +23,7 @@ namespace ThreeKingdoms.UI.Region
             Ivory = new Color32(0xF4, 0xF1, 0xE8, 0xFF), Mist = new Color32(0xB5, 0xC8, 0xD5, 0xFF),
             Silver = new Color32(0x8C, 0xA7, 0xBA, 0xFF), Cyan = new Color32(0x62, 0xD7, 0xE8, 0xFF);
 
-        VisualElement sign, minorRow, marker, bubble, bubbleRows;
+        VisualElement sign, minorRow, marker, bubble, bubbleRows, fullMap, fullMarker;
         Signpost shownSign;
         float bubbleFade;
         Label major;
@@ -30,6 +31,7 @@ namespace ThreeKingdoms.UI.Region
         float fade;
 
         public string SignText { get; private set; }
+        public bool FullMapOpen => fullMap != null && fullMap.style.display == DisplayStyle.Flex;
         // The signpost bubble's lines while one is shown ("↑ 北村 约 120 步"), for tests.
         public System.Collections.Generic.List<string> BubbleLines { get; } = new System.Collections.Generic.List<string>();
 
@@ -101,6 +103,8 @@ namespace ThreeKingdoms.UI.Region
                 map.Add(marker);
             }
             BuildBubble(root);
+            BuildFullMap(root);
+            if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-fullMap") >= 0) ToggleFullMap(true);   // screenshots
             current = null; SignText = null;
         }
 
@@ -130,6 +134,45 @@ namespace ThreeKingdoms.UI.Region
             tail.style.backgroundColor = Base; tail.style.rotate = new Rotate(45f);
             tail.style.borderRightWidth = 1; tail.style.borderBottomWidth = 1; tail.style.borderRightColor = Silver; tail.style.borderBottomColor = Silver;
             bubble.Add(tail);
+        }
+
+        // The region map over a dimmed screen (M to open and close): the labelled Codex map with the player's marker.
+        void BuildFullMap(VisualElement root)
+        {
+            if (!FullMap) return;
+            fullMap = new VisualElement();
+            fullMap.pickingMode = PickingMode.Ignore;
+            fullMap.style.position = Position.Absolute; fullMap.style.left = 0; fullMap.style.right = 0; fullMap.style.top = 0; fullMap.style.bottom = 0;
+            fullMap.style.backgroundColor = new Color(0.03f, 0.05f, 0.09f, 0.72f);
+            fullMap.style.alignItems = Align.Center; fullMap.style.justifyContent = Justify.Center;
+            fullMap.style.display = DisplayStyle.None;
+            root.Add(fullMap);
+            var frame = Panel(fullMap);
+            frame.style.paddingLeft = 14; frame.style.paddingRight = 14; frame.style.paddingTop = 10; frame.style.paddingBottom = 14;
+            var head = new VisualElement(); head.style.flexDirection = FlexDirection.Row; head.style.justifyContent = Justify.SpaceBetween; head.style.marginBottom = 8;
+            frame.Add(head);
+            var title = Text(head, RegionName + " · 区域图", 26, Ivory); title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            Text(head, "M 关闭", 18, Mist);
+            float w = 1440f, hgt = w * FullMap.height / FullMap.width;
+            var map = new VisualElement();
+            map.style.width = w; map.style.height = hgt;
+            map.style.backgroundImage = new StyleBackground(FullMap);
+            map.style.borderTopWidth = map.style.borderBottomWidth = map.style.borderLeftWidth = map.style.borderRightWidth = 1;
+            map.style.borderTopColor = map.style.borderBottomColor = map.style.borderLeftColor = map.style.borderRightColor = Silver;
+            frame.Add(map);
+            fullMarker = new VisualElement();
+            fullMarker.style.position = Position.Absolute; fullMarker.style.width = 18; fullMarker.style.height = 18;
+            fullMarker.style.backgroundColor = Cyan; fullMarker.style.rotate = new Rotate(45f);
+            fullMarker.style.borderTopWidth = fullMarker.style.borderBottomWidth = fullMarker.style.borderLeftWidth = fullMarker.style.borderRightWidth = 3;
+            fullMarker.style.borderTopColor = fullMarker.style.borderBottomColor = fullMarker.style.borderLeftColor = fullMarker.style.borderRightColor = Ivory;
+            map.Add(fullMarker);
+        }
+
+        public void ToggleFullMap(bool? open = null)
+        {
+            if (fullMap == null) return;
+            bool on = open ?? !FullMapOpen;
+            fullMap.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         void ShowBubble(Signpost s)
@@ -179,6 +222,16 @@ namespace ThreeKingdoms.UI.Region
             if (zone != current) { current = zone; Show(zone); fade = 0f; }
             if (fade < 1f) { fade = Mathf.Min(1f, fade + Time.unscaledDeltaTime * 4f); sign.style.opacity = fade; }
             UpdateBubble();
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb != null && kb.mKey.wasPressedThisFrame) ToggleFullMap();
+            if (kb != null && kb.escapeKey.wasPressedThisFrame && FullMapOpen) ToggleFullMap(false);
+            if (FullMapOpen && fullMarker != null)
+            {
+                float fu = Mathf.InverseLerp(MapBounds.x, MapBounds.z, Player.position.x), fv = Mathf.InverseLerp(MapBounds.y, MapBounds.w, Player.position.z);
+                var fm = fullMarker.parent;
+                fullMarker.style.left = fu * fm.resolvedStyle.width - 9f;
+                fullMarker.style.top = (1f - fv) * fm.resolvedStyle.height - 9f;
+            }
             if (marker != null)
             {
                 float u = Mathf.InverseLerp(MapBounds.x, MapBounds.z, Player.position.x), v = Mathf.InverseLerp(MapBounds.y, MapBounds.w, Player.position.z);

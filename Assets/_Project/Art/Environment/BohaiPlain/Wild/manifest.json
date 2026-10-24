@@ -91,6 +91,101 @@
    "filename": "saline_flat.png",
    "tile_axes": "xy",
    "source": "art/bohai-wild-b1"
+  },
+  {
+   "filename": "decal_dry_grass_a.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_dry_grass_b.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_dry_grass_c.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_field_edge.png",
+   "tile_axes": "x",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_forest_litter_a.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_forest_litter_b.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_green_meadow_a.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_green_meadow_b.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_loess_dirt_a.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_loess_dirt_b.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_mud_bank_a.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_mud_bank_b.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_saline_a.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_saline_b.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_scree_a.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_scree_b.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "decal_wild_flowers.png",
+   "tile_axes": "none",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "hill_foot_skirt.png",
+   "tile_axes": "x",
+   "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "river_bank_slope.png",
+   "tile_axes": "x",
+   "source": "art/bohai-transitions"
   }
  ]
 }

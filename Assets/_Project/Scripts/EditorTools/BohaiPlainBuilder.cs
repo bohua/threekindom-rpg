@@ -78,6 +78,8 @@ namespace ThreeKingdoms.EditorTools
             Explore(env, labels);
             Exits(env, labels);
             Terrain(env, labels);
+            GroundVariety(env);
+            EdgeDecals(env);
             Signposts(env, labels);
             Scatter(env);
             T.EndSession();
@@ -225,7 +227,7 @@ namespace ThreeKingdoms.EditorTools
             T.Patch(g, "Plain grass", "ground_grass", XMin - 60f, XMax + 60f, WaterN, ZMax + 80f, -0.01f);
             // Yellower dry plain in broad bands so the ground is not one texture end to end.
             var rng = new System.Random(5);
-            for (int i = 0; i < 26; i++)
+            for (int i = 0; i < 26 && !T.Tex("decal_dry_grass_a", optional: true); i++)
             {
                 float x = XMin + (float)rng.NextDouble() * (XMax - XMin), z = -200f + (float)rng.NextDouble() * 520f;
                 float w = 40f + (float)rng.NextDouble() * 90f, d = 25f + (float)rng.NextDouble() * 50f;
@@ -1054,7 +1056,22 @@ namespace ThreeKingdoms.EditorTools
             doc.panelSettings = AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.PanelSettings>("Assets/_Project/Settings/BattlePanelSettings.asset");
             if (!doc.panelSettings) throw new System.InvalidOperationException("Region HUD has no PanelSettings");
             var hud = go.AddComponent<ThreeKingdoms.UI.Region.RegionHud>();
-            hud.Map = map; hud.Player = player; hud.RegionName = "渤海平原";
+            // The approved Codex region map (2 px per metre, aligned to the world) is the mini map and the full map
+            // (user 2026-10-24: the map should have texture and match the design); the drawn chart is the fallback.
+            Texture2D Painted(string file)
+            {
+                string path = ArtDir + "/Minimap/" + file;
+                if (!File.Exists(path)) return null;
+                AssetDatabase.ImportAsset(path);
+                var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+                imp.textureType = TextureImporterType.Default; imp.mipmapEnabled = true; imp.npotScale = TextureImporterNPOTScale.None;
+                imp.textureCompression = TextureImporterCompression.Uncompressed; imp.filterMode = FilterMode.Trilinear; imp.wrapMode = TextureWrapMode.Clamp;
+                imp.SaveAndReimport();
+                return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            }
+            var painted = Painted("bohai_region_map.png");
+            hud.Map = painted ? painted : map; hud.FullMap = Painted("bohai_region_map_labeled.png") ?? painted ?? map;
+            hud.Player = player; hud.RegionName = "渤海平原";
             hud.MapBounds = new Vector4(XMin, ZMin, XMax, ZMax);
             hud.PlaceNames = MapNames.Select(n => n.name).ToArray();
             hud.PlacePositions = MapNames.Select(n => n.at).ToArray();
@@ -1280,7 +1297,13 @@ namespace ThreeKingdoms.EditorTools
             if (!LoadMask()) return;
             var g = T.Group(env, "Terrain (mask)");
             var walls = T.Group(g, "Impassable");
-            foreach (var r in Rects(Blocked))
+            bool Wall(int x, int z)
+            {
+                var c = mask[x, z];
+                if (c == Cell.River) return RiverDistance(XMin + x + 0.5f, ZMin + z + 0.5f, out _) > 3f;   // the pond; rivers get their own walls
+                return Blocked(c);
+            }
+            foreach (var r in Rects(Wall))
                 Solid(walls, new Vector3(XMin + r.x + r.width / 2f, 3f, ZMin + r.y + r.height / 2f), new Vector3(r.width, 6f, r.height));
 
             // Ponds and marsh from the mask (the rivers are drawn from the plan's centre lines below).
@@ -1289,7 +1312,7 @@ namespace ThreeKingdoms.EditorTools
             foreach (var r in Rects(c => c == Cell.River || c == Cell.Marsh))
             {
                 float cx = XMin + r.x + r.width / 2f, cz = ZMin + r.y + r.height / 2f;
-                if (RiverDistance(cx, cz, out _) < Mathf.Max(r.width, r.height)) continue;
+                if (RiverDistance(cx, cz, out _) < Mathf.Max(r.width, r.height) + 3f) continue;
                 var size = new Vector2(r.width, r.height);
                 T.Quad(wg, "Water", new Vector3(cx, 0.011f, cz), new Vector3(90f, 0, 0), size, T.Mat(water), T.Repeat(water, size), castShadows: false);
             }
@@ -1332,39 +1355,35 @@ namespace ThreeKingdoms.EditorTools
         {
             var rg = T.Group(g, "Rivers (plan)");
             string water = K("water_channel", "water_yellow_river");
-            string bank = T.Tex("river_bank", optional: true) ? "river_bank" : T.Tex("grass_border", optional: true) ? "grass_border" : null;
-            foreach (var (name, width, pts) in Rivers)
+            string bank = T.Tex("river_bank_slope", optional: true) ? "river_bank_slope" : T.Tex("river_bank", optional: true) ? "river_bank" : null;
+            string[] mud = Have("decal_mud_bank_a", "decal_mud_bank_b"), meadow = Have("decal_green_meadow_a", "decal_green_meadow_b");
+            string reeds = K("prop_reeds", "prop_grass_tuft");
+            foreach (var (name, width, raw) in Rivers)
             {
                 var r = T.Group(rg, name);
+                var pts = Smooth(raw);
+                var rng = new System.Random(name.GetHashCode());
+                float bankDepth = bank != null ? T.Metres(bank).y : 0f;
                 for (int i = 0; i + 1 < pts.Length; i++)
                 {
-                    Strip(r, "Water", water, pts[i], pts[i + 1], width, 0.012f + i * 0.0002f);
-                    if (bank == null) continue;
-                    var d = pts[i + 1] - pts[i]; d.y = 0f; float len = d.magnitude; d /= len;
+                    float y = 0.012f + (i % 50) * 0.00002f;
+                    Strip(r, "Water", water, pts[i], pts[i + 1], width, y);
+                    var d = pts[i + 1] - pts[i]; d.y = 0f; float len = d.magnitude; if (len < 0.01f) continue; d /= len;
                     float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
                     var right = new Vector3(d.z, 0, -d.x);
-                    float depth = T.Metres(bank).y;
-                    foreach (int s in new[] { -1, 1 })
+                    var mid = (pts[i] + pts[i + 1]) / 2f;
+                    // The water's own wall, except under the bridges.
+                    if (!UnderBridge(mid, 2f)) Solid(r, mid + Vector3.up * 3f, new Vector3(width - 1f, 6f, len + 0.6f), yaw);
+                    foreach (int s2 in new[] { -1, 1 })
                     {
-                        // A ragged strip lying over the water's edge, its rough side toward the water.
-                        var mid = (pts[i] + pts[i + 1]) / 2f + right * s * (width / 2f - depth * 0.25f) + new Vector3(0, 0.016f + i * 0.0002f, 0);
-                        T.Quad(r, "Bank", mid, new Vector3(90f, yaw + (s > 0 ? -90f : 90f), 0), new Vector2(len + 1f, depth), T.Mat(bank, clip: true), new Vector2((len + 1f) / T.Metres(bank).x, 1f), castShadows: false);
-                    }
-                }
-                // Reeds along the banks.
-                var rng = new System.Random(name.GetHashCode());
-                string reeds = K("prop_reeds", "prop_grass_tuft");
-                for (int i = 0; i + 1 < pts.Length; i++)
-                {
-                    var d = pts[i + 1] - pts[i]; float len = d.magnitude; d /= len;
-                    var right = new Vector3(d.z, 0, -d.x);
-                    for (float t = 4f; t < len; t += 9f + (float)rng.NextDouble() * 8f)
-                    {
-                        int s = rng.Next(2) == 0 ? -1 : 1;
-                        var p = pts[i] + d * t + right * s * (width / 2f + 0.6f);
-                        if (Near(p.x, p.z) && At(p.x, p.z) != Cell.River) continue;
-                        if (Bridges.Any(b => Vector3.Distance(p, (b.a + b.b) / 2f) < 26f)) continue;
-                        T.Prop(r, reeds, p.x, p.z);
+                        var edge = mid + right * s2 * (width / 2f);
+                        if (bank != null)
+                            T.Quad(r, "Bank", edge + right * s2 * (bankDepth / 2f - 0.6f) + new Vector3(0, 0.015f + (i % 50) * 0.00002f, 0),
+                                new Vector3(90f, yaw + (s2 > 0 ? -90f : 90f), 0), new Vector2(len + 0.6f, bankDepth), T.Mat(bank, clip: true), new Vector2((len + 0.6f) / T.Metres(bank).x, 1f), castShadows: false);
+                        if (UnderBridge(edge, 4f)) continue;
+                        if (mud.Length > 0 && rng.Next(3) == 0) Decal(r, mud[rng.Next(mud.Length)], edge.x + right.x * s2 * 1.5f, edge.z + right.z * s2 * 1.5f, rng, 0.7f + (float)rng.NextDouble() * 0.5f);
+                        if (meadow.Length > 0 && rng.Next(4) == 0) { var m = edge + right * s2 * (5f + (float)rng.NextDouble() * 6f); if (!Near(m.x, m.z)) Decal(r, meadow[rng.Next(meadow.Length)], m.x, m.z, rng, 0.8f + (float)rng.NextDouble() * 0.6f); }
+                        if (rng.Next(2) == 0) { var q = edge + right * s2 * (0.4f + (float)rng.NextDouble()) + d * (float)(rng.NextDouble() - 0.5) * len; if (!Near(q.x, q.z) || At(q.x, q.z) == Cell.River) T.Prop(r, reeds, q.x, q.z); }
                     }
                 }
             }
@@ -1459,7 +1478,7 @@ namespace ThreeKingdoms.EditorTools
                 float d = dist[x, z];
                 if (d <= 0f) return -0.6f;   // just under the ground, so the hill meets the plain along a sloped line, not a stepped edge
                 float noise = Mathf.PerlinNoise(x * 0.035f, z * 0.035f);
-                return Mathf.Min(26f, Mathf.Pow(d, 0.8f) * 0.9f) * (0.75f + 0.5f * noise);
+                return Mathf.Min(36f, Mathf.Pow(d, 0.85f) * 1.4f) * (0.6f + 0.8f * noise);
             }
             var verts = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
             var index = new int[gw, gh];
@@ -1548,9 +1567,119 @@ namespace ThreeKingdoms.EditorTools
                         clear = At(x + sx, z + sz) == Cell.Plain && !Near(x + sx, z + sz);
                 if (!clear) continue;
                 string key = z < -100f && rng.Next(2) == 0 ? salt : farm;
+                if (key == salt && T.Tex("decal_saline_a", optional: true)) continue;   // saline ground comes as decals (GroundVariety)
                 T.Patch(fg, key == farm ? "Field" : "Saline flat", key, x - bw / 2f, x + bw / 2f, z - bd / 2f, z + bd / 2f, 0.0055f + i * 0.00002f);
+                if (key == farm && T.Tex("decal_field_edge", optional: true))
+                {
+                    // Ridges with weeds round the field, slightly past its corners, and dry grass along them.
+                    float ridge = T.Metres("decal_field_edge").y;
+                    void Ridge(Vector3 at, float yaw, float length) =>
+                        T.Quad(fg, "Field ridge", at + new Vector3(0, 0.0058f + i * 0.00002f, 0), new Vector3(90f, yaw, 0), new Vector2(length, ridge), T.Mat("decal_field_edge", clip: true), new Vector2(length / T.Metres("decal_field_edge").x, 1f), castShadows: false);
+                    Ridge(new Vector3(x, 0, z + bd / 2f), 0f, bw + 1f); Ridge(new Vector3(x, 0, z - bd / 2f), 180f, bw + 1f);
+                    Ridge(new Vector3(x + bw / 2f, 0, z), 90f, bd + 1f); Ridge(new Vector3(x - bw / 2f, 0, z), 270f, bd + 1f);
+                }
             }
         }
+
+        // ---------- ground transitions (user 2026-10-24: no tofu blocks, nothing uniform) ----------
+        // Irregular, dithered-edge ground decals (Codex art/bohai-transitions) layered over the grass: dry grass, bare
+        // loess, saline crust and green meadow by broad noise fields; litter spilling out of the woods, scree at the hill
+        // foot, mud and meadow along the rivers, ridges round the fields. Decals turn only by right angles and mirror,
+        // so the pixel grid stays square.
+
+        static int decalCount;
+
+        static string[] Have(params string[] keys) => keys.Where(k => T.Tex(k, optional: true)).ToArray();
+
+        static void Decal(Transform parent, string key, float x, float z, System.Random rng, float scale = 1f)
+        {
+            var size = T.Metres(key) * scale;
+            float y = 0.0062f + (decalCount++ % 400) * 0.000004f;
+            var q = T.Quad(parent, key, new Vector3(x, y, z), new Vector3(90f, rng.Next(4) * 90f, 0), size, T.Mat(key, clip: true), castShadows: false);
+            if (rng.Next(2) == 0) q.transform.localScale = new Vector3(-1f, 1f, 1f);
+        }
+
+        static void GroundVariety(Transform env)
+        {
+            string[] dry = Have("decal_dry_grass_a", "decal_dry_grass_b", "decal_dry_grass_c"), dirt = Have("decal_loess_dirt_a", "decal_loess_dirt_b"),
+                salt = Have("decal_saline_a", "decal_saline_b"), meadow = Have("decal_green_meadow_a", "decal_green_meadow_b"), flowers = Have("decal_wild_flowers");
+            if (dry.Length == 0) return;
+            var g = T.Group(env, "Ground variety");
+            var rng = new System.Random(131);
+            // Broad zones from noise; inside a zone the decals overlap into one continuous ground, toward its edge they
+            // thin out (probability ramps with the noise), so zones meet in ragged, natural borders (design: art/bohai-transitions).
+            float Ramp(float v, float from, float width) => Mathf.Clamp01((v - from) / width);
+            for (float z = LeveeNorth + 4f; z < ZMax - 3f; z += 6f)
+                for (float x = XMin + 3f; x < XMax - 3f; x += 6f)
+                {
+                    float px = x + (float)rng.NextDouble() * 5f, pz = z + (float)rng.NextDouble() * 5f;
+                    if (At(px, pz) != Cell.Plain || Near(px, pz)) continue;
+                    float dryness = Mathf.PerlinNoise(px * 0.007f + 11f, pz * 0.007f + 3f) * 0.75f + Mathf.PerlinNoise(px * 0.03f, pz * 0.03f) * 0.25f;
+                    float saltness = Mathf.PerlinNoise(px * 0.009f + 70f, pz * 0.009f + 20f) - (pz + 120f) * 0.004f;   // more toward the river
+                    float river = RiverDistance(px, pz, out _);
+                    string[] set = null; float chance = 0f, scale = 1f;
+                    if (river < 26f && meadow.Length > 0) { set = meadow; chance = Ramp(26f - river, 0f, 10f); }
+                    else if (salt.Length > 0 && saltness > 0.55f) { set = salt; chance = Ramp(saltness, 0.55f, 0.12f); }
+                    else if (dirt.Length > 0 && dryness > 0.68f) { set = dirt; chance = Ramp(dryness, 0.68f, 0.08f) * 0.8f; }
+                    else if (dryness > 0.46f) { set = dry; chance = Ramp(dryness, 0.46f, 0.1f); scale = 1.2f; }
+                    else if (flowers.Length > 0) { set = flowers; chance = 0.12f; }
+                    if (set == null || rng.NextDouble() > chance) continue;
+                    Decal(g, set[rng.Next(set.Length)], px, pz, rng, scale * (0.9f + (float)rng.NextDouble() * 0.8f));
+                }
+        }
+
+        // Litter spilling out of every wood, scree and skirt below every hill.
+        static void EdgeDecals(Transform env)
+        {
+            if (mask == null) return;
+            string[] litter = Have("decal_forest_litter_a", "decal_forest_litter_b"), scree = Have("decal_scree_a", "decal_scree_b");
+            var g = T.Group(env, "Edge transitions");
+            var rng = new System.Random(137);
+            int w = mask.GetLength(0), h = mask.GetLength(1);
+            for (int z = 2; z < h - 2; z += 4)
+                for (int x = 2; x < w - 2; x += 4)
+                {
+                    var c = mask[x, z];
+                    if (c != Cell.Plain && c != Cell.Road) continue;
+                    // Nearest edge type within 5 m.
+                    bool wood = false, hill = false;
+                    for (int dz = -5; dz <= 5; dz += 5) for (int dx = -5; dx <= 5; dx += 5)
+                    {
+                        var n = mask[Mathf.Clamp(x + dx, 0, w - 1), Mathf.Clamp(z + dz, 0, h - 1)];
+                        wood |= n == Cell.Forest; hill |= n == Cell.Mountain || n == Cell.Foothill;
+                    }
+                    float px = XMin + x + (float)rng.NextDouble() * 3f, pz = ZMin + z + (float)rng.NextDouble() * 3f;
+                    if (Near(px, pz) && c != Cell.Plain) continue;
+                    if (wood && litter.Length > 0 && rng.Next(3) != 0) Decal(g, litter[rng.Next(litter.Length)], px, pz, rng, 0.7f + (float)rng.NextDouble() * 0.6f);
+                    if (hill && scree.Length > 0 && rng.Next(3) != 0) Decal(g, scree[rng.Next(scree.Length)], px, pz, rng, 0.7f + (float)rng.NextDouble() * 0.6f);
+                }
+        }
+
+        // Rivers as smooth curves: Catmull-Rom through the plan's points, about every 5 m.
+        static Vector3[] Smooth(Vector3[] pts, float step = 5f)
+        {
+            var o = new List<Vector3>();
+            for (int i = 0; i + 1 < pts.Length; i++)
+            {
+                Vector3 p0 = pts[Mathf.Max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Mathf.Min(pts.Length - 1, i + 2)];
+                int n = Mathf.Max(1, Mathf.CeilToInt(Vector3.Distance(p1, p2) / step));
+                for (int k = 0; k < n; k++)
+                {
+                    float t = k / (float)n, t2 = t * t, t3 = t2 * t;
+                    o.Add(0.5f * (2f * p1 + (-p0 + p2) * t + (2f * p0 - 5f * p1 + 4f * p2 - p3) * t2 + (-p0 + 3f * p1 - 3f * p2 + p3) * t3));
+                }
+            }
+            o.Add(pts[pts.Length - 1]);
+            return o.ToArray();
+        }
+
+        static bool UnderBridge(Vector3 p, float margin) =>
+            Bridges.Any(b =>
+            {
+                var a = new Vector2(b.a.x, b.a.z); var c = new Vector2(b.b.x, b.b.z); var q = new Vector2(p.x, p.z);
+                float t = Mathf.Clamp01(Vector2.Dot(q - a, c - a) / (c - a).sqrMagnitude);
+                return (a + t * (c - a) - q).magnitude < b.width / 2f + margin;
+            });
 
         // ---------- people ----------
 
