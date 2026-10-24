@@ -1,0 +1,522 @@
+// PROTOTYPE - NOT FOR PRODUCTION
+// Question: 空轨式 AT 行动条＋小范围格子战斗，配合“学派回路镶嵌兵书→策略”，是否好玩、是否看得懂？
+// Date: 2026-10-22
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace Prototype.BingshuTactics
+{
+    public enum Element { None, Metal, Wood, Water, Fire, Earth }
+    public enum School { Ru, Bing, Dao, Mo, Fa }
+    public enum Team { Player, Enemy }
+    public enum Troop { Infantry, Cavalry, Archer, Rebel, Strategist }
+    public enum Area { Single, Circle, Line, SelfCircle }
+    public enum Effect { Damage, Heal, Guard, Buff, Debuff }
+    // 地形（用户 2026-10-23）：草地、沙地、河流、浅滩、桥、道路、营寨、关墙、关门、拒马、山石
+    public enum Terrain { Grass, Sand, River, Ford, Bridge, Road, Camp, Wall, Gate, JuMa, Rock }
+
+    public static class Wuxing
+    {
+        public static string Name(Element e) => e switch
+        {
+            Element.Metal => "金", Element.Wood => "木", Element.Water => "水",
+            Element.Fire => "火", Element.Earth => "土", _ => "无"
+        };
+
+        public static Color Tint(Element e) => e switch
+        {
+            // 传统五色：金白、木青、水玄、火赤、土黄（水色提亮以便在深色底上辨认）
+            Element.Metal => new Color(0.90f, 0.88f, 0.80f), Element.Wood => new Color(0.25f, 0.62f, 0.48f),
+            Element.Water => new Color(0.30f, 0.45f, 0.72f), Element.Fire => new Color(0.78f, 0.24f, 0.18f),
+            Element.Earth => new Color(0.84f, 0.66f, 0.20f), _ => new Color(0.6f, 0.6f, 0.6f)
+        };
+
+        // 相生：木生火、火生土、土生金、金生水、水生木
+        public static Element Generates(Element e) => e switch
+        {
+            Element.Wood => Element.Fire, Element.Fire => Element.Earth, Element.Earth => Element.Metal,
+            Element.Metal => Element.Water, Element.Water => Element.Wood, _ => Element.None
+        };
+
+        // 相克：木克土、土克水、水克火、火克金、金克木
+        public static Element Overcomes(Element e) => e switch
+        {
+            Element.Wood => Element.Earth, Element.Earth => Element.Water, Element.Water => Element.Fire,
+            Element.Fire => Element.Metal, Element.Metal => Element.Wood, _ => Element.None
+        };
+
+        public static readonly Element[] All = { Element.Metal, Element.Wood, Element.Water, Element.Fire, Element.Earth };
+    }
+
+    public sealed class Book
+    {
+        public string Name; public Element Element; public int Grade;
+        public Book(string name, Element element, int grade) { Name = name; Element = element; Grade = grade; }
+        public string GradeName => Grade switch { 1 => "残卷", 2 => "抄本", _ => "善本" };
+    }
+
+    // 后天八卦：方位（南上北下、东左西右）、五行与三爻（自下而上，1＝阳爻，0＝阴爻）
+    public sealed class Gua
+    {
+        public string Name; public Element Element; public float Angle; public int[] Yao;
+        public Vector2 Dir => new Vector2(Mathf.Cos(Angle * Mathf.Deg2Rad), Mathf.Sin(Angle * Mathf.Deg2Rad));
+    }
+
+    public static class Bagua
+    {
+        public const int Qian = 0, Dui = 1, Li = 2, Zhen = 3, Xun = 4, Kan = 5, Gen = 6, Kun = 7;
+        public static readonly Gua[] All =
+        {
+            new Gua { Name = "乾", Element = Element.Metal, Angle = -45, Yao = new[] { 1, 1, 1 } },
+            new Gua { Name = "兑", Element = Element.Metal, Angle = 0, Yao = new[] { 1, 1, 0 } },
+            new Gua { Name = "离", Element = Element.Fire, Angle = 90, Yao = new[] { 1, 0, 1 } },
+            new Gua { Name = "震", Element = Element.Wood, Angle = 180, Yao = new[] { 1, 0, 0 } },
+            new Gua { Name = "巽", Element = Element.Wood, Angle = 135, Yao = new[] { 0, 1, 1 } },
+            new Gua { Name = "坎", Element = Element.Water, Angle = -90, Yao = new[] { 0, 1, 0 } },
+            new Gua { Name = "艮", Element = Element.Earth, Angle = -135, Yao = new[] { 0, 0, 1 } },
+            new Gua { Name = "坤", Element = Element.Earth, Angle = 45, Yao = new[] { 0, 0, 0 } },
+        };
+    }
+
+    public sealed class SlotDef
+    {
+        public Element Locked;     // None = 任意五行
+        public int Gua = -1;       // -1 = 中枢（太极）；否则为所在卦位
+        public Vector2 Pos => Gua < 0 ? Vector2.zero : Bagua.All[Gua].Dir;
+    }
+
+    public sealed class CircuitDef
+    {
+        public School School; public string Name; public Element Affinity; public string Inclusivity; public string Note;
+        public SlotDef[] Slots; public int[][] Lines;
+        public int FreeSlots => Slots.Count(s => s.Locked == Element.None);
+    }
+
+    public static class Circuits
+    {
+        static SlotDef Hub(Element e) => new SlotDef { Locked = e };
+        static SlotDef G(int gua, Element locked = Element.None) => new SlotDef { Gua = gua, Locked = locked };
+
+        // 各学派回路是一张八卦盘：中枢（太极）只能放本学派偏向五行的兵书（用户 2026-10-23）；
+        // 其余槽位落在八卦方位上，锁定位与线路走向（五行布局）、自由位多少（包容性）各不相同。中枢计入每条线。
+        public static readonly CircuitDef[] All =
+        {
+            new CircuitDef
+            {
+                School = School.Ru, Name = "儒家", Affinity = Element.Water, Inclusivity = "高",
+                Note = "中枢锁水。阴阳两仪各一线：坎乾兑、离巽震，六位不限五行，中正均衡、易于兼修。",
+                Slots = new[] { Hub(Element.Water), G(Bagua.Kan), G(Bagua.Qian), G(Bagua.Dui), G(Bagua.Li), G(Bagua.Xun), G(Bagua.Zhen) },
+                Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 0, 4, 5, 6 } }
+            },
+            new CircuitDef
+            {
+                School = School.Bing, Name = "兵家", Affinity = Element.Fire, Inclusivity = "中",
+                Note = "中枢锁火，离位锁火，巽位锁火（巽风助火）。艮震巽离坤一线贯通，威力最易叠高，配法偏狭。",
+                Slots = new[] { Hub(Element.Fire), G(Bagua.Gen), G(Bagua.Zhen), G(Bagua.Xun, Element.Fire), G(Bagua.Li, Element.Fire), G(Bagua.Kun) },
+                Lines = new[] { new[] { 0, 1, 2, 3, 4, 5 } }
+            },
+            new CircuitDef
+            {
+                School = School.Dao, Name = "道家", Affinity = Element.Wood, Inclusivity = "最高",
+                Note = "中枢锁木，其余六位不限五行。三生万物：三条三位短线鼎足而立，策略种类多、高阶难成。",
+                Slots = new[] { Hub(Element.Wood), G(Bagua.Xun), G(Bagua.Li), G(Bagua.Dui), G(Bagua.Qian), G(Bagua.Kan), G(Bagua.Gen) },
+                Lines = new[] { new[] { 0, 1, 2 }, new[] { 0, 3, 4 }, new[] { 0, 5, 6 } }
+            },
+            new CircuitDef
+            {
+                School = School.Mo, Name = "墨家", Affinity = Element.Metal, Inclusivity = "中",
+                Note = "中枢锁金，兑位锁金、坤位锁土（土生金）。兑乾坎一线（金生水），坤离一线，备守兼用。",
+                Slots = new[] { Hub(Element.Metal), G(Bagua.Dui, Element.Metal), G(Bagua.Qian), G(Bagua.Kan), G(Bagua.Kun, Element.Earth), G(Bagua.Li) },
+                Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 0, 4, 5 } }
+            },
+            new CircuitDef
+            {
+                School = School.Fa, Name = "法家", Affinity = Element.Earth, Inclusivity = "最低",
+                Note = "中枢、坤、艮三位锁土，兑位锁金，只剩乾、坎两位自由。法度森严，土系最强。",
+                Slots = new[] { Hub(Element.Earth), G(Bagua.Kun, Element.Earth), G(Bagua.Dui, Element.Metal), G(Bagua.Qian), G(Bagua.Kan), G(Bagua.Gen, Element.Earth) },
+                Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 0, 5, 4 } }
+            },
+        };
+
+        public static CircuitDef Of(School s) => All.First(c => c.School == s);
+    }
+
+    public sealed class SkillDef
+    {
+        public string Name; public string Desc; public bool IsStrategy; public Element Element = Element.None;
+        public Effect Effect; public Area Area; public int Range; public int Radius; public int Length; public int Width = 1;
+        public float Power; public bool UsesMight;        // true=物攻／物防；false=计攻／计防
+        public int Cost; public int Cast; public int Recover = 80; public int AtDelay;
+        public int Turns; public float Amount;            // 增减益幅度
+        public Dictionary<Element, int> Req = new Dictionary<Element, int>();
+        public Element Main => Req.Count == 0 ? Element : Req.OrderByDescending(kv => kv.Value).First().Key;
+        public bool TargetsAllies => Effect == Effect.Heal || Effect == Effect.Guard || Effect == Effect.Buff;
+    }
+
+    public static class Strategies
+    {
+        static SkillDef D(string name, Element e, int main, Element sec, int secReq, string desc)
+        {
+            var s = new SkillDef { Name = name, Element = e, IsStrategy = true, Desc = desc };
+            s.Req[e] = main; if (sec != Element.None) s.Req[sec] = secReq;
+            return s;
+        }
+
+        // 策略：靠回路中“单条线”的五行合计点亮。阶位门槛 2 / 4+1 / 7+2。
+        public static readonly SkillDef[] All =
+        {
+            Set(D("引火", Element.Fire, 2, Element.None, 0, "单体纵火"), Effect.Damage, Area.Single, 5, 0, 1.25f, 6, 40),
+            Set(D("火烧营寨", Element.Fire, 4, Element.Wood, 1, "半径1纵火"), Effect.Damage, Area.Circle, 5, 1, 1.0f, 12, 70),
+            Set(D("火海", Element.Fire, 7, Element.Wood, 2, "半径2大火"), Effect.Damage, Area.Circle, 6, 2, 1.1f, 22, 110),
+            Set(D("截流", Element.Water, 2, Element.None, 0, "单体，推迟其行动"), Effect.Damage, Area.Single, 5, 0, 1.0f, 6, 40, atDelay: 30),
+            Set(D("水攻", Element.Water, 4, Element.Metal, 1, "直线5格，推迟行动"), Effect.Damage, Area.Line, 1, 0, 0.9f, 12, 70, len: 5, atDelay: 25),
+            Set(D("决堤", Element.Water, 7, Element.Metal, 2, "宽3长7洪水，大幅推迟"), Effect.Damage, Area.Line, 1, 0, 1.05f, 22, 110, len: 7, width: 3, atDelay: 45),
+            Set(D("抚军", Element.Wood, 2, Element.None, 0, "单体回复30%"), Effect.Heal, Area.Single, 4, 0, 0.30f, 6, 30),
+            Set(D("鼓舞", Element.Wood, 4, Element.Water, 1, "半径1回复20%并物攻+20%"), Effect.Heal, Area.Circle, 4, 1, 0.20f, 12, 60, turns: 2, amount: 0.2f),
+            Set(D("收拢溃卒", Element.Wood, 7, Element.Water, 2, "全军回复40%"), Effect.Heal, Area.Circle, 0, 99, 0.40f, 22, 100),
+            Set(D("坚壁", Element.Earth, 2, Element.None, 0, "单体受伤-25%，2回合"), Effect.Guard, Area.Single, 4, 0, 0f, 6, 30, turns: 2, amount: 0.25f),
+            Set(D("八阵", Element.Earth, 6, Element.Fire, 2, "半径2友军受伤-35%，3回合"), Effect.Guard, Area.Circle, 3, 2, 0f, 20, 90, turns: 3, amount: 0.35f),
+            Set(D("箭雨", Element.Metal, 3, Element.None, 0, "半径1箭雨（吃武力）"), Effect.Damage, Area.Circle, 6, 1, 0.85f, 10, 60, might: true),
+            Set(D("万箭齐发", Element.Metal, 6, Element.Earth, 2, "半径2箭雨（吃武力）"), Effect.Damage, Area.Circle, 6, 2, 1.0f, 20, 100, might: true),
+        };
+
+        static SkillDef Set(SkillDef s, Effect fx, Area area, int range, int radius, float power, int cost, int cast,
+            int len = 0, int width = 1, int atDelay = 0, int turns = 0, float amount = 0f, bool might = false)
+        {
+            s.Effect = fx; s.Area = area; s.Range = range; s.Radius = radius; s.Power = power; s.Cost = cost; s.Cast = cast;
+            s.Length = len; s.Width = width; s.AtDelay = atDelay; s.Turns = turns; s.Amount = amount; s.UsesMight = might;
+            return s;
+        }
+    }
+
+    public readonly struct LitStrategy
+    {
+        public readonly SkillDef Def; public readonly int Line; public readonly int Overflow; public readonly float PowerMul;
+        public LitStrategy(SkillDef def, int line, int overflow)
+        {
+            Def = def; Line = line; Overflow = overflow; PowerMul = CircuitMath.PowerMul(overflow);
+        }
+    }
+
+    public static class CircuitMath
+    {
+        public const float OverflowStep = 0.08f; public const int OverflowCap = 5;
+
+        public static bool Fits(CircuitDef c, int slot, Book b) =>
+            b != null && slot >= 0 && slot < c.Slots.Length && (c.Slots[slot].Locked == Element.None || c.Slots[slot].Locked == b.Element);
+
+        // 一本书在该学派回路中的五行值：品级，若与学派偏向五行相同再 +1。
+        public static int Value(CircuitDef c, Book b) => b == null ? 0 : b.Grade + (b.Element == c.Affinity ? 1 : 0);
+
+        // 智力决定一段连线最多串几个槽（用户 2026-10-23）：智力低只能连成几段短线，智力极高可全盘贯通（如诸葛亮）
+        public static readonly (int MinInt, int Cap)[] CapTable = { (0, 2), (40, 3), (60, 4), (75, 5), (90, 6), (98, 99) };
+        public static int SegmentCap(int intel) => CapTable.Last(t => intel >= t.MinInt).Cap;
+
+        public readonly struct Edge { public readonly int A, B, Line; public Edge(int a, int b, int line) { A = a; B = b; Line = line; } }
+
+        // 学派绳路（c.Lines，从中枢出发）按智力上限切段：超长的绳路断成几段，中枢只属于每条绳路的首段；
+        // 上限不小于槽位总数时，全盘所有槽连成一条线。Line = -1 的边表示断开处。
+        public static int[][] Segments(CircuitDef c, int intel, out List<Edge> edges)
+        {
+            int cap = SegmentCap(intel);
+            edges = new List<Edge>();
+            if (cap >= c.Slots.Length)
+            {
+                foreach (var cord in c.Lines)
+                    for (int k = 1; k < cord.Length; k++) edges.Add(new Edge(cord[k - 1], cord[k], 0));
+                return new[] { Enumerable.Range(0, c.Slots.Length).ToArray() };
+            }
+            var lines = new List<int[]>();
+            foreach (var cord in c.Lines)
+            {
+                for (int start = 0; start < cord.Length; start += cap)
+                {
+                    int line = lines.Count;
+                    var seg = cord.Skip(start).Take(cap).ToArray();
+                    lines.Add(seg);
+                    for (int k = 1; k < seg.Length; k++) edges.Add(new Edge(seg[k - 1], seg[k], line));
+                    if (start + cap < cord.Length) edges.Add(new Edge(cord[start + cap - 1], cord[start + cap], -1));
+                }
+            }
+            return lines.ToArray();
+        }
+
+        public static int[][] Segments(CircuitDef c, int intel) => Segments(c, intel, out _);
+
+        public static Dictionary<Element, int> LineTotals(CircuitDef c, Book[] slots, int[] line)
+        {
+            var t = Wuxing.All.ToDictionary(e => e, e => 0);
+            foreach (int i in line)
+                if (i < slots.Length && slots[i] != null) t[slots[i].Element] += Value(c, slots[i]);
+            return t;
+        }
+
+        public static float PowerMul(int overflow) => 1f + OverflowStep * Mathf.Min(overflow, OverflowCap);
+
+        // 每个策略取能点亮它、且主五行溢出最多的那条线；溢出（超出门槛的点数）提高威力。
+        public static List<LitStrategy> Lit(CircuitDef c, Book[] slots, int intel)
+        {
+            var result = new List<LitStrategy>();
+            var totals = Segments(c, intel).Select(l => LineTotals(c, slots, l)).ToArray();
+            foreach (var s in Strategies.All)
+            {
+                int best = -1, bestOver = -1;
+                for (int l = 0; l < totals.Length; l++)
+                {
+                    if (!s.Req.All(kv => totals[l][kv.Key] >= kv.Value)) continue;
+                    int over = totals[l][s.Main] - s.Req[s.Main];
+                    if (over > bestOver) { best = l; bestOver = over; }
+                }
+                if (best >= 0) result.Add(new LitStrategy(s, best, bestOver));
+            }
+            return result;
+        }
+    }
+
+    public sealed class Status { public string Name; public float AtkMul = 1f, DefMul = 1f, Guard; public int Turns; }
+
+    public sealed class Unit
+    {
+        public string Name, Key; public Team Team; public Troop Troop; public Element Element; public School School;
+        public int MaxHp, Hp, Atk, Def, Mat, Mdef, Speed, Move, AtkRange, MaxEp, Ep, Cp, Int, Wu;
+        public Vector2Int Pos; public float At; public bool Defending;
+        public List<Status> Statuses = new List<Status>();
+        public List<SkillDef> Crafts = new List<SkillDef>();
+        public Book[] Slots = new Book[7];
+        public SkillDef PendingCast; public Unit PendingFollow; public float PendingMul; public Vector2Int PendingTarget; public Vector2Int PendingDir;
+        public bool Alive => Hp > 0;
+        public CircuitDef Circuit => Circuits.Of(School);
+
+        // 增益取最强、减益取最强，两者相乘
+        public float AtkMul => Statuses.Select(s => s.AtkMul).Where(m => m < 1f).DefaultIfEmpty(1f).Min()
+                             * Statuses.Select(s => s.AtkMul).Where(m => m > 1f).DefaultIfEmpty(1f).Max();
+        public float DefMul => Statuses.Select(s => s.DefMul).Where(m => m < 1f).DefaultIfEmpty(1f).Min()
+                             * Statuses.Select(s => s.DefMul).Where(m => m > 1f).DefaultIfEmpty(1f).Max();
+        public float Guard => Statuses.Select(s => s.Guard).DefaultIfEmpty(0f).Max();
+
+        public void AddStatus(Status s)
+        {
+            // V1：同属性同方向不叠加，取较强并刷新回合
+            var same = Statuses.FirstOrDefault(x => x.Name == s.Name);
+            if (same != null) Statuses.Remove(same);
+            Statuses.Add(s);
+        }
+
+        public void TickStatuses()
+        {
+            foreach (var s in Statuses) s.Turns--;
+            Statuses.RemoveAll(s => s.Turns <= 0);
+        }
+    }
+
+    public static class Combat
+    {
+        public const float TroopAdv = 0.4f, ElementAdv = 0.2f, AdvCap = 0.6f, MinTaken = 0.3f;
+
+        public static bool TroopBeats(Troop a, Troop b) =>
+            (a == Troop.Cavalry && (b == Troop.Infantry || b == Troop.Rebel)) ||
+            (a == Troop.Infantry && b == Troop.Archer) || (a == Troop.Archer && b == Troop.Cavalry);
+
+        public static float AdvMul(Unit a, Unit t, Element skillElement)
+        {
+            float adv = 0f;
+            if (TroopBeats(a.Troop, t.Troop)) adv += TroopAdv;
+            if (skillElement != Element.None && Wuxing.Overcomes(skillElement) == t.Element) adv += ElementAdv;
+            return 1f + Mathf.Min(adv, AdvCap);
+        }
+
+        public const float CampGuard = 0.15f, HeightStep = 0.1f; public const int HeightCap = 2;
+
+        // 减伤只取最强一项：防御、阵法、营寨
+        public static float TakenMul(Unit t, bool inCamp = false)
+        {
+            float reduce = Mathf.Max(t.Defending ? 0.5f : 0f, Mathf.Max(t.Guard, inCamp ? CampGuard : 0f));
+            return Mathf.Max(MinTaken, 1f - reduce);
+        }
+
+        // 居高临下：攻方每高一层 +10%，每低一层 −10%，最多 ±20%
+        public static float HeightMul(int attackerHeight, int targetHeight) =>
+            1f + HeightStep * Mathf.Clamp(attackerHeight - targetHeight, -HeightCap, HeightCap);
+
+        public static int Damage(Unit a, Unit t, float coef, bool might, Element skillElement, float heightMul = 1f, bool targetInCamp = false)
+        {
+            float atk = (might ? a.Atk : a.Mat) * a.AtkMul;
+            float def = (might ? t.Def : t.Mdef) * t.DefMul;
+            float baseDmg = atk * coef - def * 0.5f;
+            return Mathf.Max(1, Mathf.FloorToInt(baseDmg * AdvMul(a, t, skillElement) * heightMul * TakenMul(t, targetInCamp)));
+        }
+
+        public static int Heal(Unit t, float rate) => Mathf.Min(t.MaxHp - t.Hp, Mathf.FloorToInt(t.MaxHp * rate));
+    }
+
+    public sealed class Grid
+    {
+        public readonly int W, H; public readonly bool[,] Blocked; public readonly Terrain[,] Ter; public readonly int[,] Height;
+        public Grid(int w, int h) { W = w; H = h; Blocked = new bool[w, h]; Ter = new Terrain[w, h]; Height = new int[w, h]; }
+        public bool In(Vector2Int p) => p.x >= 0 && p.y >= 0 && p.x < W && p.y < H;
+        public static int Dist(Vector2Int a, Vector2Int b) => Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
+        static readonly Vector2Int[] Dirs = { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
+
+        public Terrain TerrainAt(Vector2Int p) => Ter[p.x, p.y];
+        public int HeightAt(Vector2Int p) => Height[p.x, p.y];
+
+        public static bool Impassable(Terrain t) => t == Terrain.River || t == Terrain.Wall || t == Terrain.Gate || t == Terrain.JuMa || t == Terrain.Rock;
+
+        public static string Name(Terrain t) => t switch
+        {
+            Terrain.Grass => "草地", Terrain.Sand => "沙地", Terrain.River => "河流", Terrain.Ford => "浅滩", Terrain.Bridge => "桥",
+            Terrain.Road => "道路", Terrain.Camp => "营寨", Terrain.Wall => "关墙", Terrain.Gate => "关门", Terrain.JuMa => "拒马", _ => "山石"
+        };
+
+        // 进入一格的移动消耗：沙地 2（骑兵 3）、浅滩 2；每往上爬一层 +1；高低差超过一层不能直接走
+        public int StepCost(Vector2Int from, Vector2Int to, Troop troop)
+        {
+            var t = Ter[to.x, to.y];
+            if (Blocked[to.x, to.y] || Impassable(t)) return -1;
+            int dh = Height[to.x, to.y] - Height[from.x, from.y];
+            if (Mathf.Abs(dh) > 1) return -1;
+            int cost = t == Terrain.Sand ? (troop == Troop.Cavalry ? 3 : 2) : t == Terrain.Ford ? 2 : 1;
+            return cost + Mathf.Max(0, dh);
+        }
+
+        // 可达格（含起点）及来路：按移动消耗的最短路。blocked＝不能进入（敌方单位）；友军可以穿过但不能停留，由调用方判断。
+        // ZOC（用户 2026-10-23）：进入 zoc 为真的格子后不能再继续移动（起点除外）。
+        public Dictionary<Vector2Int, Vector2Int> Reachable(Vector2Int start, int move, Func<Vector2Int, bool> occupied, Troop troop = Troop.Infantry, Func<Vector2Int, bool> zoc = null)
+        {
+            var parent = new Dictionary<Vector2Int, Vector2Int> { [start] = start };
+            var best = new Dictionary<Vector2Int, int> { [start] = 0 };
+            var open = new List<Vector2Int> { start };
+            while (open.Count > 0)
+            {
+                var p = open.OrderBy(q => best[q]).First(); open.Remove(p);
+                if (p != start && zoc != null && zoc(p)) continue;
+                foreach (var dir in Dirs)
+                {
+                    var n = p + dir;
+                    if (!In(n) || occupied(n)) continue;
+                    int c = StepCost(p, n, troop);
+                    if (c < 0) continue;
+                    int d = best[p] + c;
+                    if (d > move || (best.TryGetValue(n, out int old) && old <= d)) continue;
+                    best[n] = d; parent[n] = p;
+                    if (!open.Contains(n)) open.Add(n);
+                }
+            }
+            return parent;
+        }
+
+        // 从文字地图读入（第一行为最北，即 y 最大）
+        public static Grid FromRows(string[] rows, Func<char, (Terrain, int)> legend)
+        {
+            int h = rows.Length, w = rows[0].Length;
+            var g = new Grid(w, h);
+            for (int r = 0; r < h; r++)
+            {
+                if (rows[r].Length != w) throw new ArgumentException($"地图第{r}行长度{rows[r].Length}≠{w}");
+                for (int x = 0; x < w; x++)
+                {
+                    var (t, height) = legend(rows[r][x]);
+                    int y = h - 1 - r;
+                    g.Ter[x, y] = t; g.Height[x, y] = height;
+                }
+            }
+            return g;
+        }
+
+        public static List<Vector2Int> Path(Dictionary<Vector2Int, Vector2Int> parent, Vector2Int to)
+        {
+            var path = new List<Vector2Int> { to };
+            while (parent[to] != to) { to = parent[to]; path.Add(to); }
+            path.Reverse();
+            return path;
+        }
+
+        public IEnumerable<Vector2Int> Diamond(Vector2Int c, int r)
+        {
+            for (int x = -r; x <= r; x++)
+                for (int y = -r + Mathf.Abs(x); y <= r - Mathf.Abs(x); y++)
+                {
+                    var p = new Vector2Int(c.x + x, c.y + y);
+                    if (In(p)) yield return p;
+                }
+        }
+
+        // 光标的屏幕方向换算成格子方向：镜头绕 Y 轴转 yaw 度；斜 45° 时偏 1° 打破平局
+        public static Vector2Int ScreenDirToGrid(float yaw, Vector2Int d)
+        {
+            var rot = Quaternion.Euler(0, yaw + 1f, 0);
+            var v = rot * new Vector3(d.x, 0, d.y);
+            return Mathf.Abs(v.x) >= Mathf.Abs(v.z) ? new Vector2Int(Math.Sign(v.x), 0) : new Vector2Int(0, Math.Sign(v.z));
+        }
+
+        public static Vector2Int DirTo(Vector2Int from, Vector2Int to)
+        {
+            var d = to - from;
+            if (d == Vector2Int.zero) return Vector2Int.right;
+            return Mathf.Abs(d.x) >= Mathf.Abs(d.y) ? new Vector2Int(Math.Sign(d.x), 0) : new Vector2Int(0, Math.Sign(d.y));
+        }
+
+        public IEnumerable<Vector2Int> LineArea(Vector2Int origin, Vector2Int dir, int len, int width)
+        {
+            var side = new Vector2Int(-dir.y, dir.x);
+            for (int k = 1; k <= len; k++)
+                for (int w = -(width / 2); w <= width / 2; w++)
+                {
+                    var p = origin + dir * k + side * w;
+                    if (In(p)) yield return p;
+                }
+        }
+
+        public IEnumerable<Vector2Int> AreaOf(SkillDef s, Vector2Int caster, Vector2Int target)
+        {
+            switch (s.Area)
+            {
+                case Area.Single: return new[] { target };
+                case Area.Circle: return Diamond(target, s.Radius);
+                case Area.SelfCircle: return Diamond(caster, s.Radius);
+                default: return LineArea(caster, DirTo(caster, target), s.Length, s.Width);
+            }
+        }
+    }
+
+    // 单挑（用户 2026-10-23）：三回合，每回合双方出“攻击／架挡／绝招”。架挡克攻击，绝招破架挡，攻击打断绝招。
+    public enum DuelMove { Attack, Guard, Special }
+
+    public static class DuelRules
+    {
+        public const int Hp = 100, Rounds = 3, SpecialCp = 30;
+
+        static int Base(DuelMove m) => m == DuelMove.Special ? 38 : 24;
+        static int Scale(int dmg, int wu) => Mathf.Max(1, Mathf.RoundToInt(dmg * wu / 95f));
+
+        // 返回 (a 受到的伤害, b 受到的伤害, 结果键)
+        public static (int toA, int toB, string key) Resolve(DuelMove a, DuelMove b, int wuA, int wuB)
+        {
+            if (a == b)
+                return a == DuelMove.Guard ? (0, 0, "相持")
+                     : a == DuelMove.Attack ? (Scale(Base(b), wuB), Scale(Base(a), wuA), "互搏")
+                     : (Scale(Base(b) * 4 / 5, wuB), Scale(Base(a) * 4 / 5, wuA), "对拼");
+            if (Beats(a, b)) return (0, Scale(Base(a) + (a == DuelMove.Guard ? -12 : a == DuelMove.Attack ? 6 : 0), wuA), Key(a));
+            var (toB, toA, k) = Resolve(b, a, wuB, wuA);
+            return (toA, toB, k);
+        }
+
+        public static bool Beats(DuelMove a, DuelMove b) =>
+            (a == DuelMove.Guard && b == DuelMove.Attack) || (a == DuelMove.Special && b == DuelMove.Guard) || (a == DuelMove.Attack && b == DuelMove.Special);
+
+        static string Key(DuelMove winner) => winner == DuelMove.Guard ? "挡下" : winner == DuelMove.Special ? "破防" : "打断";
+
+        public static string Name(DuelMove m) => m == DuelMove.Attack ? "攻击" : m == DuelMove.Guard ? "架挡" : "绝招";
+    }
+
+    // AT 行动条：数值小者先动；动作越重，推后越多；速度越快，推后越少。
+    public static class AtClock
+    {
+        public static float Delay(int cost, int speed) => cost * 8f / Mathf.Max(1, speed);
+
+        public static Unit Next(IEnumerable<Unit> units) =>
+            units.Where(u => u.Alive).OrderBy(u => u.At).ThenBy(u => u.Team == Team.Player ? 0 : 1).FirstOrDefault();
+    }
+}

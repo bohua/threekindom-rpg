@@ -1,0 +1,1996 @@
+{
+  "schema": "bridge-art-assets-v1",
+  "revision": 1,
+  "generated_at": "2026-10-24T18:13:15.535036+00:00",
+  "plan_only": false,
+  "nine_slice_order": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+  ],
+  "assets": [
+    {
+      "file": "tab.png",
+      "width": 256,
+      "height": 72,
+      "mode": "RGBA",
+      "purpose": "顶部普通页签",
+      "source": "01_ITEMS_MENU.png: perimeter only",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 18,
+        "right": 18,
+        "top": 18,
+        "bottom": 18
+      },
+      "sha256": "8998feb4371e0d2f46cc87eb8ae4d068946ff341f193c846ca3ddef2d70cd3c9"
+    },
+    {
+      "file": "tab_selected.png",
+      "width": 256,
+      "height": 72,
+      "mode": "RGBA",
+      "purpose": "顶部选中页签",
+      "source": "01_ITEMS_MENU.png: perimeter only",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 18,
+        "right": 18,
+        "top": 18,
+        "bottom": 18
+      },
+      "sha256": "5f11b1637779f3018cebe42b33c2098a5c5d0ae98628fcf255c5edd72239a57b"
+    },
+    {
+      "file": "button.png",
+      "width": 320,
+      "height": 72,
+      "mode": "RGBA",
+      "purpose": "普通操作按钮",
+      "source": "01_ITEMS_MENU.png: perimeter only",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 18,
+        "right": 18,
+        "top": 18,
+        "bottom": 18
+      },
+      "sha256": "ef88d5886e22de5ea5f2fbb101fc2fa2b20064dc238b74c8c9914531fc777d67"
+    },
+    {
+      "file": "button_primary.png",
+      "width": 320,
+      "height": 72,
+      "mode": "RGBA",
+      "purpose": "主要操作按钮",
+      "source": "01_ITEMS_MENU.png: perimeter only",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 18,
+        "right": 18,
+        "top": 18,
+        "bottom": 18
+      },
+      "sha256": "5468f37c773024f3b1d74c09d62bbf159ce995bc5518105fe9ef7bb940c6ff84"
+    },
+    {
+      "file": "button_disabled.png",
+      "width": 320,
+      "height": 72,
+      "mode": "RGBA",
+      "purpose": "禁用操作按钮",
+      "source": "01_ITEMS_MENU.png: perimeter only",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 18,
+        "right": 18,
+        "top": 18,
+        "bottom": 18
+      },
+      "sha256": "f62c83f77542f10b1b71b07a89dc80536d46cf455212fec945496643cf3195bd"
+    },
+    {
+      "file": "button_back.png",
+      "width": 192,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "返回按钮，无箭头",
+      "source": "01_ITEMS_MENU.png: perimeter only",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 18,
+        "right": 18,
+        "top": 18,
+        "bottom": 18
+      },
+      "sha256": "08a11ab8996e85eeb464bf66f0c96accac02ed887e542c1ca088e2d138023438"
+    },
+    {
+      "file": "party_card.png",
+      "width": 256,
+      "height": 192,
+      "mode": "RGBA",
+      "purpose": "队伍胸像卡空底",
+      "source": "existing_card.png",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 14,
+        "right": 14,
+        "top": 14,
+        "bottom": 14
+      },
+      "sha256": "0e4a54994084ac3c319ca1d188d534dcbc9260bbbe0d722308965b8cfc60ab18"
+    },
+    {
+      "file": "party_card_selected.png",
+      "width": 256,
+      "height": 192,
+      "mode": "RGBA",
+      "purpose": "选中队伍胸像卡空底",
+      "source": "existing_card_selected.png",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 14,
+        "right": 14,
+        "top": 14,
+        "bottom": 14
+      },
+      "sha256": "7e1f8550123a509e274d55bbb4bef8d44396a0c8f49943af1208bba4e9c68c0b"
+    },
+    {
+      "file": "slot_row.png",
+      "width": 256,
+      "height": 96,
+      "mode": "RGBA",
+      "purpose": "物资/装备/技能/存档共用行",
+      "source": "existing_row.png",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 14,
+        "right": 14,
+        "top": 14,
+        "bottom": 14
+      },
+      "sha256": "bb51af06944677e9a0ac6794d77eb12c8526778c418f3525d3ce16643a66e8ad"
+    },
+    {
+      "file": "slot_row_selected.png",
+      "width": 256,
+      "height": 96,
+      "mode": "RGBA",
+      "purpose": "选中列表行",
+      "source": "existing_card_selected.png",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 14,
+        "right": 14,
+        "top": 14,
+        "bottom": 14
+      },
+      "sha256": "de7039aefd72fd130c64d6977dbc0cc1fab5eb71ed389393f70b485526c1d324"
+    },
+    {
+      "file": "subpanel.png",
+      "width": 192,
+      "height": 128,
+      "mode": "RGBA",
+      "purpose": "面板内分组空框",
+      "source": "01_ITEMS_MENU.png: perimeter only",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 18,
+        "right": 18,
+        "top": 18,
+        "bottom": 18
+      },
+      "sha256": "fa9b5b952deffaf2e53ce4175bc6632ed28170c81200b5812e7377df8b66d3ca"
+    },
+    {
+      "file": "filter_chip.png",
+      "width": 192,
+      "height": 56,
+      "mode": "RGBA",
+      "purpose": "普通类别筛选",
+      "source": "01_ITEMS_MENU.png: perimeter only",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 18,
+        "right": 18,
+        "top": 18,
+        "bottom": 18
+      },
+      "sha256": "f79265a423eba9c7d5ae06b5e9ce1402170579ef9e7cdf1bca315e9c4411c73c"
+    },
+    {
+      "file": "filter_chip_selected.png",
+      "width": 192,
+      "height": 56,
+      "mode": "RGBA",
+      "purpose": "选中类别筛选",
+      "source": "01_ITEMS_MENU.png: perimeter only",
+      "method": "perimeter reconstruction + nine-slice",
+      "nine_slice": {
+        "left": 18,
+        "right": 18,
+        "top": 18,
+        "bottom": 18
+      },
+      "sha256": "122aec8d94f9315e2b4c54317199103ffccf3a7fafcc54301b20d1624abf08b7"
+    },
+    {
+      "file": "art_frame.png",
+      "width": 192,
+      "height": 192,
+      "mode": "RGBA",
+      "purpose": "物品和技能详情大图回纹方框",
+      "source": "01_ITEMS_MENU.png",
+      "method": "reference perimeter reconstruction",
+      "nine_slice": {
+        "left": 28,
+        "right": 28,
+        "top": 28,
+        "bottom": 28
+      },
+      "sha256": "855ecde633e63cb734c41caa94b7c97a4b9e67306140b2dc0b6384be13e091df"
+    },
+    {
+      "file": "quest_bar.png",
+      "width": 512,
+      "height": 48,
+      "mode": "RGBA",
+      "purpose": "左上任务提示，右侧渐隐",
+      "source": "01_ITEMS_MENU.png",
+      "method": "reference-matched procedural fade",
+      "nine_slice": {
+        "left": 12,
+        "right": 96,
+        "top": 8,
+        "bottom": 8
+      },
+      "sha256": "ee060e4ac7cf96804136f88a97a84d8bee5e09485a369eb87d29c60b30ebfcbc"
+    },
+    {
+      "file": "icon_coin.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "铜钱",
+      "source": "01_ITEMS_MENU.png:(1236, 27, 1268, 61)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "7ce415fd7022295751602c10e8c15007ce2c3101a717ac2d1e440df3fa054afa"
+    },
+    {
+      "file": "icon_reputation.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "声望羽状金徽",
+      "source": "01_ITEMS_MENU.png:(1377, 27, 1408, 62)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "d4748e2ecd5e0143d0d6fd679f4683ea7f97010f3ff1c9a3995c9a2df7db7f31"
+    },
+    {
+      "file": "icon_quest.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "菱形任务标",
+      "source": "01_ITEMS_MENU.png:(49, 86, 77, 115)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "92552a88c1a6007fd0eeb9550a084807df4ce0b5443219d494f7e57277e18df7"
+    },
+    {
+      "file": "troop_archer.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "圈中交叉弓箭",
+      "source": "01_ITEMS_MENU.png:(234, 302, 268, 336)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "5ba6814b0878c62ca0f4254e0870691b206dcc8ffce7b136a74b3f2f0158819d"
+    },
+    {
+      "file": "troop_cavalry.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "骑兵马首",
+      "source": "01_ITEMS_MENU.png:(233, 515, 270, 550)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "066085de195f70d6104003633a683ea0a0ebe1bf54d609ef64c0c81e13eede34"
+    },
+    {
+      "file": "troop_infantry.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "步兵盾牌",
+      "source": "01_ITEMS_MENU.png:(234, 724, 270, 762)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "916ce9b7d4a73ee86492161638664712df6c4776fba1653cc255d184487b4569"
+    },
+    {
+      "file": "cat_all.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "青绿叶芽",
+      "source": "01_ITEMS_MENU.png:(1337, 302, 1367, 335)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "59ed21c2c92cc31886573a1df9d40828f1eab4d89ee31b1ee813ffcac7b5ac1d"
+    },
+    {
+      "file": "cat_consumable.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "水滴/葫芦",
+      "source": "01_ITEMS_MENU.png:(686, 234, 714, 270)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "b4861d776bd2232c2a27e9ce681afd981ce15be3a64d906b162fa98dd20731c5"
+    },
+    {
+      "file": "cat_equipment.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "装备剑",
+      "source": "01_ITEMS_MENU.png:(871, 234, 902, 273)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "1ba0f51ac8df9b61f6ea48f79490e9edfe93f2dc029aee1e27b9fe12c0501327"
+    },
+    {
+      "file": "stat_patk.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "物攻剑",
+      "source": "02_EQUIPMENT_MENU.png:(511, 705, 541, 738)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "f6fa918c35787df4f763099ba62e3c1c8140bc2c81aa484bcdfc9be48bd70c2d"
+    },
+    {
+      "file": "stat_pdef.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "物防盾",
+      "source": "02_EQUIPMENT_MENU.png:(511, 749, 541, 785)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "86b909b0dffa0501650ffd35370893e052e8c3904b9296931718333d9b245a23"
+    },
+    {
+      "file": "stat_satk.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "计攻云纹",
+      "source": "02_EQUIPMENT_MENU.png:(511, 793, 542, 826)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "c001dab6cc618e1cfe564937d4c528f10f06d54a8b829b410f618ce06cf26c74"
+    },
+    {
+      "file": "stat_sdef.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "计防太极",
+      "source": "02_EQUIPMENT_MENU.png:(739, 705, 772, 741)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "eec618e267c3e79d371b49535e8d83eb3e84d5e7e8efcf5c6528496d523c44da"
+    },
+    {
+      "file": "stat_speed.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "速度靴",
+      "source": "02_EQUIPMENT_MENU.png:(739, 751, 772, 783)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "9c38f2e8facffcfdbf2d73acff884f8aa78d4a96696e125a7d336b06c9e0c73d"
+    },
+    {
+      "file": "stat_force.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "武力交叉剑",
+      "source": "04_GENERALS_MENU.png:(1112, 358, 1147, 393)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "df3d2329c7c767c51f33556018da286cd9bdf534bd871bd4d71aa340a8383dcf"
+    },
+    {
+      "file": "stat_command.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "统率旗",
+      "source": "04_GENERALS_MENU.png:(1292, 358, 1327, 393)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "7465a130c5816b82faa1f07450d32481d4c0ade0c3f2c73a0212afb719bc8d46"
+    },
+    {
+      "file": "stat_intellect.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "智力书卷",
+      "source": "04_GENERALS_MENU.png:(1479, 359, 1513, 393)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "577895f48ad4cf6558154961d6ad91d23bdb11faaa0a2f564793cc8ac4de2aaf"
+    },
+    {
+      "file": "icon_info.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "信息圆形符号",
+      "source": "01_ITEMS_MENU.png:(1348, 772, 1386, 808)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "36d3d7cd30d43e468df710227aa08872364354c6c56fa5d3b63aadd68366481a"
+    },
+    {
+      "file": "icon_check.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "确认勾",
+      "source": "03_SKILLS_MENU.png:(962, 289, 991, 315)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "6fbc7452d49cdd82037123abda1292013361ede4c6aab5a64e300dac20c93979"
+    },
+    {
+      "file": "icon_lock.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "锁",
+      "source": "03_SKILLS_MENU.png:(937, 442, 966, 478)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "4c4b77f2cf648795e476c70f15c6921631859227b61463e0c601d353306943ec"
+    },
+    {
+      "file": "icon_up.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "提升绿色箭头",
+      "source": "02_EQUIPMENT_MENU.png:(1270, 249, 1302, 287)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "165f24b447a5cef923f19bcecd4c1a36cdc3d190a0d1150b837e49ffd437b3a5"
+    },
+    {
+      "file": "icon_sound.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "声音喇叭",
+      "source": "05_SYSTEM_MENU.png:(78, 246, 119, 280)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "fa1f58010ba7307ae843ecf4a8e5acb279c521bc3b2bb598d595cf977956c601"
+    },
+    {
+      "file": "icon_display.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "显示器",
+      "source": "05_SYSTEM_MENU.png:(80, 480, 119, 516)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "17a38d0a849564323f9c5ccaed9b3dffac34e7c1e9f5f2544d4d802b0f1cca37"
+    },
+    {
+      "file": "icon_save.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "存档文件",
+      "source": "05_SYSTEM_MENU.png:(1008, 268, 1046, 311)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "da74a06d1e4b02c1effe8e85258b34ad2cbdfc1e6a08025dec521d768fc164aa"
+    },
+    {
+      "file": "icon_autosave.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "循环自动存档",
+      "source": "05_SYSTEM_MENU.png:(1000, 636, 1048, 682)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "f38e666782710fafba8c058c41980b3ad3bd5c13fe5e5139921e1bb3a1bcc143"
+    },
+    {
+      "file": "icon_clock.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "时钟",
+      "source": "05_SYSTEM_MENU.png:(1406, 298, 1440, 333)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "7d8e2fd8b903cd266a84c2515562c8c939de73800d61db62fdffa01d81d0ea3c"
+    },
+    {
+      "file": "icon_lantern.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "暖色灯笼",
+      "source": "05_SYSTEM_MENU.png:(744, 756, 797, 823)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "a5725540a5fa3b0120b93e4da457c0f4d70f769c63605b26fd0b25c858404ae0"
+    },
+    {
+      "file": "icon_home.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "返回屋宇",
+      "source": "05_SYSTEM_MENU.png:(131, 786, 162, 820)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "5abcc40be567479ef00178f588279e8e0d9b4c0397f9df56f9190810f5f735d5"
+    },
+    {
+      "file": "icon_exit.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "门与退出箭头",
+      "source": "05_SYSTEM_MENU.png:(420, 785, 454, 820)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "5cdaeeb24384b24a4abddb666165e63dccaad5cf8b168c1d17a5fdc580028426"
+    },
+    {
+      "file": "icon_chevron_left.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "向左选择箭头",
+      "source": "05_SYSTEM_MENU.png:(379, 550, 401, 580)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "f6a78fc548ecf6d43942e33884f6cba0aebc0e3c55ba56430cd6335a45026abc"
+    },
+    {
+      "file": "icon_chevron_right.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "向右选择箭头",
+      "source": "05_SYSTEM_MENU.png:(615, 550, 635, 580)",
+      "method": "isolated reference glyph; threshold matte + resample",
+      "nine_slice": null,
+      "sha256": "e4bd03d83a5030f5ad9081c0a022dbbbcf4a8eaea6ed31b7ec077c053db0adfe"
+    },
+    {
+      "file": "slot_empty_ring.png",
+      "width": 96,
+      "height": 96,
+      "mode": "RGBA",
+      "purpose": "饰品未装备圆环",
+      "source": "existing_socket_ring.png",
+      "method": "reuse existing ring, clear inner alpha",
+      "nine_slice": null,
+      "sha256": "76f4f691cfcb475afcc7ae929617a7a38d94ddbeb5d16ec3dbd38ebcd8593844"
+    },
+    {
+      "file": "slider_track.png",
+      "width": 256,
+      "height": 24,
+      "mode": "RGBA",
+      "purpose": "音量空槽",
+      "source": "05_SYSTEM_MENU.png",
+      "method": "reference-matched high-resolution raster control",
+      "nine_slice": null,
+      "sha256": "2d9643ad2495cc19c1572558fff38c1444123b447498a6399e72e64a18e30233"
+    },
+    {
+      "file": "slider_fill.png",
+      "width": 256,
+      "height": 24,
+      "mode": "RGBA",
+      "purpose": "音量青蓝填充",
+      "source": "05_SYSTEM_MENU.png",
+      "method": "reference-matched high-resolution raster control",
+      "nine_slice": null,
+      "sha256": "60ae8e5ce51ba9421eb4c8ed33594b4a817340979e936ca90f6013e47a9fc76a"
+    },
+    {
+      "file": "slider_knob.png",
+      "width": 40,
+      "height": 40,
+      "mode": "RGBA",
+      "purpose": "菱形滑钮",
+      "source": "05_SYSTEM_MENU.png",
+      "method": "reference-matched high-resolution raster control",
+      "nine_slice": null,
+      "sha256": "4c3ba3dc1dfaab946d88a2c39fea1150eed1e75c6cf33eaa3142f7628a08eea5"
+    },
+    {
+      "file": "toggle_on.png",
+      "width": 96,
+      "height": 48,
+      "mode": "RGBA",
+      "purpose": "开关开启",
+      "source": "05_SYSTEM_MENU.png",
+      "method": "reference-matched high-resolution raster control",
+      "nine_slice": null,
+      "sha256": "00828024d5e610086df7c3e134a1fe0acc009778f75205933db41ae78578361e"
+    },
+    {
+      "file": "toggle_off.png",
+      "width": 96,
+      "height": 48,
+      "mode": "RGBA",
+      "purpose": "开关关闭",
+      "source": "05_SYSTEM_MENU.png",
+      "method": "reference-matched high-resolution raster control",
+      "nine_slice": null,
+      "sha256": "bc824c176b233d091b6421c42bdb1455c78a0246ccadc313c40c22bf07ffa0b6"
+    },
+    {
+      "file": "checkbox_checked.png",
+      "width": 48,
+      "height": 48,
+      "mode": "RGBA",
+      "purpose": "技能已学方框勾",
+      "source": "03_SKILLS_MENU.png",
+      "method": "reference-matched high-resolution raster control",
+      "nine_slice": null,
+      "sha256": "7844c6cbc41a65549658db68e239908f0ec14e5e2b7a832c684c7a83482cec1e"
+    },
+    {
+      "file": "node_done.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "习得进度节点 done",
+      "source": "03_SKILLS_MENU.png",
+      "method": "reference-matched high-resolution raster control",
+      "nine_slice": null,
+      "sha256": "73ea41f89657ea950d1548f10aa90df9227d0d68a7cc7486c849bcfee963bc49"
+    },
+    {
+      "file": "node_current.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "习得进度节点 current",
+      "source": "03_SKILLS_MENU.png",
+      "method": "reference-matched high-resolution raster control",
+      "nine_slice": null,
+      "sha256": "3256cb1cfc95b13bd5d929b268745d404c3f3076a19d9757c48211c66ab6ca21"
+    },
+    {
+      "file": "node_locked.png",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA",
+      "purpose": "习得进度节点 locked",
+      "source": "03_SKILLS_MENU.png",
+      "method": "reference-matched high-resolution raster control",
+      "nine_slice": null,
+      "sha256": "2869b110347da1f5502495b974bb7ea04a38a767a01f2754b40feb59496ed3fa"
+    },
+    {
+      "file": "item_ration.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_ration.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "3048a70373c7fec2b6cb77ba4c5ec044de60eb858052c2f2176dcfcada634007"
+    },
+    {
+      "file": "item_cavalry_lance.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_cavalry_lance.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "cca00d4f1f83773d6e844f06e61ba8933db8d69efed0f97e06de562733dfb916"
+    },
+    {
+      "file": "item_cloth_armor.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_cloth_armor.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "3358b3de9bc9b1e0254ff86145474a9581ad95da0726c478e44a6e8014b5a4b0"
+    },
+    {
+      "file": "item_horn_bow.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_horn_bow.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "5dba8044e2b0d313ff85edee8733b4fd3231daa8ad0afd413a1077c5930d5af6"
+    },
+    {
+      "file": "item_hunting_bow.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_hunting_bow.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "2aa904ee814fc3e88ed6eb699356e093ae84db90fa83e2b97afa77736160fa41"
+    },
+    {
+      "file": "item_iron_shuo.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_iron_shuo.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "8635001c1e92e1ee90f3db5395c70abfb32e244d1fbf19c1fb2f203c56f42310"
+    },
+    {
+      "file": "item_iron_spear.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_iron_spear.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "733f3612f9cb88296b1896d3f0e4569cc54495b121eb8e5a8fd9476c1395c228"
+    },
+    {
+      "file": "item_leather_armor.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_leather_armor.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "bb1b6781c6af245c2ffebba544696601d1308dacf07bc31a1f97a45e871d9b21"
+    },
+    {
+      "file": "item_leather_bracers.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_leather_bracers.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "6f2dc8875e0db5c0484003ed84e7acb8afacb36a10de2fa5da3777ad05150df2"
+    },
+    {
+      "file": "item_ring_pommel_saber.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_ring_pommel_saber_v2.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "583b68e3bcc22ce341888f0876ba8669c9bd2108ca335c48416e841ac8063d20"
+    },
+    {
+      "file": "item_swift_whip.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_swift_whip.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "bfc12f33fef41afc7205f9b8a35e538cea9b4c81cc64c3c163b064a14066375c"
+    },
+    {
+      "file": "item_war_banner.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_war_banner.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "e86c1364406ee5b576f6a03a204db77f75dcc5f8ec90f5f618d3e89c93a76218"
+    },
+    {
+      "file": "item_war_manual_fragment.png",
+      "width": 160,
+      "height": 160,
+      "mode": "RGBA",
+      "purpose": "物品厚涂插画",
+      "source": "item_war_manual_fragment.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "2d4450b2797a7456ae4f5f1d02d66a1a38ff03ab80d9d0e64c4bdc947a50fa26"
+    },
+    {
+      "file": "skill_tuji.png",
+      "width": 256,
+      "height": 224,
+      "mode": "RGBA",
+      "purpose": "部队战术技能插画",
+      "source": "skill_tuji.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "9f5447ab71f3ef04794fbc735619f40f804e577e431447ddf1c519d0bc84ff6f"
+    },
+    {
+      "file": "skill_pozhen.png",
+      "width": 256,
+      "height": 224,
+      "mode": "RGBA",
+      "purpose": "部队战术技能插画",
+      "source": "skill_pozhen.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "c47029f811acf51e7f28ddd97f36c8f93b036b63deea77dda7b7a34e796b2320"
+    },
+    {
+      "file": "skill_hengsao.png",
+      "width": 256,
+      "height": 224,
+      "mode": "RGBA",
+      "purpose": "部队战术技能插画",
+      "source": "skill_hengsao.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "9052fb4b6f988a32f6d0c5b2021f1cf02d07173e2b591df61e721fc5a5ca45f7"
+    },
+    {
+      "file": "skill_weishe.png",
+      "width": 256,
+      "height": 224,
+      "mode": "RGBA",
+      "purpose": "部队战术技能插画",
+      "source": "skill_weishe.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "88c342664a294fe7c99f06ef20445663f19e3714eee539a1b3f5a7b1dd23e282"
+    },
+    {
+      "file": "thumb_southgate.png",
+      "width": 256,
+      "height": 128,
+      "mode": "RGBA",
+      "purpose": "存档缩略图",
+      "source": "thumb_southgate.png",
+      "method": "built-in image generation + alpha cleanup / fit",
+      "nine_slice": null,
+      "sha256": "182366437fe11bd8143808cd7b5e065b5057ce541fba21292641cfa79b33371e"
+    },
+    {
+      "file": "skill_zhengdui.png",
+      "width": 256,
+      "height": 224,
+      "mode": "RGBA",
+      "purpose": "整队战旗",
+      "source": "03_SKILLS_MENU.png:(1070, 232, 1298, 428)",
+      "method": "direct artwork extraction, no frame or text",
+      "nine_slice": null,
+      "sha256": "e197d934a354b258337c660a3068d2bbcbab1198db688169b8b88ba06ece9a11"
+    },
+    {
+      "file": "skill_huoshi.png",
+      "width": 256,
+      "height": 224,
+      "mode": "RGBA",
+      "purpose": "火矢燃烧箭头",
+      "source": "03_SKILLS_MENU.png:(501, 414, 625, 539)",
+      "method": "direct artwork extraction, no frame or text",
+      "nine_slice": null,
+      "sha256": "3c06f5ba7d382a50f500a695441e28f69a7d84ab6cbb95c58830d4f0728fdd39"
+    },
+    {
+      "file": "thumb_tavern.png",
+      "width": 256,
+      "height": 128,
+      "mode": "RGBA",
+      "purpose": "存档缩略图 tavern",
+      "source": "05_SYSTEM_MENU.png:(778, 249, 974, 334)",
+      "method": "direct thumbnail extraction, no frame or text",
+      "nine_slice": null,
+      "sha256": "d2f690b865840af83601290715e807542bd94acd1614c2b234c079281c19e841"
+    },
+    {
+      "file": "thumb_empty.png",
+      "width": 256,
+      "height": 128,
+      "mode": "RGBA",
+      "purpose": "存档缩略图 empty",
+      "source": "05_SYSTEM_MENU.png:(778, 370, 974, 456)",
+      "method": "direct thumbnail extraction, no frame or text",
+      "nine_slice": null,
+      "sha256": "91f511f59fd5846cb212f9febbed34f7b87483b5cb698a6ab8ee24827a248e3d"
+    },
+    {
+      "file": "contact-sheet.png",
+      "width": 1584,
+      "height": 3162,
+      "mode": "RGB",
+      "purpose": "全部切图深底透明棋盘总览",
+      "nine_slice": null,
+      "sha256": "2437bfc3802573dcf869bb229c64c9856185fddd976a6293282a6a597300cd00"
+    }
+  ],
+  "files": [
+    {
+      "path": "_checks/asset-metadata.json",
+      "bytes": 31753,
+      "sha256": "c8e9ee8659b4dd8f4e0aa028a80e857e0987cefc0c9596a8f17d02b1c1939e0d",
+      "problems": []
+    },
+    {
+      "path": "_checks/bridge-handoff.md",
+      "bytes": 2003,
+      "sha256": "7fd755c06029b916e3780e4dd1784533db5606a425676607d2fd970ce6a6d65a",
+      "problems": []
+    },
+    {
+      "path": "_checks/bridge-initial-validation.json",
+      "bytes": 60611,
+      "sha256": "3fef21977a9b7705a47e2cd9b47f13d3dfc829a0a57e8719a8356274f9cceaad",
+      "problems": []
+    },
+    {
+      "path": "_checks/build_assets.py",
+      "bytes": 17647,
+      "sha256": "43415178c5f88f367c5dfc976f8daa69b4fd6adbc91eca2e798986f3797c1584",
+      "problems": []
+    },
+    {
+      "path": "_checks/delivery-inventory.json",
+      "bytes": 12364,
+      "sha256": "24d5a589fe33e6d680975a74746399f24c968d4d3765b6a801520b07930e4fc6",
+      "problems": []
+    },
+    {
+      "path": "_checks/final-review.json",
+      "bytes": 996,
+      "sha256": "4417ed345a235b48f27845edfc3c5c42d29884dc2e15549784352c56de44771f",
+      "problems": []
+    },
+    {
+      "path": "_checks/generation-log.json",
+      "bytes": 7556,
+      "sha256": "9e0b6b400b1e3daf286c8c289dae07f580ec1e621ac4de8957fb803be7d02b10",
+      "problems": []
+    },
+    {
+      "path": "_checks/icon-legibility-24-32-40.png",
+      "bytes": 105716,
+      "sha256": "abe07af3d101c0bf5ec65ece97a54ff2c58da5692567abc0f21a2a55a8133815",
+      "problems": []
+    },
+    {
+      "path": "_checks/item-alpha-proof.png",
+      "bytes": 664537,
+      "sha256": "473d3d3427b4fd3d402f37b763346174875b717b04d1317438c8d6243637cabe",
+      "problems": []
+    },
+    {
+      "path": "_checks/labeled-contact-sheet.png",
+      "bytes": 1153321,
+      "sha256": "ea435d584833ad3ad52bdbad6099bf68f740622c9a96a8cb26dbc78161395750",
+      "problems": []
+    },
+    {
+      "path": "_checks/manifest-repair-results.json",
+      "bytes": 1396,
+      "sha256": "ee124039bc848cb6b538d2ae57ee0e22bd52005f57a2edcb52186dd0951c0a21",
+      "problems": []
+    },
+    {
+      "path": "_checks/nine-slice-stretch-proof.png",
+      "bytes": 138763,
+      "sha256": "48541bc6db6475ab20ce9ab45b4d864d12e9da6d2c5c7cfcb00a6d6d736795bb",
+      "problems": []
+    },
+    {
+      "path": "_checks/prepare.py",
+      "bytes": 7636,
+      "sha256": "29ee1cedb7fc21aa1c08cb357494d8bcb15d93e077cdc4f27cddb2c201dbdc00",
+      "problems": []
+    },
+    {
+      "path": "_checks/reference-integrity.json",
+      "bytes": 2971,
+      "sha256": "325aa5d6b92788f250b83a1cdf593b84744dc96ec4a2cbde1ce68b5df640dd1f",
+      "problems": []
+    },
+    {
+      "path": "_checks/validation-results.json",
+      "bytes": 23996,
+      "sha256": "ba061a91d51c6c41cb3aa18c15439b622a1485706c9e17efc3ac85bf20c93727",
+      "problems": []
+    },
+    {
+      "path": "_checks/verify_assets.py",
+      "bytes": 9329,
+      "sha256": "f2967796eb4584f037c189d47d1e843b92c07b61cb3cc4a8ce3b770edc939309",
+      "problems": []
+    },
+    {
+      "path": "_checks/work-notes.md",
+      "bytes": 1565,
+      "sha256": "13dc046bcfb7c0247d0333d14b35db151ee93de1d7f34aa87ed53d117b10f8b5",
+      "problems": []
+    },
+    {
+      "path": "_checks/write_manifest.py",
+      "bytes": 3160,
+      "sha256": "1723b10a69a7568ccd3e23bc84cdbecf98267b01c303266ca9326832d29bdad9",
+      "problems": []
+    },
+    {
+      "path": "_prompts/generation-prompts.json",
+      "bytes": 19004,
+      "sha256": "f2fb3966c2db13445127fcfe930618c4fb61d1ef1d6ac93f09ec57767360eff6",
+      "problems": []
+    },
+    {
+      "path": "_prompts/item_ring_pommel_saber_v2.txt",
+      "bytes": 1030,
+      "sha256": "9f285234fe39d9db536a6d89777f1d0ed43d94ef17b15ef2f5b89148d45c43df",
+      "problems": []
+    },
+    {
+      "path": "_prompts/item_ring_pommel_saber_v3.txt",
+      "bytes": 834,
+      "sha256": "ca73b2e55057596415237b43760e0b1eeb0375cc80c91e6a0d709014295628aa",
+      "problems": []
+    },
+    {
+      "path": "_prompts/thumb_southgate.txt",
+      "bytes": 1096,
+      "sha256": "ab0dfb4eab0c80d08510e6a7a486249d3b572b98ca164f42515b5cc03d426fe1",
+      "problems": []
+    },
+    {
+      "path": "_sources/01_ITEMS_MENU.png",
+      "bytes": 1983792,
+      "sha256": "6efafe0fa5469035614a993cf5fddca0154f9cb28c0121810adbee5f6c00f995",
+      "problems": []
+    },
+    {
+      "path": "_sources/02_EQUIPMENT_MENU.png",
+      "bytes": 1944265,
+      "sha256": "3565e1e7fa7af4760262449003b8f7733b390857595837886b57eb6a23c96a44",
+      "problems": []
+    },
+    {
+      "path": "_sources/03_SKILLS_MENU.png",
+      "bytes": 2026152,
+      "sha256": "33f32a26ad1dddec917d9fbc802c3f55a8558949bcb99c0c516f4717f4e74df6",
+      "problems": []
+    },
+    {
+      "path": "_sources/04_GENERALS_MENU.png",
+      "bytes": 2271800,
+      "sha256": "b6e0600fbf0f6bb43227db544047065ee038e538dc6fa4809ec273c286841aba",
+      "problems": []
+    },
+    {
+      "path": "_sources/05_SYSTEM_MENU.png",
+      "bytes": 1853344,
+      "sha256": "a4409bd5bcede7948b20b4b20c5bedf0c1fead99a88f4c7fd26d5e65bbe0a58a",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-0f9afe38-60b9-427f-a140-60e243651655.png",
+      "bytes": 362464,
+      "sha256": "9c9425fec4ec00015fcbe7c18ee5571695d41d7aa7f3d56a6b2973e2ebb902c0",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-1301b774-754b-4bd3-b1d3-211e39e6a57d.png",
+      "bytes": 599815,
+      "sha256": "ad62e4923c0e811f0fd0e9d84bcd310db7d84f6766a8d26e5a41cbda2a2a1ea9",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-16c6ac34-3216-4922-b97b-8a52c16948d1.png",
+      "bytes": 2007964,
+      "sha256": "310097bdd73500d31e4245d64d37b9386752aaa2ee255ee6c23727b5e201d5a0",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-1f18b6f2-a4b2-4f20-84a7-e8006302a58e.png",
+      "bytes": 364917,
+      "sha256": "f68884675f2d8876cc16160145e616d46e5b94dbbb5163d7d6c4fb830532155f",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-38ee73bb-63cc-45cf-8b35-dee4b93963eb.png",
+      "bytes": 1245435,
+      "sha256": "f962476d4c51a3edbfefe1ac2b10c32f8fef37059cdd5613f55dd85d05004160",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-4a80b91e-9a77-4176-a606-08463ea0469e.png",
+      "bytes": 1849267,
+      "sha256": "8f234f2220a7c998e0b6642d0a5765adda1b67f6c5d0f9eedfc9e925fb7d9dbb",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-4eb7512f-b0f6-4127-b264-011002d8367e.png",
+      "bytes": 384550,
+      "sha256": "66f80026f24057fb9b6a14881ed85e4bd56a4fb87a302bf5e82b67e44e467a91",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-51ae5bc4-8d1d-4f37-8e37-995db22d2575.png",
+      "bytes": 589158,
+      "sha256": "747a09a73627cdb4e71ca1705e09368f93187f796e278db8be0d5fb7473ee605",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-5701cb72-c473-4366-abe8-20ee94eede03.png",
+      "bytes": 3044931,
+      "sha256": "d31649c25f8075ab113bb6837e337accd7d93709028672a1506eb9a3ec181afd",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-585bbbd5-d59b-4d6c-bc24-cda472843f7d.png",
+      "bytes": 3171397,
+      "sha256": "952b6e7be7f3390dff452bc2b3b1d0c87d39f31202f7b2f378cf5d5a253023a3",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-69973a46-e7a5-4832-a257-8bac79b37cb0.png",
+      "bytes": 1010716,
+      "sha256": "e02d9b7a02f9edd2e863025d33324822e8a8207fb196949b815256cb770e77b1",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-726642fc-bd4f-41ee-913f-9d0ff81b869b.png",
+      "bytes": 1789847,
+      "sha256": "9b655e49743f3cdfb69d7d22417c5be3e4d2ba0e20065adbfb1c15cec839997f",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-73d0226d-71e2-4d04-8ac4-921e55c1c086.png",
+      "bytes": 530580,
+      "sha256": "826a3f191c09612fb99932cdf7a175c7dbc7d73c66685bf50ffadaa94f35a819",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-943288f0-bac9-40db-9202-f0ddb9d1bb07.png",
+      "bytes": 388660,
+      "sha256": "077e2c2c5b322c06291a3a4682eef79d950fdd4ac2771a5ffbe2a43e583bbae6",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-ac0b1ee2-b095-45ce-9c9f-1fede248f3c2.png",
+      "bytes": 3254522,
+      "sha256": "7a1f21c4d09a174e9aa3cc8f814f1ea51e0e0524bf17cf9c049b0ac74172cee2",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-acdd227d-9090-4b76-aa09-0321230d7b64.png",
+      "bytes": 2000269,
+      "sha256": "09562ba8c3ce0f9f4f0a6974a5cca8a1d9c2095067bc486279603536ec975a6c",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-cc933850-7068-42a5-ba18-29b41c84a6c9.png",
+      "bytes": 2631524,
+      "sha256": "5d7f8b66fc0ff890b3bbedcc802fa57d2ffb0e9931896b5155e6f54a8f15b9ab",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-d089440d-0227-4983-9e1e-26c43dbe302e.png",
+      "bytes": 2861167,
+      "sha256": "780a5c2332e0046db498737cd46e7a1d8a47d55994b798b81ce8cb1ef63d78f6",
+      "problems": []
+    },
+    {
+      "path": "_sources/codex-exec-ded2636d-0e49-4459-ac60-f2fdd8d7128d.png",
+      "bytes": 1656785,
+      "sha256": "49c3644a2d85447135949be31c81af65c9bf29fe2ab489dbe23315aab67e2b75",
+      "problems": []
+    },
+    {
+      "path": "_sources/existing_card.png",
+      "bytes": 6770,
+      "sha256": "f1e600808b7da7645addb66c976c5c2ea6bc2f9785899bb71adeb830ecb257f2",
+      "problems": []
+    },
+    {
+      "path": "_sources/existing_card_selected.png",
+      "bytes": 8092,
+      "sha256": "9563568af87044a469cc424097a982d01836bb4c8330361dede25fcb480f881c",
+      "problems": []
+    },
+    {
+      "path": "_sources/existing_row.png",
+      "bytes": 5334,
+      "sha256": "1ec71d8c2ffa71ed8e71256aaff7df89b5552c30ff968b96ee10df17cdc50738",
+      "problems": []
+    },
+    {
+      "path": "_sources/existing_row_lit.png",
+      "bytes": 5773,
+      "sha256": "ae0982525131b4a609fd8e33d087c949750cb48cdfc9b93272783815a18ce386",
+      "problems": []
+    },
+    {
+      "path": "_sources/existing_socket_ring.png",
+      "bytes": 9148,
+      "sha256": "17f84d60df7e00d58231fbd1110a3723e414fe543fc937a2b326032beec4c30f",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_cavalry_lance.png",
+      "bytes": 384550,
+      "sha256": "66f80026f24057fb9b6a14881ed85e4bd56a4fb87a302bf5e82b67e44e467a91",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_cloth_armor.png",
+      "bytes": 1789847,
+      "sha256": "9b655e49743f3cdfb69d7d22417c5be3e4d2ba0e20065adbfb1c15cec839997f",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_horn_bow.png",
+      "bytes": 589158,
+      "sha256": "747a09a73627cdb4e71ca1705e09368f93187f796e278db8be0d5fb7473ee605",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_hunting_bow.png",
+      "bytes": 530580,
+      "sha256": "826a3f191c09612fb99932cdf7a175c7dbc7d73c66685bf50ffadaa94f35a819",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_iron_shuo.png",
+      "bytes": 362464,
+      "sha256": "9c9425fec4ec00015fcbe7c18ee5571695d41d7aa7f3d56a6b2973e2ebb902c0",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_iron_spear.png",
+      "bytes": 364917,
+      "sha256": "f68884675f2d8876cc16160145e616d46e5b94dbbb5163d7d6c4fb830532155f",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_leather_armor.png",
+      "bytes": 2007964,
+      "sha256": "310097bdd73500d31e4245d64d37b9386752aaa2ee255ee6c23727b5e201d5a0",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_leather_bracers.png",
+      "bytes": 1849267,
+      "sha256": "8f234f2220a7c998e0b6642d0a5765adda1b67f6c5d0f9eedfc9e925fb7d9dbb",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_ration.png",
+      "bytes": 2000269,
+      "sha256": "09562ba8c3ce0f9f4f0a6974a5cca8a1d9c2095067bc486279603536ec975a6c",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_ring_pommel_saber.png",
+      "bytes": 599815,
+      "sha256": "ad62e4923c0e811f0fd0e9d84bcd310db7d84f6766a8d26e5a41cbda2a2a1ea9",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_ring_pommel_saber_v2.png",
+      "bytes": 388660,
+      "sha256": "077e2c2c5b322c06291a3a4682eef79d950fdd4ac2771a5ffbe2a43e583bbae6",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_swift_whip.png",
+      "bytes": 1245435,
+      "sha256": "f962476d4c51a3edbfefe1ac2b10c32f8fef37059cdd5613f55dd85d05004160",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_war_banner.png",
+      "bytes": 1010716,
+      "sha256": "e02d9b7a02f9edd2e863025d33324822e8a8207fb196949b815256cb770e77b1",
+      "problems": []
+    },
+    {
+      "path": "_sources/item_war_manual_fragment.png",
+      "bytes": 1656785,
+      "sha256": "49c3644a2d85447135949be31c81af65c9bf29fe2ab489dbe23315aab67e2b75",
+      "problems": []
+    },
+    {
+      "path": "_sources/skill_hengsao.png",
+      "bytes": 3171397,
+      "sha256": "952b6e7be7f3390dff452bc2b3b1d0c87d39f31202f7b2f378cf5d5a253023a3",
+      "problems": []
+    },
+    {
+      "path": "_sources/skill_pozhen.png",
+      "bytes": 2861167,
+      "sha256": "780a5c2332e0046db498737cd46e7a1d8a47d55994b798b81ce8cb1ef63d78f6",
+      "problems": []
+    },
+    {
+      "path": "_sources/skill_tuji.png",
+      "bytes": 3044931,
+      "sha256": "d31649c25f8075ab113bb6837e337accd7d93709028672a1506eb9a3ec181afd",
+      "problems": []
+    },
+    {
+      "path": "_sources/skill_weishe.png",
+      "bytes": 3254522,
+      "sha256": "7a1f21c4d09a174e9aa3cc8f814f1ea51e0e0524bf17cf9c049b0ac74172cee2",
+      "problems": []
+    },
+    {
+      "path": "_sources/thumb_southgate.png",
+      "bytes": 2631524,
+      "sha256": "5d7f8b66fc0ff890b3bbedcc802fa57d2ffb0e9931896b5155e6f54a8f15b9ab",
+      "problems": []
+    },
+    {
+      "path": "art_frame.png",
+      "bytes": 12209,
+      "sha256": "855ecde633e63cb734c41caa94b7c97a4b9e67306140b2dc0b6384be13e091df",
+      "problems": []
+    },
+    {
+      "path": "button.png",
+      "bytes": 4420,
+      "sha256": "ef88d5886e22de5ea5f2fbb101fc2fa2b20064dc238b74c8c9914531fc777d67",
+      "problems": []
+    },
+    {
+      "path": "button_back.png",
+      "bytes": 4006,
+      "sha256": "08a11ab8996e85eeb464bf66f0c96accac02ed887e542c1ca088e2d138023438",
+      "problems": []
+    },
+    {
+      "path": "button_disabled.png",
+      "bytes": 2729,
+      "sha256": "f62c83f77542f10b1b71b07a89dc80536d46cf455212fec945496643cf3195bd",
+      "problems": []
+    },
+    {
+      "path": "button_primary.png",
+      "bytes": 5889,
+      "sha256": "5468f37c773024f3b1d74c09d62bbf159ce995bc5518105fe9ef7bb940c6ff84",
+      "problems": []
+    },
+    {
+      "path": "cat_all.png",
+      "bytes": 1685,
+      "sha256": "59ed21c2c92cc31886573a1df9d40828f1eab4d89ee31b1ee813ffcac7b5ac1d",
+      "problems": []
+    },
+    {
+      "path": "cat_consumable.png",
+      "bytes": 1148,
+      "sha256": "b4861d776bd2232c2a27e9ce681afd981ce15be3a64d906b162fa98dd20731c5",
+      "problems": []
+    },
+    {
+      "path": "cat_equipment.png",
+      "bytes": 1162,
+      "sha256": "1ba0f51ac8df9b61f6ea48f79490e9edfe93f2dc029aee1e27b9fe12c0501327",
+      "problems": []
+    },
+    {
+      "path": "checkbox_checked.png",
+      "bytes": 1576,
+      "sha256": "7844c6cbc41a65549658db68e239908f0ec14e5e2b7a832c684c7a83482cec1e",
+      "problems": []
+    },
+    {
+      "path": "contact-sheet.png",
+      "bytes": 1091889,
+      "sha256": "2437bfc3802573dcf869bb229c64c9856185fddd976a6293282a6a597300cd00",
+      "problems": []
+    },
+    {
+      "path": "filter_chip.png",
+      "bytes": 3921,
+      "sha256": "f79265a423eba9c7d5ae06b5e9ce1402170579ef9e7cdf1bca315e9c4411c73c",
+      "problems": []
+    },
+    {
+      "path": "filter_chip_selected.png",
+      "bytes": 5245,
+      "sha256": "122aec8d94f9315e2b4c54317199103ffccf3a7fafcc54301b20d1624abf08b7",
+      "problems": []
+    },
+    {
+      "path": "icon_autosave.png",
+      "bytes": 1543,
+      "sha256": "f38e666782710fafba8c058c41980b3ad3bd5c13fe5e5139921e1bb3a1bcc143",
+      "problems": []
+    },
+    {
+      "path": "icon_check.png",
+      "bytes": 561,
+      "sha256": "6fbc7452d49cdd82037123abda1292013361ede4c6aab5a64e300dac20c93979",
+      "problems": []
+    },
+    {
+      "path": "icon_chevron_left.png",
+      "bytes": 606,
+      "sha256": "f6a78fc548ecf6d43942e33884f6cba0aebc0e3c55ba56430cd6335a45026abc",
+      "problems": []
+    },
+    {
+      "path": "icon_chevron_right.png",
+      "bytes": 553,
+      "sha256": "e4bd03d83a5030f5ad9081c0a022dbbbcf4a8eaea6ed31b7ec077c053db0adfe",
+      "problems": []
+    },
+    {
+      "path": "icon_clock.png",
+      "bytes": 1312,
+      "sha256": "7d8e2fd8b903cd266a84c2515562c8c939de73800d61db62fdffa01d81d0ea3c",
+      "problems": []
+    },
+    {
+      "path": "icon_coin.png",
+      "bytes": 2465,
+      "sha256": "7ce415fd7022295751602c10e8c15007ce2c3101a717ac2d1e440df3fa054afa",
+      "problems": []
+    },
+    {
+      "path": "icon_display.png",
+      "bytes": 858,
+      "sha256": "17a38d0a849564323f9c5ccaed9b3dffac34e7c1e9f5f2544d4d802b0f1cca37",
+      "problems": []
+    },
+    {
+      "path": "icon_exit.png",
+      "bytes": 1309,
+      "sha256": "5cdaeeb24384b24a4abddb666165e63dccaad5cf8b168c1d17a5fdc580028426",
+      "problems": []
+    },
+    {
+      "path": "icon_home.png",
+      "bytes": 1131,
+      "sha256": "5abcc40be567479ef00178f588279e8e0d9b4c0397f9df56f9190810f5f735d5",
+      "problems": []
+    },
+    {
+      "path": "icon_info.png",
+      "bytes": 1922,
+      "sha256": "36d3d7cd30d43e468df710227aa08872364354c6c56fa5d3b63aadd68366481a",
+      "problems": []
+    },
+    {
+      "path": "icon_lantern.png",
+      "bytes": 4337,
+      "sha256": "a5725540a5fa3b0120b93e4da457c0f4d70f769c63605b26fd0b25c858404ae0",
+      "problems": []
+    },
+    {
+      "path": "icon_lock.png",
+      "bytes": 1463,
+      "sha256": "4c4b77f2cf648795e476c70f15c6921631859227b61463e0c601d353306943ec",
+      "problems": []
+    },
+    {
+      "path": "icon_quest.png",
+      "bytes": 1328,
+      "sha256": "92552a88c1a6007fd0eeb9550a084807df4ce0b5443219d494f7e57277e18df7",
+      "problems": []
+    },
+    {
+      "path": "icon_reputation.png",
+      "bytes": 1695,
+      "sha256": "d4748e2ecd5e0143d0d6fd679f4683ea7f97010f3ff1c9a3995c9a2df7db7f31",
+      "problems": []
+    },
+    {
+      "path": "icon_save.png",
+      "bytes": 1547,
+      "sha256": "da74a06d1e4b02c1effe8e85258b34ad2cbdfc1e6a08025dec521d768fc164aa",
+      "problems": []
+    },
+    {
+      "path": "icon_sound.png",
+      "bytes": 1509,
+      "sha256": "fa1f58010ba7307ae843ecf4a8e5acb279c521bc3b2bb598d595cf977956c601",
+      "problems": []
+    },
+    {
+      "path": "icon_up.png",
+      "bytes": 1164,
+      "sha256": "165f24b447a5cef923f19bcecd4c1a36cdc3d190a0d1150b837e49ffd437b3a5",
+      "problems": []
+    },
+    {
+      "path": "item_cavalry_lance.png",
+      "bytes": 9396,
+      "sha256": "cca00d4f1f83773d6e844f06e61ba8933db8d69efed0f97e06de562733dfb916",
+      "problems": []
+    },
+    {
+      "path": "item_cloth_armor.png",
+      "bytes": 33435,
+      "sha256": "3358b3de9bc9b1e0254ff86145474a9581ad95da0726c478e44a6e8014b5a4b0",
+      "problems": []
+    },
+    {
+      "path": "item_horn_bow.png",
+      "bytes": 13363,
+      "sha256": "5dba8044e2b0d313ff85edee8733b4fd3231daa8ad0afd413a1077c5930d5af6",
+      "problems": []
+    },
+    {
+      "path": "item_hunting_bow.png",
+      "bytes": 13682,
+      "sha256": "2aa904ee814fc3e88ed6eb699356e093ae84db90fa83e2b97afa77736160fa41",
+      "problems": []
+    },
+    {
+      "path": "item_iron_shuo.png",
+      "bytes": 8154,
+      "sha256": "8635001c1e92e1ee90f3db5395c70abfb32e244d1fbf19c1fb2f203c56f42310",
+      "problems": []
+    },
+    {
+      "path": "item_iron_spear.png",
+      "bytes": 8419,
+      "sha256": "733f3612f9cb88296b1896d3f0e4569cc54495b121eb8e5a8fd9476c1395c228",
+      "problems": []
+    },
+    {
+      "path": "item_leather_armor.png",
+      "bytes": 40711,
+      "sha256": "bb1b6781c6af245c2ffebba544696601d1308dacf07bc31a1f97a45e871d9b21",
+      "problems": []
+    },
+    {
+      "path": "item_leather_bracers.png",
+      "bytes": 40090,
+      "sha256": "6f2dc8875e0db5c0484003ed84e7acb8afacb36a10de2fa5da3777ad05150df2",
+      "problems": []
+    },
+    {
+      "path": "item_ration.png",
+      "bytes": 41276,
+      "sha256": "3048a70373c7fec2b6cb77ba4c5ec044de60eb858052c2f2176dcfcada634007",
+      "problems": []
+    },
+    {
+      "path": "item_ring_pommel_saber.png",
+      "bytes": 8708,
+      "sha256": "583b68e3bcc22ce341888f0876ba8669c9bd2108ca335c48416e841ac8063d20",
+      "problems": []
+    },
+    {
+      "path": "item_swift_whip.png",
+      "bytes": 27675,
+      "sha256": "bfc12f33fef41afc7205f9b8a35e538cea9b4c81cc64c3c163b064a14066375c",
+      "problems": []
+    },
+    {
+      "path": "item_war_banner.png",
+      "bytes": 25502,
+      "sha256": "e86c1364406ee5b576f6a03a204db77f75dcc5f8ec90f5f618d3e89c93a76218",
+      "problems": []
+    },
+    {
+      "path": "item_war_manual_fragment.png",
+      "bytes": 35690,
+      "sha256": "2d4450b2797a7456ae4f5f1d02d66a1a38ff03ab80d9d0e64c4bdc947a50fa26",
+      "problems": []
+    },
+    {
+      "path": "node_current.png",
+      "bytes": 5584,
+      "sha256": "3256cb1cfc95b13bd5d929b268745d404c3f3076a19d9757c48211c66ab6ca21",
+      "problems": []
+    },
+    {
+      "path": "node_done.png",
+      "bytes": 4036,
+      "sha256": "73ea41f89657ea950d1548f10aa90df9227d0d68a7cc7486c849bcfee963bc49",
+      "problems": []
+    },
+    {
+      "path": "node_locked.png",
+      "bytes": 4294,
+      "sha256": "2869b110347da1f5502495b974bb7ea04a38a767a01f2754b40feb59496ed3fa",
+      "problems": []
+    },
+    {
+      "path": "party_card.png",
+      "bytes": 9950,
+      "sha256": "0e4a54994084ac3c319ca1d188d534dcbc9260bbbe0d722308965b8cfc60ab18",
+      "problems": []
+    },
+    {
+      "path": "party_card_selected.png",
+      "bytes": 12573,
+      "sha256": "7e1f8550123a509e274d55bbb4bef8d44396a0c8f49943af1208bba4e9c68c0b",
+      "problems": []
+    },
+    {
+      "path": "quest_bar.png",
+      "bytes": 604,
+      "sha256": "ee060e4ac7cf96804136f88a97a84d8bee5e09485a369eb87d29c60b30ebfcbc",
+      "problems": []
+    },
+    {
+      "path": "skill_hengsao.png",
+      "bytes": 148715,
+      "sha256": "9052fb4b6f988a32f6d0c5b2021f1cf02d07173e2b591df61e721fc5a5ca45f7",
+      "problems": []
+    },
+    {
+      "path": "skill_huoshi.png",
+      "bytes": 90309,
+      "sha256": "3c06f5ba7d382a50f500a695441e28f69a7d84ab6cbb95c58830d4f0728fdd39",
+      "problems": []
+    },
+    {
+      "path": "skill_pozhen.png",
+      "bytes": 151739,
+      "sha256": "c47029f811acf51e7f28ddd97f36c8f93b036b63deea77dda7b7a34e796b2320",
+      "problems": []
+    },
+    {
+      "path": "skill_tuji.png",
+      "bytes": 150383,
+      "sha256": "9f5447ab71f3ef04794fbc735619f40f804e577e431447ddf1c519d0bc84ff6f",
+      "problems": []
+    },
+    {
+      "path": "skill_weishe.png",
+      "bytes": 155371,
+      "sha256": "88c342664a294fe7c99f06ef20445663f19e3714eee539a1b3f5a7b1dd23e282",
+      "problems": []
+    },
+    {
+      "path": "skill_zhengdui.png",
+      "bytes": 124539,
+      "sha256": "e197d934a354b258337c660a3068d2bbcbab1198db688169b8b88ba06ece9a11",
+      "problems": []
+    },
+    {
+      "path": "slider_fill.png",
+      "bytes": 629,
+      "sha256": "60ae8e5ce51ba9421eb4c8ed33594b4a817340979e936ca90f6013e47a9fc76a",
+      "problems": []
+    },
+    {
+      "path": "slider_knob.png",
+      "bytes": 1522,
+      "sha256": "4c3ba3dc1dfaab946d88a2c39fea1150eed1e75c6cf33eaa3142f7628a08eea5",
+      "problems": []
+    },
+    {
+      "path": "slider_track.png",
+      "bytes": 641,
+      "sha256": "2d9643ad2495cc19c1572558fff38c1444123b447498a6399e72e64a18e30233",
+      "problems": []
+    },
+    {
+      "path": "slot_empty_ring.png",
+      "bytes": 11352,
+      "sha256": "76f4f691cfcb475afcc7ae929617a7a38d94ddbeb5d16ec3dbd38ebcd8593844",
+      "problems": []
+    },
+    {
+      "path": "slot_row.png",
+      "bytes": 7198,
+      "sha256": "bb51af06944677e9a0ac6794d77eb12c8526778c418f3525d3ce16643a66e8ad",
+      "problems": []
+    },
+    {
+      "path": "slot_row_selected.png",
+      "bytes": 10269,
+      "sha256": "de7039aefd72fd130c64d6977dbc0cc1fab5eb71ed389393f70b485526c1d324",
+      "problems": []
+    },
+    {
+      "path": "stat_command.png",
+      "bytes": 1127,
+      "sha256": "7465a130c5816b82faa1f07450d32481d4c0ade0c3f2c73a0212afb719bc8d46",
+      "problems": []
+    },
+    {
+      "path": "stat_force.png",
+      "bytes": 1309,
+      "sha256": "df3d2329c7c767c51f33556018da286cd9bdf534bd871bd4d71aa340a8383dcf",
+      "problems": []
+    },
+    {
+      "path": "stat_intellect.png",
+      "bytes": 1586,
+      "sha256": "577895f48ad4cf6558154961d6ad91d23bdb11faaa0a2f564793cc8ac4de2aaf",
+      "problems": []
+    },
+    {
+      "path": "stat_patk.png",
+      "bytes": 834,
+      "sha256": "f6fa918c35787df4f763099ba62e3c1c8140bc2c81aa484bcdfc9be48bd70c2d",
+      "problems": []
+    },
+    {
+      "path": "stat_pdef.png",
+      "bytes": 1580,
+      "sha256": "86b909b0dffa0501650ffd35370893e052e8c3904b9296931718333d9b245a23",
+      "problems": []
+    },
+    {
+      "path": "stat_satk.png",
+      "bytes": 1817,
+      "sha256": "c001dab6cc618e1cfe564937d4c528f10f06d54a8b829b410f618ce06cf26c74",
+      "problems": []
+    },
+    {
+      "path": "stat_sdef.png",
+      "bytes": 1570,
+      "sha256": "eec618e267c3e79d371b49535e8d83eb3e84d5e7e8efcf5c6528496d523c44da",
+      "problems": []
+    },
+    {
+      "path": "stat_speed.png",
+      "bytes": 1046,
+      "sha256": "9c38f2e8facffcfdbf2d73acff884f8aa78d4a96696e125a7d336b06c9e0c73d",
+      "problems": []
+    },
+    {
+      "path": "subpanel.png",
+      "bytes": 4364,
+      "sha256": "fa9b5b952deffaf2e53ce4175bc6632ed28170c81200b5812e7377df8b66d3ca",
+      "problems": []
+    },
+    {
+      "path": "tab.png",
+      "bytes": 4258,
+      "sha256": "8998feb4371e0d2f46cc87eb8ae4d068946ff341f193c846ca3ddef2d70cd3c9",
+      "problems": []
+    },
+    {
+      "path": "tab_selected.png",
+      "bytes": 5705,
+      "sha256": "5f11b1637779f3018cebe42b33c2098a5c5d0ae98628fcf255c5edd72239a57b",
+      "problems": []
+    },
+    {
+      "path": "thumb_empty.png",
+      "bytes": 24899,
+      "sha256": "91f511f59fd5846cb212f9febbed34f7b87483b5cb698a6ab8ee24827a248e3d",
+      "problems": []
+    },
+    {
+      "path": "thumb_southgate.png",
+      "bytes": 76828,
+      "sha256": "182366437fe11bd8143808cd7b5e065b5057ce541fba21292641cfa79b33371e",
+      "problems": []
+    },
+    {
+      "path": "thumb_tavern.png",
+      "bytes": 69026,
+      "sha256": "d2f690b865840af83601290715e807542bd94acd1614c2b234c079281c19e841",
+      "problems": []
+    },
+    {
+      "path": "toggle_off.png",
+      "bytes": 4000,
+      "sha256": "bc824c176b233d091b6421c42bdb1455c78a0246ccadc313c40c22bf07ffa0b6",
+      "problems": []
+    },
+    {
+      "path": "toggle_on.png",
+      "bytes": 4179,
+      "sha256": "00828024d5e610086df7c3e134a1fe0acc009778f75205933db41ae78578361e",
+      "problems": []
+    },
+    {
+      "path": "troop_archer.png",
+      "bytes": 1427,
+      "sha256": "5ba6814b0878c62ca0f4254e0870691b206dcc8ffce7b136a74b3f2f0158819d",
+      "problems": []
+    },
+    {
+      "path": "troop_cavalry.png",
+      "bytes": 1702,
+      "sha256": "066085de195f70d6104003633a683ea0a0ebe1bf54d609ef64c0c81e13eede34",
+      "problems": []
+    },
+    {
+      "path": "troop_infantry.png",
+      "bytes": 1672,
+      "sha256": "916ce9b7d4a73ee86492161638664712df6c4776fba1653cc255d184487b4569",
+      "problems": []
+    }
+  ],
+  "deliverables": [
+    "art_frame.png",
+    "button.png",
+    "button_back.png",
+    "button_disabled.png",
+    "button_primary.png",
+    "cat_all.png",
+    "cat_consumable.png",
+    "cat_equipment.png",
+    "checkbox_checked.png",
+    "contact-sheet.png",
+    "filter_chip.png",
+    "filter_chip_selected.png",
+    "icon_autosave.png",
+    "icon_check.png",
+    "icon_chevron_left.png",
+    "icon_chevron_right.png",
+    "icon_clock.png",
+    "icon_coin.png",
+    "icon_display.png",
+    "icon_exit.png",
+    "icon_home.png",
+    "icon_info.png",
+    "icon_lantern.png",
+    "icon_lock.png",
+    "icon_quest.png",
+    "icon_reputation.png",
+    "icon_save.png",
+    "icon_sound.png",
+    "icon_up.png",
+    "item_cavalry_lance.png",
+    "item_cloth_armor.png",
+    "item_horn_bow.png",
+    "item_hunting_bow.png",
+    "item_iron_shuo.png",
+    "item_iron_spear.png",
+    "item_leather_armor.png",
+    "item_leather_bracers.png",
+    "item_ration.png",
+    "item_ring_pommel_saber.png",
+    "item_swift_whip.png",
+    "item_war_banner.png",
+    "item_war_manual_fragment.png",
+    "manifest.json",
+    "node_current.png",
+    "node_done.png",
+    "node_locked.png",
+    "party_card.png",
+    "party_card_selected.png",
+    "quest_bar.png",
+    "skill_hengsao.png",
+    "skill_huoshi.png",
+    "skill_pozhen.png",
+    "skill_tuji.png",
+    "skill_weishe.png",
+    "skill_zhengdui.png",
+    "slider_fill.png",
+    "slider_knob.png",
+    "slider_track.png",
+    "slot_empty_ring.png",
+    "slot_row.png",
+    "slot_row_selected.png",
+    "stat_command.png",
+    "stat_force.png",
+    "stat_intellect.png",
+    "stat_patk.png",
+    "stat_pdef.png",
+    "stat_satk.png",
+    "stat_sdef.png",
+    "stat_speed.png",
+    "subpanel.png",
+    "tab.png",
+    "tab_selected.png",
+    "thumb_empty.png",
+    "thumb_southgate.png",
+    "thumb_tavern.png",
+    "toggle_off.png",
+    "toggle_on.png",
+    "troop_archer.png",
+    "troop_cavalry.png",
+    "troop_infantry.png"
+  ],
+  "missing": [],
+  "problems": [],
+  "ok": true,
+  "validation_scope": "Local asset and manifest checks; external bridge revalidation is separate.",
+  "self_hash_omitted": true,
+  "images_generated_this_revision": 19,
+  "generation_attempts_this_revision": 20,
+  "repair_generated_images": 0,
+  "initial_bridge_report": "_checks/bridge-initial-validation.json",
+  "validation_results": "_checks/validation-results.json",
+  "codex_report": {
+    "status": "done",
+    "summary": "Manifest supplied by explicit repair request; PNGs unchanged.",
+    "files": [
+      {
+        "path": "manifest.json",
+        "description": "79 PNG metadata entries, 15 nine-slice definitions, 80 expected deliverables"
+      }
+    ],
+    "self_checks": [
+      {
+        "check": "78 runtime assets: exact names, dimensions and RGBA",
+        "passed": true
+      },
+      {
+        "check": "69 transparent assets, nine opaque illustrations",
+        "passed": true,
+        "detail": "alpha channel inspected per pixel; all invisible RGB cleared"
+      },
+      {
+        "check": "15 nine-slice metadata entries",
+        "passed": true,
+        "detail": "left/right/top/bottom, recorded in asset-metadata.json for bridge"
+      },
+      {
+        "check": "Nine-slice stretch preserves all four corner rasters",
+        "passed": true
+      },
+      {
+        "check": "Image generation ceiling",
+        "passed": true,
+        "detail": "20 / 30 calls"
+      },
+      {
+        "check": "Contact sheet exists and decodes",
+        "passed": true
+      },
+      {
+        "check": "Manifest covers all PNGs and expected deliverables",
+        "passed": true,
+        "detail": "80 files present; 79 PNG dimensions, modes, SHA256 values and 15 nine-slice definitions match"
+      },
+      {
+        "check": "CODEX_STATUS.txt remains bridge-owned",
+        "passed": true
+      }
+    ],
+    "risks": [
+      "No game integration or runtime acceptance was performed."
+    ],
+    "blocked_reason": ""
+  }
+}
