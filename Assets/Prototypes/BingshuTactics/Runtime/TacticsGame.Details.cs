@@ -124,6 +124,11 @@ namespace Prototype.BingshuTactics
                 if (!Billboard("sprite_supply_cart", Tile(p) + off)) Cart(Tile(p) + off);
             foreach (var (p, off) in new[] { (new Vector2Int(0, 11), new Vector3(0.1f, 0, 0.35f)), (new Vector2Int(13, 11), new Vector3(-0.1f, 0, 0.35f)), (new Vector2Int(0, 10), new Vector3(0.3f, 0, -0.3f)) })
                 Supplies(Tile(p) + off, p.x * 5 + p.y);
+            // 关上守军（精修件，4 帧待机）：站在墙道靠后，不挡关上弓手；营中拴马
+            foreach (var (x, spear) in new[] { (1, true), (3, false), (4, true), (10, true), (11, false) })
+                Billboard(spear ? "sprite_guard_spear" : "sprite_guard_archer", Tile(new Vector2Int(x, 12)) + new Vector3(0, 0, T * 0.3f), 0.6f, 4);   // 与可操作单位同尺度（人物已缩半）
+            Billboard("sprite_warhorse", Tile(new Vector2Int(0, 11)) + new Vector3(-0.15f, 0, -0.2f), 0.7f);
+            Billboard("sprite_warhorse", Tile(new Vector2Int(13, 11)) + new Vector3(0.15f, 0, -0.2f), 0.7f);
             // 关墙上加旗（呂、董相间）
             int k = 0;
             foreach (int x in new[] { 2, 5, 9, 12 })

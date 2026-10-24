@@ -407,7 +407,9 @@ namespace Prototype.BingshuTactics
                     switch (t)
                     {
                         case Terrain.JuMa: JuMa(c); break;
-                        case Terrain.Rock: RockMesh(B(Stone), c, 0.5f, x * 7 + y); break;
+                        case Terrain.Rock:   // 精修件：岩石露头精灵；没有时退回低多边形岩块
+                            if (!Billboard("sprite_rock_outcrop_a", c, 0.7f)) RockMesh(B(Stone), c, 0.5f, x * 7 + y);
+                            break;
                         case Terrain.Wall: Parapet(p, c); break;
                         case Terrain.Gate: GateFront(p, c); break;
                         case Terrain.Camp: Palisade(p, c); break;
@@ -471,7 +473,7 @@ namespace Prototype.BingshuTactics
         // 女墙与垛口：外露边上 0.25 m 女墙，每格两个垛口
         void Parapet(Vector2Int p, Vector3 c)
         {
-            var b = B(SideMat(Side.Rammed));
+            var b = B(Env("merlon") ? LitMat("merlon", Env("merlon")) : SideMat(Side.Rammed));
             foreach (var d in Dirs4)
             {
                 var nb = p + d;
@@ -619,7 +621,8 @@ namespace Prototype.BingshuTactics
                     var c = new Vector3((x + 0.5f) * T, Border, (y + 0.5f) * T);
                     if (y >= H && stage == 1) continue;   // 关墙背后留空
                     if (h > 0.72f) Tree(c, (int)(h * 100) % 3);
-                    else if (h < 0.12f) RockMesh(B(Stone), c, 0.35f + h, x * 13 + y);
+                    else if (h < 0.12f) { if (!Billboard(h < 0.06f ? "sprite_rock_outcrop_b" : "sprite_rock_small", c)) RockMesh(B(Stone), c, 0.35f + h, x * 13 + y); }
+                    else if (h < 0.2f && y < H) Billboard(stage == 1 && h < 0.16f ? "sprite_stone_wall_low" : "sprite_fence_wood", c);   // 外圈田埂矮石墙与木栅，只作远景
                 }
             // 外圈底下的土
             B(SideMat(Side.Dirt)).Quad(new Vector3(x0, Border - 0.6f, z0), new Vector3(x0, Border, z0), new Vector3(x1, Border, z0), new Vector3(x1, Border - 0.6f, z0),

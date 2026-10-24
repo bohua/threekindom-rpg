@@ -152,6 +152,7 @@ namespace Prototype.BingshuTactics.EditorTools
 
         // 虎牢关战场贴图包（Codex：art/battle-poc-hulao-texpack）：点采样、可读（河水帧要拆）、平铺
         const string EnvSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-poc-hulao-texpack";
+        const string EnvRefineSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-poc-hulao-refine";
 
         static Texture2D[] ImportEnvTextures()
         {
@@ -159,10 +160,13 @@ namespace Prototype.BingshuTactics.EditorTools
             var dir = Dir + "/Art/Env";
             Directory.CreateDirectory(dir);
             var list = new System.Collections.Generic.List<Texture2D>();
-            foreach (var src in Directory.GetFiles(EnvSource, "*.png"))
+            // 精修补件（art/battle-poc-hulao-refine）与贴图包同一规格，一起导入
+            var sources = System.Linq.Enumerable.ToList(Directory.GetFiles(EnvSource, "*.png"));
+            if (Directory.Exists(EnvRefineSource)) sources.AddRange(Directory.GetFiles(EnvRefineSource, "*.png"));
+            foreach (var src in sources)
             {
                 var file = Path.GetFileName(src);
-                if (file.StartsWith("contact") || file.StartsWith("tile_preview")) continue;
+                if (file.StartsWith("contact") || file.StartsWith("tile_preview") || file.StartsWith("preview")) continue;
                 var dst = $"{dir}/{file}";
                 File.Copy(src, dst, true);
                 AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceUpdate);
