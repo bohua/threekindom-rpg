@@ -27,6 +27,8 @@ namespace ThreeKingdoms.EditorTools
     {
         public const string ScenePath = "Assets/_Project/Scenes/Bohai_Plain.unity";
         public const string ArtDir = "Assets/_Project/Art/Environment/BohaiPlain";
+        // Pingyuan's own textures (Codex pingyuan-b1/-b2), searched first.
+        public const string PingyuanDir = ArtDir + "/Pingyuan";
         const string MaterialDir = ArtDir + "/Materials";
         const string MeshPath = ArtDir + "/Bohai_Meshes.asset";
 
@@ -35,7 +37,7 @@ namespace ThreeKingdoms.EditorTools
         public const float WaterN = -252f, WaterS = -322f, WaterY = -0.6f;
         // Pingyuan city
         public const float CityX0 = -110f, CityX1 = -10f, CityZ0 = -195f, CityZ1 = -115f, CityCx = -60f;
-        public static readonly Vector3 PlayerStart = new Vector3(CityCx, 0f, -160f);   // the county office square
+        public static readonly Vector3 PlayerStart = new Vector3(CityCx, 0f, -151f);   // the county office square
 
         static readonly Dictionary<float, Material> greys = new Dictionary<float, Material>();
         static Material water;
@@ -44,7 +46,7 @@ namespace ThreeKingdoms.EditorTools
         public static void Build()
         {
             greys.Clear(); water = null;
-            T.BeginSession(MaterialDir, MeshPath, ArtDir);
+            T.BeginSession(MaterialDir, MeshPath, PingyuanDir, ArtDir);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
@@ -61,6 +63,7 @@ namespace ThreeKingdoms.EditorTools
             Roads(env);
             River(env);
             Levee(env);
+            LeveeDressing(env);
             var labels = new GameObject("Whitebox labels").transform;
             PingyuanCity(env, labels);
             Ferry(env, labels);
@@ -245,7 +248,7 @@ namespace ThreeKingdoms.EditorTools
             var g = T.Group(env, "Yellow River");
             if (!water)
             {
-                water = new Material(T.Mat("wb_water_muddy")) { name = "wb_water_muddy_river" };
+                water = new Material(T.Mat(K("water_yellow_river", "wb_water_muddy"))) { name = "yellow_river_water" };
                 water.SetFloat("_Smoothness", 0.55f);
                 water.SetFloat("_SpecularHighlights", 1f); water.DisableKeyword("_SPECULARHIGHLIGHTS_OFF");
                 string path = $"{MaterialDir}/{water.name}.mat";
@@ -253,12 +256,12 @@ namespace ThreeKingdoms.EditorTools
                 AssetDatabase.CreateAsset(water, path);
             }
             var size = new Vector2(XMax - XMin + 200f, WaterN - WaterS);
-            T.Quad(g, "Water", new Vector3(0, WaterY, (WaterN + WaterS) / 2f), new Vector3(90f, 0, 0), size, water, T.Repeat("wb_water_muddy", size), castShadows: false);
+            T.Quad(g, "Water", new Vector3(0, WaterY, (WaterN + WaterS) / 2f), new Vector3(90f, 0, 0), size, water, T.Repeat(K("water_yellow_river", "wb_water_muddy"), size), castShadows: false);
             // Mud shelf from the levee foot down into the water, and the far (south) bank: R6, not open.
             float shelf = WaterN - 1f - LeveeSouth;   // negative run southward
             var mud = new Vector2(XMax - XMin + 200f, Mathf.Sqrt(shelf * shelf + WaterY * WaterY));
             T.Quad(g, "Mud shelf", new Vector3(0, WaterY / 2f, (LeveeSouth + WaterN - 1f) / 2f), new Vector3(90f - Mathf.Atan2(-WaterY, -shelf) * Mathf.Rad2Deg, 0, 0), mud,
-                T.Mat("wb_sand_bank"), T.Repeat("wb_sand_bank", mud), castShadows: false);
+                T.Mat(K("river_mud_shelf", "wb_sand_bank")), T.Repeat(K("river_mud_shelf", "wb_sand_bank"), mud), castShadows: false);
             T.Patch(g, "Far bank", "wb_sand_bank", XMin - 100f, XMax + 100f, WaterS - 12f, WaterS + 1f, WaterY + 0.25f);
             T.Patch(g, "Far fields", "wb_plain_grass", XMin - 100f, XMax + 100f, WaterS - 120f, WaterS - 11f, WaterY + 0.3f);
             // Keep the player out of the mud and water except on the ferry dock (gap x -64..-56).
@@ -278,9 +281,9 @@ namespace ThreeKingdoms.EditorTools
             var crest = new Vector2(len, LeveeCrestN - LeveeCrestS);
             T.Quad(g, "Crest road", new Vector3(0, LeveeH, (LeveeCrestN + LeveeCrestS) / 2f), new Vector3(90f, 0, 0), crest, T.Mat("ground_packed_earth"), T.Repeat("ground_packed_earth", crest), castShadows: false);
             var ns = new Vector2(len, nLen);
-            T.Quad(g, "North slope", new Vector3(0, LeveeH / 2f, (LeveeNorth + LeveeCrestN) / 2f), new Vector3(90f + nDeg, 0, 0), ns, T.Mat("ground_grass"), T.Repeat("ground_grass", ns));
+            T.Quad(g, "North slope", new Vector3(0, LeveeH / 2f, (LeveeNorth + LeveeCrestN) / 2f), new Vector3(90f + nDeg, 0, 0), ns, T.Mat(K("levee_slope", "ground_grass")), T.Repeat(K("levee_slope", "ground_grass"), ns));
             var ss = new Vector2(len, sLen);
-            T.Quad(g, "South slope", new Vector3(0, LeveeH / 2f, (LeveeCrestS + LeveeSouth) / 2f), new Vector3(90f - sDeg, 0, 0), ss, T.Mat("wb_levee_face"), T.Repeat("wb_levee_face", ss));
+            T.Quad(g, "South slope", new Vector3(0, LeveeH / 2f, (LeveeCrestS + LeveeSouth) / 2f), new Vector3(90f - sDeg, 0, 0), ss, T.Mat(K("levee_slope", "wb_levee_face")), T.Repeat(K("levee_slope", "wb_levee_face"), ss));
             // Colliders: the crest block and one tilted slab under each slope.
             Solid(g, new Vector3(0, LeveeH / 2f, (LeveeCrestN + LeveeCrestS) / 2f), new Vector3(len, LeveeH, LeveeCrestN - LeveeCrestS));
             SlopeSolid(g, "North slope collider", (LeveeNorth + LeveeCrestN) / 2f, LeveeH / 2f, nLen, nDeg, len);
@@ -290,6 +293,26 @@ namespace ThreeKingdoms.EditorTools
             T.Quad(g, "Ferry ramp N", new Vector3(CityCx, LeveeH / 2f + 0.02f, (LeveeNorth + LeveeCrestN) / 2f), new Vector3(90f + nDeg, 0, 0), ramp, T.Mat("ground_packed_earth"), T.Repeat("ground_packed_earth", ramp), castShadows: false);
             var rampS = new Vector2(7f, sLen);
             T.Quad(g, "Ferry ramp S", new Vector3(CityCx, LeveeH / 2f + 0.02f, (LeveeCrestS + LeveeSouth) / 2f), new Vector3(90f - sDeg, 0, 0), rampS, T.Mat("ground_packed_earth"), T.Repeat("ground_packed_earth", rampS), castShadows: false);
+        }
+
+        // Near the ferry the levee foot gets its fieldstone toe and the crest its timber rail (concept art), gaps at the ramp.
+        static void LeveeDressing(Transform env)
+        {
+            var g = T.Group(env, "Levee dressing at the ferry");
+            float x0 = CityCx - 70f, x1 = CityCx + 70f, gap = 4.5f;
+            foreach (var (a, b) in new[] { (x0, CityCx - gap), (CityCx + gap, x1) })
+            {
+                if (T.Tex("levee_stone_toe", optional: true))
+                {
+                    float h = T.Metres("levee_stone_toe").y;
+                    var size = new Vector2(b - a, h);
+                    T.Quad(g, "Stone toe", new Vector3((a + b) / 2f, h / 2f, LeveeNorth - 0.02f), Vector3.zero, size, T.Mat("levee_stone_toe"), new Vector2(size.x / T.Metres("levee_stone_toe").x, 1f));
+                }
+                string rail = K("levee_fence", "fence_wattle");
+                var r = new Vector2(b - a, T.Metres(rail).y);
+                foreach (float z in new[] { LeveeCrestN - 0.3f, LeveeCrestS + 0.3f })
+                    T.Quad(g, "Crest rail", new Vector3((a + b) / 2f, LeveeH + r.y / 2f, z), Vector3.zero, r, T.Mat(rail, clip: true, twoSided: true), T.Repeat(rail, r));
+            }
         }
 
         // A thin slab whose top face lies on a slope rising toward the crest (tilt in degrees about x).
@@ -302,52 +325,210 @@ namespace ThreeKingdoms.EditorTools
             go.AddComponent<BoxCollider>().size = new Vector3(width, 1f, length);
         }
 
-        // ---------- Pingyuan (whitebox) ----------
+        // ---------- Pingyuan (refined corner) ----------
+        // One city, one look (user 2026-10-24): Pingyuan follows its own approved concept art (art/pingyuan-concept),
+        // not Zhuojun. A flood-wary ferry town: buildings on 1 m rammed-earth plinths with fieldstone toes, pale loess
+        // walls, golden reed thatch (grey tiles only on the county office), open drains with plank bridges along the
+        // streets, a congee shed on the office square, a low loess town wall with timber-and-thatch gates. Textures
+        // come from Codex batches pingyuan-b1/-b2; until a file is in, the whitebox stand-in or a Zhuojun texture fills.
+
+        const float PlinthH = 0.99f, WallTk = 3f, TownWallH = 3.5f;
+
+        // The Pingyuan texture if delivered, else the fallback.
+        static string K(string key, string fallback) => T.Tex(key, optional: true) ? key : fallback;
+        static string Thatch => T.Tex("roof_thatch_gold", optional: true) ? "roof_thatch_gold" : null;
 
         static void PingyuanCity(Transform env, Transform labels)
         {
             var c = T.Group(env, "Pingyuan city");
-            T.Patch(c, "City earth", "ground_packed_earth", CityX0 + 2f, CityX1 - 2f, CityZ0 + 2f, CityZ1 - 2f, 0.002f);
-            // Walls with 9 m gaps for the four gates.
-            T.WallRun(c, "South wall W", new Vector3(CityX0 - 2f, 0, CityZ0), new Vector3(CityCx - 4.5f, 0, CityZ0));
-            T.WallRun(c, "South wall E", new Vector3(CityCx + 4.5f, 0, CityZ0), new Vector3(CityX1 + 2f, 0, CityZ0));
-            T.WallRun(c, "North wall W", new Vector3(CityX0 - 2f, 0, CityZ1), new Vector3(CityCx - 4.5f, 0, CityZ1));
-            T.WallRun(c, "North wall E", new Vector3(CityCx + 4.5f, 0, CityZ1), new Vector3(CityX1 + 2f, 0, CityZ1));
-            T.WallRun(c, "West wall S", new Vector3(CityX0, 0, CityZ0 + 2f), new Vector3(CityX0, 0, WestGate.z - 4.5f));
-            T.WallRun(c, "West wall N", new Vector3(CityX0, 0, WestGate.z + 4.5f), new Vector3(CityX0, 0, CityZ1 - 2f));
-            T.WallRun(c, "East wall S", new Vector3(CityX1, 0, CityZ0 + 2f), new Vector3(CityX1, 0, EastGate.z - 4.5f));
-            T.WallRun(c, "East wall N", new Vector3(CityX1, 0, EastGate.z + 4.5f), new Vector3(CityX1, 0, CityZ1 - 2f));
-            Gate(c, "South gate", SouthGate, 0f);
-            Gate(c, "North gate", NorthGate, 180f);
-            Gate(c, "West gate", WestGate, 90f);
-            Gate(c, "East gate", EastGate, -90f);
+            T.Patch(c, "City earth", "ground_packed_earth", CityX0 + 1.5f, CityX1 - 1.5f, CityZ0 + 1.5f, CityZ1 - 1.5f, 0.002f);
+            // Low loess walls with 8 m gaps for the four gates.
+            LoessWall(c, "South wall W", new Vector3(CityX0, 0, CityZ0), new Vector3(CityCx - 4f, 0, CityZ0));
+            LoessWall(c, "South wall E", new Vector3(CityCx + 4f, 0, CityZ0), new Vector3(CityX1, 0, CityZ0));
+            LoessWall(c, "North wall W", new Vector3(CityX0, 0, CityZ1), new Vector3(CityCx - 4f, 0, CityZ1));
+            LoessWall(c, "North wall E", new Vector3(CityCx + 4f, 0, CityZ1), new Vector3(CityX1, 0, CityZ1));
+            LoessWall(c, "West wall S", new Vector3(CityX0, 0, CityZ0), new Vector3(CityX0, 0, WestGate.z - 4f));
+            LoessWall(c, "West wall N", new Vector3(CityX0, 0, WestGate.z + 4f), new Vector3(CityX0, 0, CityZ1));
+            LoessWall(c, "East wall S", new Vector3(CityX1, 0, CityZ0), new Vector3(CityX1, 0, EastGate.z - 4f));
+            LoessWall(c, "East wall N", new Vector3(CityX1, 0, EastGate.z + 4f), new Vector3(CityX1, 0, CityZ1));
+            TownGate(c, "South gate", SouthGate, 0f);
+            TownGate(c, "North gate", NorthGate, 180f);
+            TownGate(c, "West gate", WestGate, 90f);
+            TownGate(c, "East gate", EastGate, -90f);
             Label(labels, "平原城（据点）", new Vector3(CityCx, 0, CityZ1 + 2f), 14f);
 
-            // Inside, grey boxes only: the county office on the north side behind a 26 m deep square, the main street
-            // down to the south gate, barracks north-east, market west, a few houses well away from the frontages.
-            var wb = T.Group(c, "Interior (whitebox)");
-            GreyHouse(wb, "County office (县衙)", new Vector3(CityCx, 0, -140f), 16f, 10f, 4.5f, shade: 0.7f);
-            T.Patch(wb, "Office square", "ground_street_stone", CityCx - 18f, CityCx + 18f, -168f, -141f, 0.006f);
-            T.Patch(wb, "Main street", "ground_street_stone", CityCx - 3f, CityCx + 3f, CityZ0 + 2f, -168f, 0.005f);
+            // County office square (36 × 27 m, kept clear) and the main street down to the south gate, paved in loess
+            // stone, with open drains and plank bridges either side of the street.
+            string paving = K("ground_loess_paving", "ground_street_stone");
+            T.Patch(c, "Office square", paving, CityCx - 14f, CityCx + 14f, -162f, -140.5f, 0.006f);
+            T.Patch(c, "Main street", paving, CityCx - 3f, CityCx + 3f, CityZ0 + 1.5f, -162f, 0.005f);
+            Drain(c, "Drain W", CityCx - 4.2f, CityZ0 + 2.5f, -163f, new[] { -186f, -174f });
+            Drain(c, "Drain square W", CityCx - 15.2f, -162f, -142f, new[] { -151f });
+            Drain(c, "Drain E", CityCx + 4.2f, CityZ0 + 2.5f, -163f, new[] { -186f, -174f });
+            Drain(c, "Drain square E", CityCx + 15.2f, -162f, -142f, new[] { -151f });
             Label(labels, "县衙（相府）·门前广场", new Vector3(CityCx, 0, -140f), 9f);
-            // Barracks compound: palisade with its gate on the south side, open drill ground in front.
-            var bk = T.Group(wb, "Barracks (兵营)");
-            Box(bk, "Barracks hall", new Vector3(-28f, 0, -128f), new Vector3(14f, 4f, 7f), 0.55f);
-            Box(bk, "Fence W", new Vector3(-37f, 0, -134f), new Vector3(0.4f, 2.5f, 18f), 0.4f);
-            Box(bk, "Fence E", new Vector3(-19f, 0, -134f), new Vector3(0.4f, 2.5f, 18f), 0.4f);
-            Box(bk, "Fence S W", new Vector3(-34f, 0, -143f), new Vector3(6f, 2.5f, 0.4f), 0.4f);
-            Box(bk, "Fence S E", new Vector3(-22f, 0, -143f), new Vector3(6f, 2.5f, 0.4f), 0.4f);
-            Label(labels, "兵营", new Vector3(-28f, 0, -136f), 7f);
-            var mk = T.Group(wb, "Market (市集)");
-            for (int i = 0; i < 4; i++) Box(mk, "Stall", new Vector3(-98f + (i % 2) * 9f, 0, -150f - (i / 2) * 8f), new Vector3(4f, 2.2f, 2.5f), 0.66f);
-            Label(labels, "市集", new Vector3(-93f, 0, -154f), 6f);
-            GreyHouse(wb, "House SW 1", new Vector3(-96f, 0, -188f), 7f, 6f, 3.2f);
-            GreyHouse(wb, "House SW 2", new Vector3(-82f, 0, -188f), 7f, 6f, 3.2f);
-            GreyHouse(wb, "House SE 1", new Vector3(-38f, 0, -188f), 7f, 6f, 3.2f);
-            GreyHouse(wb, "House SE 2", new Vector3(-24f, 0, -188f), 7f, 6f, 3.2f);
-            GreyHouse(wb, "Residence (能人居所)", new Vector3(-96f, 0, -132f), 8f, 7f, 3.4f, shade: 0.68f);
+
+            // County office: low and wide, five bays, the only grey-tiled roof in town; three shallow steps up its plinth.
+            var hallKey = K("pingyuan_hall_front", "yamen_hall_front");
+            var hallSide = K("pingyuan_hall_side", "yamen_hall_side");
+            OnPlinth(c, "County office (县衙)", new Vector3(CityCx, 0, -140f), hallKey, hallSide, null, "tile", null, steps: 3.6f);
+            var op = T.Group(c, "Office square props");
+            T.Prop(op, "prop_banner_han", CityCx - 9.8f, -141.2f);
+            T.Prop(op, "prop_banner_han", CityCx + 9.8f, -141.2f);
+            T.Prop(op, "prop_lantern_red", CityCx - 3.4f, -140.6f, y: PlinthH + 2.6f);
+            T.Prop(op, "prop_lantern_red", CityCx + 3.4f, -140.6f, y: PlinthH + 2.6f);
+            // The congee shed and communal tables (“同簋而食”) on the square's west edge, the notice board on the east.
+            if (T.Tex("prop_congee_shed", optional: true)) T.Prop(op, "prop_congee_shed", CityCx - 10.5f, -146f, solid: true);
+            else T.Prop(op, "Congee shed (stand-in)", CityCx - 10.5f, -146f, key: "prop_cooking_stove", solid: true);
+            string table = K("prop_long_table", "prop_low_table");
+            T.Prop(op, table, CityCx - 10f, -150.5f, solid: true);
+            T.Prop(op, table, CityCx - 10f, -154.5f, solid: true);
+            T.Prop(op, "prop_notice_board", CityCx + 10.5f, -146.5f, solid: true);
+            T.Prop(op, "prop_wine_jars", CityCx - 13f, -143.5f);
+            foreach (float x in new[] { CityCx - 17.5f, CityCx + 17.5f })
+                for (float z = -160f; z < -143f; z += 6f) T.Prop(op, "prop_tree_willow", x, z, scale: 0.75f, solid: true);
+
+            // Warehouses and inns on plinths along the street (fronts face south, clear of the street and the square),
+            // houses behind; barracks in the north-east with open drill ground before its gate.
+            string wh = K("warehouse_front", "house_b_front"), whs = K("warehouse_side", "house_b_side");
+            string hf = K("house_loess_front", "house_c_front"), hs = K("house_loess_side", "house_c_side");
+            OnPlinth(c, "Warehouse W", new Vector3(CityCx - 13f, 0, -187f), wh, whs, null, "thatch", Thatch);
+            OnPlinth(c, "Warehouse E", new Vector3(CityCx + 13f, 0, -187f), wh, whs, null, "thatch", Thatch);
+            OnPlinth(c, "Inn W", new Vector3(CityCx - 13f, 0, -175f), wh, whs, null, "thatch", Thatch);
+            OnPlinth(c, "Inn E", new Vector3(CityCx + 13f, 0, -175f), wh, whs, null, "thatch", Thatch);
+            OnPlinth(c, "House SW", new Vector3(-95f, 0, -186f), hf, hs, null, "thatch", Thatch);
+            OnPlinth(c, "House SE", new Vector3(-25f, 0, -186f), hf, hs, null, "thatch", Thatch);
+            OnPlinth(c, "House W", new Vector3(-97f, 0, -171f), hf, hs, null, "thatch", Thatch);
+            OnPlinth(c, "Residence (能人居所)", new Vector3(-96f, 0, -133f), hf, hs, null, "thatch", Thatch);
+            OnPlinth(c, "Inn SW", new Vector3(CityCx - 24f, 0, -165f), wh, whs, null, "thatch", Thatch);
+            OnPlinth(c, "Inn SE", new Vector3(CityCx + 24f, 0, -165f), wh, whs, null, "thatch", Thatch);
+            OnPlinth(c, "House W2", new Vector3(-84f, 0, -186f), hf, hs, null, "thatch", Thatch);
+            OnPlinth(c, "House E2", new Vector3(-36f, 0, -186f), hf, hs, null, "thatch", Thatch);
+            OnPlinth(c, "House E3", new Vector3(-24f, 0, -171f), hf, hs, null, "thatch", Thatch);
+            OnPlinth(c, "House E4", new Vector3(-17f, 0, -162f), hf, hs, null, "thatch", Thatch);
+            OnPlinth(c, "House NW", new Vector3(-84f, 0, -133f), hf, hs, null, "thatch", Thatch);
+            OnPlinth(c, "House NW2", new Vector3(-75f, 0, -123f), hf, hs, null, "thatch", Thatch);
+            var green = T.Group(c, "Yard greens");
+            foreach (var (gx0, gx1, gz0, gz1) in new[] { (-108f, -100f, -128f, -118f), (-20f, -12f, -193f, -188f), (-108f, -101f, -193f, -189f), (-48f, -40f, -160f, -150f) })
+                T.Patch(green, "Green", "ground_grass", gx0, gx1, gz0, gz1, 0.0035f);
+            (string key, float x, float z)[] trees = { ("prop_tree_elm", -104f, -123f), ("prop_tree_willow", -16f, -190f), ("prop_tree_elm", -104f, -191f),
+                ("prop_tree_locust", -44f, -155f), ("prop_tree_willow", -80f, -140f), ("prop_tree_elm", -40f, -133f), ("prop_tree_locust", -89f, -176f) };
+            foreach (var (key, x, z) in trees) T.Prop(green, key, x, z, scale: 0.85f, solid: true);
+            var st = T.Group(c, "Street goods");
+            string cargo = K("prop_cargo_pile", "prop_sacks_pile"), stall = K("prop_reed_blind_stall", "prop_stall");
+            T.Prop(st, cargo, CityCx - 7.6f, -189f, solid: true);
+            T.Prop(st, cargo, CityCx + 7.8f, -180.5f, solid: true);
+            T.Prop(st, "prop_handcart", CityCx - 7.4f, -181f, solid: true);
+            T.Prop(st, stall, CityCx + 7.6f, -170.5f, solid: true);
+            T.Prop(st, "prop_wine_jars", CityCx - 7.8f, -171f);
+            // Market west of the square: reed-blind stalls.
+            var mk = T.Group(c, "Market (市集)");
+            for (int i = 0; i < 4; i++) T.Prop(mk, stall, -100f + (i % 2) * 9f, -149f - (i / 2) * 8f, solid: true);
+            T.Prop(mk, "prop_grain_sacks", -95.5f, -146f);
+            T.Prop(mk, "prop_basket_stack", -86f, -161f);
+            Label(labels, "市集", new Vector3(-95f, 0, -153f), 6f);
+            var bk = T.Group(c, "Barracks (兵营)");
+            float stake = T.Metres("palisade_stakes").y;
+            T.Strip(bk, "Palisade W", "palisade_stakes", new Vector3(-38f, 0, -143f), new Vector3(-38f, 0, -119f), stake);
+            T.Strip(bk, "Palisade E", "palisade_stakes", new Vector3(-14f, 0, -143f), new Vector3(-14f, 0, -119f), stake);
+            T.Strip(bk, "Palisade S W", "palisade_stakes", new Vector3(-38f, 0, -143f), new Vector3(-29f, 0, -143f), stake);
+            T.Strip(bk, "Palisade S E", "palisade_stakes", new Vector3(-23f, 0, -143f), new Vector3(-14f, 0, -143f), stake);
+            T.Prop(bk, "prop_army_tent", -32f, -126f, solid: true);
+            T.Prop(bk, "prop_army_tent", -20f, -126f, solid: true);
+            T.Prop(bk, "prop_weapon_rack", -26f, -131f, solid: true);
+            T.Prop(bk, "prop_training_dummy", -33f, -136f);
+            T.Prop(bk, "prop_banner_han", -30.4f, -143.8f);
+            T.Prop(bk, "prop_banner_han", -21.6f, -143.8f);
+            Label(labels, "兵营", new Vector3(-26f, 0, -134f), 7f);
             Spot("Square", PlayerStart);
-            Spot("Barracks", new Vector3(-28f, 0, -148f));
+            Spot("Main street", new Vector3(CityCx, 0, -180f));
+            Spot("Barracks", new Vector3(-26f, 0, -149f));
+        }
+
+        // A building standing on a 1 m rammed-earth plinth with a fieldstone toe, steps up to its door.
+        static void OnPlinth(Transform parent, string name, Vector3 front, string frontKey, string sideKey, string backKey, string roofKey, string roofTex, float steps = 2.4f)
+        {
+            var f = T.Metres(frontKey); var sd = T.Metres(sideKey);
+            var g = T.Group(parent, name, front);
+            float w = f.x + 1.6f, d = sd.x + 1.6f, zc = sd.x / 2f;
+            string face = K("earth_plinth", "steps_riser");
+            foreach (var (pos, yaw, len) in new[] { (new Vector3(0, PlinthH / 2f, zc - d / 2f), 0f, w), (new Vector3(0, PlinthH / 2f, zc + d / 2f), 180f, w),
+                (new Vector3(-w / 2f, PlinthH / 2f, zc), 90f, d), (new Vector3(w / 2f, PlinthH / 2f, zc), -90f, d) })
+                T.Quad(g, "Plinth face", pos, new Vector3(0, yaw, 0), new Vector2(len, PlinthH), T.Mat(face), new Vector2(len / T.Metres(face).x, 1f));
+            var top = new Vector2(w, d);
+            T.Quad(g, "Plinth top", new Vector3(0, PlinthH + 0.003f, zc), new Vector3(90f, 0, 0), top, T.Mat("ground_packed_earth"), T.Repeat("ground_packed_earth", top), castShadows: false);
+            T.Solid(g, new Vector3(0, PlinthH / 2f, zc), new Vector3(w, PlinthH, d));
+            T.Building(g, "Building", new Vector3(0, PlinthH, 0), 0f, frontKey, sideKey, backKey, roofKey: roofKey, roofTexture: roofTex,
+                eaveTexture: roofTex != null ? "roof_thatch_eave" : null);
+            T.Stairs(g, "Steps", new Vector3(0, 0, -0.8f), steps, 3, 0.33f, 0.4f, 0.01f);
+        }
+
+        // A low loess town wall from a to b: 3.5 m high, 3 m thick, its top a beaten-earth walk behind a timber rail.
+        static void LoessWall(Transform parent, string name, Vector3 a, Vector3 b)
+        {
+            bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
+            float len = (alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z)) + WallTk;
+            var run = T.Group(parent, name, (a + b) / 2f, alongX ? 0f : 90f);
+            run.gameObject.AddComponent<Occluder>();
+            string face = K("town_wall_loess", "wall_rammed_earth");
+            var size = new Vector2(len, TownWallH);
+            T.Quad(run, "Face out", new Vector3(0, TownWallH / 2f, -WallTk / 2f), Vector3.zero, size, T.Mat(face), T.Repeat(face, size));
+            T.Quad(run, "Face in", new Vector3(0, TownWallH / 2f, WallTk / 2f), new Vector3(0, 180, 0), size, T.Mat(face), T.Repeat(face, size));
+            var top = new Vector2(len, WallTk);
+            T.Quad(run, "Wall walk", new Vector3(0, TownWallH, 0), new Vector3(90, 0, 0), top, T.Mat("ground_packed_earth"), T.Repeat("ground_packed_earth", top), castShadows: false);
+            string rail = K("levee_fence", "fence_wattle");
+            var railSize = new Vector2(len, T.Metres(rail).y);
+            T.Quad(run, "Rail", new Vector3(0, TownWallH + railSize.y / 2f, -WallTk / 2f + 0.2f), Vector3.zero, railSize, T.Mat(rail, clip: true, twoSided: true), T.Repeat(rail, railSize));
+            T.Solid(run, new Vector3(0, TownWallH / 2f, 0), new Vector3(len, TownWallH, WallTk));
+        }
+
+        // Pingyuan's timber-and-thatch gate in an 8 m gap of the loess wall, facing outward along yaw.
+        static void TownGate(Transform parent, string name, Vector3 at, float yaw)
+        {
+            var g = T.Group(parent, name, at, yaw);
+            g.gameObject.AddComponent<Occluder>();
+            if (!T.Tex("town_gate_front", optional: true)) { Gate(parent, name + " (stand-in)", at, yaw); return; }
+            var front = T.Metres("town_gate_front");   // 8 × 5.5, opening about 3.5 × 3.5
+            T.Quad(g, "Gate outside", new Vector3(0, front.y / 2f, -WallTk / 2f - 0.05f), Vector3.zero, front, T.Mat("town_gate_front", clip: true, twoSided: true));
+            T.Quad(g, "Gate inside", new Vector3(0, front.y / 2f, WallTk / 2f + 0.05f), new Vector3(0, 180, 0), front, T.Mat("town_gate_front", clip: true, twoSided: true));
+            string face = K("town_wall_loess", "wall_rammed_earth");
+            foreach (int s in new[] { -1, 1 })
+            {
+                var side = new Vector2(WallTk, 3.5f);
+                T.Quad(g, "Passage side", new Vector3(s * 1.75f, 1.75f, 0), new Vector3(0, s * -90f, 0), side, T.Mat(face), T.Repeat(face, side));
+                T.Solid(g, new Vector3(s * 3f, 2.75f, 0), new Vector3(2.5f, 5.5f, WallTk));
+            }
+            T.Quad(g, "Passage ceiling", new Vector3(0, 3.5f, 0), new Vector3(-90, 0, 0), new Vector2(3.5f, WallTk), T.Mat("timber_beam"), T.Repeat("timber_beam", new Vector2(3.5f, WallTk)), castShadows: false);
+            T.Solid(g, new Vector3(0, 4.5f, 0), new Vector3(4f, 2f, WallTk));
+        }
+
+        // An open drain along a street (x fixed, z0 < z1). The ground has no holes, so it is drawn at street level: a
+        // strip of water between two low fieldstone kerbs; plank bridges at the given z. Kerb colliders keep the player
+        // out except on the bridges.
+        static void Drain(Transform parent, string name, float x, float z0, float z1, float[] bridges)
+        {
+            var g = T.Group(parent, name);
+            const float w = 1f, kerbH = 0.24f;
+            float len = z1 - z0, zc = (z0 + z1) / 2f;
+            string wall = K("drain_channel_wall", "steps_riser"), water = K("water_channel", "wb_water_muddy");
+            T.Quad(g, "Drain water", new Vector3(x, 0.012f, zc), new Vector3(90f, 0, 0), new Vector2(w, len), T.Mat(water), T.Repeat(water, new Vector2(w, len)), castShadows: false);
+            foreach (int s in new[] { -1, 1 })
+            {
+                float kx = x + s * (w / 2f + 0.12f);
+                T.Quad(g, "Kerb top", new Vector3(kx, kerbH, zc), new Vector3(90f, 90f, 0), new Vector2(len, 0.24f), T.Mat(wall), new Vector2(len / T.Metres(wall).x, 0.3f), castShadows: false);
+                foreach (int f in new[] { -1, 1 })
+                    T.Quad(g, "Kerb face", new Vector3(kx + f * 0.12f, kerbH / 2f, zc), new Vector3(0, f * -90f, 0), new Vector2(len, kerbH), T.Mat(wall), new Vector2(len / T.Metres(wall).x, 1f), castShadows: false);
+            }
+            string plank = K("plank_bridge", "wb_dock_planks");
+            var cuts = new List<float> { z0 };
+            foreach (float bz in bridges)
+            {
+                T.Quad(g, "Plank bridge", new Vector3(x, kerbH + 0.03f, bz), new Vector3(90f, 90f, 0), new Vector2(1.5f, 2f), T.Mat(plank, clip: true), castShadows: false);
+                cuts.Add(bz - 0.8f); cuts.Add(bz + 0.8f);
+            }
+            cuts.Add(z1);
+            for (int i = 0; i + 1 < cuts.Count; i += 2)
+                if (cuts[i + 1] > cuts[i]) Solid(g, new Vector3(x, 0.4f, (cuts[i] + cuts[i + 1]) / 2f), new Vector3(w + 0.5f, 0.8f, cuts[i + 1] - cuts[i]));
         }
 
         // A city gate in a 9 m wall gap (Zhuojun's south-gate textures), facing outward along yaw.
@@ -379,26 +560,66 @@ namespace ThreeKingdoms.EditorTools
             var f = T.Group(env, "Pingyuan ferry (平原津)");
             // Dock: deck 0.35 m above the bank (one step), x -64..-56, out to z -266 over the water on timber piles.
             const float deckY = 0.35f, x0 = -64f, x1 = -56f, zStart = LeveeSouth + 0.5f, zEnd = -266f;
+            string planks = K("dock_planks", "wb_dock_planks");
             var deck = new Vector2(x1 - x0, zStart - zEnd);
-            T.Quad(f, "Dock deck", new Vector3((x0 + x1) / 2f, deckY, (zStart + zEnd) / 2f), new Vector3(90f, 0, 0), deck, T.Mat("wb_dock_planks"), T.Repeat("wb_dock_planks", deck), castShadows: false);
+            T.Quad(f, "Dock deck", new Vector3((x0 + x1) / 2f, deckY, (zStart + zEnd) / 2f), new Vector3(90f, 0, 0), deck, T.Mat(planks), T.Repeat(planks, deck), castShadows: false);
             Solid(f, new Vector3((x0 + x1) / 2f, deckY / 2f - 0.6f, (zStart + zEnd) / 2f), new Vector3(x1 - x0, deckY + 1.2f, zStart - zEnd));
-            for (float z = zStart - 2f; z > zEnd; z -= 4f)
-                foreach (float x in new[] { x0 + 0.3f, x1 - 0.3f })
-                    Box(f, "Pile", new Vector3(x, WaterY - 0.5f, z), new Vector3(0.4f, deckY - WaterY + 1.1f, 0.4f), 0.3f, solid: false);
+            if (T.Tex("dock_side", optional: true))
+            {
+                var side = new Vector2(zStart - zEnd, T.Metres("dock_side").y);
+                foreach (var (x, yaw) in new[] { (x0, 90f), (x1, -90f) })
+                    T.Quad(f, "Dock side", new Vector3(x, deckY - side.y / 2f, (zStart + zEnd) / 2f), new Vector3(0, yaw, 0), side, T.Mat("dock_side", clip: true, twoSided: true), new Vector2(side.x / T.Metres("dock_side").x, 1f));
+                var end = new Vector2(x1 - x0, side.y);
+                T.Quad(f, "Dock end", new Vector3((x0 + x1) / 2f, deckY - side.y / 2f, zEnd), new Vector3(0, 180f, 0), end, T.Mat("dock_side", clip: true, twoSided: true), new Vector2(end.x / T.Metres("dock_side").x, 1f));
+            }
+            else
+                for (float z = zStart - 2f; z > zEnd; z -= 4f)
+                    foreach (float x in new[] { x0 + 0.3f, x1 - 0.3f })
+                        Box(f, "Pile", new Vector3(x, WaterY - 0.5f, z), new Vector3(0.4f, deckY - WaterY + 1.1f, 0.4f), 0.3f, solid: false);
             // Keep the player on the deck.
             Solid(f, new Vector3(x0 - 0.5f, 1.5f, (zStart + zEnd) / 2f), new Vector3(1f, 3f, zStart - zEnd));
             Solid(f, new Vector3(x1 + 0.5f, 1.5f, (zStart + zEnd) / 2f), new Vector3(1f, 3f, zStart - zEnd));
             Solid(f, new Vector3((x0 + x1) / 2f, 1.5f, zEnd - 0.5f), new Vector3(x1 - x0 + 2f, 3f, 1f));
-            // Ferry boat moored at the dock end (grey for now), the ferry hut on the levee crest, a mooring post.
-            var boat = T.Group(f, "Ferry boat", new Vector3(x1 + 3.4f, WaterY, -260f));
-            Box(boat, "Hull", Vector3.zero, new Vector3(4.2f, 1.2f, 11f), 0.38f, solid: false);
-            Box(boat, "Cabin", new Vector3(0, 1.2f, 1f), new Vector3(3f, 1.6f, 3.5f), 0.55f, solid: false);
-            GreyHouse(f, "Ferry hut", new Vector3(CityCx + 12f, LeveeH, LeveeCrestN - 0.5f), 6f, 4f, 3f, yaw: 180f, shade: 0.58f);
+            // Boats, the ferry flag, mooring posts, cargo waiting at the dock head, reeds along the bank.
+            if (T.Tex("ferry_boat", optional: true))
+            {
+                T.Prop(f, "ferry_boat", x1 + 5.4f, -259f, y: WaterY + 0.1f);
+                T.Prop(f, "Ferry boat 2", x0 - 6f, -262f, y: WaterY + 0.1f, key: "ferry_boat", scale: 0.9f);
+            }
+            else
+            {
+                var boat = T.Group(f, "Ferry boat", new Vector3(x1 + 3.4f, WaterY, -260f));
+                Box(boat, "Hull", Vector3.zero, new Vector3(4.2f, 1.2f, 11f), 0.38f, solid: false);
+                Box(boat, "Cabin", new Vector3(0, 1.2f, 1f), new Vector3(3f, 1.6f, 3.5f), 0.55f, solid: false);
+            }
+            if (T.Tex("prop_ferry_flag", optional: true)) T.Prop(f, "prop_ferry_flag", x0 + 0.6f, -247f, y: deckY);
+            else T.Prop(f, "Ferry flag (stand-in)", x0 + 0.6f, -247f, y: deckY, key: "prop_banner_post");
+            string post = K("prop_mooring_post", "prop_hitching_post");
+            foreach (float z in new[] { -254f, -260f, -265f }) { T.Prop(f, post, x1 - 0.4f, z, y: deckY); T.Prop(f, post, x0 + 0.4f, z, y: deckY); }
+            string cargo = K("prop_cargo_pile", "prop_sacks_pile");
+            T.Prop(f, cargo, x1 - 1.8f, -249f, y: deckY);
+            T.Prop(f, "prop_barrel", x0 + 1.6f, -251f, y: deckY);
+            string reeds = K("prop_reeds", "prop_grass_tuft");
+            var rr = new System.Random(13);
+            for (int i = 0; i < 40; i++)
+            {
+                float x = CityCx - 60f + (float)rr.NextDouble() * 120f;
+                if (Mathf.Abs(x - CityCx) < 9f) continue;
+                T.Prop(f, reeds, x, LeveeSouth - 3f - (float)rr.NextDouble() * 6f, y: -0.2f, scale: reeds == "prop_reeds" ? 1f : 1.8f);
+            }
+            if (T.Tex("prop_reed_blind_stall", optional: true)) T.Prop(f, "Toll stall", CityCx + 9f, LeveeCrestS + 1.6f, y: LeveeH, key: "prop_reed_blind_stall", solid: true);
+            // Landmark on the crest: the river-view pavilion among willows.
+            if (T.Tex("prop_river_pavilion", optional: true)) T.Prop(f, "prop_river_pavilion", CityCx - 20f, (LeveeCrestN + LeveeCrestS) / 2f, y: LeveeH, solid: true);
+            else GreyHouse(f, "River pavilion (stand-in)", new Vector3(CityCx - 20f, LeveeH, LeveeCrestN - 1f), 4f, 4f, 3f, shade: 0.6f);
+            foreach (float x in new[] { -32f, -14f, 8f, 26f, 44f })
+                T.Prop(f, "prop_tree_willow", CityCx + x + 0.5f, LeveeCrestN - 0.6f, y: LeveeH, scale: 1.1f, solid: true);
             Label(labels, "平原津（渡口·阶段门）", new Vector3(CityCx, 0, -258f), 5f);
-            Label(labels, "黄河大堤（地标）", new Vector3(CityCx - 140f, LeveeH, LeveeCrestS), 7f);
-            Spot("Ferry", new Vector3(CityCx, deckY, -255f));
+            Label(labels, "黄河大堤·望河亭（地标）", new Vector3(CityCx - 20f, LeveeH, LeveeCrestS), 8f);
+            Spot("Ferry", new Vector3(CityCx, deckY, -252f));
             Spot("Levee", new Vector3(CityCx - 140f, LeveeH, (LeveeCrestN + LeveeCrestS) / 2f));
+            Spot("Pavilion", new Vector3(CityCx - 12f, LeveeH, (LeveeCrestN + LeveeCrestS) / 2f));
             Spot("South gate", new Vector3(CityCx, 0, CityZ0 - 8f));
+            Spot("Inside south gate", new Vector3(CityCx, 0, CityZ0 + 9f));
         }
 
         // ---------- Gaotang gate scene (门前小场景) ----------
@@ -598,8 +819,8 @@ namespace ThreeKingdoms.EditorTools
                 var npc = HD2DSampleBuilder.Character(name, ResidentImporter.KeyFor(id), at, frame, isPlayer: false);
                 npc.transform.SetParent(g, true);
             }
-            Npc("简雍（暂代）", "N24", new Vector3(CityCx + 15f, 0, -150f));
-            Npc("田豫（暂代）", "N01", new Vector3(-26.5f, 0, -144f));
+            Npc("简雍（暂代）", "N24", new Vector3(CityCx + 12.6f, 0, -152f));
+            Npc("田豫（暂代）", "N01", new Vector3(-30.2f, 0, -144.4f));
             Npc("渡口船夫（暂代）", "N12", new Vector3(-58.5f, 0.35f, -262f));
             Npc("高唐守卫", "N01", new Vector3(GaotangFront.x + 3.5f, 0, -154f));
             Npc("哨卡守兵 甲", "N01", new Vector3(541f, 0, 15f), 1);

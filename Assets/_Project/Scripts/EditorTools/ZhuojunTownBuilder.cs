@@ -740,7 +740,8 @@ namespace ThreeKingdoms.EditorTools
         // A building whose front faces south (yaw 0) or north (yaw 180, back toward the camera). Size comes from the
         // textures: front = width × wall height, side = depth × (wall + gable). roofKey "tile" or "thatch".
         internal static Transform Building(Transform parent, string name, Vector3 frontCenter, float yaw, string front, string side, string back,
-            string roofKey = "tile", string glowMask = null, bool collide = true, string interior = null, string floor = null, float interiorFrom = 0f)
+            string roofKey = "tile", string glowMask = null, bool collide = true, string interior = null, string floor = null, float interiorFrom = 0f,
+            string roofTexture = null, string eaveTexture = null)
         {
             var f = Metres(front); var sd = Metres(side);
             float width = f.x, wall = f.y, depth = sd.x, gable = Mathf.Max(0.4f, sd.y - wall);
@@ -785,12 +786,13 @@ namespace ThreeKingdoms.EditorTools
             float run = half + eave, length = run / Mathf.Cos(slope), drop = run * Mathf.Tan(slope);
             float eaveY = ridgeY - drop, deg = slope * Mathf.Rad2Deg;
             var roofSize = new Vector2(roofW, length);
-            string roofTex = thatch ? "roof_thatch" : "roof_tiles_grey";
+            // Another town's own roofing (Pingyuan's golden reed thatch) can replace the Zhuojun roof textures.
+            string roofTex = roofTexture ?? (thatch ? "roof_thatch" : "roof_tiles_grey");
             var roofMat = Mat(roofTex);
             Quad(b, "Roof front", new Vector3(0, (ridgeY + eaveY) / 2f + 0.05f, half - run / 2f), new Vector3(90f - deg, 0, 0), roofSize, roofMat, Repeat(roofTex, roofSize));
             Quad(b, "Roof back", new Vector3(0, (ridgeY + eaveY) / 2f + 0.05f, half + run / 2f), new Vector3(90f - deg, 180, 0), roofSize, roofMat, Repeat(roofTex, roofSize));
             Quad(b, "Roof underside", new Vector3(0, (ridgeY + eaveY) / 2f - 0.02f, half - run / 2f), new Vector3(-90f - deg, 0, 0), roofSize, Mat("roof_underside"), Repeat("roof_underside", roofSize), castShadows: false);
-            string eaveTex = thatch ? "roof_thatch_eave" : "roof_eave";
+            string eaveTex = eaveTexture ?? (thatch ? "roof_thatch_eave" : "roof_eave");
             var eaveSize = new Vector2(roofW, 0.6f);
             foreach (int s in new[] { 1, -1 })
                 Quad(b, "Eave", new Vector3(0, eaveY - 0.22f, s > 0 ? -eave - 0.02f : depth + eave + 0.02f), new Vector3(deg * 0.5f * s, s > 0 ? 0 : 180, 0), eaveSize,

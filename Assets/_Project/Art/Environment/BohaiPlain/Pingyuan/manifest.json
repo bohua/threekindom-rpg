@@ -1,0 +1,156 @@
+{
+ "purpose": "Pingyuan textures (Codex pingyuan-b1/-b2, approved 2026-10-24) after the approved concept art art/pingyuan-concept",
+ "pixel_density": 30,
+ "files": [
+  {
+   "filename": "dock_planks.png",
+   "tile_axes": "xy",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "dock_side.png",
+   "tile_axes": "x",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "drain_channel_wall.png",
+   "tile_axes": "x",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "ground_loess_paving.png",
+   "tile_axes": "xy",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "levee_fence.png",
+   "tile_axes": "x",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "levee_slope.png",
+   "tile_axes": "xy",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "levee_stone_toe.png",
+   "tile_axes": "x",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "plank_bridge.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "river_mud_shelf.png",
+   "tile_axes": "xy",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "town_wall_loess.png",
+   "tile_axes": "x",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "water_channel.png",
+   "tile_axes": "xy",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "water_yellow_river.png",
+   "tile_axes": "xy",
+   "source": "art/pingyuan-b1"
+  },
+  {
+   "filename": "earth_plinth.png",
+   "tile_axes": "x",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "ferry_boat.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "house_loess_front.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "house_loess_side.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "pingyuan_hall_front.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "pingyuan_hall_side.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "prop_cargo_pile.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "prop_congee_shed.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "prop_ferry_flag.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "prop_long_table.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "prop_mooring_post.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "prop_reed_blind_stall.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "prop_reeds.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "prop_river_pavilion.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "roof_thatch_gold.png",
+   "tile_axes": "xy",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "town_gate_front.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "warehouse_front.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  },
+  {
+   "filename": "warehouse_side.png",
+   "tile_axes": "none",
+   "source": "art/pingyuan-b2"
+  }
+ ]
+}
