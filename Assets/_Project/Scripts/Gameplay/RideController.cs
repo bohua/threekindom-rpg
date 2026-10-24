@@ -57,8 +57,8 @@ namespace ThreeKingdoms.Gameplay
                 {
                     f.MaxSpeed = ride ? RideSpeed * 1.4f : 13f;
                     f.Acceleration = ride ? 50f : 22f;
-                    f.WalkGap = ride ? 3.4f : 1.9f;
-                    f.StopGap = ride ? 2.6f : 1.3f;
+                    f.WalkGap = ride ? 6.5f : 1.9f;   // at least one horse length (about 3 m) between horses (user 2026-10-24)
+                    f.StopGap = ride ? 5.5f : 1.3f;
                 }
             }
         }

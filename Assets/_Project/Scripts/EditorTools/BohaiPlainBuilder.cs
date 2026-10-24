@@ -92,6 +92,7 @@ namespace ThreeKingdoms.EditorTools
             var player = HD2DSampleBuilder.Character("Liu Bei", "LiuBei", PlayerStart, 3, isPlayer: true);
             player.transform.SetParent(people, true);
             var trail = player.AddComponent<PartyTrail>();
+            trail.Length = 24f;   // room for two horses spaced a horse length apart
             int slot = 1;
             var companions = new List<MountRider>();
             foreach (var (name, key) in new[] { ("Guan Yu (follower)", "GuanYu"), ("Zhang Fei (follower)", "ZhangFei") })

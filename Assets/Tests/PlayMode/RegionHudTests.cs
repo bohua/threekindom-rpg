@@ -57,6 +57,12 @@ public sealed class RegionHudTests
         Assert.AreEqual(ride.RideSpeed, ride.Mover.Speed);
         yield return new WaitForSeconds(ride.CompanionDelay * 2f + ride.Leader.SequenceTime);
         foreach (var c in ride.Companions) Assert.AreEqual(MountRider.State.Riding, c.Current, c.name + " rides too");
+        // Galloping east along the road, the horses keep at least a horse length (about 3 m) apart (user 2026-10-24).
+        for (float t = 0; t < 2.5f; t += Time.deltaTime) { ride.Mover.Move(new Vector2(1f, 0f), Time.deltaTime); yield return null; }
+        var line = new System.Collections.Generic.List<Transform> { player };
+        foreach (var c in ride.Companions) line.Add(c.transform);
+        for (int i = 1; i < line.Count; i++)
+            Assert.GreaterOrEqual(Vector3.Distance(line[i].position, line[i - 1].position), 5.5f, line[i].name + " keeps a horse length behind");
 
         yield return At(player, new Vector3(-60f, 0, -151f));
         yield return new WaitForSeconds(ride.Settle + ride.Leader.SequenceTime + 0.3f);
