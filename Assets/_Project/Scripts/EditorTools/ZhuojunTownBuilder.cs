@@ -123,6 +123,7 @@ namespace ThreeKingdoms.EditorTools
             ReviewCamera("Review Barracks", new Vector3(31, 0, 20f));
             ReviewCamera("Review Houses", new Vector3(-27, 0, -24f));
             ReviewCamera("Review Casino", new Vector3(38.5f, 0, -10f));
+            ReviewCamera("Review Granary", new Vector3(-30f, 0, 14.5f));
             ReviewCamera("Review Clinic", new Vector3(30, 0, -22f));
             OverviewCamera();
             ReviewCamera("Review West Gate", new Vector3(-55, 0, 0f));
@@ -731,7 +732,7 @@ namespace ThreeKingdoms.EditorTools
         // A building whose front faces south (yaw 0) or north (yaw 180, back toward the camera). Size comes from the
         // textures: front = width × wall height, side = depth × (wall + gable). roofKey "tile" or "thatch".
         internal static Transform Building(Transform parent, string name, Vector3 frontCenter, float yaw, string front, string side, string back,
-            string roofKey = "tile", string glowMask = null, bool collide = true, string interior = null, string floor = null)
+            string roofKey = "tile", string glowMask = null, bool collide = true, string interior = null, string floor = null, float interiorFrom = 0f)
         {
             var f = Metres(front); var sd = Metres(side);
             float width = f.x, wall = f.y, depth = sd.x, gable = Mathf.Max(0.4f, sd.y - wall);
@@ -750,11 +751,14 @@ namespace ThreeKingdoms.EditorTools
             // the building (user 2026-10-23: the gambling house door showed the ground through it).
             if (interior != null)
             {
-                var inner = new Vector2(width, wall);
-                Quad(b, "Interior back wall", new Vector3(0, wall / 2f, depth - 0.03f), Vector3.zero, inner, Mat(interior),
+                // From interiorFrom up (a stilted granary keeps its underfloor open); side walls face inward.
+                float innerH = wall - interiorFrom, innerY = interiorFrom + innerH / 2f;
+                var inner = new Vector2(width, innerH);
+                Quad(b, "Interior back wall", new Vector3(0, innerY, depth - 0.03f), Vector3.zero, inner, Mat(interior),
                     axes.TryGetValue(interior, out string ax) && ax != "none" ? Repeat(interior, inner) : Vector2.one, castShadows: false);
                 foreach (int s in new[] { -1, 1 })
-                    Quad(b, "Interior side wall", new Vector3(s * (width / 2f - 0.03f), wall / 2f, depth / 2f), new Vector3(0, s * -90f, 0), new Vector2(depth, wall), Mat("wall_rammed_earth"), Repeat("wall_rammed_earth", new Vector2(depth, wall)), castShadows: false);
+                    Quad(b, "Interior side wall", new Vector3(s * (width / 2f - 0.03f), innerY, depth / 2f), new Vector3(0, s * 90f, 0), new Vector2(depth, innerH),
+                        Mat("wall_rammed_earth"), Repeat("wall_rammed_earth", new Vector2(depth, innerH)), castShadows: false);
             }
             if (floor != null)
             {
@@ -841,8 +845,8 @@ namespace ThreeKingdoms.EditorTools
         {
             var row = Group(env, "North row");
             // 08 Two stilted granaries, north-west.
-            Building(row, "08 Granary W", new Vector3(-37f, 0, 19f), 0f, "granary_front", "granary_side", null);
-            Building(row, "08 Granary E", new Vector3(-27f, 0, 19f), 0f, "granary_front", "granary_side", null);
+            Building(row, "08 Granary W", new Vector3(-37f, 0, 19f), 0f, "granary_front", "granary_side", null, interior: "floor_wood_planks", interiorFrom: 1f);
+            Building(row, "08 Granary E", new Vector3(-27f, 0, 19f), 0f, "granary_front", "granary_side", null, interior: "floor_wood_planks", interiorFrom: 1f);
             var gp = Group(row, "Granary props");
             Prop(gp, "prop_sacks_pile", -32f, 18.2f, solid: true);
             Prop(gp, "prop_grain_sacks", -41f, 18.6f);
