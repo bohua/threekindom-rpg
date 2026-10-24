@@ -170,13 +170,17 @@ namespace ThreeKingdoms.App
                 town.OpenPanel(ThreeKingdoms.Gameplay.Story.TownStoryController.MenuPanel);
                 yield return null;
                 var menu = Object.FindFirstObjectByType<ThreeKingdoms.UI.Menu.MainMenuHud>();
-                var tab = Panel.Substring(5) switch
+                // "-2" / "-3" after the tab: show the second / third general.
+                string tabKey = Panel.Substring(5); int pick = 0;
+                if (tabKey.Length > 2 && tabKey[tabKey.Length - 2] == '-' && char.IsDigit(tabKey[tabKey.Length - 1])) { pick = tabKey[tabKey.Length - 1] - '1'; tabKey = tabKey.Substring(0, tabKey.Length - 2); }
+                var tab = tabKey switch
                 {
                     "equip" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Equip, "skills" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Skills,
                     "bingshu" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Bingshu, "generals" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Generals,
                     "system" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.System, _ => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Items,
                 };
                 menu.Show(tab);
+                if (pick > 0) menu.SelectGeneral(pick);
                 if (tab == ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Equip) menu.PickFor(ThreeKingdoms.Core.Economy.EquipSlot.Weapon);
                 yield break;
             }

@@ -156,6 +156,20 @@ namespace ThreeKingdoms.UI.Menu
             0 => new Color(0.92f, 0.36f, 0.38f), 1 => new Color(0.30f, 0.70f, 0.95f), 2 => new Color(0.95f, 0.78f, 0.30f), _ => new Color(0.45f, 0.85f, 0.55f)
         };
 
+        // UI_STYLE_GUIDE element colours (金 银白, 木 青绿, 水 天蓝, 火 朱红, 土 赭金).
+        static Color ElementColor(Element e) => e switch
+        {
+            Element.Metal => MenuPaint.Hex(0xD5DDE4), Element.Wood => MenuPaint.Hex(0x61BCA0), Element.Water => MenuPaint.Hex(0x5BAFE3),
+            Element.Fire => MenuPaint.Hex(0xD86B70), Element.Earth => MenuPaint.Hex(0xC4A36D), _ => new Color(0.5f, 0.55f, 0.62f),
+        };
+
+        // The colour of a half cord next to socket `near`: its book's element, else the far end's, else dim grey.
+        static Color CordColor(Book near, Book far)
+        {
+            var b = near ?? far;
+            return b == null ? new Color(0.42f, 0.47f, 0.55f, 0.85f) : ElementColor(b.Element);
+        }
+
         void DrawPlatePanel(GeneralSpec g, CircuitDef c)
         {
             var p = paint;
@@ -169,20 +183,39 @@ namespace ThreeKingdoms.UI.Menu
                 p.Disc(hub, half * 0.86f, new Color(0.04f, 0.07f, 0.13f, 0.95f));
             }
 
+            // Bagua directions whose element matches the book socketed there light up (user 2026-10-24).
+            for (int i = 0; i < c.Slots.Length; i++)
+            {
+                int gua = c.Slots[i].Gua; var book = slots[i];
+                if (gua < 0 || book == null || Bagua.All[gua].Element != book.Element) continue;
+                var d = new Vector2(Bagua.All[gua].Dir.x, -Bagua.All[gua].Dir.y);
+                var col = ElementColor(book.Element);
+                float pulse = 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * 3f);
+                p.Line(hub + d * 196 * p.K, hub + d * 262 * p.K, 120 * p.K, new Color(col.r, col.g, col.b, 0.30f * pulse));
+                p.Line(hub + d * 206 * p.K, hub + d * 254 * p.K, 84 * p.K, new Color(col.r, col.g, col.b, 0.35f * pulse));
+                p.Line(hub + d * 256 * p.K + new Vector2(-d.y, d.x) * 60 * p.K, hub + d * 256 * p.K - new Vector2(-d.y, d.x) * 60 * p.K, 5 * p.K, new Color(1, 1, 1, 0.75f * pulse));
+            }
+
+            // Cords: thick, coloured by the element of the books they join (user 2026-10-24: "链路的颜色取决于连接到的镶嵌位的颜色").
             var segs = CircuitMath.Segments(c, intel, out var edges);
             foreach (var ed in edges)
             {
                 Vector2 p0 = SocketPos(hub, c, ed.A, R), p1 = SocketPos(hub, c, ed.B, R);
                 if (ed.Line < 0)
                 {
-                    var mid = (p0 + p1) / 2f; var dir = (p1 - p0).normalized * 8f;
-                    p.Line(p0, mid - dir, 2, new Color(0.5f, 0.55f, 0.62f, 0.6f)); p.Line(mid + dir, p1, 2, new Color(0.5f, 0.55f, 0.62f, 0.6f));
+                    var mid = (p0 + p1) / 2f; var dir = (p1 - p0).normalized * 10f * p.K;
+                    p.Line(p0, mid - dir, 5 * p.K, new Color(0.5f, 0.55f, 0.62f, 0.6f)); p.Line(mid + dir, p1, 5 * p.K, new Color(0.5f, 0.55f, 0.62f, 0.6f));
                     continue;
                 }
-                var col = PlateLineColor(ed.Line);
-                p.Line(p0, p1, 9 * p.K, new Color(0.02f, 0.04f, 0.08f, 0.9f));
-                p.Line(p0, p1, 6 * p.K, new Color(col.r, col.g, col.b, 0.35f));
-                p.Line(p0, p1, 3.2f * p.K, col);
+                // Each half of the cord takes the colour of the socket at its end (the other end's when that one is empty).
+                p.Line(p0, p1, 24 * p.K, new Color(0.02f, 0.04f, 0.08f, 0.9f));
+                var m = (p0 + p1) / 2f;
+                foreach (var (from, to, col) in new[] { (p0, m, CordColor(slots[ed.A], slots[ed.B])), (m, p1, CordColor(slots[ed.B], slots[ed.A])) })
+                {
+                    p.Line(from, to, 19 * p.K, new Color(col.r, col.g, col.b, 0.40f));
+                    p.Line(from, to, 11 * p.K, col);
+                    p.Line(from, to, 3 * p.K, Color.Lerp(col, Color.white, 0.55f));
+                }
             }
 
             float sock = 80 * p.K;
@@ -193,8 +226,13 @@ namespace ThreeKingdoms.UI.Menu
                 if (c.Slots[i].Gua < 0)
                 {
                     if (sel) p.Disc(pos, 58 * p.K, new Color(0.35f, 0.85f, 1f, 0.35f + 0.15f * Mathf.Sin(Time.unscaledTime * 5f)));
+                    // The hub takes its school's element: a ring in that colour and the taiji tinted with it.
+                    var hc = ElementColor(c.Affinity);
+                    p.Disc(pos, 50 * p.K, new Color(hc.r, hc.g, hc.b, 0.35f));
+                    p.Disc(pos, 46 * p.K, hc);
+                    p.Disc(pos, 40 * p.K, MenuPaint.Base);
                     var tr = new Rect(pos.x - 78 * p.K, pos.y - 78 * p.K, 156 * p.K, 156 * p.K);
-                    if (!p.Icon(tr, "taiji_hub")) { p.Disc(pos, 46 * p.K, new Color(0.85f, 0.85f, 0.8f)); p.Disc(pos, 40 * p.K, MenuPaint.Base); }
+                    if (!p.Icon(tr, "taiji_hub", tint: Color.Lerp(hc, Color.white, 0.25f))) p.Disc(pos, 34 * p.K, hc);
                     var badge = p.R(556, 494, 94, 38);
                     p.Frame(badge, "count_badge", SilverA(0.6f), new Color(0.03f, 0.07f, 0.14f, 0.92f));
                     var e = book != null ? book.Element : c.Slots[i].Locked;
@@ -207,7 +245,10 @@ namespace ThreeKingdoms.UI.Menu
                     string ring = book != null ? (sel ? "socket_ring_selected" : "socket_ring") : (sel ? "socket_plus" : "socket_empty");
                     float grow = ring == "socket_ring_selected" ? 1.17f : 1.43f;
                     var gr = new Rect(rr.center.x - rr.width * grow / 2, rr.center.y - rr.height * grow / 2, rr.width * grow, rr.height * grow);
-                    if (!p.Icon(gr, ring))
+                    // A filled socket's ring takes its book's element colour, the same as the cords into it.
+                    Color? ringTint = book != null ? Color.Lerp(ElementColor(book.Element), Color.white, 0.15f) : (Color?)null;
+                    if (book != null) p.Disc(pos, sock * 0.56f, new Color(ringTint.Value.r, ringTint.Value.g, ringTint.Value.b, 0.45f));
+                    if (!p.Icon(gr, ring, tint: ringTint))
                     {
                         p.Disc(pos, sock * 0.5f, sel ? MenuPaint.Cyan : new Color(0.62f, 0.70f, 0.80f)); p.Disc(pos, sock * 0.44f, new Color(0.04f, 0.07f, 0.14f));
                         if (book == null) GUI.Label(rr, sel ? "+" : "□", p.St(30, new Color(0.75f, 0.82f, 0.9f), TextAnchor.MiddleCenter));
