@@ -14,6 +14,7 @@ namespace ThreeKingdoms.EditorTools
     public static class TravelMenuArtImporter
     {
         const string Source = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\travel-menu-ui-slices";
+        const string SectorSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\bingshu-sector-highlights";
         public const string Dir = "Assets/_Project/Art/UI/TravelMenu";
         public const string BingshuDir = "Assets/Prototypes/BingshuTactics/Art/Destiny";
 
@@ -27,6 +28,10 @@ namespace ThreeKingdoms.EditorTools
         public static void Import(out Texture2D[] art, out string[] borders)
         {
             Directory.CreateDirectory(Dir);
+            // The 命盘's lit bagua trapezoids (user 2026-10-24), each on the plate's own 720×720 canvas.
+            if (Directory.Exists(SectorSource))
+                foreach (var src in Directory.GetFiles(SectorSource, "sector_lit_*.png"))
+                    File.Copy(src, $"{Dir}/{Path.GetFileName(src)}", true);
             if (Directory.Exists(Source))
             {
                 foreach (var src in Directory.GetFiles(Source, "*.png"))

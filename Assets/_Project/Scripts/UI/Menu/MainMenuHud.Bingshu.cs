@@ -156,6 +156,9 @@ namespace ThreeKingdoms.UI.Menu
             0 => new Color(0.92f, 0.36f, 0.38f), 1 => new Color(0.30f, 0.70f, 0.95f), 2 => new Color(0.95f, 0.78f, 0.30f), _ => new Color(0.45f, 0.85f, 0.55f)
         };
 
+        // Bagua.All order: 乾 兑 离 震 巽 坎 艮 坤.
+        static readonly string[] GuaKeys = { "qian", "dui", "li", "zhen", "xun", "kan", "gen", "kun" };
+
         // UI_STYLE_GUIDE element colours (金 银白, 木 青绿, 水 天蓝, 火 朱红, 土 赭金).
         static Color ElementColor(Element e) => e switch
         {
@@ -183,14 +186,18 @@ namespace ThreeKingdoms.UI.Menu
                 p.Disc(hub, half * 0.86f, new Color(0.04f, 0.07f, 0.13f, 0.95f));
             }
 
-            // Bagua directions whose element matches the book socketed there light up (user 2026-10-24).
+            // Bagua directions whose element matches the book socketed there light up (user 2026-10-24): the
+            // direction's trapezoid is swapped for its lit form (Codex art/bingshu-sector-highlights, drawn on the
+            // plate's own canvas); without that art a glow is drawn instead.
+            var plateRect = new Rect(hub.x - half, hub.y - half, half * 2, half * 2);
             for (int i = 0; i < c.Slots.Length; i++)
             {
                 int gua = c.Slots[i].Gua; var book = slots[i];
                 if (gua < 0 || book == null || Bagua.All[gua].Element != book.Element) continue;
+                float pulse = 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * 3f);
+                if (p.Icon(plateRect, "sector_lit_" + GuaKeys[gua], ScaleMode.StretchToFill, new Color(1, 1, 1, 0.85f + 0.15f * pulse))) continue;
                 var d = new Vector2(Bagua.All[gua].Dir.x, -Bagua.All[gua].Dir.y);
                 var col = ElementColor(book.Element);
-                float pulse = 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * 3f);
                 p.Line(hub + d * 196 * p.K, hub + d * 262 * p.K, 120 * p.K, new Color(col.r, col.g, col.b, 0.30f * pulse));
                 p.Line(hub + d * 206 * p.K, hub + d * 254 * p.K, 84 * p.K, new Color(col.r, col.g, col.b, 0.35f * pulse));
                 p.Line(hub + d * 256 * p.K + new Vector2(-d.y, d.x) * 60 * p.K, hub + d * 256 * p.K - new Vector2(-d.y, d.x) * 60 * p.K, 5 * p.K, new Color(1, 1, 1, 0.75f * pulse));
