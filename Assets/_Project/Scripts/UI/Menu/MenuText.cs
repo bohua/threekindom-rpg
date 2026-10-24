@@ -1,54 +1,65 @@
+using System;
+using System.Globalization;
 using ThreeKingdoms.Core.Battle;
+using ThreeKingdoms.Core.Story;
+using ThreeKingdoms.Gameplay.Story;
+using ThreeKingdoms.Save;
+using ThreeKingdoms.UI.Story;
 
 namespace ThreeKingdoms.UI.Menu
 {
-    // Town main menu strings (simplified Chinese). ADR-0007 replaces this with the localisation tables.
+    // Travel menu strings (simplified Chinese). ADR-0007 replaces this with the localisation tables.
     public static class MenuText
     {
-        public const string Title = "主菜单";
-        public const string Generals = "武将", Items = "物品", Settings = "设置", Close = "关闭菜单";
-        public const string GeneralsHint = "查看已入队武将的等级、属性、技能与装备。";
-        public const string SettingsHint = "测试版暂无可调整的设置项，可在此返回标题或退出游戏。";
-        public const string ToTitle = "返回标题", Quit = "退出游戏", Back2 = "返回";
-        public const string ToTitleHint = "回到标题画面。未存档的进度会丢失，可在酒馆掌柜处存档。";
-        public const string QuitHint = "退出游戏。未存档的进度会丢失。";
-        public const string SkillsHeader = "技能", GearHeader = "装备";
-        public const string BagEmpty = "背包里没有未装备的物品。";
-        public const string Back = "[菜单／取消] 关闭";
+        public const string TroopsFull = "该角色兵力已满。";
+        public const string TroopsFullLong = "当前兵力已满，使用后不会产生效果。";
+        public const string TroopsFullSkill = "当前兵力已满，无法使用。";
+        public const string BattleOnly = "仅能在战斗中使用。";
 
-        public static string Chapter(string chapter) => chapter;
+        // 行旅 / 涿郡 · 街市 (the tavern scene is 酒肆).
+        public static string Place(TownStoryController c) =>
+            c != null && c.gameObject.scene.name == GameRun.TavernScene ? "涿郡 · 酒肆" : "涿郡 · 街市";
 
-        public static string Exp(int exp, int? next) => next is int n ? $"经验 {exp}／升级需 {n}" : $"经验 {exp}（已达等级上限）";
-
-        public static string Attributes(UnitStats s) => $"武力 {s.Force}　统率 {s.Command}　智力 {s.Intellect}";
-
-        public static string Skill(string name, int cost, string description, bool learned, int level) =>
-            learned ? $"{name}（技力 {cost}）：{description}" : $"{name}（{level} 级习得）";
-        public static string Reputation(int value) => $"声望 {value}";
-
-        // The pause menu and the general's page (user 2026-10-22).
-        public const string EmptySlot = "此栏位尚未装备。", Candidates = "可换装备";
-        public static string TabName(MainMenuHud.Tab t) => t switch
+        // "目标：从南门出城迎敌（第二战 · 张梁）" → "从南门出城迎敌 · 第二战 张梁", as on the mock-ups.
+        public static string Quest(StoryState s)
         {
-            MainMenuHud.Tab.Items => "物品", MainMenuHud.Tab.Equip => "装备", MainMenuHud.Tab.Skills => "技能",
-            MainMenuHud.Tab.Generals => "武将", _ => "系统",
-        };
-        public static string InfoTabName(MainMenuHud.InfoTab t) => t switch
-        {
-            MainMenuHud.InfoTab.Status => "状态", MainMenuHud.InfoTab.Skills => "技能", MainMenuHud.InfoTab.Gear => "装备", _ => "列传",
-        };
+            string t = StoryText.Objective(s);
+            if (t.StartsWith("目标：")) t = t.Substring(3);
+            int open = t.IndexOf('（');
+            if (open > 0) t = t.Substring(0, open) + " · " + t.Substring(open + 1).TrimEnd('）').Replace(" · ", " ");
+            return t;
+        }
+
         public static string CourtesyName(string id) => id switch { "liu_bei" => "玄德", "guan_yu" => "云长", "zhang_fei" => "翼德", _ => "" };
 
-        // Who this troop type beats and loses to (V1_SPEC §5: ×1.4 once, no reverse penalty).
-        public static string Counter(TroopType t) => t switch
+        // One line under the skill name (技能 list).
+        public static string SkillBrief(SkillSpec s) => s.Id switch
         {
-            TroopType.Archer => "弓兵克骑兵，被步兵所克。占优时伤害 ×1.4。",
-            TroopType.Cavalry => "骑兵克步兵与黄巾军，被弓兵所克。占优时伤害 ×1.4。",
-            TroopType.Infantry => "步兵克弓兵，被骑兵所克。占优时伤害 ×1.4。",
-            _ => "",
+            "regroup" => "回复友军兵力。", "fire_arrows" => "单体计策攻击。", "charge" => "单体物理强攻。",
+            "break_formation" => "单体攻击并削弱物防。", "sweep" => "攻击全部敌军。", "intimidate" => "全体敌军物攻下降。",
+            _ => s.TargetsAllies ? "支援友军。" : "攻击敌军。",
         };
 
-        // 列传: short lives after 《三国演义》第一回 (paraphrased).
+        public static string SkillDetail(SkillSpec s) => s.Id switch
+        {
+            "regroup" => "回复一名存活友军 <color=#D6BA78>30%</color> 的最大兵力。\n不能用于已撤退单位。",
+            _ => (s.Description ?? "").Trim(),
+        };
+
+        static readonly string[] Ordinals = { "一", "二", "三" };
+
+        public static string SavePlace(string location)
+        {
+            if (location == SaveData.TownLocation) return "涿郡 · 酒肆";
+            if (location != null && location.StartsWith("battle_") && int.TryParse(location.Substring(7), out int n) && n >= 1 && n <= 3)
+                return $"南门整备 · 第{Ordinals[n - 1]}战";
+            return location;
+        }
+
+        public static string SavedAt(string iso) =>
+            DateTime.TryParse(iso, CultureInfo.InvariantCulture, DateTimeStyles.None, out var t) ? t.ToString("MM-dd HH:mm") : iso;
+
+        // 列传 (kept for later pages): short lives after 《三国演义》第一回 (paraphrased).
         public static string Biography(string id) => id switch
         {
             "liu_bei" => "字玄德，涿郡涿县人，自称汉中山靖王刘胜之后。少孤，与母贩屦织席为业。为人宽和，寡言语，喜怒不形于色，素有大志，专好结交天下豪杰。黄巾作乱，见榜慨然长叹，遂与关羽、张飞结义桃园，共举义兵。",
