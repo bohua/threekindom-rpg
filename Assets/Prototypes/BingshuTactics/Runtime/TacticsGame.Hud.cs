@@ -31,11 +31,29 @@ namespace Prototype.BingshuTactics
         void Frame(Rect r, string name, Color? fallbackEdge = null, float border = 24f)
         {
             var t = UI(name);
-            if (t) { GUI.DrawTexture(r, t, ScaleMode.StretchToFill, true, 0, Color.white, Vector4.one * border, 0); return; }
+            if (t) { Rect(new Rect(r.x + 2, r.y + 2, r.width - 4, r.height - 4), new Color(0.02f, 0.05f, 0.10f, 0.72f)); NineSlice(r, t, border); return; }
             Rect(r, name.Contains("selected") || name.Contains("active") || name.Contains("current") ? new Color(0.06f, 0.20f, 0.30f, 0.95f) : Navy);
             var edge = fallbackEdge ?? CyanDim;
             Rect(new Rect(r.x, r.y, r.width, 1.5f), edge); Rect(new Rect(r.x, r.yMax - 1.5f, r.width, 1.5f), edge);
             Rect(new Rect(r.x, r.y, 1.5f, r.height), edge); Rect(new Rect(r.xMax - 1.5f, r.y, 1.5f, r.height), edge);
+        }
+
+        // 自绘九宫格：贴图四边各取 b 像素（贴图像素），屏幕上四角按 min(b, 边长/2) 绘制，中间拉伸
+        static void NineSlice(Rect r, Texture2D t, float b)
+        {
+            float tw = t.width, th = t.height;
+            float bx = Mathf.Min(b, tw / 2 - 1), by = Mathf.Min(b, th / 2 - 1);
+            float sx = Mathf.Min(bx, r.width / 2), sy = Mathf.Min(by, r.height / 2);
+            float[] xs = { r.x, r.x + sx, r.xMax - sx, r.xMax }, ys = { r.y, r.y + sy, r.yMax - sy, r.yMax };
+            float[] us = { 0, bx / tw, 1 - bx / tw, 1 }, vs = { 1, 1 - by / th, by / th, 0 };   // GUI y 向下，纹理 v 向上
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                {
+                    var dst = UnityEngine.Rect.MinMaxRect(xs[i], ys[j], xs[i + 1], ys[j + 1]);
+                    if (dst.width <= 0 || dst.height <= 0) continue;
+                    var uv = UnityEngine.Rect.MinMaxRect(us[i], vs[j + 1], us[i + 1], vs[j]);
+                    GUI.DrawTextureWithTexCoords(dst, t, uv);
+                }
         }
 
         void Icon(Rect r, string name, Color fallback)
@@ -133,7 +151,7 @@ namespace Prototype.BingshuTactics
             ringAngle = Mathf.LerpAngle(ringAngle, target, 0.25f);
             const float R = 118f;
             var track = UI("ring_track");
-            if (track) GUI.DrawTexture(new Rect(c.x - R - 20, c.y - R - 20, (R + 20) * 2, (R + 20) * 2), track);
+            if (track) { float tr = R * 480f / 456f; GUI.DrawTexture(new Rect(c.x - tr, c.y - tr, tr * 2, tr * 2), track); }   // 轨道圆半径约占图 456/480
             else
                 for (int k = 0; k < 72; k++)
                 {
