@@ -151,6 +151,9 @@ namespace ThreeKingdoms.EditorTools
             hud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             hud.Portraits = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Story.DialoguePortraitSet>(DialoguePortraitImporter.SetPath);
 
+            // The ink scroll and the opening film after the last battle (user 2026-10-24).
+            CinematicsArtImporter.AddView(doc.panelSettings);
+
             // Attack and skill effects (user 2026-10-22).
             var vfx = new GameObject("Battle VFX").AddComponent<ThreeKingdoms.Gameplay.Battle.BattleVfx>();
             vfx.Controller = controller;

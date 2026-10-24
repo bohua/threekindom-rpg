@@ -171,7 +171,21 @@ public sealed class MainLineTests
         yield return null;
         c = Object.FindFirstObjectByType<TownStoryController>();
         c.FadeTime = 0.02f;
-        while (c.Busy) { Assert.Less(Time.realtimeSinceStartup, tavernDeadline); yield return null; c.Advance(); }
+        // The oath plays as an automatic scene (user 2026-10-24): every beat, letterboxed, then the ink scroll.
+        var beatsSeen = new System.Collections.Generic.HashSet<int>();
+        bool letterboxed = false;
+        while (c.Busy)
+        {
+            Assert.Less(Time.realtimeSinceStartup, tavernDeadline);
+            yield return null;
+            if (c.OathBeatIndex >= 0) beatsSeen.Add(c.OathBeatIndex);
+            letterboxed |= c.Letterbox;
+            c.Advance();
+        }
+        Assert.AreEqual(TownStoryController.OathBeats.Length, beatsSeen.Count, "every beat of the oath plays");
+        Assert.IsTrue(letterboxed, "the oath is letterboxed");
+        Assert.AreEqual(StoryCinematics.OathScroll, StoryCinematics.LastScroll, "the oath closes with its ink scroll");
+        Assert.AreEqual(1f, Time.timeScale, "time runs again after the scroll");
         Assert.AreEqual(SequenceState.Done, story.Oath);
         Assert.AreEqual(StoryPhase.LeaveTown, story.Phase);
         Assert.Less(Vector3.Distance(c.Player.transform.position, c.OathEndSpot.position), 0.5f, "control resumes inside the west gate");
@@ -256,6 +270,22 @@ public sealed class MainLineTests
                     Assert.IsNotNull(next, "ending step " + i);
                     Press(next);
                     yield return null;
+                    if (i > 0) continue;
+                    // First the ink scroll, the brothers' talk of the realm and the opening film (user 2026-10-24).
+                    float endingDeadline = Time.realtimeSinceStartup + 60f;
+                    bool talked = false;
+                    while (ButtonText("继续") == null)
+                    {
+                        Assert.Less(Time.realtimeSinceStartup, endingDeadline);
+                        talked |= hud.DialogueSpeaker != null;
+                        StoryCinematics.Advance();
+                        hud.AdvanceDialogue();
+                        yield return null;
+                    }
+                    Assert.AreEqual(StoryCinematics.YellowTurbanScroll, StoryCinematics.LastScroll);
+                    Assert.IsTrue(talked, "the brothers talk before the opening film");
+                    Assert.IsTrue(StoryCinematics.OpeningRequested);
+                    Assert.AreEqual(1f, Time.timeScale);
                 }
                 Assert.AreEqual(SequenceState.Done, GameRun.Current.Story.Ending);
                 Assert.IsTrue(HudRoot().Query<Label>().ToList().Any(l => l.text == "测试版结束"));

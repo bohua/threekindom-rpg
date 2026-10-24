@@ -468,7 +468,8 @@ namespace ThreeKingdoms.UI.Battle
             if (commanding) BuildMenu();
             if (Controller.Current == BattleController.Phase.Finished && Controller.Session.Result != null)
             {
-                if (AftermathDue()) PlayAftermath();
+                if (endingPlaying) { }
+                else if (AftermathDue()) PlayAftermath();
                 else if (!DialoguePlaying) ShowResult();
             }
             else resultPanel.style.display = DisplayStyle.None;
@@ -636,7 +637,7 @@ namespace ThreeKingdoms.UI.Battle
             if (++aftermathStep < aftermath.Count) { dialogue.Show(aftermath[aftermathStep].Speaker, aftermath[aftermathStep].Line); return; }
             dialogue.Hide();
             dialogueCatcher.style.display = DisplayStyle.None;
-            ShowResult();
+            if (!endingPlaying) ShowResult();
         }
 
         void ShowResult()
@@ -681,11 +682,35 @@ namespace ThreeKingdoms.UI.Battle
         }
 
         // Alpha 0.1 ending (story-events rule 19, answer 5): a couple of narration lines, then "test version ends".
+        // Before them (user 2026-10-24): the ink scroll for the beaten Yellow Turbans, the brothers' talk of the realm,
+        // and the opening film (design/gdd/story-cinematics.md §3.2).
         int endingStep;
+        bool endingPlaying;
+        public bool EndingPlaying => endingPlaying;
 
         void ShowEnding()
         {
             Controller.BeginEnding();
+            StartCoroutine(EndingSequence());
+        }
+
+        System.Collections.IEnumerator EndingSequence()
+        {
+            endingPlaying = true;
+            resultPanel.Clear();
+            resultPanel.style.display = DisplayStyle.None;
+            menu.style.display = DisplayStyle.None;
+            yield return null;   // the scroll freezes the battlefield, not the result panel
+            yield return ThreeKingdoms.Gameplay.Story.StoryCinematics.Scroll(ThreeKingdoms.Gameplay.Story.StoryCinematics.YellowTurbanScroll);
+            ThreeKingdoms.Gameplay.Story.StoryMusic.Play(ThreeKingdoms.Gameplay.Story.StoryMusic.AspirationCue, loop: true);
+            aftermath = ThreeKingdoms.Gameplay.Story.BattleScenes.Aspiration;
+            aftermathStep = 0;
+            dialogueCatcher.style.display = DisplayStyle.Flex;
+            dialogue.Show(aftermath[0].Speaker, aftermath[0].Line);
+            dialogueCatcher.Focus();
+            while (DialoguePlaying) yield return null;
+            ThreeKingdoms.Gameplay.Story.StoryMusic.Stop();
+            yield return ThreeKingdoms.Gameplay.Story.StoryCinematics.Opening();
             endingStep = 0;
             ShowEndingStep();
         }

@@ -1,7 +1,7 @@
 {
   "name": "ThreeKingdoms.Tests.EditMode",
   "rootNamespace": "",
-  "references": ["UnityEngine.TestRunner", "UnityEditor.TestRunner", "ThreeKingdoms.Core", "ThreeKingdoms.Data", "ThreeKingdoms.Save", "ThreeKingdoms.EditorTools", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
+  "references": ["UnityEngine.TestRunner", "UnityEditor.TestRunner", "ThreeKingdoms.Core", "ThreeKingdoms.Data", "ThreeKingdoms.Save", "ThreeKingdoms.EditorTools", "ThreeKingdoms.UI", "ThreeKingdoms.Gameplay", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
   "includePlatforms": ["Editor"],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

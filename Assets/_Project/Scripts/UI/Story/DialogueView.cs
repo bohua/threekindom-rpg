@@ -22,6 +22,8 @@ namespace ThreeKingdoms.UI.Story
         bool portraitRight;
 
         public VisualElement Box => box;
+        // Off during the peach-garden oath (user 2026-10-24): the scene itself shows the speakers.
+        public bool PortraitsEnabled { get; set; } = true;
         public bool Visible => box.style.display == DisplayStyle.Flex;
         // The speaker whose illustration is up, or null.
         public string PortraitSpeaker => portrait.style.display == DisplayStyle.Flex ? portraitSpeaker : null;
@@ -76,7 +78,7 @@ namespace ThreeKingdoms.UI.Story
 
         void ShowPortrait(string key)
         {
-            if (key == null || !portraits || !portraits.TryGet(key, out var p)) { portrait.style.display = DisplayStyle.None; portraitSpeaker = null; return; }
+            if (key == null || !PortraitsEnabled || !portraits || !portraits.TryGet(key, out var p)) { portrait.style.display = DisplayStyle.None; portraitSpeaker = null; return; }
             if (key == portraitSpeaker && portrait.style.display == DisplayStyle.Flex) return;
             float crop = p.Crop > 0 ? p.Crop : 0.6f, axis = p.Axis > 0 ? p.Axis : 0.5f;
             portrait.Show(p.Texture, p.Flip, crop, axis);
