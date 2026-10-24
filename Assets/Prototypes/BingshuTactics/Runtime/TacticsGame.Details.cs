@@ -35,7 +35,7 @@ namespace Prototype.BingshuTactics
             "sideGrassLip" => Env("side_grasslip"), "sideDirt" => Env("side_cliff"), "sideStoneBase" => Env("side_stonebase"),
             "sideWetBank" => Env("side_wetbank"), "sideRammed" => Env("side_rammed"),
             "wood" => Env("wood_plank"), "log" => Env("wood_log"), "cloth" => Env("tent_canvas"), "roof" => Env("roof_tile"),
-            "whitewash" => Env("plaster_frame"), "door" => Env("gate_door"), "flagLu" => Env("banner_lu"), "flagDong" => Env("banner_dong"),
+            "whitewash" => Env("plaster_frame"), "door" => Env("gate_passage_doors") ?? Env("gate_door"), "flagLu" => Env("banner_lu"), "flagDong" => Env("banner_dong"),
             "pillar" => Env("pillar_red"), "crate" => Env("crate"), "sack" => Env("sack"),
             "stone" => Env("rock_boulder") ?? Env("side_stonebase"),
             _ => null
