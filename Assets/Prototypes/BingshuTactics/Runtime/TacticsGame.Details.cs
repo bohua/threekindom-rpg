@@ -73,6 +73,7 @@ namespace Prototype.BingshuTactics
             var m = SpriteMat(name, additive);
             if (!m) return null;
             var t = m.mainTexture;
+            if (name.StartsWith("prop_")) scale *= ZPropScale;   // 涿郡道具按原尺寸画给原大小人物；本战场人物缩了一半，道具同比缩小
             float w = t.width / (float)frames / 30f * scale, h = t.height / 30f * scale;
             var q = GameObject.CreatePrimitive(PrimitiveType.Quad);
             Destroy(q.GetComponent<Collider>());
@@ -116,14 +117,14 @@ namespace Prototype.BingshuTactics
             Brazier(Tile(new Vector2Int(1, 11)) + new Vector3(0, 0, -0.25f));
             Brazier(Tile(new Vector2Int(13, 10)) + new Vector3(0.3f, 0, 0.3f));
             // 营寨军需（营寨格：y=11 的 0–2、12–13，y=10 的 0、2、13；西凉铁骑站 (1,10)(12,10)）
-            Tent(Tile(new Vector2Int(2, 11)));
-            Tent(Tile(new Vector2Int(12, 11)));
+            foreach (var tp in new[] { new Vector2Int(2, 11), new Vector2Int(12, 11) })
+                if (!Billboard("prop_army_tent", Tile(tp) + new Vector3(0, 0, 0.25f))) Tent(Tile(tp));
             foreach (var (p, off) in new[] { (new Vector2Int(0, 10), new Vector3(-0.3f, 0, 0.25f)), (new Vector2Int(13, 10), new Vector3(0.25f, 0, -0.3f)) })
-                if (!Billboard("sprite_weapon_rack", Tile(p) + off)) WeaponRack(Tile(p) + off);
+                if (!Billboard("prop_bow_rack", Tile(p) + off) && !Billboard("sprite_weapon_rack", Tile(p) + off)) WeaponRack(Tile(p) + off);
             foreach (var (p, off) in new[] { (new Vector2Int(2, 10), new Vector3(0.15f, 0, -0.3f)) })
-                if (!Billboard("sprite_supply_cart", Tile(p) + off)) Cart(Tile(p) + off);
+                if (!Billboard("prop_ox_cart", Tile(p) + off, 0.8f) && !Billboard("sprite_supply_cart", Tile(p) + off)) Cart(Tile(p) + off);
             foreach (var (p, off) in new[] { (new Vector2Int(0, 11), new Vector3(0.1f, 0, 0.35f)), (new Vector2Int(13, 11), new Vector3(-0.1f, 0, 0.35f)), (new Vector2Int(0, 10), new Vector3(0.3f, 0, -0.3f)) })
-                Supplies(Tile(p) + off, p.x * 5 + p.y);
+                if (!Billboard((p.x + p.y) % 3 == 0 ? "prop_grain_sacks" : (p.x + p.y) % 3 == 1 ? "prop_hay_pile" : "prop_sacks_pile", Tile(p) + off, 0.8f)) Supplies(Tile(p) + off, p.x * 5 + p.y);
             // 关上守军（精修件，4 帧待机）：站在墙道靠后，不挡关上弓手；营中拴马
             foreach (var (x, spear) in new[] { (1, true), (3, false), (4, true), (10, true), (11, false) })
                 Billboard(spear ? "sprite_guard_spear" : "sprite_guard_archer", Tile(new Vector2Int(x, 12)) + new Vector3(0, 0, T * 0.3f), 0.6f, 4);   // 与可操作单位同尺度（人物已缩半）
@@ -150,8 +151,8 @@ namespace Prototype.BingshuTactics
                     switch (t)
                     {
                         case Terrain.Grass:
-                            if (h < 0.18f) Billboard(h < 0.06f ? "sprite_bush_a" : h < 0.12f ? "sprite_bush_b" : "sprite_bush_c", c, 1f);
-                            else if (h < 0.55f) Billboard(h2 < 0.5f ? "sprite_grass_tuft_a" : "sprite_grass_tuft_b", c, 1f, shadow: false);
+                            if (h < 0.18f) { if (h >= 0.12f || !Billboard("prop_bush_b", c, 1f)) Billboard(h < 0.06f ? "sprite_bush_a" : h < 0.12f ? "sprite_bush_b" : "sprite_bush_c", c, 1f); }
+                            else if (h < 0.55f) { if (h2 >= 0.5f || !Billboard("prop_grass_tuft", c, 1f, shadow: false)) Billboard(h2 < 0.5f ? "sprite_grass_tuft_a" : "sprite_grass_tuft_b", c, 1f, shadow: false); }
                             else if (h < 0.65f) Billboard("sprite_flowers", c, 1f, shadow: false);
                             break;
                         case Terrain.Sand:
@@ -216,7 +217,7 @@ namespace Prototype.BingshuTactics
         // 火盆：铁三脚盆＋火焰动画＋暖色点光
         void Brazier(Vector3 foot)
         {
-            if (!Billboard("sprite_brazier", foot))
+            if (!Billboard("prop_brazier", foot, 1.2f) && !Billboard("sprite_brazier", foot))
             {
                 B(Stone).Box(foot + Vector3.up * 0.25f, new Vector3(0.08f, 0.5f, 0.08f), 2f);
                 B(Stone).Box(foot + Vector3.up * 0.52f, new Vector3(0.32f, 0.08f, 0.32f), 2f);

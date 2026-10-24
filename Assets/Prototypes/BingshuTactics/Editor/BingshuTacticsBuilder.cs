@@ -2,6 +2,7 @@
 // Question: 空轨式 AT 行动条＋小范围格子战斗，配合“学派回路镶嵌兵书→策略”，是否好玩、是否看得懂？
 // Date: 2026-10-22
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -45,6 +46,8 @@ namespace Prototype.BingshuTactics.EditorTools
             game.LuBuBust = ImportTexture("char_lubu_bust.png", false);
             game.UiTextures = ImportUiSlices();
             game.DestinyTextures = ImportDestinySlices();
+            game.HD2DProfile = AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>("Assets/_Project/Settings/HD2D_Default.asset");
+            Debug.Log("BINGSHU_HD2D_PROFILE " + (game.HD2DProfile ? game.HD2DProfile.name : "missing"));
             game.EnvTextures = ImportEnvTextures();
             // 单挑立绘与动作帧
             game.LiuBeiPortrait = Load<Texture2D>($"{Busts}/Full/LIU_BEI_MAIN_POSE.png");
@@ -155,6 +158,15 @@ namespace Prototype.BingshuTactics.EditorTools
         const string EnvSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-poc-hulao-texpack";
         const string EnvRefineSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-poc-hulao-refine";
 
+        const string ZhuojunRoot = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art";
+        static readonly string[] ZhuojunDirs = { "zhuojun-map-b5", "zhuojun-map-b4", "zhuojun-map-b3", "zhuojun-map-b2", "zhuojun-town", "zhuojun-corner" };
+        static readonly string[] ZhuojunFiles =
+        {
+            "ground_grass", "ground_earth_ruts", "ground_packed_earth", "ground_earth_gravel", "citywall_face", "citywall_parapet", "citywall_walkway",
+            "prop_army_tent", "prop_brazier", "prop_bow_rack", "prop_ox_cart", "prop_grain_sacks", "prop_hay_pile", "prop_sacks_pile",
+            "prop_tree_cypress", "prop_tree_elm", "prop_tree_willow", "prop_bush_b", "prop_grass_tuft",
+        };
+
         static Texture2D[] ImportEnvTextures()
         {
             if (!Directory.Exists(EnvSource)) return new Texture2D[0];
@@ -164,6 +176,12 @@ namespace Prototype.BingshuTactics.EditorTools
             // 精修补件（art/battle-poc-hulao-refine）与贴图包同一规格，一起导入
             var sources = System.Linq.Enumerable.ToList(Directory.GetFiles(EnvSource, "*.png"));
             if (Directory.Exists(EnvRefineSource)) sources.AddRange(Directory.GetFiles(EnvRefineSource, "*.png"));
+            // 涿郡原生贴图（同为每米 30 像素）：按批次新旧取最新一版；夯土地面用用户认可的原版噪点款（zhuojun-corner）
+            foreach (var name in ZhuojunFiles)
+            {
+                var src = ZhuojunDirs.Select(d => Path.Combine(ZhuojunRoot, d, name + ".png")).FirstOrDefault(File.Exists);
+                if (src != null) sources.Add(src);
+            }
             foreach (var src in sources)
             {
                 var file = Path.GetFileName(src);
@@ -175,7 +193,7 @@ namespace Prototype.BingshuTactics.EditorTools
                 imp.textureType = TextureImporterType.Default; imp.mipmapEnabled = false; imp.alphaIsTransparency = true; imp.isReadable = true;
                 imp.npotScale = TextureImporterNPOTScale.None; imp.filterMode = FilterMode.Point;
                 imp.textureCompression = TextureImporterCompression.Uncompressed;
-                imp.wrapMode = file.StartsWith("sprite_") || file.StartsWith("fx_") || file.StartsWith("banner_") ? TextureWrapMode.Clamp : TextureWrapMode.Repeat;
+                imp.wrapMode = file.StartsWith("sprite_") || file.StartsWith("fx_") || file.StartsWith("banner_") || file.StartsWith("prop_") ? TextureWrapMode.Clamp : TextureWrapMode.Repeat;
                 imp.SaveAndReimport();
                 list.Add(AssetDatabase.LoadAssetAtPath<Texture2D>(dst));
             }

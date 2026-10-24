@@ -1,8 +1,14 @@
 {
   "name": "Prototype.BingshuTactics.Editor",
   "rootNamespace": "Prototype.BingshuTactics.EditorTools",
-  "references": ["Prototype.BingshuTactics"],
-  "includePlatforms": ["Editor"],
+  "references": [
+    "Prototype.BingshuTactics",
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.Universal.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
   "overrideReferences": false,

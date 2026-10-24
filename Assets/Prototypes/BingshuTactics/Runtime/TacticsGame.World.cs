@@ -335,7 +335,13 @@ namespace Prototype.BingshuTactics
                     int rot = groundT == Terrain.Grass || groundT == Terrain.Camp || groundT == Terrain.Sand ? (int)(Hash(x, y, 4) * 4) % 4 : 0;
                     var uvs = new[] { new Vector2(v / 4f, 0), new Vector2(v / 4f, 1), new Vector2((v + 1) / 4f, 1), new Vector2((v + 1) / 4f, 0) };
                     var r = Enumerable.Range(0, 4).Select(i => uvs[(i + rot) % 4]).ToArray();
-                    var topMat = groundT == Terrain.River ? waterMat : TopMat(groundT);
+                    var zTop = groundT == Terrain.River ? null : ZMat(ZTop(groundT));
+                    if (zTop)
+                    {
+                        Vector2 W2(float wx, float wz) => new Vector2(wx / ZTile, wz / ZTile);
+                        r = new[] { W2(x0 + iW, z0 + iS), W2(x0 + iW, z1 - iN), W2(x1 - iE, z1 - iN), W2(x1 - iE, z0 + iS) };
+                    }
+                    var topMat = groundT == Terrain.River ? waterMat : zTop ? zTop : TopMat(groundT);
                     B(topMat).Quad(new Vector3(x0 + iW, top, z0 + iS), new Vector3(x0 + iW, top, z1 - iN), new Vector3(x1 - iE, top, z1 - iN), new Vector3(x1 - iE, top, z0 + iS), r[0], r[1], r[2], r[3]);
 
                     // 侧面：只画比邻格高出来的部分
@@ -380,7 +386,14 @@ namespace Prototype.BingshuTactics
                 var at = a + Vector3.up * y + inward * topIn; var bt = b + Vector3.up * y + inward * topIn;
                 var ab = a + Vector3.up * yb + inward * botIn; var bb = b + Vector3.up * yb + inward * botIn;
                 float v1 = seg / HS;
-                B(SideMat(s)).Quad(ab, at, bt, bb, new Vector2(0, 1 - v1), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 1 - v1));
+                var zWall = IsWallish(p) ? ZMat("citywall_face") : null;
+                if (zWall)
+                {
+                    // 涿郡城墙立面：120×150 一张对应 4 米宽、5 米高，按世界坐标连续铺
+                    float ua = (d.y != 0 ? a.x : a.z) / ZTile, ub = (d.y != 0 ? b.x : b.z) / ZTile;
+                    B(zWall).Quad(ab, at, bt, bb, new Vector2(ua, yb / 5f), new Vector2(ua, y / 5f), new Vector2(ub, y / 5f), new Vector2(ub, yb / 5f));
+                }
+                else B(SideMat(s)).Quad(ab, at, bt, bb, new Vector2(0, 1 - v1), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 1 - v1));
                 y = yb; layer++;
             }
             // 相差一层、两边都能走的地方加三级踏步（只是视觉；规则仍按“登高 +1”）
@@ -635,6 +648,7 @@ namespace Prototype.BingshuTactics
         // 树：六棱柱树干＋与人物同角度的树冠公告板
         void Tree(Vector3 c, int kind)
         {
+            if (Billboard(kind == 0 ? "prop_tree_cypress" : kind == 1 ? "prop_tree_elm" : "prop_tree_willow", c, 1f)) return;   // 涿郡整树精灵
             var trunk = B(Wood);
             float th = kind == 0 ? 0.9f : 0.7f;
             for (int i = 0; i < 6; i++)

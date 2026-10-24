@@ -235,6 +235,7 @@ namespace Prototype.BingshuTactics
             sun.transform.rotation = Quaternion.Euler(52f, 140f, 0f);
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.52f, 0.55f, 0.62f);
+            SetupHD2D(sun);
 
             BuildWorld3D();
 

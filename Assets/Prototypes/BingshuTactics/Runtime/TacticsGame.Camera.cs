@@ -85,6 +85,7 @@ namespace Prototype.BingshuTactics
             var look = Vector3.Lerp(camTarget, duelLook, z);
             float dist = CamDistance * zoomLevel * (1f - 0.4f * z);
             cam.transform.SetPositionAndRotation(look - rot * Vector3.forward * dist, rot);
+            UpdateFocus(dist);
         }
 
         // ---------------- 小地图 ----------------
