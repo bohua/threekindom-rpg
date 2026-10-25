@@ -64,7 +64,8 @@ namespace Prototype.BingshuTactics
         {
             Application.targetFrameRate = 60;
             block = new MaterialPropertyBlock();
-            grid = stage == 1 ? HulaoGrid() : FieldGrid();
+            if (IsChapter) stage = 2;
+            grid = IsChapter ? Grid.FromRows(Chapter.Rows, ChapterLegend) : stage == 1 ? HulaoGrid() : FieldGrid();
             W = grid.W; H = grid.H;
             disc = MakeDisc(64);
             BuildWorld();
@@ -74,6 +75,7 @@ namespace Prototype.BingshuTactics
             font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "Microsoft YaHei UI", "SimHei", "SimSun", "DengXian" }, 18);
             white = Texture2D.whiteTexture;
             Log("布阵：点选我方武将，再点蓝色格子调整站位。可先打开「兵书回路」配书。");
+            if (IsChapter && Chapter.AutoPlay) { autoPlay = true; mode = Mode.Busy; StartCoroutine(BattleLoop()); }
             var args = System.Environment.GetCommandLineArgs();
             int i = System.Array.IndexOf(args, "-poc-shots");
             if (i >= 0 && i + 1 < args.Length) StartCoroutine(AutoShots(args[i + 1]));
@@ -219,7 +221,7 @@ namespace Prototype.BingshuTactics
             return g;
         }
 
-        bool InDeploy(Vector2Int p) => stage == 1 ? p.y <= 1 && p.x >= 3 && p.x <= 10 : p.x < 3;
+        bool InDeploy(Vector2Int p) => IsChapter ? Chapter.Deploy.Contains(p) : stage == 1 ? p.y <= 1 && p.x >= 3 && p.x <= 10 : p.x < 3;
 
         void BuildWorld()
         {
@@ -236,6 +238,7 @@ namespace Prototype.BingshuTactics
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.52f, 0.55f, 0.62f);
             SetupHD2D(sun);
+            if (IsChapter) ChapterLighting(sun);
 
             BuildWorld3D();
 
@@ -258,26 +261,35 @@ namespace Prototype.BingshuTactics
 
         Book L(string name, int skip = 0) => library.Where(b => b.Name == name).Skip(skip).First();
 
+        // 刘关张默认配书（原型配置；兵书页的改动只在本次游玩内存中）
+        void DefaultBooks(Unit u)
+        {
+            switch (u.Name)
+            {
+                case "刘备": u.Slots[0] = L("《管子·度地》"); u.Slots[1] = L("《三略》"); u.Slots[2] = L("《司马法》"); u.Slots[3] = L("《墨子·备水》"); break;
+                case "关羽": u.Slots[0] = L("《孙子·火攻》"); u.Slots[3] = L("《六韬·火战》"); u.Slots[4] = L("《火攻》残卷"); u.Slots[1] = L("《尉缭子》"); u.Slots[2] = L("《管子·牧民》"); break;
+                case "张飞": u.Slots[0] = L("《孙膑兵法·八阵》"); u.Slots[1] = L("《墨子·备城门》"); u.Slots[5] = L("《六韬·龙韬》"); u.Slots[2] = L("《吴子》"); break;
+            }
+        }
+
         void BuildUnits()
         {
+            if (IsChapter) { BuildChapterUnits(); return; }
             var liu = NewUnit("刘备", "LiuBei", Team.Player, Troop.Archer, School.Ru, 160, 50, 35, 56, 35, 8, 3, 3, 60, new Vector2Int(1, 5));
             liu.Int = 81; liu.Wu = 68;
             liu.Crafts.Add(Craft("整队", "单体友军回复30%兵力", Effect.Heal, Area.Single, 3, 0, 0.30f, 20));
             liu.Crafts.Add(Craft("火矢", "单体计策1.3倍（射程4）", Effect.Damage, Area.Single, 4, 0, 1.3f, 25));
-            liu.Slots[0] = L("《管子·度地》"); liu.Slots[1] = L("《三略》"); liu.Slots[2] = L("《司马法》"); liu.Slots[3] = L("《墨子·备水》");
 
             var guan = NewUnit("关羽", "GuanYu", Team.Player, Troop.Cavalry, School.Bing, 170, 64, 36, 47, 29, 10, 5, 1, 40, new Vector2Int(2, 7));
             guan.Int = 63; guan.Wu = 96;
             guan.Crafts.Add(Craft("突击", "近战单体物理1.5倍", Effect.Damage, Area.Single, -1, 0, 1.5f, 25, might: true));
             guan.Crafts.Add(Craft("破阵", "近战单体1.1倍，物防-20% 2回合", Effect.Debuff, Area.Single, -1, 0, 1.1f, 30, might: true, turns: 2, amount: 0.2f));
-            guan.Slots[0] = L("《孙子·火攻》"); guan.Slots[3] = L("《六韬·火战》"); guan.Slots[4] = L("《火攻》残卷");
-            guan.Slots[1] = L("《尉缭子》"); guan.Slots[2] = L("《管子·牧民》");
 
             var zhang = NewUnit("张飞", "ZhangFei", Team.Player, Troop.Infantry, School.Fa, 190, 66, 40, 40, 24, 6, 3, 1, 30, new Vector2Int(2, 3));
             zhang.Int = 48; zhang.Wu = 100;
             zhang.Crafts.Add(Craft("横扫", "自身周围2格内敌军物理0.65倍", Effect.Damage, Area.SelfCircle, 0, 2, 0.65f, 30, might: true));
             zhang.Crafts.Add(Craft("威慑", "自身周围3格内敌军物攻-20% 2回合", Effect.Debuff, Area.SelfCircle, 0, 3, 0f, 25, turns: 2, amount: 0.2f));
-            zhang.Slots[0] = L("《孙膑兵法·八阵》"); zhang.Slots[1] = L("《墨子·备城门》"); zhang.Slots[5] = L("《六韬·龙韬》"); zhang.Slots[2] = L("《吴子》");
+            foreach (var pu in new[] { liu, guan, zhang }) DefaultBooks(pu);
 
             if (stage == 1)
             {
@@ -313,7 +325,7 @@ namespace Prototype.BingshuTactics
             var material = key switch
             {
                 "LiuBei" => LiuBeiMat, "GuanYu" => GuanYuMat, "ZhangFei" => ZhangFeiMat, "ZhangJiao" => ZhangJiaoMat,
-                "LuBu" => LuBuMat, "Xiliang" => XiliangMat, "WallArcher" => WallArcherMat, _ => RebelMat
+                "LuBu" => LuBuMat, "Xiliang" => XiliangMat, "WallArcher" => WallArcherMat, _ => CharMat(key) ?? RebelMat
             };
             var root = new GameObject(name).transform;
             var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
@@ -424,6 +436,7 @@ namespace Prototype.BingshuTactics
             UpdateRigs();
             UpdateScenery();
             UpdateCastRings();
+            UpdateChapter();
 
             for (int i = popups.Count - 1; i >= 0; i--)
             {
@@ -535,6 +548,7 @@ namespace Prototype.BingshuTactics
                     return;
                 case Mode.Victory:
                 case Mode.Defeat:
+                    if (IsChapter) { if (ok && !(Chapter.AutoPlay && mode == Mode.Victory)) FinishChapter(); return; }
                     if (ok || Pressed(Kb?.rKey, Pad?.startButton)) UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex);
                     return;
                 case Mode.Busy:
@@ -556,7 +570,7 @@ namespace Prototype.BingshuTactics
             {
                 if (Pressed(Kb?.tabKey, Pad?.buttonNorth)) { mode = Mode.Circuit; circuitSlot = 0; circuitFocus = 0; }
                 else if (Pressed(Kb?.fKey, Pad?.startButton)) { mode = Mode.Busy; StartCoroutine(BattleLoop()); }
-                else if (Pressed(Kb?.tKey, Pad?.selectButton)) { stage = 1 - stage; UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex); }
+                else if (!IsChapter && Pressed(Kb?.tKey, Pad?.selectButton)) { stage = 1 - stage; UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex); }
             }
         }
 
@@ -687,10 +701,17 @@ namespace Prototype.BingshuTactics
         IEnumerator BattleLoop()
         {
             Log("开战！左侧行动条从上到下为行动顺序；策略需要咏唱，读条期间会被行动条挤后。");
+            if (IsChapter) yield return OpeningLines();
             while (true)
             {
                 var u = AtClock.Next(units);
                 now = u.At; active = u; u.Defending = false; moved = false;
+                if (IsChapter)
+                {
+                    yield return ChapterRoundEvents();
+                    if (mode == Mode.Victory || mode == Mode.Defeat) yield break;
+                    if (!u.Alive) continue;
+                }
                 yield return new WaitForSeconds(0.25f);
 
                 if (u.PendingCast != null)
@@ -699,7 +720,7 @@ namespace Prototype.BingshuTactics
                     u.At = now + AtClock.Delay(u.PendingCast?.Recover ?? 80, u.Speed);
                     u.PendingCast = null; u.PendingFollow = null;
                 }
-                else if (u.Team == Team.Player && autoPlay)
+                else if (u.Team == Team.Player && (autoPlay || u.Ai))
                 {
                     mode = Mode.Busy;
                     yield return EnemyTurn(u);
@@ -719,6 +740,12 @@ namespace Prototype.BingshuTactics
                 u.TickStatuses();
                 mode = Mode.Busy; turns++;
 
+                if (IsChapter)
+                {
+                    yield return ChapterHpEvents();
+                    if (CheckChapterEnd()) yield break;
+                    continue;
+                }
                 if (stage == 1 && !units.First(x => x.Name == "吕布").Alive) { mode = Mode.Victory; Log("吕布力敌三英不支，拨马退入虎牢关！按 R 重来。"); yield break; }
                 if (!Foes(units.First(x => x.Team == Team.Player)).Any()) { mode = Mode.Victory; Log("胜利！黄巾溃退。按 R 重来。"); yield break; }
                 if (!units.Any(x => x.Alive && x.Team == Team.Player)) { mode = Mode.Defeat; Log("我军败退……按 R 重来。"); yield break; }
@@ -854,6 +881,12 @@ namespace Prototype.BingshuTactics
                 }
                 yield break;
             }
+            if (u.Escort && u.Hp * 2 < u.MaxHp)
+            {
+                u.Defending = true; Log($"{u.Name} 收拢残兵固守");
+                popups.Add((views[u].position + Vector3.up * 2f, "防御", Color.white, 0f));
+                u.At = now + AtClock.Delay(50, u.Speed); yield break;
+            }
             var strats = StrategiesOf(u);
             var big = strats.Select(l => l.Def).FirstOrDefault(s => s.Area == Area.Circle && s.Effect == Effect.Damage && u.Ep >= s.Cost);
             if (big != null)
@@ -873,7 +906,7 @@ namespace Prototype.BingshuTactics
             var targets = AttackableTargets(u, u.AtkRange);
             if (targets.Count > 0)
             {
-                var t = targets.OrderBy(x => x.Hp).First();
+                var t = targets.FirstOrDefault(x => x.Name == u.Focus) ?? targets.OrderBy(x => x.Hp).First();
                 Log($"{u.Name} 攻击 {t.Name}");
                 yield return DoAttack(u, t);
                 u.At = now + AtClock.Delay(100, u.Speed);
@@ -881,7 +914,8 @@ namespace Prototype.BingshuTactics
             }
             if (u.Move == 0) { u.At = now + AtClock.Delay(60, u.Speed); yield break; }   // 守关单位不离位
             var r = ReachOf(u);
-            var dest = r.Keys.Where(p => CanStop(u, p)).OrderBy(p => Foes(u).Min(f => Grid.Dist(p, f.Pos))).First();
+            var focus = Foes(u).FirstOrDefault(f => f.Name == u.Focus);
+            var dest = r.Keys.Where(p => CanStop(u, p)).OrderBy(p => focus != null ? Grid.Dist(p, focus.Pos) : Foes(u).Min(f => Grid.Dist(p, f.Pos))).First();
             yield return Walk(u, Grid.Path(r, dest));
             u.At = now + AtClock.Delay(70, u.Speed);
         }
@@ -1024,6 +1058,7 @@ namespace Prototype.BingshuTactics
             if (mode == Mode.SkillList) DrawSidePanel(true);
             if (mode == Mode.TargetSkill || mode == Mode.TargetAttack || mode == Mode.TargetMove) DrawHoverInfo(sw);
             if (mode == Mode.Idle || mode == Mode.Busy || mode == Mode.Deploy) DrawHoverInfo(sw);
+            if (IsChapter) DrawChapterOverlay(sw);
             if (mode == Mode.Victory || mode == Mode.Defeat)
                 GUI.Label(new Rect(0, 280, sw, 60), mode == Mode.Victory ? "胜 利" : "败 退", new GUIStyle(big) { alignment = TextAnchor.MiddleCenter, fontSize = 48 });
 
@@ -1046,6 +1081,7 @@ namespace Prototype.BingshuTactics
                 GUI.Label(new Rect(cp.x - 19, cp.y - 15, 40, 32), "▼", sh);
                 GUI.Label(new Rect(cp.x - 20, cp.y - 16, 40, 32), "▼", st);
             }
+            if (IsChapter) DrawChapterLabels();
             if (stage == 1)
             {
                 var gp = ToGui(Tile(new Vector2Int(7, 12)) + Vector3.up * 1.1f);
@@ -1184,9 +1220,9 @@ namespace Prototype.BingshuTactics
         {
             var r = new Rect(sw / 2 - 260, 40, 520, 64);
             Rect(r, new Color(0.04f, 0.06f, 0.1f, 0.85f));
-            GUI.Label(new Rect(r.x + 12, r.y + 6, 500, 22), $"{(stage == 1 ? "虎牢关·三英战吕布" : "黄巾旷野")} · 布阵 · 当前选中：{(deploySel != null ? deploySel.Name : "（点选我方武将）")}", text);
+            GUI.Label(new Rect(r.x + 12, r.y + 6, 500, 22), $"{(IsChapter ? Chapter.Title : stage == 1 ? "虎牢关·三英战吕布" : "黄巾旷野")} · 布阵 · 当前选中：{(deploySel != null ? deploySel.Name : "（点选我方武将）")}", text);
             if (GUI.Button(new Rect(r.x + 12, r.y + 32, 150, 26), "兵书回路（Tab/Y）")) { mode = Mode.Circuit; circuitSlot = -1; circuitFocus = 0; }
-            if (GUI.Button(new Rect(r.x + 185, r.y + 32, 150, 26), stage == 1 ? "换关：黄巾旷野（T）" : "换关：虎牢关（T）"))
+            if (!IsChapter && GUI.Button(new Rect(r.x + 185, r.y + 32, 150, 26), stage == 1 ? "换关：黄巾旷野（T）" : "换关：虎牢关（T）"))
             {
                 stage = 1 - stage;
                 UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex);

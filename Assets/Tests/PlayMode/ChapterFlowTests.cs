@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Jrpg;
 using NUnit.Framework;
+using Prototype.BingshuTactics;
 using ThreeKingdoms.Core.Battle;
 using ThreeKingdoms.Core.Story;
 using ThreeKingdoms.Data.Battle;
@@ -27,12 +28,17 @@ public sealed class ChapterFlowTests
     {
         GameRun.Clear();
         StagePlayer.AutoSeconds = 0f;
+        ChapterTactics.AutoPlay = true;
+        Time.timeScale = 6f;
         saveDir = System.IO.Path.Combine(Application.temporaryCachePath, "chapter-" + System.Guid.NewGuid().ToString("N"));
         GameRun.SaveDirectoryOverride = saveDir;
     }
 
     [TearDown] public void Clean()
     {
+        ChapterTactics.AutoPlay = false;
+        Time.timeScale = 1f;
+        TacticsGame.Chapter = null;
         GameRun.Clear();
         GameRun.SaveDirectoryOverride = null;
         if (System.IO.Directory.Exists(saveDir)) System.IO.Directory.Delete(saveDir, true);
@@ -102,27 +108,24 @@ public sealed class ChapterFlowTests
         yield return null;
     }
 
+    // Battles 4–6 are fought on the tactics map (ADR-0010): the AI plays our side, lines advance by themselves.
     IEnumerator WinBattle(string expected)
     {
-        yield return WaitFor<BattleController>();
-        var b = Object.FindFirstObjectByType<BattleController>();
-        Assert.AreEqual(expected, b.EncounterId);
-        var hud = Object.FindFirstObjectByType<BattleHud>();
-        if (b.Current == BattleController.Phase.Preparing) b.ConfirmPreparation();
-        b.PlaybackSpeed = 4f; b.Fast = true; b.Auto = true;
-        float deadline = Time.realtimeSinceStartup + 240f;
-        while (b.Current != BattleController.Phase.Finished)
+        yield return WaitFor<TacticsGame>();
+        var bridge = Object.FindFirstObjectByType<ChapterTactics>();
+        Assert.AreEqual(expected, bridge.EncounterId);
+        var game = Object.FindFirstObjectByType<TacticsGame>();
+        string scene = SceneManager.GetActiveScene().name;
+        float deadline = Time.realtimeSinceStartup + 400f;
+        while (!game.ChapterFinished)
         {
             Assert.Less(Time.realtimeSinceStartup, deadline, "battle " + expected);
-            if (hud.EventDialoguePlaying) hud.AdvanceDialogue();
+            Assert.IsFalse(game.Lost, expected + " lost");
             yield return null;
         }
-        Assert.AreEqual(BattleOutcome.Victory, b.Session.Result.Outcome, expected + " won");
-        Assert.IsTrue(b.LastApplied.RewardGranted);
-        yield return null;
-        while (hud.DialoguePlaying) { hud.AdvanceDialogue(); yield return null; }
-        Assert.IsTrue(b.CanContinueStory);
-        b.ContinueStory();
+        Debug.Log($"CHAPTER_TEST {expected} won in round {game.Rounds}");
+        Assert.IsTrue(bridge.LastApplied.RewardGranted);
+        while (SceneManager.GetActiveScene().name == scene) yield return null;
         yield return null;
     }
 

@@ -20,6 +20,15 @@ namespace Prototype.BingshuTactics.EditorTools
         [MenuItem("Prototype/兵书战棋原型/生成场景")]
         public static void BuildScene()
         {
+            CreateScene();
+            EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ScenePath);
+            AssetDatabase.SaveAssets();
+            Debug.Log("BINGSHU_TACTICS_SCENE_OK");
+        }
+
+        // 新建一个只有相机和 TacticsGame 的场景并填好美术引用（不保存）；0.2 主线的三场战斗也用它建场景
+        public static TacticsGame CreateScene()
+        {
             var lit = Shader.Find("Universal Render Pipeline/Lit");
             var ground = SaveMat("Ground", new Material(lit) { color = Color.white });
             var rock = SaveMat("Rock", new Material(lit) { color = new Color(0.45f, 0.42f, 0.38f) });
@@ -63,9 +72,7 @@ namespace Prototype.BingshuTactics.EditorTools
             game.ZhangFeiBust = Load<Texture2D>($"{Busts}/ZhangFei_Bust.png");
             game.GroundMat = ground; game.RockMat = rock; game.OverlayMat = overlay;
             game.Palette = LoadPalette(PalettePath);
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            AssetDatabase.SaveAssets();
-            Debug.Log("BINGSHU_TACTICS_SCENE_OK");
+            return game;
         }
 
         [MenuItem("Prototype/兵书战棋原型/构建 Windows")]

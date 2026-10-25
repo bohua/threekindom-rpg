@@ -75,7 +75,6 @@ namespace ThreeKingdoms.EditorTools
         // Battles 4–6 alone (the main-line build calls this after the Zhuojun battles).
         public static void BuildChapterBattles()
         {
-            ChapterBackdrops.Build();
             var catalog = BattleDataBuilder.Build();
             BattleUiSkinBuilder.Build();
             var icons = BuildTroopIcons();
@@ -83,7 +82,8 @@ namespace ThreeKingdoms.EditorTools
             ConvertEnemySheets();
             vfxSheets = CodexArtImporter.VfxSheets();
             DialoguePortraitImporter.Import();
-            foreach (var battle in ChapterBattles()) BuildScene(battle, catalog, icons, panel);
+            // User 2026-10-25: battles 4–6 are fought on the tactics map (ADR-0010), not in the round-based scene.
+            ChapterTacticsBuilder.Build(catalog);
             AssetDatabase.SaveAssets();
             Debug.Log("CHAPTER_BATTLES_BUILT");
         }

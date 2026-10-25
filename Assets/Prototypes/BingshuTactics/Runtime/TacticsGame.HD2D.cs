@@ -4,6 +4,7 @@
 // 虎牢关改用涿郡的 HD-2D 画面（用户 2026-10-24：“战场美术比较粗糙，看能否做成涿郡那种HD2D的贴图来展现虎牢关，地貌，营寨等细节”）：
 // 同一套后期（景深、泛光、ACES、暗角、暖色 LUT，取自 Assets/_Project/Settings/HD2D_Default.asset）、
 // 同一套三色环境光与暖雾、暖色斜阳，以及涿郡的原生贴图（每米 30 像素，地面 120×120 一张铺 4 米）。
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -19,7 +20,7 @@ namespace Prototype.BingshuTactics
         const float ZPropScale = 0.55f;
 
         // 涿郡贴图（缺图时退回虎牢关贴图包）
-        string ZTop(Terrain t) => t switch
+        string ZTop(Terrain t) => HdTop(t) ? "hd:" + HdTop(t).name : t switch
         {
             Terrain.Grass => "ground_grass", Terrain.Road => "ground_earth_ruts", Terrain.Sand => "ground_packed_earth", Terrain.Camp => "ground_earth_gravel", Terrain.Ford => "ground_ford_shallows", Terrain.Bridge => "bridge_deck",
             Terrain.Wall or Terrain.Gate => "citywall_walkway", _ => null
@@ -27,6 +28,7 @@ namespace Prototype.BingshuTactics
 
         Material ZMat(string name)
         {
+            if (name != null && name.StartsWith("hd:")) { var hd = HdGround.FirstOrDefault(x => x && x.name == name.Substring(3)); return hd ? LitMat("z_" + name, hd) : null; }
             var t = name == null ? null : Env(name);
             return t ? LitMat("z_" + name, t) : null;
         }

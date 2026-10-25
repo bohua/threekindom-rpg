@@ -101,7 +101,7 @@ namespace Prototype.BingshuTactics
             Rect(new Rect(0, 0, sw, 46), new Color(0.03f, 0.06f, 0.11f, 0.92f));
             Rect(new Rect(0, 46, sw, 1.5f), CyanDim);
             GUI.Label(new Rect(28, 2, 300, 42), "临阵·六令", St(26, Color.white, TextAnchor.MiddleLeft, true));
-            string where = stage == 1 ? "虎牢关外" : "黄巾旷野";
+            string where = IsChapter ? Chapter.Where : stage == 1 ? "虎牢关外" : "黄巾旷野";
             string who = active != null && mode != Mode.Deploy && mode != Mode.Circuit ? $" · {active.Name}的回合" : mode == Mode.Deploy ? " · 布阵" : "";
             GUI.Label(new Rect(sw - 560, 2, 400, 42), where + who, St(16, new Color(0.85f, 0.92f, 1f), TextAnchor.MiddleRight));
             if (mode != Mode.Deploy && mode != Mode.Circuit) GUI.Label(new Rect(sw - 150, 2, 130, 42), $"第{RoundNo}回合", St(20, Amber, TextAnchor.MiddleRight, true));
@@ -271,7 +271,7 @@ namespace Prototype.BingshuTactics
         // ---------------- 底部武将卡与操作提示 ----------------
         void DrawPartyV(float sw)
         {
-            var party = units.Where(u => u.Team == Team.Player).ToList();
+            var party = units.Where(u => u.Team == Team.Player && !u.Ai).ToList();
             float w = 300, gap = 10, y = RefH - 132, x0 = 14;
             foreach (var u in party)
             {
@@ -282,7 +282,7 @@ namespace Prototype.BingshuTactics
                 if (b) GUI.DrawTexture(new Rect(r.x + 6, r.y + 6, 96, r.height - 12), b, ScaleMode.ScaleAndCrop);
                 float bx = r.x + 110;
                 GUI.Label(new Rect(bx, r.y + 4, 120, 30), u.Name, St(21, Color.white, TextAnchor.MiddleLeft, true));
-                GUI.Label(new Rect(bx + 62, r.y + 6, 60, 28), "Lv.03", St(13, Amber));
+                GUI.Label(new Rect(bx + 62, r.y + 6, 60, 28), $"Lv.{(u.Level > 0 ? u.Level : 3):00}", St(13, Amber));
                 if (act) { var tag = new Rect(r.xMax - 74, r.y + 8, 64, 24); Frame(tag, "list_item_selected", Cyan, 8); GUI.Label(tag, "行动中", St(14, Color.white, TextAnchor.MiddleCenter, true)); }
                 void Stat(float dy, string label, int v, int max, Color c)
                 {

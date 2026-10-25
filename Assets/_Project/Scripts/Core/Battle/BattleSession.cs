@@ -17,6 +17,11 @@ namespace ThreeKingdoms.Core.Battle
         public int Copper { get; }
         public int RationsUsed { get; }
 
+        // A victory won outside the round-based core (0.2 battles 4–6 are fought on the tactics map, ADR-0010):
+        // the encounter's exp and copper, applied by the same owners as any other result.
+        public static BattleResult Victory(EncounterSpec encounter, int rounds, int rationsUsed = 0) =>
+            new BattleResult(encounter.Id, BattleOutcome.Victory, rounds, encounter.ExpReward, encounter.CopperReward, rationsUsed);
+
         internal BattleResult(string encounterId, BattleOutcome outcome, int rounds, int exp, int copper, int rationsUsed)
         {
             EncounterId = encounterId; Outcome = outcome; Rounds = rounds; Exp = exp; Copper = copper; RationsUsed = rationsUsed;

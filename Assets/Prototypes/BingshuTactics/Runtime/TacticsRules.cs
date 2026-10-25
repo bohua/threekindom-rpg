@@ -15,7 +15,7 @@ namespace Prototype.BingshuTactics
     public enum Area { Single, Circle, Line, SelfCircle }
     public enum Effect { Damage, Heal, Guard, Buff, Debuff }
     // 地形（用户 2026-10-23）：草地、沙地、河流、浅滩、桥、道路、营寨、关墙、关门、拒马、山石
-    public enum Terrain { Grass, Sand, River, Ford, Bridge, Road, Camp, Wall, Gate, JuMa, Rock }
+    public enum Terrain { Grass, Sand, River, Ford, Bridge, Road, Camp, Wall, Gate, JuMa, Rock, Woods, Fire }   // 树林、火（0.2 黄巾篇）
 
     public static class Wuxing
     {
@@ -282,6 +282,7 @@ namespace Prototype.BingshuTactics
         public string Name, Key; public Team Team; public Troop Troop; public Element Element; public School School;
         public int MaxHp, Hp, Atk, Def, Mat, Mdef, Speed, Move, AtkRange, MaxEp, Ep, Cp, Int, Wu;
         public Vector2Int Pos; public float At; public bool Defending;
+        public int Level; public bool Ai, Escort, Leader; public string Focus;   // 0.2：友军由电脑操作、护送对象、头目标名、优先目标
         public List<Status> Statuses = new List<Status>();
         public List<SkillDef> Crafts = new List<SkillDef>();
         public Book[] Slots = new Book[7];
@@ -362,12 +363,12 @@ namespace Prototype.BingshuTactics
         public Terrain TerrainAt(Vector2Int p) => Ter[p.x, p.y];
         public int HeightAt(Vector2Int p) => Height[p.x, p.y];
 
-        public static bool Impassable(Terrain t) => t == Terrain.River || t == Terrain.Wall || t == Terrain.Gate || t == Terrain.JuMa || t == Terrain.Rock;
+        public static bool Impassable(Terrain t) => t == Terrain.River || t == Terrain.Wall || t == Terrain.Gate || t == Terrain.JuMa || t == Terrain.Rock || t == Terrain.Fire;
 
         public static string Name(Terrain t) => t switch
         {
             Terrain.Grass => "草地", Terrain.Sand => "沙地", Terrain.River => "河流", Terrain.Ford => "浅滩", Terrain.Bridge => "桥",
-            Terrain.Road => "道路", Terrain.Camp => "营寨", Terrain.Wall => "关墙", Terrain.Gate => "关门", Terrain.JuMa => "拒马", _ => "山石"
+            Terrain.Road => "道路", Terrain.Camp => "营寨", Terrain.Wall => "关墙", Terrain.Gate => "关门", Terrain.JuMa => "拒马", Terrain.Woods => "树林", Terrain.Fire => "火", _ => "山石"
         };
 
         // 进入一格的移动消耗：沙地 2（骑兵 3）、浅滩 2；每往上爬一层 +1；高低差超过一层不能直接走
@@ -377,7 +378,7 @@ namespace Prototype.BingshuTactics
             if (Blocked[to.x, to.y] || Impassable(t)) return -1;
             int dh = Height[to.x, to.y] - Height[from.x, from.y];
             if (Mathf.Abs(dh) > 1) return -1;
-            int cost = t == Terrain.Sand ? (troop == Troop.Cavalry ? 3 : 2) : t == Terrain.Ford ? 2 : 1;
+            int cost = t == Terrain.Sand || t == Terrain.Woods ? (troop == Troop.Cavalry ? 3 : 2) : t == Terrain.Ford ? 2 : 1;
             return cost + Mathf.Max(0, dh);
         }
 

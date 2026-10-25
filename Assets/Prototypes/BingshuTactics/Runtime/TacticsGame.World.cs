@@ -325,7 +325,7 @@ namespace Prototype.BingshuTactics
                 {
                     var p = new Vector2Int(x, y);
                     var t = grid.TerrainAt(p);
-                    var groundT = t == Terrain.JuMa || t == Terrain.Rock ? Terrain.Grass : t;
+                    var groundT = t == Terrain.JuMa || t == Terrain.Rock || t == Terrain.Woods || t == Terrain.Fire ? Terrain.Grass : t;
                     float top = TopOf(p);
                     float x0 = x * T, x1 = (x + 1) * T, z0 = y * T, z1 = (y + 1) * T;
                     float iN = Inset(p, Vector2Int.up), iS = Inset(p, Vector2Int.down), iE = Inset(p, Vector2Int.right), iW = Inset(p, Vector2Int.left);
@@ -427,6 +427,7 @@ namespace Prototype.BingshuTactics
                     switch (t)
                     {
                         case Terrain.JuMa: JuMa(c); break;
+                        case Terrain.Woods: Tree(c + new Vector3((Hash(x, y, 5) - 0.5f) * 0.3f, 0, (Hash(x, y, 6) - 0.5f) * 0.3f), (int)(Hash(x, y, 7) * 3)); break;
                         case Terrain.Rock:   // 精修件：岩石露头精灵；没有时退回低多边形岩块
                             if (!Billboard("sprite_rock_outcrop_a", c, 0.7f)) RockMesh(B(Stone), c, 0.5f, x * 7 + y);
                             break;
