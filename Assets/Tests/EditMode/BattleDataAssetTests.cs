@@ -30,8 +30,8 @@ namespace ThreeKingdoms.Tests.EditMode
             Assert.AreEqual(EnemyAiKind.HighestTroops, b1.Ai);
             Assert.AreEqual(4, data.Encounter("battle_2").Enemies.Count);
             Assert.AreEqual(TroopType.Strategist, data.Encounter("battle_3").Enemies[0].General.Troop);
-            Assert.That(data.Encounters.Select(e => e.ExpReward), Is.EqualTo(new[] { 10, 20, 30, 40, 50, 60 }));
-            Assert.That(data.Encounters.Select(e => e.CopperReward), Is.EqualTo(new[] { 30, 50, 60, 60, 70, 80 }));
+            Assert.That(data.Encounters.Select(e => e.ExpReward), Is.EqualTo(new[] { 10, 20, 30, 40, 50, 60, 70, 90 }));
+            Assert.That(data.Encounters.Select(e => e.CopperReward), Is.EqualTo(new[] { 30, 50, 60, 60, 70, 80, 60, 120 }));
             Assert.AreEqual(30, data.Ration.HealPercent);
             Assert.IsFalse(data.Troops.Get(TroopType.YellowTurban).PlayerUsable);
         }
