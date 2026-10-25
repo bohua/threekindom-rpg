@@ -284,7 +284,7 @@ namespace ThreeKingdoms.EditorTools
             float shelf = WaterN - 1f - LeveeSouth;   // negative run southward
             var mud = new Vector2(XMax - XMin + 200f, Mathf.Sqrt(shelf * shelf + WaterY * WaterY));
             T.Quad(g, "Mud shelf", new Vector3(0, WaterY / 2f, (LeveeSouth + WaterN - 1f) / 2f), new Vector3(90f - Mathf.Atan2(-WaterY, -shelf) * Mathf.Rad2Deg, 0, 0), mud,
-                T.Mat(K("river_mud_shelf", "wb_sand_bank")), T.Repeat(K("river_mud_shelf", "wb_sand_bank"), mud), castShadows: false);
+                T.Mat(K("sand_flat_v2", K("river_mud_shelf", "wb_sand_bank"))), T.Repeat(K("sand_flat_v2", K("river_mud_shelf", "wb_sand_bank")), mud), castShadows: false);
             T.Patch(g, "Far bank", "wb_sand_bank", XMin - 100f, XMax + 100f, WaterS - 12f, WaterS + 1f, WaterY + 0.25f);
             T.Patch(g, "Far fields", "wb_plain_grass", XMin - 100f, XMax + 100f, WaterS - 120f, WaterS - 11f, WaterY + 0.3f);
             // Keep the player out of the mud and water except on the ferry dock (gap x -64..-56).
@@ -302,15 +302,28 @@ namespace ThreeKingdoms.EditorTools
             float nLen = Mathf.Sqrt(nRun * nRun + LeveeH * LeveeH), sLen = Mathf.Sqrt(sRun * sRun + LeveeH * LeveeH);
             float nDeg = Mathf.Atan2(LeveeH, nRun) * Mathf.Rad2Deg, sDeg = Mathf.Atan2(LeveeH, sRun) * Mathf.Rad2Deg;
             var crest = new Vector2(len, LeveeCrestN - LeveeCrestS);
-            T.Quad(g, "Crest road", new Vector3(0, LeveeH, (LeveeCrestN + LeveeCrestS) / 2f), new Vector3(90f, 0, 0), crest, T.Mat("ground_packed_earth"), T.Repeat("ground_packed_earth", crest), castShadows: false);
+            // The dike road along the crest: the V2 dirt road (8 m wide, tiling along its length) laid east–west.
+            if (T.Tex("dirt_road_v2", optional: true))
+                T.Quad(g, "Crest road", new Vector3(0, LeveeH, (LeveeCrestN + LeveeCrestS) / 2f), new Vector3(90f, 90f, 0), new Vector2(crest.y, crest.x), T.Mat("dirt_road_v2"),
+                    new Vector2(crest.y / T.Metres("dirt_road_v2").x, crest.x / T.Metres("dirt_road_v2").y), castShadows: false);
+            else
+                T.Quad(g, "Crest road", new Vector3(0, LeveeH, (LeveeCrestN + LeveeCrestS) / 2f), new Vector3(90f, 0, 0), crest, T.Mat("ground_packed_earth"), T.Repeat("ground_packed_earth", crest), castShadows: false);
             var ns = new Vector2(len, nLen);
-            T.Quad(g, "North slope", new Vector3(0, LeveeH / 2f, (LeveeNorth + LeveeCrestN) / 2f), new Vector3(90f + nDeg, 0, 0), ns, T.Mat(K("levee_slope", "ground_grass")), T.Repeat(K("levee_slope", "ground_grass"), ns));
+            T.Quad(g, "North slope", new Vector3(0, LeveeH / 2f, (LeveeNorth + LeveeCrestN) / 2f), new Vector3(90f + nDeg, 0, 0), ns, T.Mat(K("plain_grass_b", K("levee_slope", "ground_grass"))), T.Repeat(K("plain_grass_b", K("levee_slope", "ground_grass")), ns));
             var ss = new Vector2(len, sLen);
-            T.Quad(g, "South slope", new Vector3(0, LeveeH / 2f, (LeveeCrestS + LeveeSouth) / 2f), new Vector3(90f - sDeg, 0, 0), ss, T.Mat(K("levee_slope", "wb_levee_face")), T.Repeat(K("levee_slope", "wb_levee_face"), ss));
+            T.Quad(g, "South slope", new Vector3(0, LeveeH / 2f, (LeveeCrestS + LeveeSouth) / 2f), new Vector3(90f - sDeg, 0, 0), ss, T.Mat(K("plain_grass_dry", K("levee_slope", "wb_levee_face"))), T.Repeat(K("plain_grass_dry", K("levee_slope", "wb_levee_face")), ss));
             // Colliders: the crest block and one tilted slab under each slope.
             Solid(g, new Vector3(0, LeveeH / 2f, (LeveeCrestN + LeveeCrestS) / 2f), new Vector3(len, LeveeH, LeveeCrestN - LeveeCrestS));
             SlopeSolid(g, "North slope collider", (LeveeNorth + LeveeCrestN) / 2f, LeveeH / 2f, nLen, nDeg, len);
             SlopeSolid(g, "South slope collider", (LeveeCrestS + LeveeSouth) / 2f, LeveeH / 2f, sLen, -sDeg, len);
+            // Rammed-earth bank with a stone toe along the river side's foot (art/bohai-water-v2 shore_embankment_band).
+            if (T.Tex("shore_embankment_band", optional: true))
+            {
+                float dep = T.Metres("shore_embankment_band").y, t = (dep / 2f) / sLen;
+                var band = new Vector2(len, dep);
+                T.Quad(g, "Embankment band", new Vector3(0, LeveeH * t + 0.03f, LeveeSouth + (LeveeCrestS - LeveeSouth) * t), new Vector3(90f - sDeg, 0, 0), band,
+                    T.Mat("shore_embankment_band", clip: true), new Vector2(len / T.Metres("shore_embankment_band").x, 1f), castShadows: false);
+            }
             // Ferry ramps: the ferry road laid over both slopes in line with the gate.
             var ramp = new Vector2(7f, nLen);
             T.Quad(g, "Ferry ramp N", new Vector3(CityCx, LeveeH / 2f + 0.02f, (LeveeNorth + LeveeCrestN) / 2f), new Vector3(90f + nDeg, 0, 0), ramp, T.Mat("ground_packed_earth"), T.Repeat("ground_packed_earth", ramp), castShadows: false);
@@ -653,6 +666,7 @@ namespace ThreeKingdoms.EditorTools
         {
             var g = T.Group(env, "Gaotang (高唐·门前小场景)");
             float cx = GaotangFront.x, wz = -150f;
+            if (GaotangRefined(g, cx, wz)) { Label(labels, "高唐（门前小场景）", new Vector3(cx, 0, wz), 12f); Spot("Gaotang", new Vector3(cx, 0, wz - 14f)); Spot("Gaotang square", new Vector3(cx, 0, wz + 14f)); return; }
             // A short stretch of town wall with its gate; inside, one square with the county hall and one enterable shop.
             T.WallRun(g, "Wall W", new Vector3(cx - 40f, 0, wz), new Vector3(cx - 4.5f, 0, wz));
             T.WallRun(g, "Wall E", new Vector3(cx + 4.5f, 0, wz), new Vector3(cx + 40f, 0, wz));
@@ -689,7 +703,13 @@ namespace ThreeKingdoms.EditorTools
             float stake = T.Metres("palisade_stakes").y;
             T.Strip(b, "Palisade N", "palisade_stakes", new Vector3(bx, 0, 26f), new Vector3(bx, 0, 90f), stake);
             T.Strip(b, "Palisade S", "palisade_stakes", new Vector3(bx, 0, -50f), new Vector3(bx, 0, 14f), stake);
-            Box(b, "Closed gate", new Vector3(bx, 0, 20f), new Vector3(0.6f, 3f, 12f), 0.32f);
+            if (T.Tex("checkpoint_gate", optional: true))
+            {
+                var cg = T.Metres("checkpoint_gate");
+                T.Quad(b, "Closed gate", new Vector3(bx, cg.y / 2f, 20f), new Vector3(0, 90f, 0), cg, T.Mat("checkpoint_gate", clip: true, twoSided: true));
+                Solid(b, new Vector3(bx, 1.5f, 20f), new Vector3(0.6f, 3f, 12f));
+            }
+            else Box(b, "Closed gate", new Vector3(bx, 0, 20f), new Vector3(0.6f, 3f, 12f), 0.32f);
             if (T.Tex("watchtower_front", optional: true))
                 T.Building(b, "Watchtower", new Vector3(bx - 6f, 0, 31f), 0f, "watchtower_front", "watchtower_side", "watchtower_front", interior: "wall_rammed_earth");
             T.Patch(b, "Marsh N", "wb_water_muddy", bx - 6f, bx + 15f, 34f, 110f, 0.002f);
@@ -715,7 +735,12 @@ namespace ThreeKingdoms.EditorTools
                 ("house_b_front", "house_b_side", "house_b_back", true, new Vector3(-22f, 0, -2f)),
                 ("house_c_front", "house_c_side", "house_c_back", false, new Vector3(23f, 0, -4f)),
             };
-            foreach (var (front, side, back, thatch, at) in houses) T.Building(v, "House", at, 0f, front, side, back, roofKey: thatch ? "thatch" : "tile");
+            // Bohai villages build like the plain around them (loess walls, golden thatch), not like Zhuojun.
+            bool loess = T.Tex("house_loess_front", optional: true);
+            foreach (var (front, side, back, thatch, at) in houses)
+                if (loess) T.Building(v, "House", at, 0f, thatch ? "house_loess_front" : K("warehouse_front", "house_loess_front"), thatch ? "house_loess_side" : K("warehouse_side", "house_loess_side"), null,
+                    roofKey: "thatch", roofTexture: Thatch, eaveTexture: "roof_thatch_eave");
+                else T.Building(v, "House", at, 0f, front, side, back, roofKey: thatch ? "thatch" : "tile");
             T.Prop(v, "prop_well", 0f, 0f, solid: true);
             T.Prop(v, "prop_hay_pile", -8f, -6f);
             T.Prop(v, "prop_firewood", 9f, 8f);
@@ -741,32 +766,42 @@ namespace ThreeKingdoms.EditorTools
         {
             // 1 Beacon ruin by the levee: a broken rammed-earth tower, rubble, a dead tree.
             var b = T.Group(env, "Beacon ruin (废烽燧)", new Vector3(-330f, 0, -170f));
+            if (!Landmark(b, "beacon"))
+            {
             Box(b, "Tower stump", Vector3.zero, new Vector3(6f, 7f, 6f), 0.5f);
             Box(b, "Tower crown (broken)", new Vector3(1f, 7f, 0.5f), new Vector3(3.5f, 1.8f, 3f), 0.5f);
             for (int i = 0; i < 5; i++) Box(b, "Rubble", new Vector3(-5f + i * 2.4f, 0, -5f + (i % 2) * 1.5f), new Vector3(1.4f, 0.6f, 1.2f), 0.45f, yaw: i * 23f);
+            }
             T.Prop(b, "prop_tree_locust", 7f, 3f, scale: 0.8f, solid: true);
             Label(labels, "废烽燧（探索点）", b.position, 10f);
             Spot("Beacon", b.position + new Vector3(0, 0, -9f));
 
             // 2 Reed marsh: open water patches among reeds, a punt pulled up.
             var r = T.Group(env, "Reed marsh (芦苇荡)", new Vector3(220f, 0, -70f));
-            T.Patch(r, "Pool A", "wb_water_muddy", -18f, 4f, -6f, 12f, 0.004f);
-            T.Patch(r, "Pool B", "wb_water_muddy", 6f, 22f, 4f, 20f, 0.004f);
+            string pool = K("pond_water_v2", "wb_water_muddy");
+            // Irregular pools with reed-mud shores (no rectangles: user 2026-10-24, no tofu blocks).
+            Pool(r, "Pool A", new Vector2(-7f, 3f), 11f, 9f, 31, pool);
+            Pool(r, "Pool B", new Vector2(14f, 12f), 8f, 8f, 47, pool);
             var rr = new System.Random(3);
             for (int i = 0; i < 46; i++)
             {
                 float x = -26f + (float)rr.NextDouble() * 54f, z = -12f + (float)rr.NextDouble() * 38f;
-                T.Prop(r, rr.Next(3) == 0 ? "prop_bush_b" : "prop_grass_tuft", x, z, scale: 1.6f);
+                if (T.Tex("prop_reed_clump_large", optional: true)) T.Prop(r, rr.Next(3) == 0 ? "prop_reed_clump_large" : K("prop_reeds", "prop_grass_tuft"), x, z, scale: 0.9f + (float)rr.NextDouble() * 0.4f);
+                else T.Prop(r, rr.Next(3) == 0 ? "prop_bush_b" : "prop_grass_tuft", x, z, scale: 1.6f);
             }
-            Box(r, "Punt", new Vector3(-4f, 0, -9f), new Vector3(1.4f, 0.5f, 5f), 0.35f, yaw: 20f, solid: false);
+            if (T.Tex("prop_punt_boat", optional: true)) T.Prop(r, "prop_punt_boat", -4f, -9f);
+            else Box(r, "Punt", new Vector3(-4f, 0, -9f), new Vector3(1.4f, 0.5f, 5f), 0.35f, yaw: 20f, solid: false);
             Label(labels, "芦苇荡（探索点）", r.position, 6f);
             Spot("Reeds", r.position + new Vector3(0, 0, -16f));
 
             // 3 Tomb mound with a pair of stone que pillars on its spirit road.
             var t = T.Group(env, "Tomb mound (古冢石阙)", new Vector3(-220f, 0, 260f));
+            if (!Landmark(t, "tomb"))
+            {
             for (int i = 0; i < 4; i++) Box(t, "Mound tier", Vector3.zero + new Vector3(0, i * 1.6f, 0), new Vector3(24f - i * 5f, 1.6f, 20f - i * 4.5f), 0.48f);
             Box(t, "Que W", new Vector3(-4f, 0, -18f), new Vector3(2f, 5f, 2f), 0.75f);
             Box(t, "Que E", new Vector3(4f, 0, -18f), new Vector3(2f, 5f, 2f), 0.75f);
+            }
             T.Patch(t, "Spirit road", "ground_street_stone", -2f, 2f, -24f, -10f, 0.005f);
             Label(labels, "古冢石阙（探索点）", t.position, 11f);
             Spot("Tomb", t.position + new Vector3(0, 0, -26f));
@@ -1213,6 +1248,7 @@ namespace ThreeKingdoms.EditorTools
             Spot("Hill pass", new Vector3(40f, 0, 286f));
             Spot("Hills", new Vector3(-100f, 0, 262f));
             Spot("Pond", new Vector3(256f, 0, -54f));
+            Spot("Checkpoint", new Vector3(528f, 0, 20f));
             // On the levee crest above the ferry (terrain plan sign_dike).
             Sign("大堤渡口", new Vector3(CityCx + 10f, LeveeH, LeveeCrestN - 0.8f),
                 ("平原城", new Vector3(CityCx, 0, CityZ0), 40f), ("平原津", new Vector3(CityCx, 0, -258f), 30f),
@@ -1389,6 +1425,47 @@ namespace ThreeKingdoms.EditorTools
             return inside;
         }
 
+        // A small pond of noisy outline round a local centre (inside a group), with a reed-mud shore band.
+        static void Pool(Transform parent, string name, Vector2 c, float rx, float rz, int seed, string waterKey)
+        {
+            var rng = new System.Random(seed);
+            const int n = 20;
+            var pts = new Vector2[n];
+            for (int i = 0; i < n; i++)
+            {
+                float a = i / (float)n * Mathf.PI * 2f, k = 0.75f + (float)rng.NextDouble() * 0.4f;
+                pts[i] = c + new Vector2(Mathf.Cos(a) * rx * k, Mathf.Sin(a) * rz * k);
+            }
+            var origin = parent.position;
+            var verts = new List<Vector3> { new Vector3(c.x, 0.012f, c.y) };
+            var uvs = new List<Vector2> { (c + new Vector2(origin.x, origin.z)) / 12f };
+            foreach (var p in pts) { verts.Add(new Vector3(p.x, 0.012f, p.y)); uvs.Add((p + new Vector2(origin.x, origin.z)) / 12f); }
+            var tris = new List<int>();
+            for (int i = 0; i < n; i++) tris.AddRange(new[] { 0, 1 + (i + 1) % n, 1 + i });
+            var mesh = new Mesh { name = name };
+            mesh.SetVertices(verts); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            if (mesh.normals[0].y < 0f) { tris.Reverse(); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals(); }
+            string path = TerrainDir + "/Bohai_" + name.Replace(' ', '_') + ".asset";
+            if (AssetDatabase.LoadAssetAtPath<Mesh>(path)) AssetDatabase.DeleteAsset(path);
+            AssetDatabase.CreateAsset(mesh, path);
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterial = T.Mat(waterKey); mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            Solid(parent, new Vector3(c.x, 1f, c.y), new Vector3(rx * 1.3f, 2f, rz * 1.3f));
+            string band = T.Tex("shore_reed_mud_band", optional: true) ? "shore_reed_mud_band" : null;
+            if (band == null) return;
+            float dep = T.Metres(band).y;
+            for (int i = 0; i < n; i++)
+            {
+                var a2 = pts[i]; var b2 = pts[(i + 1) % n]; var d2 = b2 - a2; float l2 = d2.magnitude; d2 /= l2;
+                var outw = new Vector2(d2.y, -d2.x); if (Vector2.Dot(outw, (a2 + b2) / 2f - c) < 0f) outw = -outw;
+                var m2 = (a2 + b2) / 2f + outw * (dep / 2f - 0.8f);
+                T.Quad(parent, "Pool shore", new Vector3(m2.x, 0.0135f + i * 0.00002f, m2.y), new Vector3(90f, Mathf.Atan2(outw.x, outw.y) * Mathf.Rad2Deg, 0), new Vector2(l2 + 1.2f, dep),
+                    T.Mat(band, clip: true), new Vector2((l2 + 1.2f) / T.Metres(band).x, 1f), castShadows: false);
+            }
+        }
+
         static void Ponds(Transform g)
         {
             var pg = T.Group(g, "Reed pond");
@@ -1501,7 +1578,19 @@ namespace ThreeKingdoms.EditorTools
                         if (UnderBridge(edge, 4f)) continue;
                         if (mud.Length > 0 && rng.Next(3) == 0) Decal(r, mud[rng.Next(mud.Length)], edge.x + right.x * s2 * 1.5f, edge.z + right.z * s2 * 1.5f, rng, 0.7f + (float)rng.NextDouble() * 0.5f);
                         if (meadow.Length > 0 && rng.Next(4) == 0) { var m = edge + right * s2 * (5f + (float)rng.NextDouble() * 6f); if (!Near(m.x, m.z)) Decal(r, meadow[rng.Next(meadow.Length)], m.x, m.z, rng, 0.8f + (float)rng.NextDouble() * 0.6f); }
-                        if (rng.Next(2) == 0) { var q = edge + right * s2 * (0.4f + (float)rng.NextDouble()) + d * (float)(rng.NextDouble() - 0.5) * len; if (!Near(q.x, q.z) || At(q.x, q.z) == Cell.River) T.Prop(r, reeds, q.x, q.z); }
+                        // Reed clumps (2–4 stems) on most stretches, stones where the shore is pebbly.
+                        string clump = K("prop_reed_clump_large", reeds), stones = K("prop_shore_stones", "prop_rock_small");
+                        if (rng.NextDouble() < 0.7)
+                        {
+                            int n2 = 2 + rng.Next(3);
+                            var c0 = edge + right * s2 * (0.3f + (float)rng.NextDouble() * 1.2f) + d * (float)(rng.NextDouble() - 0.5) * len;
+                            for (int k = 0; k < n2; k++)
+                            {
+                                var q = c0 + d * ((float)rng.NextDouble() - 0.5f) * 2.4f + right * s2 * (float)rng.NextDouble() * 1.4f;
+                                if (!Near(q.x, q.z) || At(q.x, q.z) == Cell.River) T.Prop(r, k == 0 ? clump : reeds, q.x, q.z, scale: 0.8f + (float)rng.NextDouble() * 0.5f);
+                            }
+                        }
+                        if (rng.NextDouble() < 0.35) { var q = edge + right * s2 * (1.5f + (float)rng.NextDouble() * 2f) + d * (float)(rng.NextDouble() - 0.5) * len; if (!Near(q.x, q.z)) T.Prop(r, stones, q.x, q.z); }
                     }
                 }
             }
@@ -1875,6 +1964,154 @@ namespace ThreeKingdoms.EditorTools
             var size = new Vector2(XMax - XMin + 120f, ZMax + 80f - LeveeNorth + 4f);
             T.Quad(env, "Splat ground", new Vector3((XMin + XMax) / 2f, -0.009f, (LeveeNorth - 4f + ZMax + 80f) / 2f), new Vector3(90f, 0, 0), size, m, castShadows: false);
             splatGround = true;
+        }
+
+        // ---------- landmarks and Gaotang after their Codex designs (art/bohai-landmarks-b1, art/gaotang-b1) ----------
+        // User 2026-10-25: put textures on every grey box and refine where needed. Each falls back to its whitebox
+        // when the art is missing.
+
+        static bool HasAll(params string[] keys) => keys.All(k => T.Tex(k, optional: true));
+
+        // A free-standing block whose four faces carry front/side art (front and back the same), top capped.
+        static void TexturedBlock(Transform parent, string name, Vector3 baseCentre, string front, string side, string top, float yaw = 0f)
+        {
+            var f = T.Metres(front); var sd = T.Metres(side);
+            var g = T.Group(parent, name, baseCentre, yaw);
+            g.gameObject.AddComponent<Occluder>();
+            float w = f.x, d = sd.x, h = Mathf.Max(f.y, sd.y);
+            T.Quad(g, "Front", new Vector3(0, f.y / 2f, -d / 2f), Vector3.zero, f, T.Mat(front, clip: true));
+            T.Quad(g, "Back", new Vector3(0, f.y / 2f, d / 2f), new Vector3(0, 180f, 0), f, T.Mat(front, clip: true));
+            T.Quad(g, "Side L", new Vector3(-w / 2f, sd.y / 2f, 0), new Vector3(0, 90f, 0), sd, T.Mat(side, clip: true));
+            T.Quad(g, "Side R", new Vector3(w / 2f, sd.y / 2f, 0), new Vector3(0, -90f, 0), sd, T.Mat(side, clip: true));
+            if (top != null)
+            {
+                var ts = new Vector2(w * 0.8f, d * 0.8f);
+                T.Quad(g, "Top", new Vector3(0, h * 0.82f, 0), new Vector3(90f, 0, 0), ts, T.Mat(top), T.Repeat(top, ts), castShadows: false);
+            }
+            T.Solid(g, new Vector3(0, h / 2f, 0), new Vector3(w * 0.9f, h, d * 0.9f));
+        }
+
+        // A smooth earthen mound (elliptical dome) with planar UVs, for the tomb.
+        static void Mound(Transform parent, string name, Vector3 centre, float rx, float rz, float height, string tex)
+        {
+            const int seg = 36, rings = 10;
+            var verts = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
+            var tile = T.Metres(tex);
+            for (int r = 0; r <= rings; r++)
+            {
+                float t = r / (float)rings, rad = Mathf.Sin(t * Mathf.PI / 2f), y = height * Mathf.Cos(t * Mathf.PI / 2f);
+                for (int s = 0; s <= seg; s++)
+                {
+                    float a = s / (float)seg * Mathf.PI * 2f;
+                    var v = new Vector3(Mathf.Cos(a) * rx * rad, y, Mathf.Sin(a) * rz * rad);
+                    verts.Add(v); uvs.Add(new Vector2(v.x / tile.x, v.z / tile.y));
+                }
+            }
+            for (int r = 0; r < rings; r++)
+                for (int s = 0; s < seg; s++)
+                {
+                    int a = r * (seg + 1) + s, b = a + seg + 1;
+                    tris.AddRange(new[] { a, a + 1, b, a + 1, b + 1, b });
+                }
+            var mesh = new Mesh { name = name };
+            mesh.SetVertices(verts); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            if (mesh.normals[verts.Count / 2].y < 0f) { tris.Reverse(); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals(); }
+            string path = TerrainDir + "/" + name.Replace(' ', '_') + ".asset";
+            if (AssetDatabase.LoadAssetAtPath<Mesh>(path)) AssetDatabase.DeleteAsset(path);
+            AssetDatabase.CreateAsset(mesh, path);
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = centre;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial = T.Mat(tex);
+            go.AddComponent<Occluder>();
+            var col = new GameObject("Collider").AddComponent<BoxCollider>();
+            col.transform.SetParent(go.transform, false);
+            col.center = new Vector3(0, height / 2f, 0); col.size = new Vector3(rx * 1.6f, height, rz * 1.6f);
+        }
+
+        static bool Landmark(Transform root, string kind)
+        {
+            switch (kind)
+            {
+                case "beacon":
+                    if (!HasAll("beacon_ruin_front", "beacon_ruin_side")) return false;
+                    TexturedBlock(root, "Beacon tower (ruin)", Vector3.zero, "beacon_ruin_front", "beacon_ruin_side", K("hill_top", null));
+                    string rubble = K("prop_rubble_heap", "prop_rock_small");
+                    foreach (var (x, z) in new[] { (-5f, -4.5f), (-2.4f, -5.5f), (3.6f, -4.8f), (5.4f, -2f), (-5.6f, 1.5f) }) T.Prop(root, rubble, x, z, solid: true);
+                    var rng = new System.Random(5);
+                    string[] scree = Have("decal_scree_a", "decal_scree_b");
+                    for (int i = 0; i < 6 && scree.Length > 0; i++) Decal(root, scree[rng.Next(scree.Length)], root.position.x - 6f + (float)rng.NextDouble() * 12f, root.position.z - 6f + (float)rng.NextDouble() * 10f, rng);
+                    return true;
+                case "tomb":
+                    if (!HasAll("tomb_mound_slope", "que_pillar_front", "que_pillar_side")) return false;
+                    Mound(root, "Tomb mound", root.position, 13f, 11f, 7f, "tomb_mound_slope");
+                    TexturedBlock(root, "Que W", new Vector3(-4.5f, 0, -18f), "que_pillar_front", "que_pillar_side", null);
+                    TexturedBlock(root, "Que E", new Vector3(4.5f, 0, -18f), "que_pillar_front", "que_pillar_side", null);
+                    string beast = K("prop_stone_beast", "prop_rock_large"), tablet = K("prop_stone_tablet", "prop_rock_large");
+                    T.Prop(root, beast, -3f, -14f, solid: true); T.Prop(root, beast, 3f, -14f, solid: true);
+                    T.Prop(root, tablet, 0f, -12.5f, solid: true);
+                    return true;
+                default: return false;
+            }
+        }
+
+        // Gaotang, a frontier garrison town (one city, one look): grey-brick walls with merlons, an iron-studded gate,
+        // dark-brown tile roofs, a gravel square with a weapon cart, alarm drum and red banners.
+        static bool GaotangRefined(Transform g, float cx, float wz)
+        {
+            if (!HasAll("gaotang_wall_face", "gaotang_gate_front", "gaotang_hall_front", "gaotang_hall_side")) return false;
+            void Wall(string name, Vector3 a, Vector3 b)
+            {
+                bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
+                float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
+                var run = T.Group(g, name, (a + b) / 2f, alongX ? 0f : 90f);
+                run.gameObject.AddComponent<Occluder>();
+                var face = T.Metres("gaotang_wall_face"); var size = new Vector2(len, face.y);
+                T.Quad(run, "Face out", new Vector3(0, face.y / 2f, -2f), Vector3.zero, size, T.Mat("gaotang_wall_face", clip: true), new Vector2(len / face.x, 1f));
+                T.Quad(run, "Face in", new Vector3(0, face.y / 2f, 2f), new Vector3(0, 180f, 0), size, T.Mat("gaotang_wall_face", clip: true), new Vector2(len / face.x, 1f));
+                string topKey = K("gaotang_wall_top", "citywall_walkway");
+                var top = new Vector2(len, 4f);
+                T.Quad(run, "Walk", new Vector3(0, face.y * 0.86f, 0), new Vector3(90f, 0, 0), top, T.Mat(topKey), T.Repeat(topKey, top), castShadows: false);
+                T.Solid(run, new Vector3(0, face.y / 2f, 0), new Vector3(len, face.y, 4f));
+            }
+            Wall("Wall W", new Vector3(cx - 40f, 0, wz), new Vector3(cx - 5f, 0, wz));
+            Wall("Wall E", new Vector3(cx + 5f, 0, wz), new Vector3(cx + 40f, 0, wz));
+            Wall("Wall side W", new Vector3(cx - 38f, 0, wz + 2f), new Vector3(cx - 38f, 0, wz + 50f));
+            Wall("Wall side E", new Vector3(cx + 38f, 0, wz + 2f), new Vector3(cx + 38f, 0, wz + 50f));
+            Wall("Wall back", new Vector3(cx - 40f, 0, wz + 52f), new Vector3(cx + 40f, 0, wz + 52f));
+            var gate = T.Group(g, "Gaotang gate", new Vector3(cx, 0, wz));
+            gate.gameObject.AddComponent<Occluder>();
+            var gf = T.Metres("gaotang_gate_front");
+            T.Quad(gate, "Gate outside", new Vector3(0, gf.y / 2f, -2.05f), Vector3.zero, gf, T.Mat("gaotang_gate_front", clip: true, twoSided: true));
+            T.Quad(gate, "Gate inside", new Vector3(0, gf.y / 2f, 2.05f), new Vector3(0, 180f, 0), gf, T.Mat("gaotang_gate_front", clip: true, twoSided: true));
+            string face2 = K("gaotang_wall_face", "citywall_face");
+            foreach (int s in new[] { -1, 1 })
+            {
+                T.Quad(gate, "Passage side", new Vector3(s * 2f, 2.25f, 0), new Vector3(0, s * -90f, 0), new Vector2(4f, 4.5f), T.Mat(face2, clip: true), new Vector2(4f / T.Metres(face2).x, 0.75f));
+                T.Solid(gate, new Vector3(s * 3.5f, gf.y / 2f, 0), new Vector3(3f, gf.y, 4f));
+            }
+            T.Quad(gate, "Passage ceiling", new Vector3(0, 4.5f, 0), new Vector3(-90f, 0, 0), new Vector2(4f, 4f), T.Mat("timber_beam"), T.Repeat("timber_beam", new Vector2(4f, 4f)), castShadows: false);
+            T.Solid(gate, new Vector3(0, (4.5f + gf.y) / 2f, 0), new Vector3(4f, gf.y - 4.5f, 4f));
+            string square = K("gaotang_square", "ground_street_stone");
+            T.Patch(g, "Gaotang square", square, cx - 16f, cx + 16f, wz + 2f, wz + 30f, 0.006f);
+            T.Patch(g, "Gate apron", K("sand_flat_v2", square), cx - 12f, cx + 12f, wz - 22f, wz - 2f, 0.0055f);
+            string roof = T.Tex("gaotang_roof", optional: true) ? "gaotang_roof" : null;
+            var hall = T.Building(g, "County hall (县府)", new Vector3(cx, 0, wz + 31f), 0f, "gaotang_hall_front", "gaotang_hall_side", null, roofKey: "tile", roofTexture: roof);
+            T.Stairs(g, "Hall steps", new Vector3(cx, 0, wz + 31f), 4f, 3, 0.3f, 0.4f, 0.6f);
+            if (HasAll("gaotang_shop_front", "gaotang_shop_side"))
+                T.Building(g, "Shop (enterable)", new Vector3(cx - 26f, 0, wz + 18f), 90f, "gaotang_shop_front", "gaotang_shop_side", null, roofKey: "tile", roofTexture: roof,
+                    interior: "interior_shop_back_wall", floor: "floor_wood_planks");
+            var props = T.Group(g, "Square props");
+            if (T.Tex("prop_gaotang_watch_drum", optional: true)) T.Prop(props, "prop_gaotang_watch_drum", cx + 10f, wz + 27f, solid: true);
+            if (T.Tex("prop_spear_rack_cart", optional: true)) { T.Prop(props, "prop_spear_rack_cart", cx + 12f, wz + 10f, solid: true); T.Prop(props, "prop_spear_rack_cart", cx - 12f, wz + 6f, solid: true); }
+            string banner = K("prop_gaotang_banner", "prop_banner_han");
+            foreach (float x in new[] { -6f, 6f }) T.Prop(props, banner, cx + x, wz + 29.5f);
+            foreach (float x in new[] { -6.5f, 6.5f }) T.Prop(props, banner, cx + x, wz - 3f);
+            T.Prop(props, "prop_army_tent", cx + 26f, wz + 40f, solid: true);
+            T.Prop(props, "prop_army_tent", cx - 26f, wz + 40f, solid: true);
+            return true;
         }
 
         // ---------- people ----------

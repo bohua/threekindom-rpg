@@ -271,6 +271,131 @@
    "filename": "yellow_river_v2.png",
    "tile_axes": "xy",
    "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "beacon_ruin_front.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "beacon_ruin_side.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "checkpoint_gate.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "gaotang_gate_front.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "gaotang_hall_front.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "gaotang_hall_side.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "gaotang_roof.png",
+   "tile_axes": "xy",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "gaotang_shop_front.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "gaotang_shop_side.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "gaotang_square.png",
+   "tile_axes": "xy",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "gaotang_wall_face.png",
+   "tile_axes": "x",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "gaotang_wall_top.png",
+   "tile_axes": "xy",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "prop_gaotang_banner.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "prop_gaotang_watch_drum.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "prop_punt_boat.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "prop_reed_clump_large.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "prop_rubble_heap.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "prop_shore_stones.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "prop_spear_rack_cart.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "prop_stone_beast.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "prop_stone_tablet.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "que_pillar_front.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "que_pillar_side.png",
+   "tile_axes": "none",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "tomb_mound_slope.png",
+   "tile_axes": "xy",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
+  },
+  {
+   "filename": "tomb_mound_top.png",
+   "tile_axes": "xy",
+   "source": "art/gaotang-b1 or art/bohai-landmarks-b1"
   }
  ]
 }
