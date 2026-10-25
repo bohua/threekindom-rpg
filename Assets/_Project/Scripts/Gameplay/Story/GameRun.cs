@@ -23,6 +23,10 @@ namespace ThreeKingdoms.Gameplay.Story
         // only played, and battles 4–6.
         public const string CampScene = "Camp_LuZhi", AnxiScene = "Anxi_Town", StageScene = "Story_Stage";
         public static readonly string[] ChapterBattleScenes = { "Battle_Yingchuan04", "Battle_Guangzong05", "Battle_Anxi06" };
+        // 0.3 讨董篇 (design/v0.3-taodong): Gongsun Zan's garrison and the allied camp at Suanzao to walk in; battle 7 (the
+        // optional drill) and battle 8 (Hulao Pass) on the tactics map.
+        public const string GongsunScene = "Camp_Gongsun", SuanzaoScene = "Camp_Suanzao";
+        public static readonly string[] Chapter3BattleScenes = { "Battle_Drill07", "Battle_Hulao08" };
         public const string Chapter = "第一章　涿郡起兵";
 
         public enum Arrival { NewGame, ReturnFromBattle, AtTavern, FromTavernInside, AtSouthGate }
@@ -82,7 +86,7 @@ namespace ThreeKingdoms.Gameplay.Story
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() { Current = null; SaveDirectoryOverride = null; }
 
-        public static int BattleIndex(string encounterId) => Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6" }, encounterId);
+        public static int BattleIndex(string encounterId) => Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6", "battle_7", "battle_8" }, encounterId);
 
         public static string SceneFor(string encounterId) => encounterId switch
         {
@@ -92,6 +96,8 @@ namespace ThreeKingdoms.Gameplay.Story
             "battle_4" => ChapterBattleScenes[0],
             "battle_5" => ChapterBattleScenes[1],
             "battle_6" => ChapterBattleScenes[2],
+            "battle_7" => Chapter3BattleScenes[0],
+            "battle_8" => Chapter3BattleScenes[1],
             _ => null,
         };
 
@@ -110,7 +116,8 @@ namespace ThreeKingdoms.Gameplay.Story
         }
 
         // Header of a save slot: the chapter part the play-through is in.
-        public string ChapterTitle => Chapter2.Step >= ChapterStep.Anxi ? "第一篇章　安喜县尉"
+        public string ChapterTitle => Chapter2.Step >= ChapterStep.Done ? "第一篇章　讨董"
+            : Chapter2.Step >= ChapterStep.Anxi ? "第一篇章　安喜县尉"
             : Chapter2.Step >= ChapterStep.Camp ? "第一篇章　黄巾转战" : Chapter;
 
         // ---------- saving (ADR-0004) ----------
@@ -148,6 +155,8 @@ namespace ThreeKingdoms.Gameplay.Story
             }
             else if (restored.Location == SaveData.CampLocation) SceneManager.LoadScene(CampScene);
             else if (restored.Location == SaveData.AnxiLocation) SceneManager.LoadScene(AnxiScene);
+            else if (restored.Location == SaveData.GongsunLocation) SceneManager.LoadScene(GongsunScene);
+            else if (restored.Location == SaveData.SuanzaoLocation) SceneManager.LoadScene(SuanzaoScene);
             else SceneManager.LoadScene(SceneFor(restored.Location));
             return true;
         }

@@ -13,6 +13,8 @@ namespace ThreeKingdoms.Save
         public const string TownLocation = "town";
         // 0.2 safe stages: Lu Zhi's camp and Anxi county (arrival autosave, manual save at the gate guard / the clerk).
         public const string CampLocation = "camp", AnxiLocation = "anxi";
+        // 0.3: Gongsun Zan's garrison and the Suanzao camp.
+        public const string GongsunLocation = "camp_gongsun", SuanzaoLocation = "suanzao";
 
         public int formatVersion = CurrentFormat;
         public string gameVersion = "";

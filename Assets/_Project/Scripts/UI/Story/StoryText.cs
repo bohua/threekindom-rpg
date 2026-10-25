@@ -189,7 +189,8 @@ namespace ThreeKingdoms.UI.Story
         };
 
         public static string Speaker(string key) => key != null && Speakers.TryGetValue(key, out var s) ? s
-            : key != null && ChapterText.Speakers.TryGetValue(key, out var c) ? c : "";
+            : key != null && ChapterText.Speakers.TryGetValue(key, out var c) ? c
+            : key != null && ChapterText3.Speakers.TryGetValue(key, out var c3) ? c3 : "";
         public static string Line(string key)
         {
             if (key != null && key.StartsWith("warn:no_weapon:")) return $"{key.Substring(15)}没有装备武器，仍可出战。可先回城整备，再走近黄巾军便开战。";
@@ -211,6 +212,7 @@ namespace ThreeKingdoms.UI.Story
                 case "archery.reward": return $"得到彩头{part[1]}文（现有铜钱{part[2]}）。";
             }
             if (ChapterText.Lines.TryGetValue(key, out var chapterLine)) return chapterLine;   // 0.2 黄巾篇
+            if (ChapterText3.Lines.TryGetValue(key, out var chapter3Line)) return chapter3Line;   // 0.3 讨董篇
             // A resident with nothing new to say repeats the earlier line (.won → .after → base).
             for (string k = key; k != null; k = k.EndsWith(".won") ? k.Substring(0, k.Length - 4) + ".after" : k.EndsWith(".after") ? k.Substring(0, k.Length - 6) : null)
                 if (Lines.TryGetValue(k, out var s)) return s;

@@ -25,7 +25,7 @@ namespace ThreeKingdoms.EditorTools
     // every piece falls back to a white-box shape of the right size while its texture is missing, so the scenes play
     // from the first build. Layouts follow the approved concept images: open ground of 6–8 m before the command tent,
     // the yamen and the post station, key people at their doors.
-    public static class ChapterFieldBuilder
+    public static partial class ChapterFieldBuilder
     {
         public const string StagePath = "Assets/_Project/Scenes/Story_Stage.unity";
         public const string CampPath = "Assets/_Project/Scenes/Camp_LuZhi.unity";
@@ -46,7 +46,8 @@ namespace ThreeKingdoms.EditorTools
             BuildStage();
             BuildCamp();
             BuildAnxi();
-            var paths = new[] { StagePath, CampPath, AnxiPath };
+            BuildChapter3();   // 0.3: Gongsun Zan's garrison, the Suanzao camp (ChapterFieldBuilder3)
+            var paths = new[] { StagePath, CampPath, AnxiPath, GongsunPath, SuanzaoPath };
             var scenes = EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path)).ToList();
             scenes.AddRange(paths.Select(p => new EditorBuildSettingsScene(p, true)));
             EditorBuildSettings.scenes = scenes.ToArray();
@@ -738,6 +739,7 @@ namespace ThreeKingdoms.EditorTools
             Picture("tent", Tex("stage_tent_interior"), new Color(0.30f, 0.20f, 0.14f));
             Picture("wancheng", Tex("stage_wancheng"), new Color(0.50f, 0.48f, 0.42f));
             Picture("map", AssetDatabase.LoadAssetAtPath<Texture2D>($"{ArtRoot}/Map/worldmap_chapter1_zoom.png"), new Color(0.86f, 0.82f, 0.70f));
+            foreach (var (id, tex, fallback) in Stage3Backgrounds()) Picture(id, tex, fallback);   // 0.3
             // Without the road painting, the outskirts layers stand in.
             var road = backgrounds.Find("road");
             if (!Tex("B2_road_scene"))
@@ -775,6 +777,7 @@ namespace ThreeKingdoms.EditorTools
                 r.transform.localPosition = new Vector3(0, 0.8f, 0);
             }
 
+            foreach (var (name, key) in Stage3Actors()) ActorSprite(name, key);   // 0.3
             var go2 = new GameObject("Stage");
             var stage = go2.AddComponent<StageController>();
             stage.Catalog = AssetDatabase.LoadAssetAtPath<BattleCatalog>(BattleDataBuilder.CatalogPath);
@@ -792,6 +795,7 @@ namespace ThreeKingdoms.EditorTools
             hud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             hud.Portraits = AssetDatabase.LoadAssetAtPath<DialoguePortraitSet>(DialoguePortraitImporter.SetPath);
             hud.Map = AssetDatabase.LoadAssetAtPath<Texture2D>($"{ArtRoot}/Map/worldmap_chapter1_zoom.png");
+            hudGo.AddComponent<ChronicleHud>();   // 0.3 realm-map chronicle
             CinematicsArtImporter.AddView(panel);
             var es = new GameObject("EventSystem");
             es.AddComponent<EventSystem>();

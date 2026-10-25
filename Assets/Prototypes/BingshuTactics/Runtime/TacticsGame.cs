@@ -768,6 +768,7 @@ namespace Prototype.BingshuTactics
         void Hit(Unit a, Unit t, int dmg)
         {
             HitFx(a, t);
+            dmg = Floored(t, dmg);   // 0.3：不可击败的首领
             t.Hp = Mathf.Max(0, t.Hp - dmg);
             a.Cp = Mathf.Min(100, a.Cp + 8); t.Cp = Mathf.Min(100, t.Cp + 5);
             popups.Add((views[t].position + Vector3.up * (1.8f * HeadK), dmg.ToString(), new Color(1f, 0.95f, 0.8f), 0f));
@@ -783,11 +784,13 @@ namespace Prototype.BingshuTactics
             var r = ReachOf(u);
             yield return Walk(u, Grid.Path(r, ApproachTile(u, target, u.AtkRange, r)));
             yield return Lunge(u, target.Pos);
-            Hit(u, target, Combat.Damage(u, target, 1f, true, Element.None, HMul(u, target), InCamp(target)));
+            var victim = Cover(u, target);   // 0.3 众望
+            Hit(u, victim, Combat.Damage(u, victim, 1f, true, Element.None, HMul(u, victim), InCamp(victim)));
         }
 
         IEnumerator DoCraft(Unit u, SkillDef s, Vector2Int targetTile)
         {
+            if (s.Name == "三英") { yield return SanYing(u); yield break; }   // 0.3 合体技
             u.Cp -= s.Cost;
             popups.Add((views[u].position + Vector3.up * (2.4f * HeadK), "武技·" + s.Name, new Color(1f, 0.85f, 0.3f), 0f));
             if (s.Range < 0)
@@ -807,8 +810,12 @@ namespace Prototype.BingshuTactics
             var color = s.IsStrategy ? Wuxing.Tint(s.Element) : new Color(1f, 0.85f, 0.4f);
             flashes.Add((area, color, 0f));
             var targets = units.Where(x => x.Alive && area.Contains(x.Pos) && (s.TargetsAllies ? x.Team == u.Team : x.Team != u.Team)).ToList();
-            foreach (var t in targets)
+            var covered = new HashSet<Unit>();
+            foreach (var t0 in targets)
             {
+                var t = t0;
+                if (s.Name == "众望") { ApplyZhongwang(u, t); continue; }   // 0.3 刘备招牌技
+                if (s.Effect == Effect.Damage || (s.Effect == Effect.Debuff && s.Power > 0)) t = Cover(u, t0, covered);
                 switch (s.Effect)
                 {
                     case Effect.Damage:
@@ -870,7 +877,7 @@ namespace Prototype.BingshuTactics
             {
                 var foe = Foes(u).FirstOrDefault(f => Grid.Dist(f.Pos, u.Pos) == 1);
                 if (foe == null) { Log("吕布横戟立马，守住关门"); u.At = now + AtClock.Delay(60, u.Speed); yield break; }
-                if (turnCount[u] % 2 == 0)
+                if (turnCount[u] % 2 == 0 && u.Crafts.Count > 0)
                 {
                     var craft = u.Crafts[0];
                     Log($"吕布 武技「{craft.Name}」！");
@@ -883,11 +890,13 @@ namespace Prototype.BingshuTactics
                 {
                     Log($"吕布 攻击 {foe.Name}");
                     yield return Lunge(u, foe.Pos);
-                    Hit(u, foe, Combat.Damage(u, foe, 1f, true, Element.None, HMul(u, foe), InCamp(foe)));
+                    var victim = Cover(u, foe);
+                    Hit(u, victim, Combat.Damage(u, victim, 1f, true, Element.None, HMul(u, victim), InCamp(victim)));
                     u.At = now + AtClock.Delay(100, u.Speed);
                 }
                 yield break;
             }
+            if (AutoCombo(u, out var combo)) { yield return combo; u.At = now + AtClock.Delay(100, u.Speed); yield break; }   // 0.3 自动代打用合体技
             if (u.Escort && u.Hp * 2 < u.MaxHp)
             {
                 u.Defending = true; Log($"{u.Name} 收拢残兵固守");
@@ -1140,7 +1149,8 @@ namespace Prototype.BingshuTactics
         // 范围内是否有可作用的对象：伤害、减益要有敌人，回复、结阵要有友军
         bool HasTargets(Unit u, SkillDef s)
         {
-            bool Ok(Unit t) => t != null && t.Alive && (s.TargetsAllies ? t.Team == u.Team : t.Team != u.Team);
+            if (s.Name == "三英") return ComboReady(u);   // 0.3
+            bool Ok(Unit t) => t != null && t.Alive && (s.TargetsAllies ? t.Team == u.Team : t.Team != u.Team) && !(s.Name == "众望" && t == u);
             if (s.Range < 0) return !s.TargetsAllies && AttackableTargets(u, 1).Count > 0;
             if (s.Radius >= 99) return Friends(u).Any();
             if (s.Area == Area.SelfCircle) return grid.Diamond(u.Pos, s.Radius).Any(p => Ok(At(p)));

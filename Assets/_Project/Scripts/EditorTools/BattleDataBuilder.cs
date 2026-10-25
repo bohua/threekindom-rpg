@@ -24,7 +24,7 @@ namespace ThreeKingdoms.EditorTools
             var config = Asset<BattleConfigDefinition>("Battle/BattleConfig", c =>
             {
                 c.AdvantagePercent = 140; c.GuardPercent = 50; c.MinModifierPercent = 20; c.MaxAttribute = 100;
-                c.ExpTable = new[] { 0, 10, 30, 60, 100, 150, 210 };   // 0.2: level cap 5 → 7 (SYSTEMS_V02 §4)
+                c.ExpTable = new[] { 0, 10, 30, 60, 100, 150, 210, 280, 370 };   // 0.2: level cap 5 → 7 (SYSTEMS_V02 §4); 0.3: → 9 (SYSTEMS_V03 §4)
             });
             var troops = Asset<TroopTableDefinition>("Battle/TroopTable", t =>
             {
@@ -62,7 +62,9 @@ namespace ThreeKingdoms.EditorTools
                 SkillTarget.AllEnemies, DamageKind.None, 0, stat: BattleStat.PhysicalAttack, mod: -20, turns: 2);
             var enemyFire = Skill("enemy_arson", "纵火（暂名）", "指挥部队纵火：单体 1.3 倍计策伤害。效果同火矢。", 4, SkillTarget.SingleEnemy, DamageKind.Strategy, 130);
 
-            var liu = General("liu_bei", "LiuBei", "刘备", TroopType.Archer, 65, 75, 75, 1, 2, 2, (1, regroup), (3, fireArrows));
+            // 0.3: Liu Bei's signature skill 众望 (SYSTEMS_V03 §3.6) — a tactics-map craft; the round battles never reach level 8.
+            var zhongwang = Skill("zhongwang", "众望", "替相邻友军承受下一次攻击，并提高其物防（随声望增强），持续 2 回合。", 5, SkillTarget.SingleAlly, DamageKind.None, 0);
+            var liu = General("liu_bei", "LiuBei", "刘备", TroopType.Archer, 65, 75, 75, 1, 2, 2, (1, regroup), (3, fireArrows), (8, zhongwang));
             var guan = General("guan_yu", "GuanYu", "关羽", TroopType.Cavalry, 90, 80, 60, 2, 2, 1, (1, charge), (3, breakFormation));
             var zhang = General("zhang_fei", "ZhangFei", "张飞", TroopType.Infantry, 95, 75, 45, 3, 2, 1, (1, sweep), (3, intimidate));
 
@@ -118,6 +120,14 @@ namespace ThreeKingdoms.EditorTools
                 (banditChief, 6), (bandit, 4), (bandit, 4), (bandit, 4));
             b6.Events = new[] { Event("opening", 1, Objective("剿灭山贼")) };
 
+            // 0.3 讨董篇 (V03_TAODONG_PLAN §4): the optional drill with the White Horse riders, Hulao Pass. Both are played on the
+            // tactics map; the encounter carries the enemies, levels and rewards.
+            var baimaRider = General("baima_rider", "BaimaRider", "白马义从", TroopType.Cavalry, 72, 62, 40, 0, 0, 0, (1, enemyCharge));
+            var luBu = General("lu_bu", "LuBu", "吕布", TroopType.Cavalry, 100, 85, 30, 0, 0, 0, (1, enemyCharge), (1, enemySweep));
+            var bingzhou = General("bingzhou_cavalry", "BingzhouCavalry", "并州骑", TroopType.Cavalry, 66, 55, 25, 0, 0, 0);
+            var b7 = Encounter("battle_7", "Battle7_Drill", "选做 · 校场演武", EnemyAiKind.FacingSlot, 70, 60, (baimaRider, 7), (baimaRider, 7), (baimaRider, 6));
+            var b8 = Encounter("battle_8", "Battle8_Hulao", "第八战 · 虎牢关·三英战吕布", EnemyAiKind.FacingSlot, 90, 120, (luBu, 9), (bingzhou, 7), (bingzhou, 7));
+
             // Equipment catalogue (equipment-items GDD, adopted 2026-10-19; names provisional, values to be tuned).
             var saber = Equip("ring_pommel_saber", "环首刀", EquipSlot.Weapon, TroopType.Infantry, gift: 15, atk: 4);
             var lance = Equip("cavalry_lance", "骑枪", EquipSlot.Weapon, TroopType.Cavalry, gift: 15, atk: 4);
@@ -139,11 +149,16 @@ namespace ThreeKingdoms.EditorTools
             var mirror = Equip("heart_mirror", "护心镜", EquipSlot.Accessory, null, buy: 90, def: 4, troops: 10, tier: 2);
             var luQuiver = Equip("lu_quiver", "“卢”字箭囊", EquipSlot.Accessory, null, gift: 20, tech: 1, speed: 1);   // corner reward in Lu Zhi's camp
             var woodCharm = Equip("anxi_charm", "护身木牌", EquipSlot.Accessory, null, gift: 10, def: 3);   // thanks of the Anxi townsfolk
+            // 0.3: Gongsun Zan's quartermaster (tier 3) and the stable's corner find.
+            var yanBow = Equip("yan_horn_bow", "燕地角弓", EquipSlot.Weapon, TroopType.Archer, buy: 210, atk: 16, speed: 1, tier: 3);
+            var baimaLance = Equip("baima_lance", "白马骑枪", EquipSlot.Weapon, TroopType.Cavalry, buy: 220, atk: 17, tier: 3);
+            var youSpear = Equip("youzhou_spear", "幽州铁矛", EquipSlot.Weapon, TroopType.Infantry, buy: 220, atk: 17, tier: 3);
+            var baimaBell = Equip("baima_bell", "白马铃", EquipSlot.Accessory, null, gift: 30, speed: 1, troops: 15);
             var economy = Asset<EconomyCatalog>("Economy/EconomyCatalog", c =>
             {
                 c.StartCopper = 120; c.StartRations = 2; c.RationPrice = 10; c.SellPercent = 50;
                 c.Equipment = new[] { saber, lance, huntingBow, cloth, spear, shuo, hornBow, leather, bracers, banner, manual, whip,
-                    forgedSaber, steelShuo, zheBow, lamellar, mirror, luQuiver, woodCharm };
+                    forgedSaber, steelShuo, zheBow, lamellar, mirror, luQuiver, woodCharm, yanBow, baimaLance, youSpear, baimaBell };
                 c.StartingGear = new[]
                 {
                     new StartingGearEntry { General = liu, Items = new[] { huntingBow, cloth } },
@@ -156,7 +171,7 @@ namespace ThreeKingdoms.EditorTools
             {
                 c.Config = config; c.Troops = troops; c.Ration = ration; c.Economy = economy;
                 c.Party = new[] { liu, guan, zhang };
-                c.Encounters = new[] { b1, b2, b3, b4, b5, b6 };
+                c.Encounters = new[] { b1, b2, b3, b4, b5, b6, b7, b8 };
             });
             AssetDatabase.SaveAssets();
             catalog.ToRuntime();   // validate

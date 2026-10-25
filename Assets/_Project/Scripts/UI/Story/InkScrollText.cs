@@ -25,10 +25,17 @@ namespace ThreeKingdoms.UI.Story
                 "中平元年，劉備從盧植於廣宗，南下潁川，火攻草澤，於火光中初見曹操。歸途恩師檻車被徵，又救董卓於廣宗城下，反遭輕慢。是冬黃巾平定。——事本《三國志》《後漢書》與《三國演義》第一回"),
             ["anxi"] = new Entry("安喜掛印",
                 "中平二年，劉備以功為安喜尉，施貧斷訟，修橋剿賊。督郵至縣，求謁不通，乃縛之於馬枊，杖二百，解綬繫其頸，棄官而去。——事本《三國志·先主傳》裴注引《典略》與《三國演義》第二回"),
+            // 0.3 讨董篇 (V03_TAODONG_PLAN §2): ④ ⑤ the 演义 tales, ⑥ closes the version.
+            ["wenjiu"] = new Entry("溫酒斬華雄",
+                "初平元年，關東諸侯會盟酸棗，董卓將華雄連斬聯軍數將。關羽請戰，曹操斟熱酒與之，羽曰：酒且斟下，某去便來。須臾提華雄首級擲於地，其酒尚溫。——事本《三國演義》第五回；史載華雄為孫堅所斬"),
+            ["sanying"] = new Entry("三英戰呂布",
+                "呂布出虎牢關搦戰，公孫瓚不敵而走。張飛挺矛接戰，關羽、劉備相繼來助，三人圍住呂布轉燈般廝殺，布遮攔不住，撥馬退入關中。——事本《三國演義》第五回，非史實"),
+            ["fen_luoyang"] = new Entry("焚洛陽",
+                "董卓焚洛陽宮室，劫天子西遷長安。孫堅入洛，掃除宗廟；諸侯各懷異心，聯軍遂散。劉備隨公孫瓚北還，名聲始聞於天下。——事本《三國志·武帝紀》《孫破虜傳》與《三國演義》第六回"),
         };
 
-        // Only the last scroll of the current version gets the 完成 seal (0.2: 安喜掛印).
-        public static bool Sealed(string id) => id == "anxi";
+        // Only the last scroll of the current version gets the 完成 seal (0.2: 安喜掛印; 0.3: 焚洛陽).
+        public static bool Sealed(string id) => id == "fen_luoyang";
 
         public static bool TryGet(string id, out Entry entry) => Entries.TryGetValue(id ?? "", out entry);
 

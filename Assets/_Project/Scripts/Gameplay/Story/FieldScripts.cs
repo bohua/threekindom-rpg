@@ -15,6 +15,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static IEnumerable<StageStep> OnArrive(FieldStoryController c)
         {
+            if (FieldScripts3.Mine(c)) return FieldScripts3.OnArrive(c);   // 0.3
             var ch = c.Run.Chapter2;
             if (c.Location == FieldStoryController.Place.Camp && ch.Step == ChapterStep.Camp)
                 return ch.Has(ChapterScripts.CampGreeted) ? new[] { Autosave(SaveData.CampLocation) } : CampArrival();
@@ -61,6 +62,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static string Prompt(FieldStoryController c, string id)
         {
+            if (FieldScripts3.Mine(c)) return FieldScripts3.Prompt(c, id);
             var ch = c.Run.Chapter2;
             switch (id)
             {
@@ -81,6 +83,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static bool Marked(FieldStoryController c, string id)
         {
+            if (FieldScripts3.Mine(c)) return FieldScripts3.Marked(c, id);
             var ch = c.Run.Chapter2;
             bool anxi = ch.Step == ChapterStep.Anxi;
             return id switch
@@ -98,6 +101,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static string Objective(FieldStoryController c)
         {
+            if (FieldScripts3.Mine(c)) return FieldScripts3.Objective(c);
             var ch = c.Run.Chapter2;
             if (c.Location == FieldStoryController.Place.Camp)
                 return ch.Has(ChapterScripts.CampGreeted) ? "目标：在营中整备，准备好后到营门出发" : "目标：拜见卢植";
@@ -110,6 +114,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static IEnumerable<StageStep> Talk(FieldStoryController c, string id)
         {
+            if (FieldScripts3.Mine(c)) return FieldScripts3.Talk(c, id);
             var ch = c.Run.Chapter2;
             var inv = c.Run.Progress.Inventory;
             switch (id)
@@ -338,14 +343,11 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return Move("liu_bei", 36f, 0f, 1.4f);
             yield return L("narrator", "c13.end");
             yield return Fade(1f);
-            // 后事预告 (V02_HUANGJIN_PLAN §5 C13): not written into the story state.
-            for (int i = 1; i <= 6; i++) yield return Card("after." + i, 3.5f);
+            // 0.3 (V03_TAODONG_PLAN §3.4): scroll ③ without the seal, then D1 drift and the 189 interlude on the story stage;
+            // the 后事预告 moved to the end of 0.3.
             yield return Scroll(ChapterScripts.ScrollAnxi);
             yield return Advance(ChapterStep.AnxiBandits, ChapterStep.Done);
-            yield return Card("end.title", 4f);
-            yield return Card("end.thanks", 4f);
-            yield return Call(GameRun.Clear);
-            yield return Load(GameRun.TitleScene);
+            yield return Load(GameRun.StageScene, ChapterScripts3.Drift);
         }
     }
 }

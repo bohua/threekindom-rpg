@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f58774cdd05485f4a9f581414a12d3d3, type: 3}
+  m_Name: Battle8_Hulao
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.EncounterDefinition
+  Id: battle_8
+  DisplayName: "\u7B2C\u516B\u6218 \xB7 \u864E\u7262\u5173\xB7\u4E09\u82F1\u6218\u5415\u5E03"
+  Enemies:
+  - General: {fileID: 11400000, guid: 93676ce4627ac2e4fb558f485bcdb621, type: 2}
+    Level: 9
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 4fb9141471448254483bdb459fcffe42, type: 2}
+    Level: 7
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 4fb9141471448254483bdb459fcffe42, type: 2}
+    Level: 7
+    FocusEscort: 0
+  Ai: 1
+  SkillEveryRounds: 3
+  ExpReward: 90
+  CopperReward: 120
+  Allies: []
+  Events: []

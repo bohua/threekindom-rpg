@@ -25,6 +25,10 @@ namespace ThreeKingdoms.EditorTools
             // 0.2 (Codex art/v02-ink-scrolls-b1; the approved thumbnails stand in until the full paintings land).
             ("scroll_zhuanzhan", new[] { @"art\v02-ink-scrolls-b1\painting_zhuanzhan.png", @"art\v02-ink-scrolls-concept\scroll2_huangjin_zhuanzhan_thumb.png" }),
             ("scroll_anxi", new[] { @"art\v02-ink-scrolls-b1\painting_anxi.png", @"art\v02-ink-scrolls-concept\scroll3_anxi_guayin_thumb.png" }),
+            // 0.3 (Codex art/v03-ink-scrolls; the approved thumbnails stand in until the full paintings land).
+            ("scroll_wenjiu", new[] { @"art\v03-ink-scrolls\painting_wenjiu.png", @"art\v03-ink-scrolls-concept\scroll_wenjiu_huaxiong_thumb.png" }),
+            ("scroll_sanying", new[] { @"art\v03-ink-scrolls\painting_sanying.png", @"art\v03-ink-scrolls-concept\scroll_sanying_lubu_thumb.png" }),
+            ("scroll_fen_luoyang", new[] { @"art\v03-ink-scrolls\painting_fen_luoyang.png", @"art\v03-ink-scrolls-concept\scroll_fen_luoyang_thumb.png" }),
             ("seal_done", new[] { @"art\story-cinematics\seal_done.png", @"art\story-cinematics-concept\_checks\seal_clean_alpha.png" }),
             ("scroll_roller", new[] { @"art\story-cinematics\scroll_roller.png" }),
             ("ink_drop", new[] { @"art\story-cinematics\ink_drop.png" }),
@@ -96,6 +100,9 @@ namespace ThreeKingdoms.EditorTools
                 new StoryCinematicsView.Painting { Id = "huangjin", Texture = Load("scroll_huangjin") },
                 new StoryCinematicsView.Painting { Id = "zhuanzhan", Texture = Load("scroll_zhuanzhan") },
                 new StoryCinematicsView.Painting { Id = "anxi", Texture = Load("scroll_anxi") },
+                new StoryCinematicsView.Painting { Id = "wenjiu", Texture = Load("scroll_wenjiu") },
+                new StoryCinematicsView.Painting { Id = "sanying", Texture = Load("scroll_sanying") },
+                new StoryCinematicsView.Painting { Id = "fen_luoyang", Texture = Load("scroll_fen_luoyang") },
             };
             return view;
         }

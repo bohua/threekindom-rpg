@@ -19,7 +19,10 @@ namespace ThreeKingdoms.EditorTools
         const string Chars = "Assets/_Project/Art/Sprites/Characters";
         const string GroundDir = "Assets/_Project/Art/Chapter2/Tactics";
         const string DefaultGroundSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v02-tactics-ground";
-        static readonly string[] CharKeys = { "ZhangBao", "ZhangLiang", "NpcDongZhuo", "NpcBandit", "NpcBanditChief", "NpcYellowGuard", "YellowTurban", "NpcCaoCao", "NpcHanSoldier" };
+        static readonly string[] CharKeys = { "ZhangBao", "ZhangLiang", "NpcDongZhuo", "NpcBandit", "NpcBanditChief", "NpcYellowGuard", "YellowTurban", "NpcCaoCao", "NpcHanSoldier",
+            "NpcBaimaRider" };   // 0.3: the White Horse riders of the drill (Lü Bu and the Bingzhou riders use the prototype's own sheets)
+        // 0.3 battles 7–8 (V03_TAODONG_PLAN §4).
+        public static readonly string[] Chapter3Paths = { "Assets/_Project/Scenes/Battle_Drill07.unity", "Assets/_Project/Scenes/Battle_Hulao08.unity" };
 
         static string GroundSource
         {
@@ -40,7 +43,8 @@ namespace ThreeKingdoms.EditorTools
         {
             var ground = ImportGround();
             EnsurePixelMaterials();
-            var ids = new[] { "battle_4", "battle_5", "battle_6" };
+            var ids = new[] { "battle_4", "battle_5", "battle_6", "battle_7", "battle_8" };
+            var paths = BattleSceneBuilder.ChapterBattlePaths.Concat(Chapter3Paths).ToArray();
             for (int i = 0; i < ids.Length; i++)
             {
                 var game = BingshuTacticsBuilder.CreateScene();
@@ -53,8 +57,11 @@ namespace ThreeKingdoms.EditorTools
                 bridge.EncounterId = ids[i];
                 bridge.Portraits = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Story.DialoguePortraitSet>(DialoguePortraitImporter.SetPath);
                 EditorUtility.SetDirty(game);
-                EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), BattleSceneBuilder.ChapterBattlePaths[i]);
+                EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), paths[i]);
             }
+            var scenes = EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path)).ToList();
+            scenes.AddRange(paths.Select(p => new EditorBuildSettingsScene(p, true)));
+            EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
             Debug.Log("CHAPTER_TACTICS_BUILT ground=" + ground.Length);
         }

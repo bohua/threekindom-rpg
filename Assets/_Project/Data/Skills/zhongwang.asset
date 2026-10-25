@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d74cacfb40d6e7047828c2990b1c7f0c, type: 3}
+  m_Name: zhongwang
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.BattleSkillDefinition
+  Id: zhongwang
+  DisplayName: "\u4F17\u671B"
+  Description: "\u66FF\u76F8\u90BB\u53CB\u519B\u627F\u53D7\u4E0B\u4E00\u6B21\u653B\u51FB\uFF0C\u5E76\u63D0\u9AD8\u5176\u7269\u9632\uFF08\u968F\u58F0\u671B\u589E\u5F3A\uFF09\uFF0C\u6301\u7EED
+    2 \u56DE\u5408\u3002"
+  TechCost: 5
+  Target: 2
+  Damage: 0
+  PowerPercent: 0
+  HealPercent: 0
+  ModifierStat: 0
+  ModifierPercent: 0
+  ModifierTurns: 0

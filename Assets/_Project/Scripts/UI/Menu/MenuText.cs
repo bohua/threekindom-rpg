@@ -19,7 +19,8 @@ namespace ThreeKingdoms.UI.Menu
         // 行旅 / 涿郡 · 街市 (the tavern scene is 酒肆).
         public static string Place(IFieldHost c) =>
             c is UnityEngine.MonoBehaviour m && m.gameObject.scene.name == GameRun.TavernScene ? "涿郡 · 酒肆"
-            : c?.SaveLocation == SaveData.CampLocation ? "广宗 · 卢植大营" : c?.SaveLocation == SaveData.AnxiLocation ? "中山 · 安喜县" : "涿郡 · 街市";
+            : c?.SaveLocation == SaveData.CampLocation || c?.SaveLocation == SaveData.AnxiLocation
+              || c?.SaveLocation == SaveData.GongsunLocation || c?.SaveLocation == SaveData.SuanzaoLocation ? SavePlace(c.SaveLocation) : "涿郡 · 街市";
 
         // "目标：从南门出城迎敌（第二战 · 张梁）" → "从南门出城迎敌 · 第二战 张梁", as on the mock-ups.
         public static string Quest(StoryState s, ChapterState c = null)
@@ -54,6 +55,10 @@ namespace ThreeKingdoms.UI.Menu
             if (location == SaveData.TownLocation) return "涿郡 · 酒肆";
             if (location == SaveData.CampLocation) return "广宗 · 卢植大营";
             if (location == SaveData.AnxiLocation) return "中山 · 安喜县";
+            if (location == SaveData.GongsunLocation) return "幽州 · 公孙瓒营";
+            if (location == SaveData.SuanzaoLocation) return "陈留 · 酸枣大营";
+            if (location == "battle_7") return "公孙瓒营 · 校场";
+            if (location == "battle_8") return "虎牢关 · 战前整备";
             if (location == "battle_4") return "颍川 · 战前整备";
             if (location == "battle_5") return "广宗 · 战前整备";
             if (location == "battle_6") return "安喜 · 战前整备";

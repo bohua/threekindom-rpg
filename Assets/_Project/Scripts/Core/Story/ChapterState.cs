@@ -17,11 +17,18 @@ namespace ThreeKingdoms.Core.Story
         ToAnxi = 6,         // battle 5 won: optional Wancheng (C5), C9, scroll ②
         Anxi = 7,           // 185, Anxi county: C10, commissions, battle 6
         AnxiBandits = 8,    // battle 6 won: the courier leads to C11–C13
-        Done = 9,           // Anxi left: scroll ③, the end of 0.2
+        Done = 9,           // Anxi left: scroll ③; 0.3 goes on with D1 drift and the 189 interlude (story stage)
+        // 0.3 讨董篇 (design/v0.3-taodong/SYSTEMS_V03.md §1)
+        Gongsun = 10,       // 190, Gongsun Zan's garrison: D4, optional battle 7, D5
+        Suanzao = 11,       // the allied camp at Suanzao: D6 the oath, D7 Guan Yu and Hua Xiong
+        Hulao = 12,         // Hulao Pass: battle 8
+        Luoyang = 13,       // battle 8 won: scroll ⑤, D9 Luoyang burns (191), D10 the ruins, D11
+        Done03 = 14,        // the coalition breaks up: scroll ⑥, the end of 0.3
     }
 
-    // Main-line node (蓝图 §4.2): 184 until the Yellow Turbans are put down (C9), then 185.
-    public enum ChronicleNode { N1 = 1, N2 = 2 }
+    // Main-line node (蓝图 §4.2): 184 until the Yellow Turbans are put down (C9), then 185; 0.3 adds 189 (the interlude
+    // after Anxi), 190 (Gongsun Zan, the coalition) and 191 (after Luoyang burns).
+    public enum ChronicleNode { N1 = 1, N2 = 2, N3 = 3, N4 = 4, N5 = 5 }
 
     // One thing a character remembers (SYSTEMS_V02 §3): flags only, no attitude numbers.
     public readonly struct Memory
@@ -46,8 +53,13 @@ namespace ThreeKingdoms.Core.Story
         public ChapterStep Step { get; private set; }
         public IReadOnlyCollection<string> Flags => flags;
         public IReadOnlyList<Memory> Memories => memories;
-        public ChronicleNode Node => Step >= ChapterStep.Anxi ? ChronicleNode.N2 : ChronicleNode.N1;
-        public int Year => Node == ChronicleNode.N2 ? 185 : 184;
+        // N5 (191) begins when Luoyang has burned (flag Year191, written in D9), not with a step (REVIEW_V03 R12).
+        public ChronicleNode Node => Has(Year191) ? ChronicleNode.N5 : Step >= ChapterStep.Gongsun ? ChronicleNode.N4
+            : Step >= ChapterStep.Done ? ChronicleNode.N3 : Step >= ChapterStep.Anxi ? ChronicleNode.N2 : ChronicleNode.N1;
+        public int Year => Node switch { ChronicleNode.N5 => 191, ChronicleNode.N4 => 190, ChronicleNode.N3 => 189, ChronicleNode.N2 => 185, _ => 184 };
+
+        // 0.3 flags: the optional drill (battle 7) won, Tian Yu met.
+        public const string Drill = "drill", TianYu = "tianyu", Year191 = "y191";
 
         public event Action<Memory> Remembered;
 
@@ -74,17 +86,28 @@ namespace ThreeKingdoms.Core.Story
             ChapterStep.Yingchuan => "battle_4",
             ChapterStep.Guangzong => "battle_5",
             ChapterStep.Anxi => "battle_6",
+            ChapterStep.Hulao => "battle_8",
             _ => null,
         };
+
+        // The optional drill at Gongsun Zan's garrison (battle 7): once, only while there.
+        public bool DrillOpen => Step == ChapterStep.Gongsun && !Has(Drill);
 
         // The single reward-once gate for battles 4–6 (as StoryState.RecordVictory is for 1–3).
         public bool RecordVictory(string encounterId)
         {
+            if (encounterId == "battle_7")
+            {
+                if (!DrillOpen) return false;
+                Set(Drill);
+                return true;
+            }
             if (encounterId == null || encounterId != NextBattleId) return false;
             Step = Step switch
             {
                 ChapterStep.Yingchuan => ChapterStep.Guangzong,
                 ChapterStep.Guangzong => ChapterStep.ToAnxi,
+                ChapterStep.Hulao => ChapterStep.Luoyang,
                 _ => ChapterStep.AnxiBandits,
             };
             return true;
@@ -111,7 +134,11 @@ namespace ThreeKingdoms.Core.Story
         // Development / test entry straight into battle 4, 5 or 6 (battleIndex 3–5).
         public static ChapterState AtBattle(int battleIndex) => new ChapterState
         {
-            Step = battleIndex switch { 3 => ChapterStep.Yingchuan, 4 => ChapterStep.Guangzong, 5 => ChapterStep.Anxi, _ => ChapterStep.Zhuojun },
+            Step = battleIndex switch
+            {
+                3 => ChapterStep.Yingchuan, 4 => ChapterStep.Guangzong, 5 => ChapterStep.Anxi, 6 => ChapterStep.Gongsun, 7 => ChapterStep.Hulao,
+                _ => ChapterStep.Zhuojun,
+            },
         };
 
         // A saved play-through (ADR-0004).

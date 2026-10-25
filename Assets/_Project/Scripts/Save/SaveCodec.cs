@@ -52,7 +52,7 @@ namespace ThreeKingdoms.Save
             public ChapterState Chapter;
         }
 
-        static readonly string[] Locations = { SaveData.TownLocation, SaveData.CampLocation, SaveData.AnxiLocation };
+        static readonly string[] Locations = { SaveData.TownLocation, SaveData.CampLocation, SaveData.AnxiLocation, SaveData.GongsunLocation, SaveData.SuanzaoLocation };
 
         // Alpha 0.1 saves (format 1): the chapter step follows from the three battles; memories and commissions start empty,
         // levels and exp are kept. A save made after the third victory continues with Zou Jing's orders (C1).
@@ -68,6 +68,8 @@ namespace ThreeKingdoms.Save
             SaveData.TownLocation => step <= ChapterStep.ZhuojunFree,
             SaveData.CampLocation => step == ChapterStep.Camp,
             SaveData.AnxiLocation => step == ChapterStep.Anxi || step == ChapterStep.AnxiBandits,
+            SaveData.GongsunLocation => step == ChapterStep.Gongsun,
+            SaveData.SuanzaoLocation => step == ChapterStep.Suanzao,
             _ => true,
         };
 

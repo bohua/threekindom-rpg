@@ -78,10 +78,29 @@ namespace ThreeKingdoms.EditorTools
         };
         const string Chapter2Source = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v02-characters-sprites";
 
-        // A 0.2 person's atlas now: their own once imported, else the stand-in resident's.
+        // 0.3 讨董篇 people (Codex art/v03-characters-sprites; design image art/v03-characters-concept), same sheet format.
+        public static readonly (string Id, string Key, string Prefix, bool Walks, string StandIn)[] Chapter3 =
+        {
+            ("D01", "NpcGongsunZan", "GONGSUN_ZAN", false, "N01"),
+            ("D02", "NpcBaimaRider", "BAIMA_RIDER", false, "N02"),
+            ("D03", "NpcJianYong", "JIAN_YONG", false, "N06"),
+            ("D04", "NpcTianYu", "TIAN_YU", false, "N12"),
+            ("D05", "NpcYuanShao", "YUAN_SHAO", false, "N03"),
+            ("D06", "NpcYuanShu", "YUAN_SHU", false, "N05"),
+            ("D07", "NpcKongRong", "KONG_RONG", false, "N06"),
+            ("D08", "NpcSunJian", "SUN_JIAN", false, "N01"),
+            ("D09", "NpcTaoQian", "TAO_QIAN", false, "N09"),
+            ("D10", "NpcHuaXiong", "HUA_XIONG", false, "N01"),
+            ("D11", "NpcChenGong", "CHEN_GONG", false, "N03"),
+            ("D12", "NpcLvBoshe", "LV_BOSHE", false, "N09"),
+            ("D13", "NpcAllySoldier", "ALLIANCE_SOLDIER", true, "N02"),
+        };
+        const string Chapter3Source = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v03-characters-sprites";
+
+        // A 0.2 / 0.3 person's atlas now: their own once imported, else the stand-in resident's.
         public static string ChapterKey(string id)
         {
-            var c = Chapter2.First(x => x.Id == id);
+            var c = Chapter2.Concat(Chapter3).First(x => x.Id == id);
             return File.Exists(HD2DSampleBuilder.AtlasPath(c.Key)) ? c.Key : Residents.First(x => x.Id == c.StandIn).Key;
         }
 
@@ -112,7 +131,8 @@ namespace ThreeKingdoms.EditorTools
             var sheets = Residents.Select(r => (r.Key, r.Prefix, r.Walks, Dir: root))
                 .Append((WaiterKey, "NPC_TAVERN_WAITER", true, WaiterSource))
                 .Concat(Townsfolk.Select(t => (t.Key, t.Prefix, t.Walks, Dir: TownsfolkSource)))
-                .Concat(Chapter2.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter2Source)));
+                .Concat(Chapter2.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter2Source)))
+                .Concat(Chapter3.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter3Source)));
             foreach (var (key, prefix, walks, dir) in sheets)
             {
                 string poses = Path.Combine(dir, prefix + "_3X3.png");
