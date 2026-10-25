@@ -180,7 +180,7 @@ namespace ThreeKingdoms.Gameplay.Story
                     L("gongsun_zan", "d5.1"), L("gongsun_zan", "d5.2"), L("liu_bei", "d5.3"),
                     L("gongsun_zan", "d5.4").When(ChapterState.Drill),
                     L("tian_yu", "d5.5").When(ChapterState.TianYu), L("liu_bei", "d5.6").When(ChapterState.TianYu),
-                    Remember("tian_yu", "tianyu_stay", "stay", "mem.tianyu_stay").When(ChapterState.TianYu),
+                    Remember("tian_yu", "tianyu_follow", "follow", "mem.tianyu_follow").When(ChapterState.TianYu),
                     L("gongsun_zan", "d5.7"),
                     Fade(1f), Load(GameRun.StageScene, ChapterScripts3.ToSuanzao),
                 },

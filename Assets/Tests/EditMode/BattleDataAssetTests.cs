@@ -24,7 +24,7 @@ namespace ThreeKingdoms.Tests.EditMode
         {
             var data = AssetDatabase.LoadAssetAtPath<BattleCatalog>(CatalogPath).ToRuntime();
             Assert.That(data.Party.Select(g => g.Id), Is.EqualTo(new[] { "liu_bei", "guan_yu", "zhang_fei" }));
-            Assert.That(data.Encounters.Select(e => e.Id), Is.EqualTo(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6" }));   // 0.2 adds 4–6
+            Assert.That(data.Encounters.Select(e => e.Id), Is.EqualTo(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6", "battle_7", "battle_8" }));   // 0.2 adds 4–6, 0.3 adds 7–8
             var b1 = data.Encounter("battle_1");
             Assert.That(b1.Enemies.Select(e => (e.General.Id, e.Level)), Is.EqualTo(new[] { ("cheng_yuanzhi", 2), ("yt_headman", 1), ("yt_headman", 1) }));
             Assert.AreEqual(EnemyAiKind.HighestTroops, b1.Ai);

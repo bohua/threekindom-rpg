@@ -33,7 +33,7 @@ namespace ThreeKingdoms.Tests.EditMode
         [Test]
         public void CatalogueHasTwelveKindsAndTheShopSellsEight()
         {
-            Assert.AreEqual(19, eco.Equipment.Count);   // 0.2: 12 + the Anxi tier (5) + two story keepsakes
+            Assert.AreEqual(23, eco.Equipment.Count);   // 0.2: 12 + the Anxi tier (5) + two story keepsakes; 0.3: + Gongsun tier (3) + 白马铃
             Assert.AreEqual(7, eco.StockAt(1).Count(), "涿郡与大营只卖第一档");
             Assert.AreEqual(12, eco.StockAt(2).Count(), "安喜市集加 5 件");
             Assert.That(eco.StockAt(1).Select(e => e.Id), Is.EquivalentTo(new[]
