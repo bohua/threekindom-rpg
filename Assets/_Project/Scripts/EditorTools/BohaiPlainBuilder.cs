@@ -253,17 +253,19 @@ namespace ThreeKingdoms.EditorTools
         static void Roads(Transform env)
         {
             var g = T.Group(env, "Roads");
-            // Main roads 8 m (ruts down the middle), spurs to villages and wild spots 5 m.
+            BeginRibbons();
+            // Dirt spurs first, so their junctions are known when the stone roads lay their curbs.
+            DirtRibbon(g, "Spur to the beacon", 5f, BeaconSpur);
+            DirtRibbon(g, "Spur to the reeds", 5f, ReedSpur);
+            DirtRibbon(g, "Spur to the tomb", 5f, TombSpur);
+            DirtRibbon(g, "Lane in the north village", 5f, ExtraRoads[0]);
+            // The ferry road: south gate down to the levee foot (the ramp over the levee is laid in Levee()).
+            DirtRibbon(g, "Ferry road", 7f, ExtraRoads[1]);
             StoneRoad(g, "West road", 8f, WestRoad);
             StoneRoad(g, "North road", 8f, NorthRoad);
             StoneRoad(g, "East road", 8f, EastRoad);
             StoneRoad(g, "Gaotang to the post station", 8f, PostRoad);
-            Road(g, "Spur to the beacon", 5f, new Vector3(-250f, 0, -100f), new Vector3(-330f, 0, -165f));
-            Road(g, "Spur to the reeds", 5f, new Vector3(150f, 0, -170f), new Vector3(215f, 0, -88f));
-            Road(g, "Spur to the tomb", 5f, new Vector3(-380f, 0, 40f), new Vector3(-300f, 0, 160f), new Vector3(-224f, 0, 244f));
-            Road(g, "Lane in the north village", 5f, new Vector3(40f, 0, 200f), new Vector3(-10f, 0, 214f));
-            // The ferry road: south gate down to the levee foot (the ramp over the levee is laid in Levee()).
-            Road(g, "Ferry road", 7f, SouthGate + new Vector3(0, 0, -5f), new Vector3(CityCx, 0, LeveeNorth + 0.5f));
+            AssetDatabase.SaveAssets();
         }
 
         static void River(Transform env)
@@ -675,7 +677,7 @@ namespace ThreeKingdoms.EditorTools
             T.WallRun(g, "Wall back", new Vector3(cx - 40f, 0, wz + 52f), new Vector3(cx + 40f, 0, wz + 52f));
             Gate(g, "Gaotang gate", new Vector3(cx, 0, wz), 0f);
             T.Patch(g, "Gaotang square", "ground_street_stone", cx - 15f, cx + 15f, wz + 2f, wz + 30f, 0.006f);
-            T.Patch(g, "Gate apron", "ground_packed_earth", cx - 12f, cx + 12f, wz - 26f, wz - 2f, 0.003f);
+            EarthPatch(g, new Vector3(cx, 0, wz - 12f), 12f, 10f, 67);
             GreyHouse(g, "County hall (县府)", new Vector3(cx, 0, wz + 30f), 14f, 9f, 4.5f, shade: 0.7f);
             GreyHouse(g, "Shop (enterable)", new Vector3(cx - 24f, 0, wz + 20f), 8f, 6f, 3.4f, yaw: 90f);
             Label(labels, "高唐（门前小场景）", new Vector3(cx, 0, wz), 12f);
@@ -687,7 +689,7 @@ namespace ThreeKingdoms.EditorTools
         static void PostStationAndBarrier(Transform env, Transform labels)
         {
             var p = T.Group(env, "Post station (驿站)");
-            T.Patch(p, "Post yard", "ground_packed_earth", PostFront.x - 14f, PostFront.x + 14f, PostFront.z - 12f, PostFront.z + 2f, 0.003f);
+            EarthPatch(p, PostFront + new Vector3(0, 0, -5f), 14f, 7f, 61);
             T.Building(p, "Post station", PostFront, 0f, "post_station_front", "post_station_side", null);
             T.Building(p, "Stable", PostFront + new Vector3(-11f, 0, 0), 0f, "stable_front", "stable_side", null, roofKey: "thatch", interior: "wall_rammed_earth");
             T.Prop(p, "prop_banner_post", PostFront.x + 4.6f, PostFront.z - 1f, y: 0.9f);
@@ -726,7 +728,7 @@ namespace ThreeKingdoms.EditorTools
         {
             var v = T.Group(env, name + " village", centre);
             // Five houses round a threshing floor with a well; fields outside. Doors face south onto the floor.
-            T.Patch(v, "Threshing floor", "ground_packed_earth", -16f, 16f, -12f, 12f, 0.003f);
+            EarthPatch(env, centre, 16f, 12f, seed);   // threshing floor with a ragged edge
             (string front, string side, string back, bool thatch, Vector3 at)[] houses =
             {
                 ("house_b_front", "house_b_side", "house_b_back", true, new Vector3(-12f, 0, 12f)),
@@ -802,7 +804,19 @@ namespace ThreeKingdoms.EditorTools
             Box(t, "Que W", new Vector3(-4f, 0, -18f), new Vector3(2f, 5f, 2f), 0.75f);
             Box(t, "Que E", new Vector3(4f, 0, -18f), new Vector3(2f, 5f, 2f), 0.75f);
             }
-            T.Patch(t, "Spirit road", "ground_street_stone", -2f, 2f, -24f, -10f, 0.005f);
+            {
+                // Spirit road: stone slabs that narrow and fade out into the grass at the south end, no hard rectangle.
+                var sp = Smooth(new[] { t.position + new Vector3(0, 0, -26f), t.position + new Vector3(0, 0, -10f) }, 1f);
+                var tk = Taper(sp, true, false, flare: false);
+                (sp, tk) = RoundEnds(sp, tk, true, false, 2.2f);
+                string sk = K("stone_road_v2", "ground_street_stone");
+                Ribbon(t, "Spirit road", T.Mat(sk), sp, -2.2f, 2.2f, 0.005f, T.Metres(sk).y * (4.4f / T.Metres(sk).x), tk);
+                if (T.Tex("road_edge_band", optional: true))
+                {
+                    Ribbon(t, "Spirit edge R", T.Mat("road_edge_band", clip: true), sp, 1.9f, 1.9f + T.Metres("road_edge_band").y, 0.0058f, T.Metres("road_edge_band").x, tk, vAcross: true, band: true);
+                    Ribbon(t, "Spirit edge L", T.Mat("road_edge_band", clip: true), sp, -1.9f, -(1.9f + T.Metres("road_edge_band").y), 0.0058f, T.Metres("road_edge_band").x, tk, vAcross: true, band: true);
+                }
+            }
             Label(labels, "古冢石阙（探索点）", t.position, 11f);
             Spot("Tomb", t.position + new Vector3(0, 0, -26f));
         }
@@ -1125,16 +1139,20 @@ namespace ThreeKingdoms.EditorTools
         {
             var g = T.Group(parent, name);
             string top = K("curb_top", "steps_tread"), side = K("curb_side", "steps_riser");
+            var raw = points;
+            points = Smooth(raw, 4f);   // rounded bends (user 2026-10-25)
+            string paving = K("stone_road_v2", "ground_street_stone");
+            Ribbon(g, "Stone paving", T.Mat(paving), points, -width / 2f, width / 2f, 0.005f, T.Metres(paving).y * (width / T.Metres(paving).x));
             for (int i = 0; i + 1 < points.Length; i++)
             {
                 Vector3 a = points[i], b = points[i + 1];
-                Strip(g, "Stone paving", K("stone_road_v2", "ground_street_stone"), a, b, width, 0.005f + i * 0.0002f);
                 var d = (b - a); d.y = 0f; float len = d.magnitude; d /= len;
                 float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
                 var right = new Vector3(d.z, 0, -d.x);
                 foreach (int s in new[] { -1, 1 })
                 {
                     var mid = (a + b) / 2f + right * s * (width / 2f + CurbWidth / 2f);
+                    if (junctions.Any(j => Vector3.Distance(j, mid) < 5.5f)) continue;   // open where a side road joins
                     var c = T.Group(g, "Curb", mid);
                     T.Quad(c, "Curb top", new Vector3(0, CurbHeight, 0), new Vector3(90f, yaw, 0), new Vector2(CurbWidth, len), T.Mat(top), new Vector2(1f, len / T.Metres(top).x), castShadows: false);
                     foreach (int f in new[] { -1, 1 })
@@ -1143,15 +1161,11 @@ namespace ThreeKingdoms.EditorTools
                 }
             }
             if (T.Tex("road_edge_band", optional: true))
-                for (int i = 0; i + 1 < points.Length; i++)
-                {
-                    var d = points[i + 1] - points[i]; d.y = 0f; float len = d.magnitude; d /= len;
-                    float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg; var right = new Vector3(d.z, 0, -d.x);
-                    float dep = T.Metres("road_edge_band").y;
-                    foreach (int s2 in new[] { -1, 1 })
-                        T.Quad(g, "Road edge", (points[i] + points[i + 1]) / 2f + right * s2 * (width / 2f + CurbWidth + dep / 2f - 0.2f) + new Vector3(0, 0.0058f, 0),
-                            new Vector3(90f, yaw + (s2 > 0 ? 90f : -90f), 0), new Vector2(len + 0.6f, dep), T.Mat("road_edge_band", clip: true), new Vector2((len + 0.6f) / T.Metres("road_edge_band").x, 1f), castShadows: false);
-                }
+            {
+                float dep = T.Metres("road_edge_band").y, e0 = width / 2f + CurbWidth - 0.2f;
+                Ribbon(g, "Road edge R", T.Mat("road_edge_band", clip: true), points, e0, e0 + dep, 0.0058f, T.Metres("road_edge_band").x, vAcross: true);
+                Ribbon(g, "Road edge L", T.Mat("road_edge_band", clip: true), points, -e0, -(e0 + dep), 0.0058f, T.Metres("road_edge_band").x, vAcross: true);
+            }
             Avenue(g, width, points);
         }
 
@@ -1209,7 +1223,7 @@ namespace ThreeKingdoms.EditorTools
         static readonly Vector3[] WestRoad = { new Vector3(XMin, 0, 40f), new Vector3(-380f, 0, 40f), new Vector3(-250f, 0, -100f), WestGate + new Vector3(-6f, 0, 0) };
         static readonly Vector3[] NorthRoad = { NorthGate + new Vector3(0, 0, 6f), new Vector3(CityCx, 0, -20f), new Vector3(40f, 0, 120f), new Vector3(40f, 0, 200f), new Vector3(40f, 0, ZMax) };
         static readonly Vector3[] EastRoad = { EastGate + new Vector3(6f, 0, 0), new Vector3(150f, 0, -170f), new Vector3(310f, 0, -182f), GaotangFront };
-        static readonly Vector3[] PostRoad = { GaotangFront + new Vector3(18f, 0, 0), new Vector3(420f, 0, -100f), PostFront, new Vector3(XMax, 0, 20f) };
+        static readonly Vector3[] PostRoad = { GaotangFront + new Vector3(6f, 0, 0), new Vector3(420f, 0, -100f), PostFront, new Vector3(XMax, 0, 20f) };
         static readonly Vector3[] BeaconSpur = { new Vector3(-250f, 0, -100f), new Vector3(-330f, 0, -165f) };
         static readonly Vector3[] ReedSpur = { new Vector3(150f, 0, -170f), new Vector3(215f, 0, -88f) };
         static readonly Vector3[] TombSpur = { new Vector3(-380f, 0, 40f), new Vector3(-300f, 0, 160f), new Vector3(-224f, 0, 244f) };
@@ -2096,7 +2110,7 @@ namespace ThreeKingdoms.EditorTools
             T.Solid(gate, new Vector3(0, (4.5f + gf.y) / 2f, 0), new Vector3(4f, gf.y - 4.5f, 4f));
             string square = K("gaotang_square", "ground_street_stone");
             T.Patch(g, "Gaotang square", square, cx - 16f, cx + 16f, wz + 2f, wz + 30f, 0.006f);
-            T.Patch(g, "Gate apron", K("sand_flat_v2", square), cx - 12f, cx + 12f, wz - 22f, wz - 2f, 0.0055f);
+            EarthPatch(g, new Vector3(cx, 0, wz - 12f), 12f, 10f, 67);
             string roof = T.Tex("gaotang_roof", optional: true) ? "gaotang_roof" : null;
             var hall = T.Building(g, "County hall (县府)", new Vector3(cx, 0, wz + 31f), 0f, "gaotang_hall_front", "gaotang_hall_side", null, roofKey: "tile", roofTexture: roof);
             T.Stairs(g, "Hall steps", new Vector3(cx, 0, wz + 31f), 4f, 3, 0.3f, 0.4f, 0.6f);
@@ -2112,6 +2126,207 @@ namespace ThreeKingdoms.EditorTools
             T.Prop(props, "prop_army_tent", cx + 26f, wz + 40f, solid: true);
             T.Prop(props, "prop_army_tent", cx - 26f, wz + 40f, solid: true);
             return true;
+        }
+
+        // ---------- road ribbons (user 2026-10-25: no square corners or square road ends) ----------
+        // Roads are smooth ribbons along a Catmull-Rom curve through their points, so bends are rounded. Each side gets
+        // a ragged edge band onto the grass; an open end (a road that stops in open country) tapers and breaks up into
+        // loose earth decals instead of stopping in a straight line. Curbs leave gaps where side roads join.
+
+        static Mesh roadContainer;
+        static readonly List<Vector3> junctions = new List<Vector3>();
+        static int ribbonCount;
+
+        static void BeginRibbons()
+        {
+            string path = TerrainDir + "/Bohai_Roads.asset";
+            if (AssetDatabase.LoadAssetAtPath<Mesh>(path)) AssetDatabase.DeleteAsset(path);
+            roadContainer = new Mesh { name = "Bohai_Roads" };
+            AssetDatabase.CreateAsset(roadContainer, path);
+            junctions.Clear();
+            ribbonCount = 0;
+        }
+
+        // A ribbon from offset `inner` to `outer` metres right of the centre line (negative = left), u across 0..1
+        // (or uScale), v along by tileLength. taper: per-point width factor (null = none).
+        static GameObject Ribbon(Transform parent, string name, Material mat, Vector3[] pts, float inner, float outer, float y, float tileLength, float[] taper = null, bool vAcross = false, bool band = false)
+        {
+            var verts = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
+            float dist = 0f;
+            for (int i = 0; i < pts.Length; i++)
+            {
+                var tan = (pts[Mathf.Min(pts.Length - 1, i + 1)] - pts[Mathf.Max(0, i - 1)]); tan.y = 0f; tan.Normalize();
+                var right = new Vector3(tan.z, 0, -tan.x);
+                if (i > 0) { var d = pts[i] - pts[i - 1]; d.y = 0f; dist += d.magnitude; }
+                float k = taper != null ? taper[i] : 1f;
+                verts.Add(pts[i] + right * inner * k + Vector3.up * y);
+                verts.Add(pts[i] + right * (band ? inner * k + (outer - inner) : outer * k) + Vector3.up * y);
+                float along = dist / tileLength;
+                if (vAcross) { uvs.Add(new Vector2(along, 0f)); uvs.Add(new Vector2(along, 1f)); }
+                else { uvs.Add(new Vector2(0f, along)); uvs.Add(new Vector2(1f, along)); }
+            }
+            for (int i = 0; i + 1 < pts.Length; i++)
+            {
+                int a = i * 2;
+                tris.AddRange(new[] { a, a + 1, a + 2, a + 1, a + 3, a + 2 });
+            }
+            var mesh = new Mesh { name = $"{name} {ribbonCount++}", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            mesh.SetVertices(verts); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals();
+            if (mesh.normals.Length > 0 && mesh.normals[0].y < 0f) { tris.Reverse(); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals(); }
+            mesh.RecalculateBounds();
+            AssetDatabase.AddObjectToAsset(mesh, roadContainer);
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = Vector3.zero;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.AddComponent<MeshRenderer>(); r.sharedMaterial = mat; r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return go;
+        }
+
+        // True when p is within `r` of any road other than `self` (so a road end there is a junction, not open).
+        static bool NearOtherRoad(Vector3 p, Vector3[] self, float r)
+        {
+            var q = new Vector2(p.x, p.z);
+            foreach (var road in AllRoads.Concat(ExtraRoads))
+            {
+                if (road == self) continue;
+                for (int i = 0; i + 1 < road.Length; i++)
+                {
+                    var a = new Vector2(road[i].x, road[i].z); var b = new Vector2(road[i + 1].x, road[i + 1].z);
+                    float t = Mathf.Clamp01(Vector2.Dot(q - a, b - a) / Mathf.Max(0.001f, (b - a).sqrMagnitude));
+                    if ((a + t * (b - a) - q).magnitude < r) return true;
+                }
+            }
+            return false;
+        }
+
+        static bool OpenEnd(Vector3 p, Vector3[] self) =>
+            !NearOtherRoad(p, self, 6f) && p.z > LeveeNorth + 3f && Mathf.Abs(p.x) < XMax - 2f && p.z < ZMax - 2f && At(p.x, p.z) != Cell.Town
+            && !(p.x > CityX0 - 12f && p.x < CityX1 + 12f && p.z > CityZ0 - 12f && p.z < CityZ1 + 12f);
+
+        // Width factors: 1 along the road, easing to 0.55 over the last 5 m of an open end.
+        static float[] Taper(Vector3[] pts, bool openStart, bool openEnd, bool flare = true)
+        {
+            var k = new float[pts.Length];
+            float total = 0f; var at = new float[pts.Length];
+            for (int i = 1; i < pts.Length; i++) { total += Vector3.Distance(pts[i], pts[i - 1]); at[i] = total; }
+            for (int i = 0; i < pts.Length; i++)
+            {
+                float f = 1f;
+                if (openStart) f = Mathf.Min(f, Mathf.Lerp(0.55f, 1f, Mathf.SmoothStep(0f, 1f, at[i] / 5f)));
+                if (openEnd) f = Mathf.Min(f, Mathf.Lerp(0.55f, 1f, Mathf.SmoothStep(0f, 1f, (total - at[i]) / 5f)));
+                // Where a side road meets another road its mouth flares out, like worn ground at a fork (the first 6 m lie
+                // under the main road, so the flare eases back over the 9 m after that).
+                if (flare && !openStart) f = Mathf.Max(f, Mathf.Lerp(1.8f, 1f, Mathf.SmoothStep(0f, 1f, (at[i] - 6f) / 9f)));
+                if (flare && !openEnd) f = Mathf.Max(f, Mathf.Lerp(1.8f, 1f, Mathf.SmoothStep(0f, 1f, (total - at[i] - 6f) / 9f)));
+                k[i] = f;
+            }
+            return k;
+        }
+
+        // Rounds the open ends: the centre line runs on past the end by one half-width while the width closes on a
+        // quarter circle, so a road that stops in the open finishes in a rounded tip, never a straight cut.
+        static (Vector3[] pts, float[] k) RoundEnds(Vector3[] pts, float[] k, bool openStart, bool openEnd, float halfWidth)
+        {
+            var p = new List<Vector3>(pts); var w = new List<float>(k);
+            const int n = 6;
+            if (openEnd)
+            {
+                var o = pts[pts.Length - 1] - pts[pts.Length - 2]; o.y = 0f; o.Normalize();
+                float r = halfWidth * k[k.Length - 1], k0 = k[k.Length - 1];
+                for (int i = 1; i <= n; i++) { float a = i / (float)n * Mathf.PI / 2f; p.Add(pts[pts.Length - 1] + o * r * Mathf.Sin(a)); w.Add(k0 * Mathf.Max(0.02f, Mathf.Cos(a))); }
+            }
+            if (openStart)
+            {
+                var o = pts[0] - pts[1]; o.y = 0f; o.Normalize();
+                float r = halfWidth * k[0], k0 = k[0];
+                for (int i = 1; i <= n; i++) { float a = i / (float)n * Mathf.PI / 2f; p.Insert(0, pts[0] + o * r * Mathf.Sin(a)); w.Insert(0, k0 * Mathf.Max(0.02f, Mathf.Cos(a))); }
+            }
+            return (p.ToArray(), w.ToArray());
+        }
+
+        // Loose earth breaking up an open road end: decals of bare loess and dry grass fanning out past the end.
+        static void EndScatter(Transform parent, Vector3 end, Vector3 outward, float width, int seed)
+        {
+            string[] dirt = Have("decal_loess_dirt_a", "decal_loess_dirt_b"), dry = Have("decal_dry_grass_a", "decal_dry_grass_b", "decal_dry_grass_c");
+            if (dirt.Length == 0) return;
+            var rng = new System.Random(seed);
+            outward.y = 0f; outward.Normalize();
+            var right = new Vector3(outward.z, 0, -outward.x);
+            for (int i = 0; i < 7; i++)
+            {
+                float fwd = -1f + (float)rng.NextDouble() * 6f, side = ((float)rng.NextDouble() - 0.5f) * width * (1.2f + fwd * 0.15f);
+                var p = end + outward * fwd + right * side;
+                Decal(parent, i < 5 ? dirt[rng.Next(dirt.Length)] : (dry.Length > 0 ? dry[rng.Next(dry.Length)] : dirt[0]), p.x, p.z, rng, 0.6f + (float)rng.NextDouble() * 0.5f);
+            }
+        }
+
+        // A dirt road ribbon with edge bands and broken-up open ends.
+        static void DirtRibbon(Transform parent, string name, float width, Vector3[] raw)
+        {
+            var g = T.Group(parent, name);
+            var pts = Smooth(raw, 2f);
+            bool o0 = OpenEnd(raw[0], raw), o1 = OpenEnd(raw[raw.Length - 1], raw);
+
+            var taper = Taper(pts, o0, o1);
+            (pts, taper) = RoundEnds(pts, taper, o0, o1, width / 2f);
+            string key = K("dirt_road_v2", "ground_packed_earth");
+            Ribbon(g, "Road", T.Mat(key), pts, -width / 2f, width / 2f, 0.0045f, T.Metres(key).y * (width / T.Metres(key).x), taper);
+            if (T.Tex("road_edge_band", optional: true))
+            {
+                float dep = T.Metres("road_edge_band").y;
+                Ribbon(g, "Edge R", T.Mat("road_edge_band", clip: true), pts, width / 2f - 0.4f, width / 2f - 0.4f + dep, 0.0047f, T.Metres("road_edge_band").x, taper, vAcross: true, band: true);
+                Ribbon(g, "Edge L", T.Mat("road_edge_band", clip: true), pts, -(width / 2f - 0.4f), -(width / 2f - 0.4f + dep), 0.0047f, T.Metres("road_edge_band").x, taper, vAcross: true, band: true);
+            }
+            if (o0) EndScatter(g, raw[0], raw[0] - raw[1], width, name.GetHashCode());
+            if (o1) EndScatter(g, raw[raw.Length - 1], raw[raw.Length - 1] - raw[raw.Length - 2], width, name.GetHashCode() + 1);
+            if (!o0) junctions.Add(raw[0]);
+            if (!o1) junctions.Add(raw[raw.Length - 1]);
+        }
+
+        static readonly Vector3[][] ExtraRoads =
+        {
+            new[] { new Vector3(40f, 0, 200f), new Vector3(-10f, 0, 214f) },
+            new[] { SouthGate + new Vector3(0, 0, -5f), new Vector3(CityCx, 0, LeveeNorth + 0.5f) },
+        };
+
+        // A patch of bare ground with a ragged outline (village threshing floors, yards): a filled blob whose radius
+        // wanders, ringed by the same broken earth-to-grass band as the roads, plus a few loose clods past the rim.
+        static void EarthPatch(Transform parent, Vector3 centre, float rx, float rz, int seed)
+        {
+            var rng = new System.Random(seed);
+            const int n = 96;
+            float ph1 = (float)rng.NextDouble() * 6.3f, ph2 = (float)rng.NextDouble() * 6.3f;
+            var rim = new Vector3[n + 1];
+            for (int i = 0; i < n; i++)
+            {
+                float a = i / (float)n * Mathf.PI * 2f;
+                float f = 0.86f + 0.08f * Mathf.Sin(a * 3f + ph1) + 0.05f * Mathf.Sin(a * 5f + ph2) + 0.025f * Mathf.Sin(a * 11f + ph1 * 2f);
+                rim[i] = centre + new Vector3(Mathf.Cos(a) * rx * f, 0, Mathf.Sin(a) * rz * f);
+            }
+            rim[n] = rim[0];
+            // Loess fill, the same light earth as the road edge band, so the rim reads as worn ground and not an outline.
+            string fill = K("sand_flat_v2", "ground_packed_earth"); var tile = T.Metres(fill);
+            var verts = new List<Vector3> { centre + Vector3.up * 0.0040f }; var uvs = new List<Vector2> { new Vector2(centre.x / tile.x, centre.z / tile.y) }; var tris = new List<int>();
+            for (int i = 0; i < n; i++) { verts.Add(rim[i] + Vector3.up * 0.0040f); uvs.Add(new Vector2(rim[i].x / tile.x, rim[i].z / tile.y)); }
+            for (int i = 0; i < n; i++) tris.AddRange(new[] { 0, 1 + (i + 1) % n, 1 + i });
+            var mesh = new Mesh { name = $"Earth patch {ribbonCount++}" };
+            mesh.SetVertices(verts); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals();
+            if (mesh.normals[0].y < 0f) { tris.Reverse(); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals(); }
+            mesh.RecalculateBounds();
+            AssetDatabase.AddObjectToAsset(mesh, roadContainer);
+            var go = new GameObject("Earth patch"); go.transform.SetParent(parent, false); go.transform.position = Vector3.zero;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterial = T.Mat(fill); mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            if (T.Tex("road_edge_band", optional: true))
+                Ribbon(parent, "Earth patch rim", T.Mat("road_edge_band", clip: true), rim, -0.8f, T.Metres("road_edge_band").y * 0.8f, 0.0044f, T.Metres("road_edge_band").x, vAcross: true, band: true);
+            string[] dirt = Have("decal_loess_dirt_a", "decal_loess_dirt_b");
+            for (int i = 0; i < 4 && dirt.Length > 0; i++)
+            {
+                float a = (float)rng.NextDouble() * Mathf.PI * 2f, d = 1.05f + (float)rng.NextDouble() * 0.2f;
+                Decal(parent, dirt[rng.Next(dirt.Length)], centre.x + Mathf.Cos(a) * rx * d, centre.z + Mathf.Sin(a) * rz * d, rng, 0.5f + (float)rng.NextDouble() * 0.3f);
+            }
         }
 
         // ---------- people ----------
