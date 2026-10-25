@@ -95,7 +95,7 @@ Suno 没有可供本机调用的接口，以下提示词交给用户在 Suno 网
 | 文件名（不含扩展名） | 用途 | 目标长度 |
 | --- | --- | --- |
 | `taoyuan_oath` | 桃园结义过场 | 约 32 秒 |
-| `scroll_finale` | 水墨画卷收尾 | 约 20 秒（前 4.5 秒对动画，之后可循环阅读） |
+| `scroll_finale` | 水墨画卷收尾（气势恢宏的英雄赞歌） | 约 15 秒（前 4.5 秒对动画） |
 | `victory_aspiration` | 破黄巾后兄弟对白（可选） | 约 30 秒，可循环 |
 
 音效（`Resources/Audio/Sfx/`，可用任意音效库，Suno 不擅长）：`ink_drop` 墨滴、`scroll_unroll` 画卷展开、`seal_stamp` 盖印。
@@ -122,21 +122,23 @@ vocals, lyrics, rap, EDM, electric guitar, modern pop drums, horror, long silenc
 
 ### scroll_finale
 
+用户 2026-10-25 改为：短音乐，气势恢宏，英雄赞歌（取代原先的静谧古琴版）。
+
 Style：
 ```
-Instrumental, no vocals. Chinese ink-painting ambience, guqin and dizi, sparse and elegant, about 20 seconds, free tempo then gentle 60 BPM. Beautiful, contemplative, like turning the last page of an illustrated classic.
+Instrumental, no vocals. Epic heroic Chinese orchestral anthem, short cue about 15 seconds, 90 BPM. Grand brass fanfare, full strings, big taiko and war drums, cymbal swells, suona and dizi carrying a soaring heroic melody, wordless male choir "ah". Majestic, triumphant, a hymn to heroes, like the closing page of a legendary chronicle.
 ```
 Song description：
 ```
-0-0.5s: a single soft water-drop chime as ink falls.
-0.5-1.5s: a rising guqin glissando and airy breath as a scroll unrolls.
-1.5-3.6s: delicate guqin plucks and a short dizi phrase while text is written.
-3.6s: one firm low woodblock and taiko hit for a red seal being stamped.
-3.6-20s: a calm, loopable bed of guqin, soft strings and distant xiao for reading; end on a chord that loops cleanly back to 3.6s.
+0-0.5s: one deep taiko boom and a rising cymbal swell as the picture freezes.
+0.5-1.5s: strings sweep upward as a scroll unrolls.
+1.5-3.6s: brass and suona state a bold heroic motif over driving war drums while the story is written.
+3.6s: a massive orchestral hit with taiko and gong for a red seal being stamped.
+3.6-15s: the full heroic anthem: soaring melody, wordless male choir, broad brass chords, building to a majestic final chord held with natural reverb; no fade-out before the end.
 ```
 Exclude：
 ```
-vocals, drums groove, EDM, guitar, heavy percussion after the stamp, sudden loud notes
+vocals, lyrics, rap, EDM, electric guitar, rock drums, sad mood, long quiet intro, abrupt cut-off
 ```
 
 ### victory_aspiration（可选）
