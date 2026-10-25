@@ -383,6 +383,12 @@ namespace ThreeKingdoms.EditorTools
             ("dirt_road_v2", "dirt_road_hd"), ("stone_road_v2", "stone_road_hd"), ("road_edge_band", "road_edge_hd"),
             ("gaotang_square", "gaotang_square_hd"), ("ground_packed_earth", "packed_earth_hd"),
             ("plain_meadow", "plain_grass_hd_b"), ("plain_loess", "packed_earth_hd"),
+            // second batch (art/bohai-hd-ground-b2): water, shores, hills, woods, fields
+            ("river_water_v2", "river_water_hd"), ("yellow_river_v2", "yellow_river_hd"), ("pond_water_v2", "pond_water_hd"),
+            ("sand_flat_v2", "sand_flat_hd"), ("pebble_flat_v2", "pebble_flat_hd"), ("saline_flat", "saline_flat_hd"),
+            ("shore_sand_band", "shore_sand_hd"), ("shore_pebble_band", "shore_pebble_hd"), ("shore_reed_mud_band", "shore_reed_mud_hd"),
+            ("shore_embankment_band", "shore_embankment_hd"), ("hill_slope", "hill_slope_hd"), ("hill_top", "hill_top_hd"),
+            ("forest_floor", "forest_floor_hd"), ("farm_field", "farm_field_hd"),
         };
 
         static string K(string key, string fallback) => T.Tex(key, optional: true) ? key : fallback;
