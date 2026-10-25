@@ -89,7 +89,7 @@ namespace ThreeKingdoms.EditorTools
                     importer.mipmapEnabled = !pixel && sub != "Map" && sub != "Stage";
                     importer.textureCompression = pixel ? TextureImporterCompression.Uncompressed : TextureImporterCompression.CompressedHQ;
                     importer.npotScale = TextureImporterNPOTScale.None;
-                    importer.maxTextureSize = 2048;
+                    importer.maxTextureSize = key.StartsWith("far_") ? 8192 : 2048;   // the 5120-px horizon strips keep their detail
                     importer.alphaIsTransparency = true;
                     importer.wrapModeU = a.Contains("x") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
                     importer.wrapModeV = a.Contains("y") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
@@ -223,12 +223,13 @@ namespace ThreeKingdoms.EditorTools
                 Object.DestroyImmediate(box.GetComponent<Collider>());
                 box.name = "White box";
                 box.transform.SetParent(root, false);
-                box.transform.localPosition = new Vector3(0, fallbackSize.y / 2f, 0);
+                // The block stands behind its foot line (like a picture's footprint), so people at the door stay outside it.
+                box.transform.localPosition = new Vector3(0, fallbackSize.y / 2f, fallbackSize.z / 2f);
                 box.transform.localScale = fallbackSize;
                 box.GetComponent<MeshRenderer>().sharedMaterial = Mat(null, null, fallback, false);
                 footprint = fallbackSize;
             }
-            if (solid) Solid(root, "Collider", new Vector3(0, footprint.y / 2f, 0), footprint);
+            if (solid) Solid(root, "Collider", new Vector3(0, footprint.y / 2f, tex ? 0f : footprint.z / 2f), footprint);
             if (footprint.y > 3.5f) root.gameObject.AddComponent<Occluder>();
             return root;
         }
@@ -369,8 +370,9 @@ namespace ThreeKingdoms.EditorTools
             follow.Pitch = HD2DSampleBuilder.CameraPitch; follow.Distance = HD2DSampleBuilder.CameraDistance; follow.Fov = HD2DSampleBuilder.CameraFov;
             camGo.AddComponent<SeeThroughOccluders>().Target = player.transform;
 
-            var high = AssetDatabase.LoadAssetAtPath<VolumeProfile>(HD2DSampleBuilder.HighProfilePath);
-            var low = AssetDatabase.LoadAssetAtPath<VolumeProfile>(HD2DSampleBuilder.LowProfilePath);
+            // Bright noon (user 2026-10-25: 白天色调明媚，不要昏黄): no warm town LUT, neutral tonemapping, a touch of exposure.
+            var high = NoonProfile(NoonHighPath, depthOfField: true);
+            var low = NoonProfile(NoonLowPath, depthOfField: false);
             var volumeGo = new GameObject("Global Volume");
             var volume = volumeGo.AddComponent<Volume>();
             volume.isGlobal = true;
@@ -393,6 +395,26 @@ namespace ThreeKingdoms.EditorTools
             c.Stage.Confirm = ProjectSetup.Action("Interact");
             f.Controller = c;
             return f;
+        }
+
+        internal const string NoonHighPath = "Assets/_Project/Settings/HD2D_Noon.asset", NoonLowPath = "Assets/_Project/Settings/HD2D_Noon_Low.asset";
+        internal const string NoonBattlePath = "Assets/_Project/Settings/HD2D_Noon_Battle.asset";
+
+        internal static VolumeProfile NoonProfile(string path, bool depthOfField)
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            if (existing) return existing;   // built once per run; both scenes share it
+            var p = HD2DSampleBuilder.CreateProfile(path, depthOfField, bloomThreshold: 1.05f, bloomIntensity: 0.45f, highQualityBloom: depthOfField, lut: null);
+            foreach (var c in p.components)
+            {
+                if (c is Tonemapping t) t.mode.Override(TonemappingMode.Neutral);
+                if (c is ColorAdjustments a) { a.postExposure.Override(0.25f); a.contrast.Override(8f); a.saturation.Override(10f); }
+                if (c is ColorLookup l) { l.contribution.Override(0f); l.active = false; }
+                if (c is Vignette v) v.intensity.Override(0.18f);
+            }
+            EditorUtility.SetDirty(p);
+            AssetDatabase.SaveAssets();
+            return p;
         }
 
         static PartyFollower Follower(string name, string key)

@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-25T17:43:28.845085+00:00",
+  "asset_count": 28,
+  "files": [
+    {
+      "filename": "ground_camp_dirt_a.png",
+      "width": 1440,
+      "height": 1440,
+      "purpose": "ground camp dirt a",
+      "tile_axes": "xy",
+      "sha256": "f4b0ca09ffed7bbac80fa6ede32bf4a82656cc48b432850584ec389d941b2228"
+    },
+    {
+      "filename": "ground_camp_dirt_b.png",
+      "width": 1440,
+      "height": 1440,
+      "purpose": "ground camp dirt b",
+      "tile_axes": "xy",
+      "sha256": "65d490d37be69a5da45425bbb133b53e3db9ba9daec5eb1c035ff6dbc0f9b202"
+    },
+    {
+      "filename": "ground_camp_ruts.png",
+      "width": 1440,
+      "height": 1440,
+      "purpose": "ground camp ruts",
+      "tile_axes": "xy",
+      "sha256": "c3f50c99fbd55e2effc4bdf1192fe14e9cee0e9dad3dde211c78c53d30c54bb5"
+    },
+    {
+      "filename": "ground_camp_grass.png",
+      "width": 1440,
+      "height": 1440,
+      "purpose": "ground camp grass",
+      "tile_axes": "xy",
+      "sha256": "9495ed364d5c8e82d94e9b248745d7c962b0c7a08cd2b1f76fe08cb4aab37f56"
+    },
+    {
+      "filename": "ground_camp_grass_fringe.png",
+      "width": 1440,
+      "height": 240,
+      "purpose": "ground camp grass fringe",
+      "tile_axes": "x",
+      "sha256": "672e3ec5ce536c6ac37a3555d1c06e77f7c3b914019c8bfd3b0cdb2605911834"
+    },
+    {
+      "filename": "tent_han_small.png",
+      "width": 600,
+      "height": 420,
+      "purpose": "tent han small",
+      "tile_axes": "none",
+      "sha256": "28ddd341bd9f4cbec6628d7a08ae6e7c6d90cfbf373307f4cb0c630c7a93ef64"
+    },
+    {
+      "filename": "tent_han_supply.png",
+      "width": 840,
+      "height": 480,
+      "purpose": "tent han supply",
+      "tile_axes": "none",
+      "sha256": "92c80b5f43bed6372d4c9e1614d65f84d96d6dbb82af38367181217e92c7dc7f"
+    },
+    {
+      "filename": "tent_han_wounded.png",
+      "width": 840,
+      "height": 480,
+      "purpose": "tent han wounded",
+      "tile_axes": "none",
+      "sha256": "58357ae4c5e105d46164fe7e2b26cafcd068a4e37bbf6b6199672ae3845996cd"
+    },
+    {
+      "filename": "tent_han_command.png",
+      "width": 1560,
+      "height": 960,
+      "purpose": "tent han command",
+      "tile_axes": "none",
+      "sha256": "358644cac5445598fafda656fa8cad8ec4e76efc7e1ca6cf6164675f009087d6"
+    },
+    {
+      "filename": "palisade_segment.png",
+      "width": 480,
+      "height": 300,
+      "purpose": "palisade segment",
+      "tile_axes": "x",
+      "sha256": "3d2a7e42cc4aee4a78ac70e93a0d699ac94b319cb9af146fb32f3531bb024b33"
+    },
+    {
+      "filename": "palisade_gate.png",
+      "width": 720,
+      "height": 480,
+      "purpose": "palisade gate",
+      "tile_axes": "none",
+      "sha256": "9e206f868b46adc4edb5da0b70387078d14d7c534af09f7161b866532f820ec4"
+    },
+    {
+      "filename": "watchtower.png",
+      "width": 480,
+      "height": 960,
+      "purpose": "watchtower",
+      "tile_axes": "none",
+      "sha256": "54b948d1d9339f345ba8f20710e995b6a49dc8d6782d0e65bb760e13084cb6b8"
+    },
+    {
+      "filename": "luzhai_abatis.png",
+      "width": 480,
+      "height": 180,
+      "purpose": "luzhai abatis",
+      "tile_axes": "x",
+      "sha256": "48fe1067e6dad80f58e1baeec52ec4c44eefeea4b8a121905df411760151829e"
+    },
+    {
+      "filename": "banner_han_red.png",
+      "width": 120,
+      "height": 480,
+      "purpose": "banner han red",
+      "tile_axes": "none",
+      "sha256": "1c2139c00f07f71b8ac579ff571c31f2e2cd94bc125fe132e5796447b4af4779"
+    },
+    {
+      "filename": "banner_lu_general.png",
+      "width": 180,
+      "height": 600,
+      "purpose": "banner lu general",
+      "tile_axes": "none",
+      "sha256": "da2eba3960d15ef7c2b41710028b09fefbf0e022e9e9e5da6b018f6f4340553f"
+    },
+    {
+      "filename": "banner_dadu_red.png",
+      "width": 240,
+      "height": 720,
+      "purpose": "banner dadu red",
+      "tile_axes": "none",
+      "sha256": "9bf2db94ea6aa5322aecc091f46be8c5b16ccb206fb6f3f9359a0d685782f92a"
+    },
+    {
+      "filename": "grain_sacks.png",
+      "width": 240,
+      "height": 180,
+      "purpose": "grain sacks",
+      "tile_axes": "none",
+      "sha256": "f8d1a20740f7d98c8bf0001f18b18759d8213cf464004c610a427c76eb3de7a8"
+    },
+    {
+      "filename": "arrow_bundles.png",
+      "width": 180,
+      "height": 180,
+      "purpose": "arrow bundles",
+      "tile_axes": "none",
+      "sha256": "1c2580e4b4327696cc3f0576be890041053a4f763b8c68b87f628b4e11f6ec82"
+    },
+    {
+      "filename": "weapon_rack.png",
+      "width": 300,
+      "height": 240,
+      "purpose": "weapon rack",
+      "tile_axes": "none",
+      "sha256": "6a384cbc750ae800ca00bc2f0c3693a424bee2ff04525b9b6ede6e2223222caa"
+    },
+    {
+      "filename": "archery_target.png",
+      "width": 180,
+      "height": 240,
+      "purpose": "archery target",
+      "tile_axes": "none",
+      "sha256": "41b941ee9d5a15ea803fc047be773e631f869fecada5fbc9a052d00936711d97"
+    },
+    {
+      "filename": "horse_trough.png",
+      "width": 360,
+      "height": 120,
+      "purpose": "horse trough",
+      "tile_axes": "none",
+      "sha256": "923be47cc7d9c87deba2a7d545f646041869efec5a6c8bf1515c5d2726fec887"
+    },
+    {
+      "filename": "straw_mat.png",
+      "width": 240,
+      "height": 80,
+      "purpose": "straw mat",
+      "tile_axes": "none",
+      "sha256": "883e09e59f2b4d0eadfc3c13b80343bbf98107f9a5e1cff45e53ed34b30116df"
+    },
+    {
+      "filename": "brazier.png",
+      "width": 120,
+      "height": 144,
+      "purpose": "brazier",
+      "tile_axes": "none",
+      "sha256": "8b3b42d183c4055f398348dbdbe77cbbbe50c0df862f3fb33c7da5e5056fb524"
+    },
+    {
+      "filename": "water_jar.png",
+      "width": 120,
+      "height": 144,
+      "purpose": "water jar",
+      "tile_axes": "none",
+      "sha256": "7c338a70b020e51df36710286e8fa33e1e132cf28b3a24df588b5d017510ab59"
+    },
+    {
+      "filename": "crates.png",
+      "width": 240,
+      "height": 180,
+      "purpose": "crates",
+      "tile_axes": "none",
+      "sha256": "c6d01d9ba358744b8e7b12196ca2485c5ea77d053e11d2bc199578b5a99ff000"
+    },
+    {
+      "filename": "stable_shed.png",
+      "width": 1200,
+      "height": 600,
+      "purpose": "stable shed",
+      "tile_axes": "none",
+      "sha256": "c613469d8ed41aeacd3e25f0596c23a1bcee4aa5db8568b7a3d378ba832df4a1"
+    },
+    {
+      "filename": "horse_brown.png",
+      "width": 300,
+      "height": 240,
+      "purpose": "horse brown",
+      "tile_axes": "none",
+      "sha256": "00dcd668781c063129633a5ddd9527993f06480b34789c389b16b3c71aba6864"
+    },
+    {
+      "filename": "far_julu_plain_guangzong.png",
+      "width": 5120,
+      "height": 1080,
+      "purpose": "far julu plain guangzong",
+      "tile_axes": "none",
+      "sha256": "cee9446f921251da6bbc322875f1e3dcbf56839bfd5f99e581a3e3ef9fc68002"
+    },
+    {
+      "filename": "preview.png",
+      "width": 3840,
+      "height": 3200,
+      "purpose": "Static camp assembly and complete asset catalogue",
+      "tile_axes": "none",
+      "sha256": "50f1bffe76756a11028fb521806f860c8d61ddbf83b4300299dfabe1f5be3b12"
+    }
+  ],
+  "documentation": [
+    "PROMPTS.md"
+  ],
+  "images_generated": 19,
+  "generation_limit": 24,
+  "validation_scope": "Static PNG checks; Unity import/runtime not tested."
+}

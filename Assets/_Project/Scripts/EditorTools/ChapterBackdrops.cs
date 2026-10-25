@@ -78,7 +78,19 @@ namespace ThreeKingdoms.EditorTools
                 AssetDatabase.SaveAssets();
                 BattleBackdropBaker.BuildBattleScene(backdrop, OwnScene(id), Root);
                 if (id == "B1" && Has("B1_fire")) AddFireLayers();
+                else NoonGrade(OwnScene(id));
+
             }
+        }
+
+        // The daylight battles get the bright noon grade instead of the warm Zhuojun LUT (user 2026-10-25).
+        static void NoonGrade(string scenePath)
+        {
+            var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            var noon = ChapterFieldBuilder.NoonProfile(ChapterFieldBuilder.NoonBattlePath, depthOfField: false);
+            foreach (var v in Object.FindObjectsByType<UnityEngine.Rendering.Volume>(FindObjectsSortMode.None)) v.sharedProfile = noon;
+            foreach (var t in Object.FindObjectsByType<ThreeKingdoms.App.HD2DQualityTier>(FindObjectsSortMode.None)) { t.High = noon; t.Low = noon; }
+            EditorSceneManager.SaveScene(scene);
         }
 
         // B1's burning state: the same five layers on fire, under "Backdrop Fire", switched on by the fire event.

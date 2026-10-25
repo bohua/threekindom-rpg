@@ -181,6 +181,9 @@ namespace ThreeKingdoms.EditorTools
                 var atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(HD2DSampleBuilder.AtlasPath(battle.AllySprite));
                 ally.GetComponentInChildren<SpriteFrameAnimator>(true).Target.sharedMaterial = HD2DSampleBuilder.PixelMaterial(battle.AllySprite, atlas);
                 allyViews = new[] { View(ally, AllyFeet, ringMat, targetMat, idle: 2, flipAttack: true) };
+                // The card shows Dong Zhuo's head from his full illustration (Codex art/v02-portraits).
+                var full = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Art/Portraits/Full/DONG_ZHUO_PORTRAIT.png");
+                if (full) { allyViews[0].Portrait = full; allyViews[0].PortraitCrop = new RectInt(300, 1060, 420, 420); }
             }
             var fxSwitches = ChapterBackdrops.FxSwitches(battle.Backdrop, battle.Night);
 

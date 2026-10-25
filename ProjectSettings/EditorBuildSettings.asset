@@ -56,5 +56,14 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Zhuojun_Tavern.unity
     guid: 3ea54a9d68fefd34890883374d787582
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Chapter_B1.unity
+    guid: 990b1336040cbf54fa5b272e1424950c
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Chapter_B2.unity
+    guid: 63e0f6c688a0563448cdf1ef2ad450b4
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Chapter_B3.unity
+    guid: e97ec9582176e3743bbd18dc4408ad9d
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
