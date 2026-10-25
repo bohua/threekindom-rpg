@@ -289,11 +289,11 @@ namespace ThreeKingdoms.EditorTools
             var archeryHud = archeryGo.AddComponent<ThreeKingdoms.UI.Town.ArcheryHud>(); archeryHud.Controller = c; archeryHud.Art = CodexArtImporter.Archery.Select(n => CodexArtImporter.Load(CodexArtImporter.ArcheryDir, n))
                 .Concat(new[] { "ground_grass", "platform_top", "platform_edge", "prop_banner_han" }.Select(n => CodexArtImporter.Load(ZhuojunTownBuilder.TownDir, n)))
                 .Where(t => t).ToArray();   // sky and stone platform reuse town textures (user 2026-10-23) archeryHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
+            // The travel menu (行旅, GAME_MENU_UI_REDESIGN.md) draws itself (IMGUI) over the town.
             var menuGo = new GameObject("Main Menu HUD");
-            var menuDoc = menuGo.AddComponent<UIDocument>();
-            menuDoc.panelSettings = doc.panelSettings;
-            menuDoc.sortingOrder = 10;
-            var mainMenu = menuGo.AddComponent<ThreeKingdoms.UI.Menu.MainMenuHud>(); mainMenu.Controller = c; mainMenu.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
+            var mainMenu = menuGo.AddComponent<ThreeKingdoms.UI.Menu.MainMenuHud>(); mainMenu.Controller = c;
+            TravelMenuArtImporter.Import(out mainMenu.Art, out mainMenu.Borders);
+            mainMenu.BingshuArt = TravelMenuArtImporter.BingshuSlices();
             mainMenu.Portraits = townHud.Portraits;
             mainMenu.Busts = new[] { "LiuBei", "GuanYu", "ZhangFei" }.Select(k => AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/_Project/Art/Portraits/{k}_Bust.png")).ToArray();
             if (!Object.FindFirstObjectByType<EventSystem>())

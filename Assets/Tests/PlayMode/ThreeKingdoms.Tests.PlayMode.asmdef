@@ -14,7 +14,8 @@
     "ThreeKingdoms.Data",
     "Unity.RenderPipelines.Core.Runtime",
     "Unity.RenderPipelines.Universal.Runtime",
-    "ThreeKingdoms.Save"
+    "ThreeKingdoms.Save",
+    "Prototype.BingshuTactics"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
