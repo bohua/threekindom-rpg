@@ -537,7 +537,7 @@ namespace Prototype.BingshuTactics
             {
                 case Mode.Menu:
                     if (cancel && moved) { UndoMove(); return; }
-                    if (pulse.y != 0) ringSel = NextUsable(ringSel, -pulse.y);   // 转轮跳过不可用的选项
+                    if (pulse.y != 0) ringSel = NextUsable(ringSel, pulse.y);   // 下键顺时针转（用户 2026-10-25）；跳过不可用的选项
                     if (ok && RingUsable(RingItems[ringSel])) ChooseRing(ringSel);
                     return;
                 case Mode.SkillList:
@@ -714,7 +714,14 @@ namespace Prototype.BingshuTactics
                 }
                 yield return new WaitForSeconds(0.25f);
 
-                if (u.PendingCast != null)
+                if (ChaosHoldsTurn(u))
+                {
+                    Log($"{u.Name} 陷入混乱，原地不动");
+                    popups.Add((views[u].position + Vector3.up * (2.2f * HeadK), "混乱", new Color(1f, 0.55f, 0.5f), 0f));
+                    yield return new WaitForSeconds(0.3f);
+                    u.At = now + AtClock.Delay(100, u.Speed);
+                }
+                else if (u.PendingCast != null)
                 {
                     yield return ExecuteCast(u);
                     u.At = now + AtClock.Delay(u.PendingCast?.Recover ?? 80, u.Speed);
@@ -1098,7 +1105,13 @@ namespace Prototype.BingshuTactics
             {
                 var g = ToGui(views[u].position + Vector3.up * (1.75f * HeadK));
                 Bar(new Rect(g.x - 24, g.y, 48, 6), u.Hp / (float)u.MaxHp, u.Team == Team.Player ? new Color(0.4f, 0.85f, 0.4f) : new Color(0.95f, 0.35f, 0.3f));
-                if (u.PendingCast != null)
+                if (u.Chaos)
+                {
+                    var cr = new Rect(g.x - 22, g.y - 24, 44, 20);
+                    Rect(cr, new Color(0.85f, 0.42f, 0.44f, 0.9f));
+                    GUI.Label(cr, u.ChaosForced > 0 ? $"混乱{u.ChaosForced}" : "混乱", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold });
+                }
+                else if (u.PendingCast != null)
                     GUI.Label(new Rect(g.x - 50, g.y - 22, 100, 20), $"咏唱·{u.PendingCast.Name}", new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, normal = { textColor = Wuxing.Tint(u.PendingCast.Element) } });
             }
             foreach (var p in popups)

@@ -50,6 +50,7 @@ namespace ThreeKingdoms.EditorTools
                 var bridge = new GameObject("Chapter Tactics").AddComponent<ChapterTactics>();
                 bridge.Catalog = catalog;
                 bridge.EncounterId = ids[i];
+                bridge.Portraits = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Story.DialoguePortraitSet>(DialoguePortraitImporter.SetPath);
                 EditorUtility.SetDirty(game);
                 EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), BattleSceneBuilder.ChapterBattlePaths[i]);
             }

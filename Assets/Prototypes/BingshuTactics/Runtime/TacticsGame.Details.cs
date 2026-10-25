@@ -159,9 +159,10 @@ namespace Prototype.BingshuTactics
                             if (h < 0.15f) Billboard("sprite_grass_tuft_a", c, 1f, shadow: false);
                             break;
                         case Terrain.Ford:
-                            Billboard("sprite_pebbles", c, 1f, shadow: false);
+                            if (!IsChapter) Billboard("sprite_pebbles", c, 1f, shadow: false);   // 0.2：水里不放石块（用户 2026-10-25）
                             break;
                         case Terrain.River:
+                            if (IsChapter) break;
                             // 河岸卵石：挨着陆地的河格
                             if (Dirs4.Any(d => grid.In(p + d) && grid.TerrainAt(p + d) != Terrain.River && grid.TerrainAt(p + d) != Terrain.Ford) && h < 0.6f)
                                 Billboard("sprite_pebbles", Tile(p) + new Vector3((h - 0.5f) * T * 0.6f, -0.12f, (h2 - 0.5f) * T * 0.4f), 1f, shadow: false);

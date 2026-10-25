@@ -22,6 +22,7 @@ namespace ThreeKingdoms.UI.Battle
     {
         public BattleCatalog Catalog;
         public string EncounterId = "battle_4";
+        public DialoguePortraitSet Portraits;   // the same bust set the story dialogue uses
 
         public static bool AutoPlay;   // tests and screenshots: the party is played by the AI, lines advance by themselves
 
@@ -34,6 +35,13 @@ namespace ThreeKingdoms.UI.Battle
             var data = Run.Data;
             var encounter = data.Encounter(EncounterId);
             var def = Stages.Build(EncounterId, encounter, Run, data);
+            if (Portraits)
+                foreach (var e in Portraits.Entries)
+                {
+                    string name = StoryText.Speaker(e.Speaker);
+                    if (e.Texture && !string.IsNullOrEmpty(name) && !def.Portraits.ContainsKey(name))
+                        def.Portraits[name] = new TacticsPortrait { Texture = e.Texture, Crop = e.Crop, Axis = e.Axis, Flip = e.Flip };
+                }
             def.AutoPlay = AutoPlay || System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-chapterShots") >= 0;
             def.Finished = OnFinished;
             TacticsGame.Chapter = def;
@@ -52,6 +60,11 @@ namespace ThreeKingdoms.UI.Battle
             if (i < 0 || i + 1 >= args.Length) yield break;
             string dir = args[i + 1];
             System.IO.Directory.CreateDirectory(dir);
+            foreach (var t in new[] { 0.7f, 0.5f })   // the opening lines
+            {
+                yield return new WaitForSecondsRealtime(t);
+                ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, $"{EncounterId}-line{t:0.0}.png"));
+            }
             for (int k = 0; k < 8; k++)
             {
                 yield return new WaitForSecondsRealtime(k == 0 ? 2.5f : 7f);
@@ -92,9 +105,9 @@ namespace ThreeKingdoms.UI.Battle
                 "t^^.cccccccc.^^t",
                 "t^,,,..::..,,,^t",
                 ".,,,,..::..,,,,.",
-                "..,,..m::m..,,..",
-                "...mmm.::.mmm...",
-                "t..mm..::..mm..t",
+                "..,,..~::~..,,..",
+                "...~~~.::.~~~...",
+                "t..~~..::..~~..t",
                 "tt.....::.....tt",
                 "t...,..::..,...t",
                 "....r..::..r....",
@@ -235,7 +248,7 @@ namespace ThreeKingdoms.UI.Battle
                             {
                                 new TacticsAction { Kind = TacticsActionKind.Fire, Tiles = dry.ToArray() }, Banner("火起！"),
                                 Line("guan_yu", "b4_fire.1"), Line("liu_bei", "b4_fire.2"),
-                                new TacticsAction { Kind = TacticsActionKind.Chaos, Team = Team.Enemy, Turns = 2 },
+                                new TacticsAction { Kind = TacticsActionKind.Chaos, Team = Team.Enemy, Turns = 4 },   // 剧情强制混乱 4 次行动，之后转普通混乱
                                 new TacticsAction { Kind = TacticsActionKind.Damage, Team = Team.Enemy, Value = 0.10f },
                                 Goal("援军将至：坚持到第 6 回合"),
                             },

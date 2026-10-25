@@ -133,6 +133,12 @@ namespace Prototype.BingshuTactics
                 GUI.Label(new Rect(r.x + 72, r.y + 6, 120, 26), u.Name, St(17, Color.white, TextAnchor.MiddleLeft, true));
                 string sub = u == active ? "当前" : u.PendingCast != null ? "咏唱中" : $"{(u.Team == Team.Player ? "友" : "敌")} · {u.At - now:00}";
                 GUI.Label(new Rect(r.x + 72, r.y + 34, 120, 24), sub, St(13, u == active ? Cyan : u.PendingCast != null ? new Color(0.85f, 0.65f, 1f) : Grey));
+                if (u.Chaos)   // 混乱标记（用户 2026-10-25）
+                {
+                    var tag = new Rect(r.xMax - 52, r.y + 34, 42, 22);
+                    Rect(tag, new Color(0.85f, 0.42f, 0.44f, 0.9f));
+                    GUI.Label(tag, "混乱", St(13, Color.white, TextAnchor.MiddleCenter, true));
+                }
                 y += 72;
             }
         }

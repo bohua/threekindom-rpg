@@ -48,6 +48,9 @@ namespace Prototype.BingshuTactics
 
     public struct TacticsOutcome { public bool Victory; public int Rounds; }
 
+    // 对白立绘：Crop＝从顶部截取的高度比例，Axis＝水平中心
+    public struct TacticsPortrait { public Texture2D Texture; public float Crop, Axis; public bool Flip; }
+
     public sealed class TacticsStageDef
     {
         public string Id, Title, Where, Objective;
@@ -58,6 +61,8 @@ namespace Prototype.BingshuTactics
         public List<TacticsEvent> Events = new List<TacticsEvent>();
         public System.Action<TacticsOutcome> Finished;
         public List<(string speaker, string text)> OpeningLines = new List<(string, string)>(), VictoryLines = new List<(string, string)>();
+        public Dictionary<string, TacticsPortrait> Portraits = new Dictionary<string, TacticsPortrait>();   // 按说话人显示名
+        public int Seed = 1;                // 混乱恢复的随机数种子（重开同一场结果一致）
         public bool AutoPlay;               // 测试与截图：我方也由电脑代打，台词自动翻页
         public bool NoRetreatOnDefeat;
     }
@@ -190,7 +195,7 @@ namespace Prototype.BingshuTactics
                     case TacticsActionKind.Chaos:
                         foreach (var t in units.Where(x => x.Alive && x.Team == a.Team && !x.Escort))
                         {
-                            t.AddStatus(new Status { Name = "混乱", AtkMul = 0.7f, DefMul = 0.8f, Turns = Mathf.Max(1, a.Turns) });
+                            Confuse(t, Mathf.Max(1, a.Turns));
                             popups.Add((views[t].position + Vector3.up * (2.2f * HeadK), "混乱", new Color(1f, 0.55f, 0.5f), 0f));
                         }
                         yield return new WaitForSeconds(0.4f);
@@ -221,6 +226,41 @@ namespace Prototype.BingshuTactics
         {
             t.Hp = 0; t.PendingCast = null; t.PendingFollow = null;
             popups.Add((views[t].position + Vector3.up * (2.3f * HeadK), "退走", new Color(1f, 0.8f, 0.5f), 0f));
+        }
+
+        // ---------------- 混乱（用户 2026-10-25） ----------------
+        // 剧情强制混乱：原地不动挨打，持续 forcedTurns 次行动；之后转为普通混乱：再原地不动 1 次，
+        // 此后每次轮到时按智力掷骰恢复，恢复率随混乱的次数上升，直到恢复。混乱期间物攻、计攻−30%，物防−20%。
+        System.Random chaosRng;
+
+        void Confuse(Unit t, int forcedTurns)
+        {
+            t.Chaos = true; t.ChaosForced = forcedTurns; t.ChaosTurns = 0;
+            t.AddStatus(new Status { Name = "混乱", AtkMul = 0.7f, DefMul = 0.8f, Turns = 9999 });
+            t.PendingCast = null; t.PendingFollow = null;
+        }
+
+        // 轮到混乱单位时调用：返回 true 表示本次原地不动
+        bool ChaosHoldsTurn(Unit u)
+        {
+            if (!u.Chaos) return false;
+            if (u.ChaosForced > 0) { u.ChaosForced--; Debug.Log($"TACTICS_CHAOS_FORCED {u.Name} left {u.ChaosForced}"); return true; }
+            u.ChaosTurns++;
+            if (u.ChaosTurns > 1)
+            {
+                chaosRng ??= new System.Random(Chapter?.Seed ?? 1);
+                float p = Mathf.Clamp01(0.15f + u.Int / 250f + 0.15f * (u.ChaosTurns - 2));
+                if (chaosRng.NextDouble() < p)
+                {
+                    u.Chaos = false;
+                    u.Statuses.RemoveAll(s => s.Name == "混乱");
+                    popups.Add((views[u].position + Vector3.up * (2.2f * HeadK), "恢复", new Color(0.6f, 1f, 0.7f), 0f));
+                    Log($"{u.Name} 从混乱中恢复");
+                    Debug.Log($"TACTICS_CHAOS_RECOVER {u.Name} after {u.ChaosTurns}");
+                    return false;
+                }
+            }
+            return true;
         }
 
         IEnumerator ShowLine(string speaker, string text)
@@ -381,11 +421,23 @@ namespace Prototype.BingshuTactics
             if (line.HasValue)
             {
                 var r = new Rect(sw / 2 - 420, RefH - 300, 840, 120);
+                bool hasPortrait = Chapter.Portraits.TryGetValue(line.Value.speaker ?? "", out var pt) && pt.Texture;
+                if (hasPortrait)   // 立绘：头部到上胸，站在对话框左侧、下半压在框后（用户 2026-10-25）
+                {
+                    var pr = new Rect(r.x + 4, r.y - 190, 240, 300);
+                    float crop = pt.Crop > 0 ? pt.Crop : 0.6f, axis = pt.Axis > 0 ? pt.Axis : 0.5f;
+                    float uh = crop, uw = Mathf.Min(1f, crop * pt.Texture.height / (float)pt.Texture.width * pr.width / pr.height);
+                    float ux = Mathf.Clamp(axis - uw / 2f, 0f, 1f - uw);
+                    var uv = new Rect(ux, 1f - uh, uw, uh);
+                    if (pt.Flip) uv = new Rect(ux + uw, 1f - uh, -uw, uh);
+                    GUI.DrawTextureWithTexCoords(pr, pt.Texture, uv);
+                }
                 Rect(r, new Color(Ink.r, Ink.g, Ink.b, 0.94f));
                 Rect(new Rect(r.x, r.y, r.width, 1.5f), Silver); Rect(new Rect(r.x, r.yMax - 1.5f, r.width, 1.5f), Silver);
                 Rect(new Rect(r.x, r.y, 1.5f, r.height), Silver); Rect(new Rect(r.xMax - 1.5f, r.y, 1.5f, r.height), Silver);
-                GUI.Label(new Rect(r.x + 22, r.y + 10, 300, 28), line.Value.speaker, St(20, Teal, TextAnchor.MiddleLeft, true));
-                GUI.Label(new Rect(r.x + 22, r.y + 42, r.width - 44, 70), line.Value.text, new GUIStyle(St(19, Ivory, TextAnchor.UpperLeft)) { wordWrap = true });
+                float tx = hasPortrait ? 252f : 22f;
+                GUI.Label(new Rect(r.x + tx, r.y + 10, 300, 28), line.Value.speaker, St(20, Teal, TextAnchor.MiddleLeft, true));
+                GUI.Label(new Rect(r.x + tx, r.y + 42, r.width - tx - 22, 70), line.Value.text, new GUIStyle(St(19, Ivory, TextAnchor.UpperLeft)) { wordWrap = true });
                 GUI.Label(new Rect(r.xMax - 40, r.yMax - 30, 30, 24), "▼", St(16, Teal, TextAnchor.MiddleCenter));
             }
             if ((mode == Mode.Victory && victoryReady && !line.HasValue) || mode == Mode.Defeat)

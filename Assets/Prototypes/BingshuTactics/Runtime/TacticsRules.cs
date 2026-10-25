@@ -282,7 +282,8 @@ namespace Prototype.BingshuTactics
         public string Name, Key; public Team Team; public Troop Troop; public Element Element; public School School;
         public int MaxHp, Hp, Atk, Def, Mat, Mdef, Speed, Move, AtkRange, MaxEp, Ep, Cp, Int, Wu;
         public Vector2Int Pos; public float At; public bool Defending;
-        public int Level; public bool Ai, Escort, Leader; public string Focus;   // 0.2：友军由电脑操作、护送对象、头目标名、优先目标
+        public int Level; public bool Ai, Escort, Leader; public string Focus;
+        public bool Chaos; public int ChaosForced, ChaosTurns;   // 混乱：剧情强制的剩余次数、普通混乱已持续次数   // 0.2：友军由电脑操作、护送对象、头目标名、优先目标
         public List<Status> Statuses = new List<Status>();
         public List<SkillDef> Crafts = new List<SkillDef>();
         public Book[] Slots = new Book[7];

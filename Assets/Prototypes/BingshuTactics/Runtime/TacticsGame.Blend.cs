@@ -70,11 +70,17 @@ namespace Prototype.BingshuTactics
                     float wu = u + (Mathf.PerlinNoise(u * 0.9f + 11.3f, v * 0.9f) - 0.5f) * 0.9f + (Mathf.PerlinNoise(u * 2.7f, v * 2.7f + 5.1f) - 0.5f) * 0.35f;
                     float wv = v + (Mathf.PerlinNoise(u * 0.9f, v * 0.9f + 23.7f) - 0.5f) * 0.9f + (Mathf.PerlinNoise(u * 2.7f + 9.4f, v * 2.7f) - 0.5f) * 0.35f;
                     var g = Cell(Mathf.FloorToInt(wu), Mathf.FloorToInt(wv));
+                    // 水岸只轻微弯曲：水面不越过格子太多，免得能走的格子看着像水
+                    if ((g == Ground.Water) != (Cell(Mathf.FloorToInt(u), Mathf.FloorToInt(v)) == Ground.Water))
+                        g = Cell(Mathf.FloorToInt(u + (wu - u) * 0.35f), Mathf.FloorToInt(v + (wv - v) * 0.35f));
                     if (!field.ContainsKey(g)) g = Ground.Grass;
                     field[g][fy * fw + fx] = 1f;
                 }
             // 2. 模糊：交界变成约半格宽的渐变带
             foreach (var k in present) field[k] = Blur(field[k], fw, fh, BlendSub / 2 + 1);
+            // 水面向内收：岸上的格子最多泛一点湿边，看起来是水的地方都确实不能走
+            if (field.TryGetValue(Ground.Water, out var water))
+                for (int i = 0; i < water.Length; i++) water[i] = Mathf.Clamp01((water[i] - 0.4f) / 0.6f);
 
             // 3. 逐像素：取占比、加细噪声碎边、按占比锐化后混合各地面贴图（贴图按 4 米一张平铺）
             int pw = gw * BlendPx, ph = gh * BlendPx;
