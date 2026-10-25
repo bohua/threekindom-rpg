@@ -264,32 +264,34 @@ public sealed class MainLineTests
             else
             {
                 Assert.IsTrue(b.ReachedEnding);
-                for (int i = 0; i < 3; i++)   // continue → two narration lines → test version end
+                // 0.2: continue → the brothers' talk and the opening film → back in Zhuojun, where Zou Jing brings the
+                // orders (C1) and scroll ① closes the section (V02_HUANGJIN_PLAN §3.4).
+                var next = ButtonText("继续");
+                Assert.IsNotNull(next, "continue after the third victory");
+                Press(next);
+                yield return null;
+                float endingDeadline = Time.realtimeSinceStartup + 90f;
+                bool talked = false;
+                while (Object.FindFirstObjectByType<TownStoryController>() == null)
                 {
-                    var next = ButtonText("继续");
-                    Assert.IsNotNull(next, "ending step " + i);
-                    Press(next);
+                    Assert.Less(Time.realtimeSinceStartup, endingDeadline);
+                    if (hud) { talked |= hud.DialogueSpeaker != null; hud.AdvanceDialogue(); }
+                    StoryCinematics.Advance();
                     yield return null;
-                    if (i > 0) continue;
-                    // First the ink scroll, the brothers' talk of the realm and the opening film (user 2026-10-24).
-                    float endingDeadline = Time.realtimeSinceStartup + 60f;
-                    bool talked = false;
-                    while (ButtonText("继续") == null)
-                    {
-                        Assert.Less(Time.realtimeSinceStartup, endingDeadline);
-                        talked |= hud.DialogueSpeaker != null;
-                        StoryCinematics.Advance();
-                        hud.AdvanceDialogue();
-                        yield return null;
-                    }
-                    Assert.AreEqual(StoryCinematics.YellowTurbanScroll, StoryCinematics.LastScroll);
-                    Assert.IsTrue(talked, "the brothers talk before the opening film");
-                    Assert.IsTrue(StoryCinematics.OpeningRequested);
-                    Assert.AreEqual(1f, Time.timeScale);
                 }
+                Assert.IsTrue(talked, "the brothers talk before the opening film");
+                Assert.IsTrue(StoryCinematics.OpeningRequested);
                 Assert.AreEqual(SequenceState.Done, GameRun.Current.Story.Ending);
-                Assert.IsTrue(HudRoot().Query<Label>().ToList().Any(l => l.text == "测试版结束"));
-                Assert.IsNotNull(ButtonText("返回标题"));
+                yield return null;
+                c = Object.FindFirstObjectByType<TownStoryController>();
+                while (GameRun.Current.Chapter2.Step != ThreeKingdoms.Core.Story.ChapterStep.ZhuojunFree)
+                {
+                    Assert.Less(Time.realtimeSinceStartup, endingDeadline);
+                    c.Advance();
+                    yield return null;
+                }
+                Assert.AreEqual(StoryCinematics.YellowTurbanScroll, StoryCinematics.LastScroll);
+                Assert.AreEqual(1f, Time.timeScale);
             }
         }
         var levels = GameRun.Current.Data.Party.Select(g => GameRun.Current.Progress.Level(g)).ToArray();

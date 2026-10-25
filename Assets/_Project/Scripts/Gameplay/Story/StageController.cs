@@ -34,6 +34,8 @@ namespace ThreeKingdoms.Gameplay.Story
         public string Prompt => null;
         public bool Busy => true;
         public string StageId { get; private set; }
+        // Development: the script a directly opened stage plays (-stage).
+        public static string DevOverride;
         public event Action Changed { add => Player.Changed += value; remove => Player.Changed -= value; }
 
         void Start()
@@ -42,12 +44,12 @@ namespace ThreeKingdoms.Gameplay.Story
             {
                 // Opened on its own: a development run at the chapter step the script expects.
                 var run = GameRun.NewGame(Catalog);
-                run.PendingStage = DevStage;
+                run.PendingStage = DevOverride ?? DevStage;
             }
             if (Camera) cameraHome = Camera.transform.position;
             foreach (Transform b in Backgrounds) b.gameObject.SetActive(false);
             foreach (Transform a in Actors) a.gameObject.SetActive(false);
-            StageId = Run.PendingStage ?? DevStage;
+            StageId = Run.PendingStage ?? DevOverride ?? DevStage;
             Run.PendingStage = null;
             Player.Actors = this;
             StartCoroutine(PlayThenFallback(ChapterScripts.Stage(StageId)));

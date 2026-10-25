@@ -33,8 +33,10 @@ namespace ThreeKingdoms.Tests.EditMode
         [Test]
         public void CatalogueHasTwelveKindsAndTheShopSellsEight()
         {
-            Assert.AreEqual(12, eco.Equipment.Count);
-            Assert.That(eco.ShopStock.Select(e => e.Id), Is.EquivalentTo(new[]
+            Assert.AreEqual(19, eco.Equipment.Count);   // 0.2: 12 + the Anxi tier (5) + two story keepsakes
+            Assert.AreEqual(7, eco.StockAt(1).Count(), "涿郡与大营只卖第一档");
+            Assert.AreEqual(12, eco.StockAt(2).Count(), "安喜市集加 5 件");
+            Assert.That(eco.StockAt(1).Select(e => e.Id), Is.EquivalentTo(new[]
                 { "iron_spear", "iron_shuo", "horn_bow", "leather_armor", "leather_bracers", "war_banner", "war_manual_fragment" }));
             Assert.IsFalse(Item("cloth_armor").InShop, "starting gear cannot be bought back");
             Assert.IsFalse(Item("swift_whip").InShop, "the side-quest reward is not sold");

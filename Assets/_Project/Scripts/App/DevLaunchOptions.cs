@@ -19,6 +19,11 @@ namespace ThreeKingdoms.App
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
         {
+            // 0.2: -stage <id> picks the story-stage script; -stageAuto <seconds> moves lines on and takes the first choice.
+            string stageId = LaunchArgs.Get("-stage");
+            if (stageId != null) ThreeKingdoms.Gameplay.Story.StageController.DevOverride = stageId;
+            if (float.TryParse(LaunchArgs.Get("-stageAuto"), NumberStyles.Float, CultureInfo.InvariantCulture, out float stageAuto))
+                ThreeKingdoms.Gameplay.Story.StagePlayer.AutoSeconds = stageAuto;
             string scene = LaunchArgs.Get("-scene");
             if (scene != null && SceneManager.GetActiveScene().name != scene) SceneManager.LoadScene(scene);
 

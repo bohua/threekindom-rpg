@@ -29,6 +29,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 67ed65bbe0ba9fb409a75a2686a33651, type: 2}
   - {fileID: 11400000, guid: 72eedcc359fa6de4a956cff1fe138781, type: 2}
   - {fileID: 11400000, guid: b94a6e852d81fbf47aa682efc32588f7, type: 2}
+  - {fileID: 11400000, guid: 9411a5baa9767b24fa72f8bed33de031, type: 2}
+  - {fileID: 11400000, guid: 592e4ed03e8402244a644d26e1e60909, type: 2}
+  - {fileID: 11400000, guid: ef2adb553fcf3e843a4b1bfc518c5415, type: 2}
+  - {fileID: 11400000, guid: a62653c5df0372840b88fe30365c6b82, type: 2}
+  - {fileID: 11400000, guid: 3d6a9820adc07c144ba58a71b5099379, type: 2}
+  - {fileID: 11400000, guid: 2791f870e173690428748709e9823fb6, type: 2}
+  - {fileID: 11400000, guid: 3f3f79a2fd51431429c906483e66a89e, type: 2}
   StartingGear:
   - General: {fileID: 11400000, guid: 5e29858fabf05534791eb726680d1824, type: 2}
     Items:

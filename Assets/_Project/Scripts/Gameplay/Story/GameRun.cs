@@ -68,6 +68,14 @@ namespace ThreeKingdoms.Gameplay.Story
             { Chapter2 = ChapterState.AtBattle(battleIndex) };
         }
 
+        // A play-through at a 0.2 chapter step (tests, development): Zhuojun done, the party at the given exp and copper.
+        public static GameRun ForChapter(BattleCatalog catalog, ChapterStep step, int exp, int copper, int rations = 2, bool development = false)
+        {
+            var data = catalog.ToRuntime();
+            return Current = new GameRun(data, StoryState.Restore(true, true, SequenceState.Done, StoryState.BattleCount, SequenceState.Done),
+                new DevPartyProgress(data, new Inventory(data.Economy, copper, rations), exp), development) { Chapter2 = ChapterState.At(step) };
+        }
+
         public static void Clear() => Current = null;
 
         // Static state survives "enter play mode" without a domain reload; start every run clean.

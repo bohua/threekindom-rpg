@@ -56,6 +56,9 @@ namespace ThreeKingdoms.Gameplay.Story
         [Tooltip("Seconds a march takes when nobody skips it (SYSTEMS_V02 §5: 5–8 s)")] public float MarchSeconds = 6f;
 
         public IStageActors Actors { get; set; }
+        // Development / soak runs: lines and cards move on by themselves after this many seconds, choices take option 1.
+        public static float AutoSeconds;
+        float waitingSince;
         public GameRun Run => GameRun.Current;
         public bool Playing { get; private set; }
         public DialogueLine? Line { get; private set; }
@@ -77,6 +80,11 @@ namespace ThreeKingdoms.Gameplay.Story
 
         void Update()
         {
+            if (Playing && AutoSeconds > 0f)
+            {
+                if (Choices != null && chosen == null && Time.time - waitingSince > AutoSeconds) chosen = 0;
+                else if (Choices == null && Time.time - waitingSince > AutoSeconds) { waitingSince = Time.time; Advance(); }
+            }
             if (!Playing || Choices != null) return;
             if (Confirm && Confirm.action.WasPressedThisFrame()) Advance();
         }
@@ -136,6 +144,7 @@ namespace ThreeKingdoms.Gameplay.Story
                     Line = new DialogueLine(s.A, s.B);
                     Choices = s.Options;
                     chosen = null;
+                    waitingSince = Time.time;
                     Changed?.Invoke();
                     while (chosen == null) yield return null;
                     int pick = chosen.Value;
@@ -219,6 +228,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         IEnumerator WaitConfirm()
         {
+            waitingSince = Time.time;
             advance = false;
             Changed?.Invoke();
             yield return null;   // the press that started the line must not skip it

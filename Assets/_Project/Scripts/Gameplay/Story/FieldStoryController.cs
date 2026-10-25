@@ -88,8 +88,7 @@ namespace ThreeKingdoms.Gameplay.Story
         // Opened on its own (development): a run at this place's step.
         GameRun DevRun()
         {
-            var run = GameRun.ForBattle(Catalog, Location == Place.Camp ? 3 : 5, Location == Place.Camp ? 60 : 150, 260, 2);
-            return run;
+            return GameRun.ForChapter(Catalog, Location == Place.Camp ? ChapterStep.Camp : ChapterStep.Anxi, Location == Place.Camp ? 60 : 150, 260, 2, development: true);
         }
 
         void Update()
@@ -151,11 +150,11 @@ namespace ThreeKingdoms.Gameplay.Story
                 }
                 Changed?.Invoke();
             }
-            if (!Stage.Left && pendingPanel != null) { var panel = pendingPanel; pendingPanel = null; OpenPanel(panel); }
+            if (!Stage.Left && !string.IsNullOrEmpty(pendingPanel)) { var panel = pendingPanel; pendingPanel = null; OpenPanel(panel); }
         }
 
         // A scene can end by opening the shop or the save panel (FieldScripts sets this).
-        public string pendingPanel;
+        [NonSerialized] public string pendingPanel;
 
         // Shows or hides what the flags say (the broken / mended bridge, the timber pile, the ox at the trough …).
         public void RefreshFlags()

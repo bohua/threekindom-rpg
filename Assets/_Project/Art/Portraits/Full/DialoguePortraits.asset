@@ -61,3 +61,51 @@ MonoBehaviour:
     Flip: 0
     Crop: 0.6
     Axis: 0.5
+  - Speaker: lu_zhi
+    Texture: {fileID: 2800000, guid: 98ab0ce6b5ca38641a0571064233e357, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: cao_cao
+    Texture: {fileID: 2800000, guid: b1ccee88b82e88b4a8059865fdd23fa1, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: dong_zhuo
+    Texture: {fileID: 2800000, guid: c19614ab68b286e42b2c076fd69a0ba1, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: zou_jing
+    Texture: {fileID: 2800000, guid: f9ab0fe9328edd846a59d2dc540c46ab, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: sun_jian
+    Texture: {fileID: 2800000, guid: 21944c98af358664a9aa2e09da8ae2ee, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: du_you
+    Texture: {fileID: 2800000, guid: 54bea7324e0a75c418373303adf6bbd4, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: bandit_chief
+    Texture: {fileID: 2800000, guid: e5ca13aeb62c30749a1f89511a4628e2, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: clerk
+    Texture: {fileID: 2800000, guid: 137c9fe093570c647aa56a6042cab705, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.62
+    Axis: 0.45

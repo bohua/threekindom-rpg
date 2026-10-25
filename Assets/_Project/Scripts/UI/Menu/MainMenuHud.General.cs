@@ -36,6 +36,15 @@ namespace ThreeKingdoms.UI.Menu
             p.HLine(490, 238, 200, SilverA(0.5f));
             p.Text(490, 242, 120, 44, $"Lv.{level}", 30, MenuPaint.Gold);
 
+            // 记忆 (0.2, SYSTEMS_V02 §3.2): what this general remembers; Liu Bei's page also lists what others remember
+            // of him (卢植、曹操、董卓、孙坚). Newest first, up to five lines, over the foot of the illustration.
+            var memories = MemoryLines(g.Id);
+            p.Fill(476, 650, 542, 210, new Color(0.06f, 0.11f, 0.19f, 0.86f));
+            p.SubBox(476, 650, 542, 210, "记忆");
+            if (memories.Count == 0) p.Text(500, 700, 500, 40, "尚无记忆", 21, MenuPaint.Mist);
+            for (int i = 0; i < memories.Count && i < 5; i++)
+                p.Text(500, 690 + i * 32, 504, 32, "◇ " + memories[i], 19, MenuPaint.Ivory);
+
             // 武将详情.
             p.PanelBox(1038, 158, 604, 712, "武将详情");
             TroopMark(1514, 172, 34, g.Troop);
@@ -85,6 +94,19 @@ namespace ThreeKingdoms.UI.Menu
                 int idx = i;
                 if (GUI.Button(p.R(x, 788, 182, 66), GUIContent.none, GUIStyle.none)) { Show(Tab.Equip); slotIndex = idx; }
             }
+        }
+
+        static readonly string[] Party = { "liu_bei", "guan_yu", "zhang_fei" };
+
+        System.Collections.Generic.List<string> MemoryLines(string generalId)
+        {
+            var chapter = Controller?.Run?.Chapter2;
+            var list = new System.Collections.Generic.List<string>();
+            if (chapter == null) return list;
+            foreach (var m in chapter.Memories.Reverse())
+                if (m.Who == generalId || (generalId == "liu_bei" && System.Array.IndexOf(Party, m.Who) < 0))
+                    list.Add(ThreeKingdoms.UI.Story.StoryText.Line(m.Text));
+            return list;
         }
 
         // ================= 系统 =================

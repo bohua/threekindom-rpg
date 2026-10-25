@@ -33,10 +33,15 @@ namespace ThreeKingdoms.EditorTools
             WireTown();
             BuildTavern();
             BuildTitle();
+            // 0.2 黄巾篇 (V02_HUANGJIN_PLAN): battles 4–6, the story stage, Lu Zhi's camp and Anxi.
+            BattleSceneBuilder.BuildChapterBattles();
+            ChapterFieldBuilder.Build();
 
             string town = ZhuojunTownBuilder.ScenePath;
             var battles = new[] { BattleSceneBuilder.ScenePath, "Assets/_Project/Scenes/Battle_Tutorial02.unity", "Assets/_Project/Scenes/Battle_Tutorial03.unity" };
-            var first = new[] { TitlePath, town }.Concat(battles).ToArray();
+            var first = new[] { TitlePath, town }.Concat(battles)
+                .Concat(new[] { ChapterFieldBuilder.StagePath, ChapterFieldBuilder.CampPath, ChapterFieldBuilder.AnxiPath })
+                .Concat(BattleSceneBuilder.ChapterBattlePaths).ToArray();
             var scenes = EditorBuildSettings.scenes.Where(s => !first.Contains(s.path)).ToList();
             scenes.InsertRange(0, first.Select(p => new EditorBuildSettingsScene(p, true)));
             EditorBuildSettings.scenes = scenes.ToArray();
@@ -211,6 +216,11 @@ namespace ThreeKingdoms.EditorTools
                 .Where(t => t.parent && t.parent.name == "Residents").OrderBy(t => t.name).ToArray();
             if (c.Residents.Length != 12) throw new System.InvalidOperationException($"Town has {c.Residents.Length} residents, expected 12");
             GateBlockers(c);
+            // 0.2 C1: Zou Jing walks in through the south gate after the third victory (hidden until then).
+            var zou = HD2DSampleBuilder.Character("邹靖", ResidentImporter.ChapterKey("C04"), new Vector3(0, 0, -38f), 0, isPlayer: false);
+            Object.DestroyImmediate(zou.GetComponent<Collider>());
+            zou.SetActive(false);
+            c.ZouJing = zou.transform;
             // The second batch of townsfolk (user 2026-10-22) and the four who do more than talk.
             c.Ambient = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
                 .Where(t => t.parent && t.parent.name == "Townsfolk").OrderBy(t => t.name).ToArray();

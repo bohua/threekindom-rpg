@@ -1,0 +1,145 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f58774cdd05485f4a9f581414a12d3d3, type: 3}
+  m_Name: Battle4_Yingchuan
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.EncounterDefinition
+  Id: battle_4
+  DisplayName: "\u7B2C\u56DB\u6218 \xB7 \u988D\u5DDD\u591C\u6218"
+  Enemies:
+  - General: {fileID: 11400000, guid: c5441612f1106e24cbf89f25e6853570, type: 2}
+    Level: 5
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: bd7ab0114dbbbca4c9c400d137153115, type: 2}
+    Level: 5
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 2df952300b6f43e45aa1b527e3a8d689, type: 2}
+    Level: 3
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 2df952300b6f43e45aa1b527e3a8d689, type: 2}
+    Level: 3
+    FocusEscort: 0
+  Ai: 1
+  SkillEveryRounds: 3
+  ExpReward: 40
+  CopperReward: 60
+  Allies: []
+  Events:
+  - Id: fire_preview
+    When: 0
+    Round: 2
+    Unit: 
+    Percent: 0
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 7
+      Text: "\u575A\u5B88\uFF01\u706B\u653B\u5C06\u4E8E\u4E0B\u56DE\u5408\u53D1\u52A8"
+      Target: 
+      Value: 0
+      Result: 0
+  - Id: fire
+    When: 0
+    Round: 3
+    Unit: 
+    Percent: 0
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 4
+      Text: fire_wall
+      Target: 
+      Value: 0
+      Result: 0
+    - Kind: 0
+      Text: "\u706B\u8D77\uFF01"
+      Target: 
+      Value: 0
+      Result: 0
+    - Kind: 1
+      Text: b4_fire
+      Target: 
+      Value: 0
+      Result: 0
+    - Kind: 2
+      Text: chaos
+      Target: enemy_all
+      Value: 2
+      Result: 0
+    - Kind: 3
+      Text: 
+      Target: enemy_all
+      Value: 10
+      Result: 0
+    - Kind: 7
+      Text: "\u63F4\u519B\u5C06\u81F3\uFF1A\u575A\u6301\u5230\u7B2C 5 \u56DE\u5408"
+      Target: 
+      Value: 0
+      Result: 0
+  - Id: cavalry_preview
+    When: 0
+    Round: 4
+    Unit: 
+    Percent: 0
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 7
+      Text: "\u7EA2\u65D7\u9A91\u5175\u5C06\u4E8E\u4E0B\u56DE\u5408\u6740\u5230"
+      Target: 
+      Value: 0
+      Result: 0
+  - Id: cavalry
+    When: 0
+    Round: 5
+    Unit: 
+    Percent: 0
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 4
+      Text: red_cavalry_sweep
+      Target: 
+      Value: 0
+      Result: 0
+    - Kind: 0
+      Text: "\u63F4\u519B\u6740\u5230\uFF01"
+      Target: 
+      Value: 0
+      Result: 0
+    - Kind: 1
+      Text: b4_cavalry
+      Target: 
+      Value: 0
+      Result: 0
+    - Kind: 5
+      Text: 
+      Target: enemy_all
+      Value: 0
+      Result: 0
+  - Id: opening
+    When: 0
+    Round: 1
+    Unit: 
+    Percent: 0
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 7
+      Text: "\u625B\u4F4F\u9EC4\u5DFE\u7684\u653B\u52BF"
+      Target: 
+      Value: 0
+      Result: 0

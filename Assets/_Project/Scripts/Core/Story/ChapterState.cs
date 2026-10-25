@@ -105,6 +105,9 @@ namespace ThreeKingdoms.Core.Story
 
         public IEnumerable<string> OpenCommissions => AnxiCommissions.Where(c => !Has(c));
 
+        // Development / test entry at any step.
+        public static ChapterState At(ChapterStep step) => new ChapterState { Step = step };
+
         // Development / test entry straight into battle 4, 5 or 6 (battleIndex 3–5).
         public static ChapterState AtBattle(int battleIndex) => new ChapterState
         {
