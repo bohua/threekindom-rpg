@@ -19,13 +19,21 @@ namespace ThreeKingdoms.Gameplay.Story
         public const string TownScene = "Zhuojun_Town";
         public const string TavernScene = "Zhuojun_Tavern";   // indoor scene where Guan Yu joins (user 2026-10-22)
         public static readonly string[] BattleScenes = { "Battle_Tutorial01", "Battle_Tutorial02", "Battle_Tutorial03" };
+        // 0.2 黄巾篇 (V02_HUANGJIN_PLAN §3): Lu Zhi's camp and Anxi county to walk in, the story stage for scenes that are
+        // only played, and battles 4–6.
+        public const string CampScene = "Camp_LuZhi", AnxiScene = "Anxi_Town", StageScene = "Story_Stage";
+        public static readonly string[] ChapterBattleScenes = { "Battle_Yingchuan04", "Battle_Guangzong05", "Battle_Anxi06" };
         public const string Chapter = "第一章　涿郡起兵";
 
-        public enum Arrival { NewGame, ReturnFromBattle, AtTavern, FromTavernInside }
+        public enum Arrival { NewGame, ReturnFromBattle, AtTavern, FromTavernInside, AtSouthGate }
 
         public static GameRun Current { get; private set; }
 
         public StoryState Story { get; }
+        // 0.2 chapter progress, choices and memories (SYSTEMS_V02 §3, §5).
+        public ChapterState Chapter2 { get; private set; } = new ChapterState();
+        // The story-stage script the next Story_Stage load plays (StageScripts id).
+        public string PendingStage { get; set; }
         public BattleData Data { get; }
         public DevPartyProgress Progress { get; }
         // Reputation and the like (user 2026-10-22).
@@ -56,7 +64,8 @@ namespace ThreeKingdoms.Gameplay.Story
         public static GameRun ForBattle(BattleCatalog catalog, int battleIndex, int startExp, int startCopper, int rations)
         {
             var data = catalog.ToRuntime();
-            return Current = new GameRun(data, StoryState.AtBattle(battleIndex), new DevPartyProgress(data, new Inventory(data.Economy, startCopper, rations), startExp), true);
+            return Current = new GameRun(data, StoryState.AtBattle(battleIndex), new DevPartyProgress(data, new Inventory(data.Economy, startCopper, rations), startExp), true)
+            { Chapter2 = ChapterState.AtBattle(battleIndex) };
         }
 
         public static void Clear() => Current = null;
@@ -65,15 +74,36 @@ namespace ThreeKingdoms.Gameplay.Story
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() { Current = null; SaveDirectoryOverride = null; }
 
-        public static int BattleIndex(string encounterId) => Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3" }, encounterId);
+        public static int BattleIndex(string encounterId) => Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6" }, encounterId);
 
         public static string SceneFor(string encounterId) => encounterId switch
         {
             "battle_1" => BattleScenes[0],
             "battle_2" => BattleScenes[1],
             "battle_3" => BattleScenes[2],
+            "battle_4" => ChapterBattleScenes[0],
+            "battle_5" => ChapterBattleScenes[1],
+            "battle_6" => ChapterBattleScenes[2],
             _ => null,
         };
+
+        // The next main battle in either chapter, or null.
+        public string NextBattleId => Story.NextBattleId ?? Chapter2.NextBattleId;
+
+        // The reward-once gate for every main battle: Alpha 0.1's three through StoryState, 4–6 through the chapter.
+        public bool RecordVictory(string encounterId)
+        {
+            if (Story.RecordVictory(encounterId))
+            {
+                Chapter2.OpenAfterZhuojun(Story.NextBattleId == null);
+                return true;
+            }
+            return Chapter2.RecordVictory(encounterId);
+        }
+
+        // Header of a save slot: the chapter part the play-through is in.
+        public string ChapterTitle => Chapter2.Step >= ChapterStep.Anxi ? "第一篇章　安喜县尉"
+            : Chapter2.Step >= ChapterStep.Camp ? "第一篇章　黄巾转战" : Chapter;
 
         // ---------- saving (ADR-0004) ----------
 
@@ -90,7 +120,7 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             var leader = Progress.Party.Count > 0 ? Progress.Party[0] : null;
             return SaveCodec.Capture(Story, Progress.Inventory, Progress.ExpByGeneral, location, leader != null ? Progress.Level(leader) : 1,
-                Chapter, Application.version, DateTime.Now, Life);
+                ChapterTitle, Application.version, DateTime.Now, Life, Chapter2);
         }
 
         public void SaveTo(string slot, string location) => Slots().Write(slot, Capture(location));
@@ -102,12 +132,14 @@ namespace ThreeKingdoms.Gameplay.Story
             if (!SaveCodec.TryRestore(save, data.Economy, out var restored, out error)) return false;
             var progress = new DevPartyProgress(data, restored.Inventory);
             progress.RestoreExp(restored.Exp);
-            Current = new GameRun(data, restored.Story, progress, false) { Life = restored.Life };
+            Current = new GameRun(data, restored.Story, progress, false) { Life = restored.Life, Chapter2 = restored.Chapter ?? new ChapterState() };
             if (restored.Location == SaveData.TownLocation)
             {
                 Current.NextArrival = Arrival.AtTavern;
                 SceneManager.LoadScene(TownScene);
             }
+            else if (restored.Location == SaveData.CampLocation) SceneManager.LoadScene(CampScene);
+            else if (restored.Location == SaveData.AnxiLocation) SceneManager.LoadScene(AnxiScene);
             else SceneManager.LoadScene(SceneFor(restored.Location));
             return true;
         }

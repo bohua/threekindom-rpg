@@ -17,6 +17,7 @@ namespace ThreeKingdoms.Core.Battle
     public sealed class BattleUnit
     {
         readonly List<StatModifier> modifiers = new List<StatModifier>();
+        readonly Dictionary<string, int> statuses = new Dictionary<string, int>();
         readonly BattleConfig config;
 
         public Side Side { get; }
@@ -31,8 +32,15 @@ namespace ThreeKingdoms.Core.Battle
         public int Troops { get; private set; }
         public int Tech { get; private set; }
         public bool Defending { get; internal set; }
-        public bool Active => Troops > 0;
+        // Sent away by a battle event (溃走) while it still had troops (SYSTEMS_V02 §1.2).
+        public bool Routed { get; private set; }
+        public bool Active => Troops > 0 && !Routed;
+        public RetreatReason RetreatReason => Routed ? RetreatReason.Routed : RetreatReason.Defeated;
         public IReadOnlyList<StatModifier> Modifiers => modifiers;
+        // Named statuses (混乱) with their remaining rounds; their stat effects live in Modifiers.
+        public IReadOnlyDictionary<string, int> Statuses => statuses;
+        // Enemy AI flag (SYSTEMS_V02 §2.2): goes for the escort target first.
+        public bool FocusEscort { get; internal set; }
 
         public BattleUnit(Side side, int slot, GeneralSpec general, int level, IEnumerable<SkillSpec> skills,
             TroopTable troops, BattleConfig config, StatBonus bonus = default)
@@ -71,6 +79,33 @@ namespace ThreeKingdoms.Core.Battle
 
         internal StatModifier FindModifier(BattleStat stat, int sign) =>
             modifiers.FirstOrDefault(m => m.Stat == stat && Math.Sign(m.Percent) == sign);
+
+        // A named status: its modifiers follow the usual stacking rule, the status keeps the longer duration.
+        internal void ApplyStatus(StatusSpec status, int turns)
+        {
+            if (status == null || turns <= 0) return;
+            foreach (var (stat, percent) in status.Effects) ApplyModifier(stat, percent, turns);
+            statuses[status.Id] = statuses.TryGetValue(status.Id, out int left) ? Math.Max(left, turns) : turns;
+        }
+
+        internal List<string> TickStatuses()
+        {
+            var expired = new List<string>();
+            foreach (var id in statuses.Keys.ToList())
+                if (--statuses[id] <= 0) { statuses.Remove(id); expired.Add(id); }
+            return expired;
+        }
+
+        // Event damage never retreats a unit: at least 1 troop stays (SYSTEMS_V02 §1.2 damage_ratio).
+        internal int LoseTroops(int amount)
+        {
+            int actual = Math.Min(Troops - 1, Math.Max(0, amount));
+            if (actual <= 0) return 0;
+            Troops -= actual;
+            return actual;
+        }
+
+        internal void Rout() { if (Troops > 0) Routed = true; }
 
         internal List<StatModifier> TickModifiers()
         {

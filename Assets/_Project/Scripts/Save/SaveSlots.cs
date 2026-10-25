@@ -50,7 +50,8 @@ namespace ThreeKingdoms.Save
             catch (Exception) { data = null; }
             if (data == null || string.IsNullOrEmpty(data.location)) { data = null; return SaveReadStatus.Damaged; }
             // Only the current format is read; others are reported and left alone (answer 7).
-            if (data.formatVersion != SaveData.CurrentFormat) { data = null; return SaveReadStatus.Unsupported; }
+            // Format 1 (Alpha 0.1) is migrated on restore (SYSTEMS_V02 §5); the file itself stays as it is.
+            if (data.formatVersion < SaveData.OldestReadable || data.formatVersion > SaveData.CurrentFormat) { data = null; return SaveReadStatus.Unsupported; }
             return SaveReadStatus.Ok;
         }
     }

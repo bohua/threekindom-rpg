@@ -272,20 +272,24 @@ namespace ThreeKingdoms.UI.Story
                 }
                 while (TypedCount < glyphs.Count) SetOpacity(glyphs[TypedCount++], 1);
 
-                Stage = "seal";
-                StoryMusic.Sfx(StoryMusic.SealSfx);
-                yield return Tween(SealTime, k =>
+                // 0.2: the 完成 seal only on the version's last scroll (V02_HUANGJIN_PLAN §1); the others end unsealed.
+                if (InkScrollText.Sealed(id))
                 {
-                    float s = Mathf.Lerp(2.4f, 1f, k * k);
-                    seal.style.scale = new Scale(new Vector3(s, s, 1));
-                    SetOpacity(seal, k);
-                });
-                yield return Tween(0.18f, k =>
-                {
-                    float shake = (1f - k) * 6f * Mathf.Sin(k * 40f);
-                    scroll.style.translate = new Translate(shake, -shake * 0.5f);
-                });
-                scroll.style.translate = new Translate(0, 0);
+                    Stage = "seal";
+                    StoryMusic.Sfx(StoryMusic.SealSfx);
+                    yield return Tween(SealTime, k =>
+                    {
+                        float s = Mathf.Lerp(2.4f, 1f, k * k);
+                        seal.style.scale = new Scale(new Vector3(s, s, 1));
+                        SetOpacity(seal, k);
+                    });
+                    yield return Tween(0.18f, k =>
+                    {
+                        float shake = (1f - k) * 6f * Mathf.Sin(k * 40f);
+                        scroll.style.translate = new Translate(shake, -shake * 0.5f);
+                    });
+                    scroll.style.translate = new Translate(0, 0);
+                }
 
                 Stage = "wait";
                 advance = false;

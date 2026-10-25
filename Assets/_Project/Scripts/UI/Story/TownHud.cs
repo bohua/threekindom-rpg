@@ -150,7 +150,7 @@ namespace ThreeKingdoms.UI.Story
         void Refresh()
         {
             if (!Controller || Controller.Run == null) { fade.style.opacity = 0; dialogue.Hide(); return; }
-            objective.text = StoryText.Objective(Controller.Run.Story);
+            objective.text = StoryText.Objective(Controller.Run.Story, Controller.Run.Chapter2);
             bool cinema = Controller.Letterbox || Controller.Cinematic;
             objective.style.display = cinema ? DisplayStyle.None : DisplayStyle.Flex;
             foreach (var bar in letterbox) if (bar != null) bar.style.display = Controller.Letterbox ? DisplayStyle.Flex : DisplayStyle.None;

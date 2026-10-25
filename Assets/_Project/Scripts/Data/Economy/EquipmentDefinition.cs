@@ -24,6 +24,7 @@ namespace ThreeKingdoms.Data.Economy
         [Header("价格")]
         [Tooltip("0 = 商店不出售（初始装备、支线奖励）")] [Min(0)] public int BuyPrice;
         [Tooltip("没有买价的物品，铁匠收购的配置售价")] [Min(0)] public int GiftSellPrice;
+        [Tooltip("1＝涿郡与卢植大营有售，2＝安喜市集起有售（0.2）")] [Min(1)] public int ShopTier = 1;
 
         public EquipmentSpec ToRuntime() => new EquipmentSpec(Id, DisplayName, Slot, LimitTroop ? Troop : (TroopType?)null,
             new StatBonus
@@ -31,6 +32,6 @@ namespace ThreeKingdoms.Data.Economy
                 Troops = Troops, Tech = Tech, PhysicalAttack = PhysicalAttack, PhysicalDefense = PhysicalDefense,
                 StrategyAttack = StrategyAttack, StrategyDefense = StrategyDefense, Speed = Speed,
             },
-            BuyPrice, GiftSellPrice);
+            BuyPrice, GiftSellPrice, ShopTier);
     }
 }

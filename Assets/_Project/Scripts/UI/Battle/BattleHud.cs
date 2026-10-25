@@ -14,7 +14,7 @@ namespace ThreeKingdoms.UI.Battle
     // plates over their units, round and action order at the top, result panel at the end.
     // Reads state from BattleController and submits commands through it; never touches the battle core directly.
     [RequireComponent(typeof(UIDocument))]
-    public sealed class BattleHud : MonoBehaviour
+    public sealed partial class BattleHud : MonoBehaviour
     {
         public BattleController Controller;
         [Tooltip("Teaching hints; optional")] public BattleTutor Tutor;
@@ -75,7 +75,7 @@ namespace ThreeKingdoms.UI.Battle
         SkillSpec pendingSkill;
 
         sealed class Card { public VisualElement Root, TroopFill, TechFill, Glow, Frame, Seal; public Label Name, TroopText, TechText, Status; }
-        sealed class Plate { public VisualElement Root, Fill, NameBox, Mark; public Label Name; public bool Boss; }
+        sealed class Plate { public VisualElement Root, Fill, NameBox, Mark; public Label Name; public bool Boss; public string Label; }
 
         void OnEnable()
         {
@@ -93,6 +93,8 @@ namespace ThreeKingdoms.UI.Battle
             if (Tutor) Tutor.HintShown += ShowHint;
             Controller.EventPlayed += OnEvent;
             Controller.SortieRequested += AskSortie;
+            Controller.BannerShown += ShowBanner;
+            Controller.DialogueRequested += PlayEventDialogue;
             if (Controller.Session != null) Rebuild();
         }
 
@@ -105,6 +107,8 @@ namespace ThreeKingdoms.UI.Battle
             if (Tutor) Tutor.HintShown -= ShowHint;
             Controller.EventPlayed -= OnEvent;
             Controller.SortieRequested -= AskSortie;
+            Controller.BannerShown -= ShowBanner;
+            Controller.DialogueRequested -= PlayEventDialogue;
         }
 
         // Auto battle on / off (user 2026-10-22); the command menu stays hidden while it is on.
@@ -211,6 +215,7 @@ namespace ThreeKingdoms.UI.Battle
             sortieConfirm.style.backgroundColor = new Color(0.05f, 0.06f, 0.10f, 0.98f);
             sortieConfirm.style.paddingTop = sortieConfirm.style.paddingBottom = 28;
             sortieConfirm.style.display = DisplayStyle.None;
+            BuildChapterLayout();
         }
 
         // ---------- teaching hints ----------
@@ -287,13 +292,18 @@ namespace ThreeKingdoms.UI.Battle
             resultPanel.style.display = DisplayStyle.None;
             messageLabel.text = Controller.Session.Encounter.DisplayName;
             foreach (var u in Controller.Session.State.Players) cardOf[u] = MakeCard(u);
+            // 0.2: allies take a fourth card with the escort mark (SYSTEMS_V02 §2.2); four cards share the row.
+            foreach (var u in Controller.Session.State.AllyUnits) cardOf[u] = MakeAllyCard(u);
+            float width = Controller.Session.State.AllyUnits.Count > 0 ? 24f : 32f;
+            foreach (var c in cardOf.Values) c.Root.style.width = new Length(width, LengthUnit.Percent);
             var names = Controller.Session.State.Enemies.GroupBy(e => e.Name).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet();
             var counter = new Dictionary<string, int>();
             foreach (var u in Controller.Session.State.Enemies)
             {
                 string label = u.Name;
                 if (names.Contains(u.Name)) { counter.TryGetValue(u.Name, out int n); counter[u.Name] = n + 1; label += "甲乙丙丁"[n]; }
-                plateOf[u] = MakePlate(label, boss: !u.Id.StartsWith("yt_"));   // named commanders get the boss plate
+                plateOf[u] = MakePlate(label, boss: !u.Id.StartsWith("yt_") && u.Id != "bandit");   // named commanders get the boss plate
+                plateOf[u].Label = label;
             }
             Refresh();
         }
@@ -457,6 +467,7 @@ namespace ThreeKingdoms.UI.Battle
             if (skin) skin.Item(fastButton, Controller.Fast ? skin.ItemSelected : skin.ItemNormal);
             else fastButton.style.backgroundColor = Controller.Fast ? new Color(0.5f, 0.38f, 0.12f) : Panel;
             orderLabel.text = BattleText.Order(string.Join(" → ", state.ActionOrder().Select(u => u.Name)));
+            RefreshChapter(state);
             foreach (var pair in cardOf) UpdateCard(pair.Key, pair.Value);
             bool commanding = Controller.Current == BattleController.Phase.Commanding;
             if (commanding && step != Step.Command && pendingActor != Controller.Actor) step = Step.Command;
@@ -486,7 +497,8 @@ namespace ThreeKingdoms.UI.Battle
             c.TroopFill.style.width = new Length(100f * troops / u.Stats.MaxTroops, LengthUnit.Percent);
             c.TechFill.style.width = new Length(100f * tech / Mathf.Max(1, u.Stats.MaxTech), LengthUnit.Percent);
             var commanded = Controller.Current == BattleController.Phase.Commanding && Controller.Commands.TryGetValue(u, out var cmd) ? $"  已选：{BattleText.Command(cmd.Kind)}" : "";
-            c.Status.text = string.Join("  ", u.Modifiers.Select(BattleText.Remaining)) + commanded;
+            c.Status.text = string.Join("  ", u.Statuses.Select(kv => BattleText.StatusRemaining(kv.Key, kv.Value))
+                .Concat(u.Modifiers.Select(BattleText.Remaining))) + commanded;
             bool selected = Controller.Actor == u;
             if (skin)
             {
@@ -634,9 +646,10 @@ namespace ThreeKingdoms.UI.Battle
         public void AdvanceDialogue()
         {
             if (!DialoguePlaying) return;
-            if (++aftermathStep < aftermath.Count) { dialogue.Show(aftermath[aftermathStep].Speaker, aftermath[aftermathStep].Line); return; }
+            if (++aftermathStep < aftermath.Count) { dialogue.Show(aftermath[aftermathStep].Speaker, aftermath[aftermathStep].Line); autoAdvanceAt = Time.unscaledTime + AutoLineSeconds; return; }
             dialogue.Hide();
             dialogueCatcher.style.display = DisplayStyle.None;
+            if (eventDialogue) { eventDialogue = false; Controller.DialogueFinished(); return; }
             if (!endingPlaying) ShowResult();
         }
 
@@ -665,7 +678,8 @@ namespace ThreeKingdoms.UI.Battle
             var buttons = new VisualElement(); buttons.style.flexDirection = FlexDirection.Row; buttons.style.marginTop = 18;
             resultPanel.Add(buttons);
             Button first = null;
-            if (Controller.ReachedEnding) first = MenuButton(buttons, BattleText.Continue, ShowEnding, 24, 220);
+            if (Controller.ReachedEnding && won && (applied?.RewardGranted ?? false)) first = MenuButton(buttons, BattleText.Continue, ShowEnding, 24, 220);
+            else if (Controller.CanContinueStory) first = MenuButton(buttons, BattleText.Continue, Controller.ContinueStory, 24, 220);
             else if (Controller.CanReturnToTown) first = MenuButton(buttons, BattleText.ReturnToTown, Controller.ReturnToTown, 24, 220);
             else if (Controller.HasNextBattle) first = MenuButton(buttons, BattleText.NextBattle, Controller.GoToNextBattle, 24, 220);
             if (!won || Controller.Run.IsDevelopment)
@@ -700,8 +714,8 @@ namespace ThreeKingdoms.UI.Battle
             resultPanel.Clear();
             resultPanel.style.display = DisplayStyle.None;
             menu.style.display = DisplayStyle.None;
-            yield return null;   // the scroll freezes the battlefield, not the result panel
-            yield return ThreeKingdoms.Gameplay.Story.StoryCinematics.Scroll(ThreeKingdoms.Gameplay.Story.StoryCinematics.YellowTurbanScroll);
+            yield return null;
+            // 0.2: scroll ① now follows Zou Jing's orders in town (V02_HUANGJIN_PLAN §3.4); here only the brothers' talk.
             ThreeKingdoms.Gameplay.Story.StoryMusic.Play(ThreeKingdoms.Gameplay.Story.StoryMusic.AspirationCue, loop: true);
             aftermath = ThreeKingdoms.Gameplay.Story.BattleScenes.Aspiration;
             aftermathStep = 0;
@@ -711,8 +725,9 @@ namespace ThreeKingdoms.UI.Battle
             while (DialoguePlaying) yield return null;
             ThreeKingdoms.Gameplay.Story.StoryMusic.Stop();
             yield return ThreeKingdoms.Gameplay.Story.StoryCinematics.Opening();
-            endingStep = 0;
-            ShowEndingStep();
+            // A development run of battle 3 keeps the old narration; a play-through goes on to Zou Jing (C1).
+            if (Controller.Run.IsDevelopment) { endingStep = 0; ShowEndingStep(); }
+            else Controller.ToZhuojunOrders();
         }
 
         void ShowEndingStep()
@@ -757,6 +772,8 @@ namespace ThreeKingdoms.UI.Battle
                 case BattleEventKind.Heal:
                 case BattleEventKind.ItemUsed: Popup(e.Target, $"+{e.Amount}", new Color(0.5f, 1f, 0.55f), 32); break;
                 case BattleEventKind.ModifierApplied: Popup(e.Target, $"{BattleText.Stat(e.Modifier.Stat)}{e.ModifierPercent}%", new Color(0.7f, 0.8f, 1f), 24); break;
+                case BattleEventKind.EventDamage: Popup(e.Target, $"-{e.Amount}", new Color(1f, 0.55f, 0.3f), 32); break;
+                case BattleEventKind.StatusApplied: Popup(e.Target, BattleText.StatusName(e.Text), new Color(1f, 0.75f, 0.4f), 26); break;
             }
             foreach (var pair in cardOf) UpdateCard(pair.Key, pair.Value);
             roundLabel.text = BattleText.Round(Controller.Session.State.Round);
@@ -780,6 +797,7 @@ namespace ThreeKingdoms.UI.Battle
         {
             dialogue?.Tick();
             if (Controller == null) return;
+            TickChapter();
             if (DialoguePlaying)
             {
                 var focused = root.panel?.focusController.focusedElement;

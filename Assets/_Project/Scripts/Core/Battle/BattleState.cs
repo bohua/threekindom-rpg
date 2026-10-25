@@ -12,11 +12,26 @@ namespace ThreeKingdoms.Core.Battle
 
         readonly List<BattleUnit> players;
         readonly List<BattleUnit> enemies;
+        readonly List<BattleUnit> allies;
+        readonly HashSet<BattleUnit> escorts;
+        readonly BattleScript script;
+        readonly HashSet<string> fired = new HashSet<string>();
         readonly BattleConfig config;
         readonly TroopTable troops;
+        BattleOutcome forced = BattleOutcome.Ongoing;
 
         public IReadOnlyList<BattleUnit> Players => players;
         public IReadOnlyList<BattleUnit> Enemies => enemies;
+        // Friendly units that take no orders (0.2); they stand after our three and never count as our line-up.
+        public IReadOnlyList<BattleUnit> AllyUnits => allies;
+        // Escort targets: if one retreats the battle is lost at once (SYSTEMS_V02 §2.2).
+        public IEnumerable<BattleUnit> Escorts => escorts;
+        // The turn-goal bar text set by battle events (SYSTEMS_V02 §1.2 set_objective), or null.
+        public string Objective { get; private set; }
+        // Event ids that have fired this battle (runtime only, never saved: a retry starts over).
+        public IReadOnlyCollection<string> FiredEvents => fired;
+        // Events dropped by the depth limit (diagnostics only).
+        public List<string> IgnoredEvents { get; } = new List<string>();
         public int Round { get; private set; } = 1;
         public ItemSpec RationItem { get; }
         public int Rations { get; private set; }
@@ -26,29 +41,40 @@ namespace ThreeKingdoms.Core.Battle
         public TroopTable Troops => troops;
 
         internal BattleState(IEnumerable<BattleUnit> playerUnits, IEnumerable<BattleUnit> enemyUnits, ItemSpec rationItem, int rations,
-            BattleConfig config, TroopTable troops)
+            BattleConfig config, TroopTable troops, IEnumerable<BattleUnit> allyUnits = null, BattleScript script = null)
         {
+            allies = (allyUnits ?? Enumerable.Empty<BattleUnit>()).OrderBy(u => u.Slot).ToList();
+            escorts = new HashSet<BattleUnit>();
+            this.script = script ?? BattleScript.Empty;
             this.config = config ?? throw new ArgumentNullException(nameof(config));
             this.troops = troops ?? throw new ArgumentNullException(nameof(troops));
             players = playerUnits.OrderBy(u => u.Slot).ToList();
             enemies = enemyUnits.OrderBy(u => u.Slot).ToList();
             if (players.Count == 0 || players.Count > MaxLineup) throw new ArgumentException("我方出战需要 1–3 名武将。");
             if (enemies.Count == 0) throw new ArgumentException("敌方编组为空。");
-            if (players.Any(u => u.Side != Side.Player) || enemies.Any(u => u.Side != Side.Enemy)) throw new ArgumentException("单位阵营不符。");
+            if (players.Any(u => u.Side != Side.Player) || enemies.Any(u => u.Side != Side.Enemy) || allies.Any(u => u.Side != Side.Ally))
+                throw new ArgumentException("单位阵营不符。");
             RationItem = rationItem;
             Rations = rationItem == null ? 0 : Math.Max(0, rations);
         }
 
-        public IReadOnlyList<BattleUnit> Allies(BattleUnit unit) => unit.Side == Side.Player ? players : enemies;
-        public IReadOnlyList<BattleUnit> Opponents(BattleUnit unit) => unit.Side == Side.Player ? enemies : players;
-        public IEnumerable<BattleUnit> AllUnits => players.Concat(enemies);
+        internal void MarkEscort(BattleUnit unit) { if (allies.Contains(unit)) escorts.Add(unit); }
 
-        // Non-defend order: speed high → low; equal speed: our side first; same side: line-up slot.
+        // Our support targets: our line-up, then the allies (SYSTEMS_V02 §2.2 target pools).
+        public IReadOnlyList<BattleUnit> Allies(BattleUnit unit) => unit.Side == Side.Enemy ? enemies : players.Concat(allies).ToList();
+        // The enemies' target pool is our line-up first, the allies after.
+        public IReadOnlyList<BattleUnit> Opponents(BattleUnit unit) => unit.Side == Side.Enemy ? players.Concat(allies).ToList() : enemies;
+        public IEnumerable<BattleUnit> AllUnits => players.Concat(allies).Concat(enemies);
+        public static bool SameSide(BattleUnit a, BattleUnit b) => (a.Side == Side.Enemy) == (b.Side == Side.Enemy);
+
+        static int Rank(Side side) => side == Side.Player ? 0 : side == Side.Ally ? 1 : 2;
+
+        // Non-defend order: speed high → low; equal speed: our side, then allies, then the enemy; same side: slot.
         public static int CompareOrder(BattleUnit a, BattleUnit b)
         {
             int speed = b.EffectiveFloor(BattleStat.Speed).CompareTo(a.EffectiveFloor(BattleStat.Speed));
             if (speed != 0) return speed;
-            int side = a.Side.CompareTo(b.Side);
+            int side = Rank(a.Side).CompareTo(Rank(b.Side));
             return side != 0 ? side : a.Slot.CompareTo(b.Slot);
         }
 
@@ -110,9 +136,12 @@ namespace ThreeKingdoms.Core.Battle
                 if (Outcome != BattleOutcome.Ongoing) break;
                 var command = list.First(c => c.Actor == actor);
                 if (command.Kind == CommandKind.Defend || !actor.Active) continue;
+                var before = Snapshot();
                 log.Add(new BattleEvent(BattleEventKind.ActionStarted, actor, command.Target, command.Skill, command: command.Kind));
                 Execute(command, log);
                 UpdateOutcome(log);
+                // Conditions this action produced go through the event queue (SYSTEMS_V02 §1.2 pipeline steps 4–5).
+                if (Outcome == BattleOutcome.Ongoing) RunEvents(Conditions(before, 1).ToList(), log);
             }
 
             if (Outcome == BattleOutcome.Ongoing) EndRound(log);
@@ -132,7 +161,7 @@ namespace ThreeKingdoms.Core.Battle
         void ExecuteAttack(BattleCommand c, List<BattleEvent> log)
         {
             var target = c.Target;
-            if (target == null || !target.Active || target.Side == c.Actor.Side)
+            if (target == null || !target.Active || SameSide(target, c.Actor))
             {
                 // Attack target already retreated: switch to the first living opponent.
                 target = Opponents(c.Actor).FirstOrDefault(u => u.Active);
@@ -156,9 +185,8 @@ namespace ThreeKingdoms.Core.Battle
             }
             else
             {
-                var expected = skill.TargetsAllies ? actor.Side : Opposite(actor.Side);
                 // Single-target skill without a legal target is cancelled; tech is not spent.
-                if (c.Target == null || !c.Target.Active || c.Target.Side != expected) { Cancel(c, CancelReason.TargetInvalid, log); return; }
+                if (c.Target == null || !c.Target.Active || SameSide(c.Target, actor) != skill.TargetsAllies) { Cancel(c, CancelReason.TargetInvalid, log); return; }
                 targets = new List<BattleUnit> { c.Target };
             }
 
@@ -189,7 +217,7 @@ namespace ThreeKingdoms.Core.Battle
         {
             var target = c.Target;
             // Invalid target or nothing to heal: cancelled, the ration is kept.
-            if (target == null || !target.Active || target.Side != c.Actor.Side) { Cancel(c, CancelReason.TargetInvalid, log); return; }
+            if (target == null || !target.Active || !SameSide(target, c.Actor)) { Cancel(c, CancelReason.TargetInvalid, log); return; }
             if (target.Troops >= target.Stats.MaxTroops) { Cancel(c, CancelReason.TargetFullTroops, log); return; }
             if (RationItem == null || Rations <= 0) { Cancel(c, CancelReason.NoItem, log); return; }
             Rations--;
@@ -215,11 +243,15 @@ namespace ThreeKingdoms.Core.Battle
         void Cancel(BattleCommand c, CancelReason reason, List<BattleEvent> log) =>
             log.Add(new BattleEvent(BattleEventKind.Cancelled, c.Actor, c.Target, c.Skill, reason: reason, command: c.Kind));
 
-        // Checked after every action: the battle ends the moment one side has no active unit left.
+        // Checked after every action and every battle event. Defeat first (SYSTEMS_V02 §1.2): our line-up gone, an escort
+        // gone, or end_battle(defeat); then victory: every enemy gone or end_battle(victory). Allies never count as ours.
         void UpdateOutcome(List<BattleEvent> log)
         {
-            if (enemies.All(u => !u.Active)) { Outcome = BattleOutcome.Victory; log.Add(new BattleEvent(BattleEventKind.Victory)); }
-            else if (players.All(u => !u.Active)) { Outcome = BattleOutcome.Defeat; log.Add(new BattleEvent(BattleEventKind.Defeat)); }
+            if (Outcome != BattleOutcome.Ongoing) return;
+            if (players.All(u => !u.Active) || escorts.Any(u => !u.Active) || forced == BattleOutcome.Defeat)
+            { Outcome = BattleOutcome.Defeat; log.Add(new BattleEvent(BattleEventKind.Defeat)); }
+            else if (enemies.All(u => !u.Active) || forced == BattleOutcome.Victory)
+            { Outcome = BattleOutcome.Victory; log.Add(new BattleEvent(BattleEventKind.Victory)); }
         }
 
         void EndRound(List<BattleEvent> log)
@@ -229,11 +261,126 @@ namespace ThreeKingdoms.Core.Battle
                 unit.Defending = false;
                 foreach (var expired in unit.TickModifiers())
                     log.Add(new BattleEvent(BattleEventKind.ModifierExpired, target: unit, modifier: expired));
+                foreach (var status in unit.TickStatuses())
+                    log.Add(new BattleEvent(BattleEventKind.StatusExpired, target: unit, text: status));
             }
             log.Add(new BattleEvent(BattleEventKind.RoundEnded, amount: Round));
             Round++;
         }
 
-        static Side Opposite(Side side) => side == Side.Player ? Side.Enemy : Side.Player;
+        // ---------- battle events (SYSTEMS_V02 §1) ----------
+
+        int startedRound;
+
+        // turn_start(N): once per round, before the AI reads the round-start state and before our orders.
+        internal List<BattleEvent> StartRound()
+        {
+            var log = new List<BattleEvent>();
+            if (Outcome != BattleOutcome.Ongoing || startedRound == Round) return log;
+            startedRound = Round;
+            RunEvents(script.Events.Where(e => e.When.Kind == TriggerKind.TurnStart && e.When.Round == Round).Select(e => (e, 1)).ToList(), log);
+            return log;
+        }
+
+        Dictionary<BattleUnit, (int troops, bool active)> Snapshot() => AllUnits.ToDictionary(u => u, u => (u.Troops, u.Active));
+
+        // Events whose conditions the change since `before` met: a unit crossing below a share of its troops (one hit
+        // straight to 0 counts), or a unit leaving the field (optionally only for one reason).
+        IEnumerable<(ScriptEvent e, int depth)> Conditions(Dictionary<BattleUnit, (int troops, bool active)> before, int depth)
+        {
+            foreach (var e in script.Events)
+            {
+                if (e.Once && fired.Contains(e.Id)) continue;
+                var w = e.When;
+                if (w.Kind == TriggerKind.UnitHpBelow)
+                {
+                    foreach (var u in Matching(w.Unit))
+                    {
+                        if (!before.TryGetValue(u, out var b)) continue;
+                        long limit = (long)u.Stats.MaxTroops * w.Percent;
+                        if (b.troops * 100L >= limit && u.Troops * 100L < limit) { yield return (e, depth); break; }
+                    }
+                }
+                else if (w.Kind == TriggerKind.UnitRetreated)
+                {
+                    foreach (var u in Matching(w.Unit))
+                        if (before.TryGetValue(u, out var b) && b.active && !u.Active && (w.Reason == null || w.Reason == u.RetreatReason))
+                        { yield return (e, depth); break; }
+                }
+            }
+        }
+
+        IEnumerable<BattleUnit> Matching(string target) => target switch
+        {
+            BattleScript.EnemyAll => enemies,
+            BattleScript.PlayerAll => players,
+            BattleScript.AllyAll => allies,
+            _ => AllUnits.Where(u => u.Id == target),
+        };
+
+        // First in, first out; a full outcome check after each event. Conditions an event's own actions produce queue one
+        // level deeper, up to BattleScript.MaxDepth; deeper ones are dropped and only noted in IgnoredEvents.
+        void RunEvents(List<(ScriptEvent e, int depth)> start, List<BattleEvent> log)
+        {
+            var queue = new Queue<(ScriptEvent e, int depth)>(start);
+            while (queue.Count > 0 && Outcome == BattleOutcome.Ongoing)
+            {
+                var (ev, depth) = queue.Dequeue();
+                if (ev.Once && fired.Contains(ev.Id)) continue;
+                fired.Add(ev.Id);
+                var before = Snapshot();
+                foreach (var action in ev.Actions)
+                    if (Do(action, log)) break;   // end_battle stops the rest
+                UpdateOutcome(log);
+                if (Outcome != BattleOutcome.Ongoing) break;
+                foreach (var next in Conditions(before, depth + 1).ToList())
+                {
+                    if (next.depth > BattleScript.MaxDepth) { IgnoredEvents.Add(next.e.Id); continue; }
+                    queue.Enqueue(next);
+                }
+            }
+        }
+
+        // True when the action ended the battle.
+        bool Do(ScriptAction a, List<BattleEvent> log)
+        {
+            switch (a.Kind)
+            {
+                case ScriptActionKind.Banner: log.Add(new BattleEvent(BattleEventKind.Banner, text: a.Text)); break;
+                case ScriptActionKind.Dialogue: log.Add(new BattleEvent(BattleEventKind.Dialogue, text: a.Text)); break;
+                case ScriptActionKind.Fx: log.Add(new BattleEvent(BattleEventKind.Fx, text: a.Text)); break;
+                case ScriptActionKind.SetObjective:
+                    Objective = a.Text;
+                    log.Add(new BattleEvent(BattleEventKind.ObjectiveChanged, text: a.Text));
+                    break;
+                case ScriptActionKind.ApplyStatus:
+                    var status = StatusSpec.Find(a.Text);
+                    foreach (var u in Matching(a.Target).Where(u => u.Active).ToList())
+                    {
+                        u.ApplyStatus(status, a.Value);
+                        log.Add(new BattleEvent(BattleEventKind.StatusApplied, target: u, amount: a.Value, text: status.Id));
+                    }
+                    break;
+                case ScriptActionKind.DamageRatio:
+                    foreach (var u in Matching(a.Target).Where(u => u.Active).ToList())
+                    {
+                        int lost = u.LoseTroops(BattleRules.PercentOf(u.Stats.MaxTroops, a.Value));
+                        log.Add(new BattleEvent(BattleEventKind.EventDamage, target: u, amount: lost));
+                    }
+                    break;
+                case ScriptActionKind.Retreat:
+                    foreach (var u in Matching(a.Target).Where(u => u.Active).ToList())
+                    {
+                        u.Rout();
+                        log.Add(new BattleEvent(BattleEventKind.Retreated, target: u));
+                    }
+                    break;
+                case ScriptActionKind.EndBattle:
+                    forced = a.Result;
+                    UpdateOutcome(log);
+                    return true;
+            }
+            return false;
+        }
     }
 }

@@ -177,6 +177,7 @@ namespace ThreeKingdoms.Gameplay.Story
             Place(Player.transform, Run.NextArrival switch
             {
                 GameRun.Arrival.ReturnFromBattle => ReturnSpot,
+                GameRun.Arrival.AtSouthGate => ReturnSpot,
                 GameRun.Arrival.AtTavern => TavernSpot ? TavernSpot : ReturnSpot,
                 GameRun.Arrival.FromTavernInside => TavernSpot ? TavernSpot : ReturnSpot,
                 _ => NewGameSpot,
@@ -191,7 +192,9 @@ namespace ThreeKingdoms.Gameplay.Story
             SetControl(true);
             // An oath interrupted by a reload replays from the start (GDD rule 11).
             story.ToSafeState();
+            ShowZouJing();
             if (story.Phase == StoryPhase.Oath) StartCoroutine(PlayOath());
+            else if (Run.Chapter2.Step == ChapterStep.ZouJingOrders) StartCoroutine(PlayZouJingOrders());   // 0.2 C1
             Changed?.Invoke();
         }
 
@@ -233,6 +236,7 @@ namespace ThreeKingdoms.Gameplay.Story
             if (Prompt == null) return;
             if (Prompt == "notice") StartCoroutine(Run.Story.ZhangFeiJoined ? Say(NoticeRead) : MeetZhangFei());
             else if (Prompt == "tavern") StartCoroutine(EnterTavern());
+            else if (Prompt == "gate:leave") StartCoroutine(LeaveZhuojun());
             else if (Prompt == "gate:locked" || Prompt == "gate:done") StartCoroutine(Say(new[] { new DialogueLine("system", Prompt) }));
             else if (Prompt == ShopPanel || Prompt == SavePanel) { Face(Prompt == ShopPanel ? Smith : Innkeeper); OpenPanel(Prompt); }
             else if (Prompt.StartsWith("npc:")) TalkToResident(Prompt.Substring(4));
@@ -345,7 +349,8 @@ namespace ThreeKingdoms.Gameplay.Story
             var story = Run.Story;
             var p = Player.transform.position;
             InGatePassage = new Bounds(GateCenter, GateSize).Contains(p + Vector3.up);
-            if (InGatePassage || (Near(BlockerLeader, p) && story.CanLeaveTown(out _)))
+            if (InGatePassage && Run.Chapter2.Step == ChapterStep.ZhuojunFree) prompt = "gate:leave";   // 0.2: south for good
+            else if (InGatePassage || (Near(BlockerLeader, p) && story.CanLeaveTown(out _)))
                 prompt = story.CanLeaveTown(out string reason) ? "gate:" + story.NextBattleId
                     : reason == StoryState.ReasonAllDone ? "gate:done" : "gate:locked";
             else if (Near(NoticeBoard, p)) prompt = "notice";

@@ -20,6 +20,11 @@ namespace ThreeKingdoms.Gameplay.Story
                 new DialogueLine("zhang_liang", "foe.battle_2.1"), new DialogueLine("guan_yu", "foe.battle_2.2"),
                 new DialogueLine("liu_bei", "foe.battle_2.3"),
             },
+            ["battle_6"] = new[]
+            {
+                new DialogueLine("bandit_chief", "foe.battle_6.1"), new DialogueLine("zhang_fei", "foe.battle_6.2"),
+                new DialogueLine("liu_bei", "foe.battle_6.3"),
+            },
             ["battle_3"] = new[]
             {
                 new DialogueLine("zhang_jiao", "foe.battle_3.1"), new DialogueLine("zhang_bao", "foe.battle_3.2"),
@@ -42,6 +47,24 @@ namespace ThreeKingdoms.Gameplay.Story
             {
                 new DialogueLine("zhang_jiao", "won.battle_3.1"), new DialogueLine("zhang_bao", "won.battle_3.2"),
                 new DialogueLine("liu_bei", "won.battle_3.3"),
+            },
+            // 0.2: C4 初遇曹操 after the Yingchuan night battle, C8 董卓之辱 after Guangzong (V02_HUANGJIN_PLAN §5).
+            ["battle_4"] = new[]
+            {
+                new DialogueLine("narrator", "c4.1"), new DialogueLine("cao_cao", "c4.2"), new DialogueLine("liu_bei", "c4.3"),
+                new DialogueLine("cao_cao", "c4.4"), new DialogueLine("cao_cao", "c4.5"), new DialogueLine("narrator", "c4.6"),
+                new DialogueLine("liu_bei", "c4.7"), new DialogueLine("guan_yu", "c4.8"),
+            },
+            ["battle_5"] = new[]
+            {
+                new DialogueLine("narrator", "c8.1"), new DialogueLine("dong_zhuo", "c8.2"), new DialogueLine("liu_bei", "c8.3"),
+                new DialogueLine("dong_zhuo", "c8.4"), new DialogueLine("narrator", "c8.5"), new DialogueLine("zhang_fei", "c8.6"),
+                new DialogueLine("liu_bei", "c8.7"), new DialogueLine("zhang_fei", "c8.8"), new DialogueLine("liu_bei", "c8.9"),
+            },
+            ["battle_6"] = new[]
+            {
+                new DialogueLine("bandit_chief", "won.battle_6.1"), new DialogueLine("zhang_fei", "won.battle_6.2"),
+                new DialogueLine("liu_bei", "won.battle_6.3"),
             },
         };
 

@@ -58,8 +58,9 @@ namespace ThreeKingdoms.Data.Battle
             var encounters = Encounters.Select(e =>
             {
                 if (!e) throw new InvalidOperationException($"{name}: 遭遇引用为空。");
-                return new EncounterSpec(e.Id, e.DisplayName, e.Enemies.Select(x => new EnemySlot(General(x.General, e.name), x.Level)),
-                    e.Ai, e.SkillEveryRounds, e.ExpReward, e.CopperReward);
+                return new EncounterSpec(e.Id, e.DisplayName, e.Enemies.Select(x => new EnemySlot(General(x.General, e.name), x.Level, x.FocusEscort)),
+                    e.Ai, e.SkillEveryRounds, e.ExpReward, e.CopperReward,
+                    (e.Allies ?? Array.Empty<AllyEntry>()).Select(a => new AllySlot(General(a.General, e.name), a.Level, a.Escort)), e.Script());
             }).ToArray();
 
             Unique(generals.Values.Select(g => g.Id), "武将");

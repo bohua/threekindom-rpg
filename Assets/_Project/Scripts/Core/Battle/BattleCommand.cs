@@ -24,6 +24,8 @@ namespace ThreeKingdoms.Core.Battle
     public enum BattleEventKind
     {
         Defend, ActionStarted, Damage, Heal, ModifierApplied, ModifierExpired, Retargeted, Retreated, Cancelled, ItemUsed, RoundEnded, Victory, Defeat,
+        // 0.2 battle events (SYSTEMS_V02 §1): Text holds the banner / objective text, dialogue id, fx id or status id.
+        RoundStarted, Banner, Dialogue, Fx, ObjectiveChanged, StatusApplied, StatusExpired, EventDamage,
     }
 
     public enum CancelReason { None, TargetInvalid, NotEnoughTech, NoItem, TargetFullTroops, UnknownSkill }
@@ -47,11 +49,16 @@ namespace ThreeKingdoms.Core.Battle
         public StatModifier Modifier { get; }
         public int ModifierPercent { get; }
         public int ModifierTurns { get; }
+        public string Text { get; }
+        // Retreated: troops at 0 (被击破) or sent away by an event (溃走).
+        public RetreatReason RetreatReason { get; }
 
         internal BattleEvent(BattleEventKind kind, BattleUnit actor = null, BattleUnit target = null, SkillSpec skill = null,
             int amount = 0, bool advantage = false, CancelReason reason = CancelReason.None, StatModifier modifier = null,
-            bool guarded = false, CommandKind command = CommandKind.Attack)
+            bool guarded = false, CommandKind command = CommandKind.Attack, string text = null)
         {
+            Text = text;
+            RetreatReason = target?.RetreatReason ?? RetreatReason.Defeated;
             Kind = kind; Actor = actor; Target = target; Skill = skill; Amount = amount; Advantage = advantage; Reason = reason;
             Modifier = modifier; Guarded = guarded; Command = command;
             TargetTroopsAfter = target?.Troops ?? 0;

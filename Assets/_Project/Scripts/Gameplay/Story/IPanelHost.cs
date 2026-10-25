@@ -12,4 +12,10 @@ namespace ThreeKingdoms.Gameplay.Story
         event Action<string> PanelOpened;
         event Action<string> PanelClosed;
     }
+
+    // A host whose shop carries more than the first tier of equipment (0.2: the Anxi market).
+    public interface IShopTier
+    {
+        int ShopTier { get; }
+    }
 }

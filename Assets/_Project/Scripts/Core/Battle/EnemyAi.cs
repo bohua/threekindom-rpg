@@ -12,6 +12,9 @@ namespace ThreeKingdoms.Core.Battle
         public int Round => state.Round;
         public IReadOnlyList<BattleUnit> Players => state.Players;
         public IReadOnlyList<BattleUnit> Enemies => state.Enemies;
+        public IReadOnlyList<BattleUnit> Allies => state.AllyUnits;
+        // The living escort target, or null (SYSTEMS_V02 §2.2 focus_escort).
+        public BattleUnit Escort => System.Linq.Enumerable.FirstOrDefault(state.Escorts, u => u.Active);
     }
 
     public interface IEnemyAi
@@ -29,6 +32,23 @@ namespace ThreeKingdoms.Core.Battle
 
         // Lowest current troops among the living, ties by slot.
         internal static BattleUnit Weakest(IEnumerable<BattleUnit> living) => living.OrderBy(u => u.Troops).ThenBy(u => u.Slot).FirstOrDefault();
+
+        // An enemy marked focus_escort attacks the escort while it stands; everyone else keeps their policy.
+        internal static BattleUnit Focus(BattleUnit enemy, BattleView view) => enemy.FocusEscort ? view.Escort : null;
+    }
+
+    // Allies (SYSTEMS_V02 §2.2, Dong Zhuo's army): at half troops or more, attack the enemy with the fewest troops
+    // (ties by slot); below half, defend. Reads the round-start state like the enemy AI.
+    public static class AllyAi
+    {
+        public static IReadOnlyList<BattleCommand> Decide(BattleView view)
+        {
+            var commands = new List<BattleCommand>();
+            var target = EnemyAi.Weakest(view.Enemies.Where(u => u.Active));
+            foreach (var ally in view.Allies.Where(u => u.Active))
+                commands.Add(ally.Troops * 2 >= ally.Stats.MaxTroops && target != null ? BattleCommand.Attack(ally, target) : BattleCommand.Defend(ally));
+            return commands;
+        }
     }
 
     // Battle 1: every enemy attacks the living unit with the most troops (ties by slot), so pressure lands on Zhang Fei.
@@ -40,7 +60,7 @@ namespace ThreeKingdoms.Core.Battle
             var target = view.Players.Where(u => u.Active).OrderByDescending(u => u.Troops).ThenBy(u => u.Slot).FirstOrDefault();
             if (target == null) return commands;
             foreach (var enemy in view.Enemies.Where(u => u.Active))
-                commands.Add(BattleCommand.Attack(enemy, target));
+                commands.Add(BattleCommand.Attack(enemy, EnemyAi.Focus(enemy, view) ?? target));
             return commands;
         }
     }
@@ -61,7 +81,7 @@ namespace ThreeKingdoms.Core.Battle
             foreach (var enemy in view.Enemies.Where(u => u.Active))
             {
                 var facing = view.Players[System.Math.Min(enemy.Slot, view.Players.Count - 1)];
-                var target = facing.Active ? facing : EnemyAi.Weakest(living);
+                var target = EnemyAi.Focus(enemy, view) ?? (facing.Active ? facing : EnemyAi.Weakest(living));
                 var skill = SkillThisRound(enemy, view.Round);
                 if (skill != null && skill.TechCost <= enemy.Tech)
                     commands.Add(BattleCommand.UseSkill(enemy, skill, skill.IsSingleTarget ? target : null));

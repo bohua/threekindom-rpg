@@ -21,6 +21,17 @@ namespace ThreeKingdoms.Gameplay.Battle
         public string EncounterId = "battle_1";
         [Tooltip("Our units by line-up slot (Liu Bei, Guan Yu, Zhang Fei)")] public BattleUnitView[] PlayerViews = Array.Empty<BattleUnitView>();
         [Tooltip("Enemy units by slot; extra views are hidden")] public BattleUnitView[] EnemyViews = Array.Empty<BattleUnitView>();
+        [Tooltip("Friendly units that take no orders (0.2, battle 5: Dong Zhuo's army); extra views are hidden")] public BattleUnitView[] AllyViews = Array.Empty<BattleUnitView>();
+
+        // A battle event's effect on the scene (0.2): fx id → objects switched on / off (B1 night → B1 on fire).
+        [Serializable]
+        public struct FxSwitch
+        {
+            public string Id;
+            public GameObject On, Off;
+            [Tooltip("Seconds the effect holds the playback")] public float Seconds;
+        }
+        public FxSwitch[] FxSwitches = Array.Empty<FxSwitch>();
         [Tooltip("Stand-in party when this scene is opened directly: battle 1 = 0 exp / 120 copper, battle 2 = 10 / 150, battle 3 = 30 / 200 (V1_SPEC §7–8)")]
         public int StartRations = 2, StartCopper = 120, StartExp;
         [Tooltip("Development run only: scene the next-battle button loads after a victory; empty after the last battle")] public string NextScene;
@@ -47,6 +58,13 @@ namespace ThreeKingdoms.Gameplay.Battle
         public event Action<BattleCommand> CommandChosen;
         // Shop-style panels opened from preparation ("outfit"), same contract as the town's (ShopHud listens to both).
         public event Action<string> PanelOpened, PanelClosed;
+        // 0.2 battle events (SYSTEMS_V02 §1): the HUD shows the banner and the event's lines, the scene plays the effect.
+        public event Action<string> BannerShown;
+        public event Action<IReadOnlyList<DialogueLine>> DialogueRequested;
+        public event Action<string> FxPlayed;
+        // The HUD calls this when the event's lines are done (or skipped).
+        public void DialogueFinished() => eventDialogueOpen = false;
+        bool eventDialogueOpen;
 
         readonly Dictionary<BattleUnit, BattleCommand> commands = new Dictionary<BattleUnit, BattleCommand>();
         readonly Dictionary<BattleUnit, BattleUnitView> views = new Dictionary<BattleUnit, BattleUnitView>();
@@ -160,7 +178,7 @@ namespace ThreeKingdoms.Gameplay.Battle
         // retry restores (nothing is applied on defeat). Development runs never touch the player's saves.
         void AutoSave()
         {
-            if (Run.IsDevelopment || Run.Story.NextBattleId != EncounterId) return;
+            if (Run.IsDevelopment || Run.NextBattleId != EncounterId) return;
             try { Run.SaveTo(ThreeKingdoms.Save.SaveSlots.Auto, EncounterId); AutoSaved = true; }
             catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) { Debug.LogWarning("Autosave failed: " + e.Message); }
         }
@@ -177,6 +195,8 @@ namespace ThreeKingdoms.Gameplay.Battle
             views.Clear();
             BindPlayers(Session.State.Players);
             Bind(Session.State.Enemies, EnemyViews);
+            Bind(Session.State.AllyUnits, AllyViews);
+            foreach (var fx in FxSwitches) { if (fx.On) fx.On.SetActive(false); if (fx.Off) fx.Off.SetActive(true); }
             LastApplied = null;
             BattleStarted?.Invoke();
             BeginCommanding();
@@ -210,7 +230,23 @@ namespace ThreeKingdoms.Gameplay.Battle
             }
         }
 
-        void BeginCommanding()
+        // A round starts with its turn_start events (SYSTEMS_V02 §1.2), which may end the battle on their own.
+        void BeginCommanding() => StartCoroutine(BeginRound());
+
+        IEnumerator BeginRound()
+        {
+            var log = Session.StartRound();
+            if (log.Any(e => e.Kind != BattleEventKind.RoundStarted))
+            {
+                Current = Phase.Playback;
+                Changed?.Invoke();
+                yield return Playback(log);
+            }
+            if (Session.Result != null) { Finish(); yield break; }
+            OpenCommands();
+        }
+
+        void OpenCommands()
         {
             commands.Clear();
             pending.Clear();
@@ -291,6 +327,38 @@ namespace ThreeKingdoms.Gameplay.Battle
                         break;
                     case BattleEventKind.RoundEnded:
                     case BattleEventKind.ModifierExpired:
+                    case BattleEventKind.RoundStarted:
+                    case BattleEventKind.ObjectiveChanged:
+                    case BattleEventKind.StatusExpired:
+                        Changed?.Invoke();
+                        break;
+                    case BattleEventKind.Banner:
+                        BannerShown?.Invoke(e.Text);
+                        yield return Wait(1.5f);
+                        break;
+                    case BattleEventKind.Dialogue:
+                        var lines = ChapterScripts.BattleDialogue(e.Text);
+                        if (lines.Count == 0 || DialogueRequested == null) break;
+                        eventDialogueOpen = true;
+                        DialogueRequested.Invoke(lines);
+                        while (eventDialogueOpen) yield return null;
+                        break;
+                    case BattleEventKind.Fx:
+                        FxPlayed?.Invoke(e.Text);
+                        float hold = 1.2f;
+                        foreach (var fx in FxSwitches.Where(f => f.Id == e.Text))
+                        {
+                            if (fx.On) fx.On.SetActive(true);
+                            if (fx.Off) fx.Off.SetActive(false);
+                            if (fx.Seconds > 0f) hold = fx.Seconds;
+                        }
+                        yield return Wait(hold);
+                        break;
+                    case BattleEventKind.EventDamage:
+                        if (target) yield return target.Hit(Speed);
+                        break;
+                    case BattleEventKind.StatusApplied:
+                        yield return Wait(0.2f);
                         break;
                     default:
                         yield return Wait(0.45f);
@@ -305,7 +373,27 @@ namespace ThreeKingdoms.Gameplay.Battle
         // After a victory: back to town (play-through), the next battle (development run), or the ending (last battle).
         public bool HasNextBattle => Won && Run.IsDevelopment && !string.IsNullOrEmpty(NextScene);
         public bool CanReturnToTown => Won && !Run.IsDevelopment && Run.Story.NextBattleId != null;
-        public bool ReachedEnding => Won && Run.Story.NextBattleId == null;
+        // Battle 3 closes Zhuojun (0.2: the brothers' talk, then Zou Jing's orders in town instead of the test-version end).
+        public bool ReachedEnding => Won && EncounterId == "battle_3";
+        // Battles 4–6 lead on into the 0.2 chapter (the story stage, or Anxi).
+        public bool CanContinueStory => Won && !Run.IsDevelopment && ChapterScripts.AfterVictory(EncounterId).scene != null;
+
+        public void ContinueStory()
+        {
+            var (scene, stage) = ChapterScripts.AfterVictory(EncounterId);
+            if (!Won || scene == null) return;
+            Run.PendingStage = stage;
+            Run.NextArrival = GameRun.Arrival.ReturnFromBattle;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
+        }
+
+        // After battle 3 (0.2): back to Zhuojun's south gate, where Zou Jing brings the orders (C1).
+        public void ToZhuojunOrders()
+        {
+            if (Run.Story.Ending == ThreeKingdoms.Core.Story.SequenceState.Playing) Run.Story.CompleteEnding();
+            Run.NextArrival = GameRun.Arrival.AtSouthGate;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(GameRun.TownScene);
+        }
 
         public void GoToNextBattle()
         {
@@ -341,8 +429,12 @@ namespace ThreeKingdoms.Gameplay.Battle
         {
             Current = Phase.Finished;
             // The story is the single reward-once gate: only the first win of the next battle grants exp and copper.
-            bool firstClear = Session.Result.Outcome == BattleOutcome.Victory && Run.Story.RecordVictory(Session.Encounter.Id);
+            bool firstClear = Session.Result.Outcome == BattleOutcome.Victory && Run.RecordVictory(Session.Encounter.Id);
             LastApplied = Progress.Apply(Session.Result, firstClear);
+            // C4 and C8 play as this battle's aftermath; their memories are written with the first clear (SYSTEMS_V02 §3.3).
+            if (firstClear)
+                foreach (var (who, key, value, text) in ChapterScripts.VictoryMemories(Session.Encounter.Id))
+                    Run.Chapter2.Remember(who, key, value, text);
             HighlightActor();
             Changed?.Invoke();
         }
