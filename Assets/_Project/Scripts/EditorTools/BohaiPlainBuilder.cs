@@ -1260,6 +1260,15 @@ namespace ThreeKingdoms.EditorTools
             return mask[ix, iz];
         }
 
+        // True when every cell within r metres (8 directions) is of the kind.
+        static bool Inside(int x, int z, int r, System.Func<Cell, bool> kind)
+        {
+            int w = mask.GetLength(0), h = mask.GetLength(1);
+            for (int dz = -r; dz <= r; dz += r) for (int dx = -r; dx <= r; dx += r)
+                if (!kind(mask[Mathf.Clamp(x + dx, 0, w - 1), Mathf.Clamp(z + dz, 0, h - 1)])) return false;
+            return true;
+        }
+
         static bool Blocked(Cell c) => c == Cell.Mountain || c == Cell.Foothill || c == Cell.Forest || c == Cell.River || c == Cell.Marsh;
 
         // Rectangles covering every cell of a class: runs along x, then stacked rows with the same run merged.
@@ -1301,6 +1310,10 @@ namespace ThreeKingdoms.EditorTools
             {
                 var c = mask[x, z];
                 if (c == Cell.River) return RiverDistance(XMin + x + 0.5f, ZMin + z + 0.5f, out _) > 3f;   // the pond; rivers get their own walls
+                // Woods and hills block only where they visibly stand (user 2026-10-25: invisible walls on grass): the
+                // wall starts 2 m inside a wood (its edge row of trees stands there) and 3 m inside a hill (where the slope rises).
+                if (c == Cell.Forest) return Inside(x, z, 2, k => k == Cell.Forest);
+                if (c == Cell.Mountain || c == Cell.Foothill) return Inside(x, z, 3, k => k == Cell.Mountain || k == Cell.Foothill);
                 return Blocked(c);
             }
             foreach (var r in Rects(Wall))
@@ -1318,6 +1331,7 @@ namespace ThreeKingdoms.EditorTools
             }
             RiverStrips(g);
             Forests(g);
+            ForestEdgeRow(g);
             Mountains(g);
             Fields(g);
         }
@@ -1438,6 +1452,26 @@ namespace ThreeKingdoms.EditorTools
                     string key = edge && cluster != null && rng.Next(3) == 0 ? cluster : trees[rng.Next(trees.Length)];
                     T.Prop(fg, key, XMin + fx, ZMin + fz, scale: 0.85f + (float)rng.NextDouble() * 0.35f);
                     if (edge && rng.Next(2) == 0) T.Prop(fg, under, XMin + fx + 1.2f, ZMin + fz - 1.6f);
+                }
+        }
+
+        // A close row of trees along each wood's edge, 2 m in (where its wall begins), so no grass shows in front of
+        // an invisible wall.
+        static void ForestEdgeRow(Transform g)
+        {
+            var fg = T.Group(g, "Forest edge row");
+            string[] trees = new[] { "prop_tree_oak", "prop_tree_jujube", "prop_tree_willow", "prop_tree_elm", "prop_tree_poplar", "prop_tree_locust" }
+                .Where(k => T.Tex(k, optional: true)).ToArray();
+            string under = K("prop_undergrowth", "prop_bush");
+            var rng = new System.Random(73);
+            int w = mask.GetLength(0), h = mask.GetLength(1);
+            for (int z = 1; z < h - 1; z += 3)
+                for (int x = 1; x < w - 1; x += 3)
+                {
+                    if (mask[x, z] != Cell.Forest) continue;
+                    if (Inside(x, z, 2, k => k == Cell.Forest)) continue;   // only the 2 m edge band
+                    T.Prop(fg, trees[rng.Next(trees.Length)], XMin + x + 0.5f, ZMin + z + 0.5f, scale: 0.75f + (float)rng.NextDouble() * 0.35f);
+                    if (rng.Next(2) == 0) T.Prop(fg, under, XMin + x + (float)rng.NextDouble() * 2f - 1f, ZMin + z - 1.2f, scale: 0.9f);
                 }
         }
 
