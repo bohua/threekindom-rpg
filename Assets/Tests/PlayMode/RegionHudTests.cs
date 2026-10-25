@@ -27,6 +27,7 @@ public sealed class RegionHudTests
 
         yield return At(player, new Vector3(-60f, 0, -151f));
         Assert.AreEqual("平原 · 县衙", hud.SignText);
+        Assert.AreEqual("坐标  x -60  ·  z -151", hud.CoordsText, "the position readout under the sign");
         yield return At(player, new Vector3(-60f, 0.35f, -255f));
         Assert.AreEqual("平原 · 码头", hud.SignText);
         yield return At(player, new Vector3(-60f, 0, -200f));

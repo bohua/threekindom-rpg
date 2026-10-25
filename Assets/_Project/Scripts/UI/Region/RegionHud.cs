@@ -26,11 +26,13 @@ namespace ThreeKingdoms.UI.Region
         VisualElement sign, minorRow, marker, bubble, bubbleRows, fullMap, fullMarker;
         Signpost shownSign;
         float bubbleFade;
-        Label major;
+        Label major, coords;
+        VisualElement coordPanel;
         LocationZone current;
         float fade;
 
         public string SignText { get; private set; }
+        public string CoordsText => coords?.text;
         public bool FullMapOpen => fullMap != null && fullMap.style.display == DisplayStyle.Flex;
         // The signpost bubble's lines while one is shown ("↑ 北村 约 120 步"), for tests.
         public System.Collections.Generic.List<string> BubbleLines { get; } = new System.Collections.Generic.List<string>();
@@ -68,6 +70,13 @@ namespace ThreeKingdoms.UI.Region
                 else { tick.style.borderBottomWidth = 2; tick.style.borderBottomColor = Silver; }
                 sign.Add(tick);
             }
+
+            // Position readout under the signboard (user 2026-10-25: to report where a problem is). World metres,
+            // x east and z north, the same numbers as the region map and the level docs.
+            coordPanel = Panel(root);
+            coordPanel.style.position = Position.Absolute; coordPanel.style.left = 36; coordPanel.style.top = 104;
+            coordPanel.style.paddingLeft = 12; coordPanel.style.paddingRight = 12; coordPanel.style.paddingTop = 3; coordPanel.style.paddingBottom = 4;
+            coords = Text(coordPanel, "", 18, Mist);
 
             if (Map)
             {
@@ -222,6 +231,11 @@ namespace ThreeKingdoms.UI.Region
             if (zone != current) { current = zone; Show(zone); fade = 0f; }
             if (fade < 1f) { fade = Mathf.Min(1f, fade + Time.unscaledDeltaTime * 4f); sign.style.opacity = fade; }
             UpdateBubble();
+            var at = Player.position;
+            string text = $"坐标  x {Mathf.RoundToInt(at.x)}  ·  z {Mathf.RoundToInt(at.z)}";
+            if (coords.text != text) coords.text = text;
+            float signH = sign.resolvedStyle.height;
+            if (!float.IsNaN(signH) && signH > 0f) coordPanel.style.top = 30f + signH + 6f;
             var kb = UnityEngine.InputSystem.Keyboard.current;
             if (kb != null && kb.mKey.wasPressedThisFrame) ToggleFullMap();
             if (kb != null && kb.escapeKey.wasPressedThisFrame && FullMapOpen) ToggleFullMap(false);
