@@ -303,6 +303,7 @@ namespace Prototype.BingshuTactics
         float TopOf(Vector2Int p)
         {
             var t = grid.TerrainAt(p);
+            if (blendMat && (t == Terrain.River || t == Terrain.Ford)) return 0f;   // 融合地面里水面与岸平齐，不留方格水沿
             return t == Terrain.River ? -0.15f : t == Terrain.Ford ? -0.06f : grid.HeightAt(p) * HS + (t == Terrain.Wall || t == Terrain.Gate ? WallExtra : 0f);
         }
 
@@ -342,6 +343,11 @@ namespace Prototype.BingshuTactics
                         r = new[] { W2(x0 + iW, z0 + iS), W2(x0 + iW, z1 - iN), W2(x1 - iE, z1 - iN), W2(x1 - iE, z0 + iS) };
                     }
                     var topMat = groundT == Terrain.River ? waterMat : zTop ? zTop : TopMat(groundT);
+                    if (UsesBlend(groundT))   // 0.2：整张融合地面，格与格之间没有贴图切口
+                    {
+                        topMat = blendMat;
+                        r = new[] { BlendUV(x0 + iW, z0 + iS), BlendUV(x0 + iW, z1 - iN), BlendUV(x1 - iE, z1 - iN), BlendUV(x1 - iE, z0 + iS) };
+                    }
                     B(topMat).Quad(new Vector3(x0 + iW, top, z0 + iS), new Vector3(x0 + iW, top, z1 - iN), new Vector3(x1 - iE, top, z1 - iN), new Vector3(x1 - iE, top, z0 + iS), r[0], r[1], r[2], r[3]);
 
                     // 侧面：只画比邻格高出来的部分
@@ -680,12 +686,16 @@ namespace Prototype.BingshuTactics
             const int ring = 3;
             var top = TopMat(Terrain.Grass);
             float x0 = -ring * T, x1 = (W + ring) * T, z0 = -ring * T, z1 = (H + ring) * T;
-            var b = B(LitMat("borderGrass", TopStrip(Terrain.Grass), new Color(0.82f, 0.86f, 0.80f)));
+            var b = B(blendMat ? blendMat : LitMat("borderGrass", TopStrip(Terrain.Grass), new Color(0.82f, 0.86f, 0.80f)));
             for (int x = -ring; x < W + ring; x++)
                 for (int y = -ring; y < H + ring; y++)
                 {
                     if (x >= 0 && y >= 0 && x < W && y < H) continue;
                     int v = (int)(Hash(x + 50, y + 50, 3) * 4) % 4;
+                    if (blendMat)
+                        b.Quad(new Vector3(x * T, Border, y * T), new Vector3(x * T, Border, (y + 1) * T), new Vector3((x + 1) * T, Border, (y + 1) * T), new Vector3((x + 1) * T, Border, y * T),
+                            BlendUV(x * T, y * T), BlendUV(x * T, (y + 1) * T), BlendUV((x + 1) * T, (y + 1) * T), BlendUV((x + 1) * T, y * T));
+                    else
                     b.Quad(new Vector3(x * T, Border, y * T), new Vector3(x * T, Border, (y + 1) * T), new Vector3((x + 1) * T, Border, (y + 1) * T), new Vector3((x + 1) * T, Border, y * T),
                         new Vector2(v / 4f, 0), new Vector2(v / 4f, 1), new Vector2((v + 1) / 4f, 1), new Vector2((v + 1) / 4f, 0));
                     float h = Hash(x + 50, y + 50, 9);
@@ -798,6 +808,7 @@ namespace Prototype.BingshuTactics
                 ? Enumerable.Range(0, 4).Select(f => WaterStrip(wt, f)).ToArray()
                 : Enumerable.Range(0, 4).Select(f => TopStrip(Terrain.River, f)).ToArray();
             waterMat = LitMat("water", waterFrames[0]);
+            if (IsChapter) BakeChapterGround();
             BuildTerrain();
             BuildProps();
             // 地形碰撞：每格一个盒体，只用于鼠标拾取，不渲染

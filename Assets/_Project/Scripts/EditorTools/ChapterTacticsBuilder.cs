@@ -72,7 +72,8 @@ namespace ThreeKingdoms.EditorTools
                 if (imp == null) continue;
                 imp.textureType = TextureImporterType.Default; imp.mipmapEnabled = true; imp.filterMode = FilterMode.Trilinear;
                 imp.wrapMode = TextureWrapMode.Repeat; imp.npotScale = TextureImporterNPOTScale.None; imp.maxTextureSize = 2048;
-                imp.textureCompression = TextureImporterCompression.CompressedHQ; imp.alphaIsTransparency = false;
+                imp.textureCompression = TextureImporterCompression.Uncompressed; imp.alphaIsTransparency = false;
+                imp.isReadable = true;   // the tactics map bakes one blended ground texture from these at battle start
                 imp.SaveAndReimport();
                 list.Add(AssetDatabase.LoadAssetAtPath<Texture2D>(p));
             }
