@@ -17,13 +17,14 @@ namespace ThreeKingdoms.UI.Menu
         public const string BattleOnly = "仅能在战斗中使用。";
 
         // 行旅 / 涿郡 · 街市 (the tavern scene is 酒肆).
-        public static string Place(TownStoryController c) =>
-            c != null && c.gameObject.scene.name == GameRun.TavernScene ? "涿郡 · 酒肆" : "涿郡 · 街市";
+        public static string Place(IFieldHost c) =>
+            c is UnityEngine.MonoBehaviour m && m.gameObject.scene.name == GameRun.TavernScene ? "涿郡 · 酒肆"
+            : c?.SaveLocation == SaveData.CampLocation ? "广宗 · 卢植大营" : c?.SaveLocation == SaveData.AnxiLocation ? "中山 · 安喜县" : "涿郡 · 街市";
 
         // "目标：从南门出城迎敌（第二战 · 张梁）" → "从南门出城迎敌 · 第二战 张梁", as on the mock-ups.
-        public static string Quest(StoryState s)
+        public static string Quest(StoryState s, ChapterState c = null)
         {
-            string t = StoryText.Objective(s);
+            string t = StoryText.Objective(s, c);
             if (t.StartsWith("目标：")) t = t.Substring(3);
             int open = t.IndexOf('（');
             if (open > 0) t = t.Substring(0, open) + " · " + t.Substring(open + 1).TrimEnd('）').Replace(" · ", " ");
@@ -51,6 +52,11 @@ namespace ThreeKingdoms.UI.Menu
         public static string SavePlace(string location)
         {
             if (location == SaveData.TownLocation) return "涿郡 · 酒肆";
+            if (location == SaveData.CampLocation) return "广宗 · 卢植大营";
+            if (location == SaveData.AnxiLocation) return "中山 · 安喜县";
+            if (location == "battle_4") return "颍川 · 战前整备";
+            if (location == "battle_5") return "广宗 · 战前整备";
+            if (location == "battle_6") return "安喜 · 战前整备";
             if (location != null && location.StartsWith("battle_") && int.TryParse(location.Substring(7), out int n) && n >= 1 && n <= 3)
                 return $"南门整备 · 第{Ordinals[n - 1]}战";
             return location;

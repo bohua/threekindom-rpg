@@ -18,7 +18,8 @@ namespace ThreeKingdoms.UI.Menu
     // pixel space (MenuPaint); 技能 is the generals' own level-up skills only, unrelated to gear and books.
     public sealed partial class MainMenuHud : MonoBehaviour
     {
-        public TownStoryController Controller;
+        [Tooltip("TownStoryController or FieldStoryController (0.2): any IFieldHost")] public MonoBehaviour Host;
+        ThreeKingdoms.Gameplay.Story.IFieldHost Controller => Host as ThreeKingdoms.Gameplay.Story.IFieldHost;
         [Tooltip("Full illustrations (武将 page)")] public DialoguePortraitSet Portraits;
         [Tooltip("Bust crops for the party cards: liu_bei, guan_yu, zhang_fei")] public Texture2D[] Busts = Array.Empty<Texture2D>();
         [Tooltip("The menu's own slices (art/travel-menu-ui-slices)")] public Texture2D[] Art = Array.Empty<Texture2D>();
@@ -45,12 +46,12 @@ namespace ThreeKingdoms.UI.Menu
 
         void OnEnable()
         {
-            if (Controller) { Controller.PanelOpened += OnOpened; Controller.PanelClosed += OnClosed; }
+            if (Controller != null) { Controller.PanelOpened += OnOpened; Controller.PanelClosed += OnClosed; }
         }
 
         void OnDisable()
         {
-            if (Controller) { Controller.PanelOpened -= OnOpened; Controller.PanelClosed -= OnClosed; }
+            if (Controller != null) { Controller.PanelOpened -= OnOpened; Controller.PanelClosed -= OnClosed; }
         }
 
         void OnOpened(string p)
@@ -250,7 +251,7 @@ namespace ThreeKingdoms.UI.Menu
 
             // Objective line.
             if (!p.Icon(48, 87, 28, 28, "icon_quest")) p.Text(48, 84, 30, 32, "◇", 26, MenuPaint.Gold, TextAnchor.MiddleCenter, true);
-            p.Text(92, 82, 380, 36, MenuText.Quest(Controller.Run.Story), 21, MenuPaint.Ivory);
+            p.Text(92, 82, 380, 36, MenuText.Quest(Controller.Run.Story, Controller.Run.Chapter2), 21, MenuPaint.Ivory);
             p.HLine(40, 120, 410, SilverA(0.45f));
 
             // Tabs.

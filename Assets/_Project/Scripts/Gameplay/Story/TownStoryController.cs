@@ -22,7 +22,7 @@ namespace ThreeKingdoms.Gameplay.Story
     // Drives the Zhuojun main line (ADR-0006 §3, story-events GDD): talk to Guan Yu and Zhang Fei to recruit them,
     // the automatic peach-garden oath once both have joined, and leaving by the south gate for the next battle.
     // Rules come from StoryState; this component only stages them.
-    public sealed partial class TownStoryController : MonoBehaviour, IPanelHost
+    public sealed partial class TownStoryController : MonoBehaviour, IFieldHost
     {
         public BattleCatalog Catalog;
         public PlayerMover Player;
@@ -77,6 +77,8 @@ namespace ThreeKingdoms.Gameplay.Story
         [Tooltip("Seconds for a fade to black / back")] public float FadeTime = 0.4f;
 
         public GameRun Run { get; private set; }
+        BattleCatalog IFieldHost.Catalog => Catalog;
+        public string SaveLocation => ThreeKingdoms.Save.SaveData.TownLocation;
         public bool Busy { get; private set; }
         public DialogueLine? Line { get; private set; }
         // "talk:guan_yu", "gate:locked", "gate:battle_2" … or null.

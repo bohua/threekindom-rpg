@@ -242,8 +242,18 @@ namespace ThreeKingdoms.UI.Story
         }
 
         // 0.2: after the third victory the goal follows the chapter (Zou Jing, then the south gate).
-        public static string Objective(StoryState s, ChapterState c) => c == null || c.Step < ChapterStep.ZouJingOrders ? Objective(s)
-            : c.Step == ChapterStep.ZouJingOrders ? "目标：听邹靖传令" : "目标：整备后从南门出城，随邹靖南下广宗";
+        public static string Objective(StoryState s, ChapterState c) => c == null || c.Step < ChapterStep.ZouJingOrders ? Objective(s) : c.Step switch
+        {
+            ChapterStep.ZouJingOrders => "目标：听邹靖传令",
+            ChapterStep.ZhuojunFree => "目标：整备后从南门出城，随邹靖南下广宗",
+            ChapterStep.Camp => c.Has("c2") ? "目标：在营中整备，准备好后到营门出发" : "目标：拜见卢植",
+            ChapterStep.Yingchuan => "目标：随官军截击颍川黄巾",
+            ChapterStep.Guangzong => "目标：回师广宗",
+            ChapterStep.ToAnxi => "目标：赴安喜县到任",
+            ChapterStep.Anxi => "目标：处理县中难事，准备好后从东门出城剿贼",
+            ChapterStep.AnxiBandits => "目标：督邮到了驿馆，去见驿卒",
+            _ => "目标：0.2 黄巾篇完",
+        };
 
         public static string Objective(StoryState s) => s.Phase switch
         {

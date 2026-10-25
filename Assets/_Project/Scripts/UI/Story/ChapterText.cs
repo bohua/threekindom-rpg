@@ -44,6 +44,9 @@ namespace ThreeKingdoms.UI.Story
             // ---------- 卢植大营 ----------
             ["camp.guard.talk"] = "营中军令严明，不得喧哗。三位若要出发，与我说一声便是；行前可在此记下行程（存档）。",
             ["camp.guard.save"] = "要在此记下行程吗？",
+            ["camp.guard.ask"] = "（要做什么？）",
+            ["camp.guard.opt.save"] = "记下行程（存档）", ["camp.guard.opt.leave"] = "出发去颍川", ["camp.guard.opt.cancel"] = "没什么",
+            ["anxi.clerk.opt.save"] = "记下行程（存档）", ["anxi.clerk.opt.cancel"] = "没什么",
             ["camp.leave.ask"] = "离开大营后不能返回。下次补给在安喜。确定出发吗？",
             ["camp.leave.yes"] = "出发", ["camp.leave.no"] = "再等等",
             ["camp.quartermaster"] = "军粮、刀枪都在这里，按价付钱便是。卢公治军，一钱不苟。",

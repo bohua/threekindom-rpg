@@ -9,7 +9,7 @@ namespace ThreeKingdoms.Gameplay.Story
     public enum StageOp
     {
         Line, Choice, Card, Background, Actor, Move, Hide, Face, Remember, Flag, Scroll, March, Fade, Rations,
-        Advance, Load, Battle, Wait, Music, Reputation, Item, Autosave, Shake, Flash,
+        Advance, Load, Battle, Wait, Music, Reputation, Item, Autosave, Shake, Flash, Call,
     }
 
     public sealed class StageStep
@@ -19,6 +19,8 @@ namespace ThreeKingdoms.Gameplay.Story
         public float X, Y, Seconds;
         public string[] Options = Array.Empty<string>();
         public StageStep[][] Branches = Array.Empty<StageStep[]>();
+        // Call: game logic run when the step is reached (a walkable scene's checks: copper, flags, panels).
+        public Action Callback;
         // Plays only when this flag is set ("!" in front: only when it is not).
         public string If;
 
@@ -71,5 +73,6 @@ namespace ThreeKingdoms.Gameplay.Story
         public static StageStep Autosave(string location) => new StageStep { Op = StageOp.Autosave, A = location };
         public static StageStep Shake(float seconds = 0.4f) => new StageStep { Op = StageOp.Shake, Seconds = seconds };
         public static StageStep Flash() => new StageStep { Op = StageOp.Flash };
+        public static StageStep Call(Action action) => new StageStep { Op = StageOp.Call, Callback = action };
     }
 }

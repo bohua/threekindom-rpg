@@ -202,6 +202,7 @@ namespace ThreeKingdoms.Gameplay.Story
                     if (string.IsNullOrEmpty(s.A)) StoryMusic.Stop(); else StoryMusic.Play(s.A, loop: true);
                     break;
                 case StageOp.Wait: yield return WaitSeconds(s.Seconds); break;
+                case StageOp.Call: s.Callback?.Invoke(); break;
                 case StageOp.Load:
                     Left = true;
                     if (run != null) run.PendingStage = s.B;

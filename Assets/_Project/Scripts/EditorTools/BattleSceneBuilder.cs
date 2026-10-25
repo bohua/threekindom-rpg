@@ -33,7 +33,13 @@ namespace ThreeKingdoms.EditorTools
             public string Path, EncounterId, Next, Location, BaseScene = BattleBackdropBaker.ScenePath;
             public string[] EnemySprites;
             public int StartExp, StartCopper;
+            // 0.2: a friendly unit's sprite (battle 5: Dong Zhuo's army), the night tint of battle 4, and its fire.
+            public string AllySprite;
+            public bool Night;
+            public string Backdrop;   // ChapterBackdrops id ("B1", "B2", "B3"); the outskirts until it is delivered
         }
+
+        static readonly Vector2 AllyFeet = new Vector2(-3.4f, -3.6f);
 
         static readonly BattleSpec[] Battles =
         {
@@ -45,6 +51,42 @@ namespace ThreeKingdoms.EditorTools
             new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Tutorial03.unity", EncounterId = "battle_3", Next = "", Location = "涿郡 · 城外", BaseScene = BattleBackdropBaker.OutskirtsScenePath,
                 EnemySprites = new[] { "ZhangJiao", "ZhangBao", "ZhangLiang" }, StartExp = 30, StartCopper = 200 },
         };
+
+        // 0.2 黄巾篇 battles 4–6 (V02_HUANGJIN_PLAN §4). Sprite keys of the 0.2 people resolve when the scene is built
+        // (their own atlas once Codex delivers it, a stand-in before). Starting exp / copper: development runs only.
+        static BattleSpec[] ChapterBattles() => new[]
+        {
+            new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Yingchuan04.unity", EncounterId = "battle_4", Next = "Battle_Guangzong05", Location = "颍川 · 草泽夜营",
+                BaseScene = ChapterBackdrops.ScenePath("B1"), Backdrop = "B1", Night = true,
+                EnemySprites = new[] { "ZhangBao", "ZhangLiang", "YellowTurban", "YellowTurban" }, StartExp = 60, StartCopper = 200 },
+            new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Guangzong05.unity", EncounterId = "battle_5", Next = "Battle_Anxi06", Location = "广宗 · 城外原野",
+                BaseScene = ChapterBackdrops.ScenePath("B2"), Backdrop = "B2",
+                EnemySprites = new[] { "ZhangJiao", ResidentImporter.ChapterKey("C11"), ResidentImporter.ChapterKey("C11"), ResidentImporter.ChapterKey("C11") },
+                AllySprite = ResidentImporter.ChapterKey("C03"), StartExp = 100, StartCopper = 260 },
+            new BattleSpec { Path = "Assets/_Project/Scenes/Battle_Anxi06.unity", EncounterId = "battle_6", Next = "", Location = "安喜 · 山麓",
+                BaseScene = ChapterBackdrops.ScenePath("B3"), Backdrop = "B3",
+                EnemySprites = new[] { ResidentImporter.ChapterKey("C07"), ResidentImporter.ChapterKey("C08"), ResidentImporter.ChapterKey("C08"), ResidentImporter.ChapterKey("C08") },
+                StartExp = 150, StartCopper = 330 },
+        };
+
+        public static readonly string[] ChapterBattlePaths =
+            { "Assets/_Project/Scenes/Battle_Yingchuan04.unity", "Assets/_Project/Scenes/Battle_Guangzong05.unity", "Assets/_Project/Scenes/Battle_Anxi06.unity" };
+
+        // Battles 4–6 alone (the main-line build calls this after the Zhuojun battles).
+        public static void BuildChapterBattles()
+        {
+            ChapterBackdrops.Build();
+            var catalog = BattleDataBuilder.Build();
+            BattleUiSkinBuilder.Build();
+            var icons = BuildTroopIcons();
+            var panel = BuildPanelSettings();
+            ConvertEnemySheets();
+            vfxSheets = CodexArtImporter.VfxSheets();
+            DialoguePortraitImporter.Import();
+            foreach (var battle in ChapterBattles()) BuildScene(battle, catalog, icons, panel);
+            AssetDatabase.SaveAssets();
+            Debug.Log("CHAPTER_BATTLES_BUILT");
+        }
 
         // The three brothers' 3×3 sheets (INITIAL_SCENARIO_ART.md); the generic Yellow Turban atlas already exists.
         static readonly (string Key, string Sheet, int FigureHeight)[] EnemySheets =
@@ -129,7 +171,22 @@ namespace ThreeKingdoms.EditorTools
                 return View(unit, EnemyFeet[i - 1], ringMat, targetMat, idle: 1, flipAttack: false);
             }).ToArray();
 
+            BattleUnitView[] allyViews = new BattleUnitView[0];
+            if (battle.AllySprite != null)
+            {
+                // A copy of the last enemy unit on our side, facing right: Dong Zhuo's army.
+                var source = units.Find("Yellow Turban 4") ?? units.Find(battle.EnemySprites[3]);
+                var ally = Object.Instantiate(source.gameObject, units).transform;
+                ally.name = "Ally " + battle.AllySprite;
+                var atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(HD2DSampleBuilder.AtlasPath(battle.AllySprite));
+                ally.GetComponentInChildren<SpriteFrameAnimator>(true).Target.sharedMaterial = HD2DSampleBuilder.PixelMaterial(battle.AllySprite, atlas);
+                allyViews = new[] { View(ally, AllyFeet, ringMat, targetMat, idle: 2, flipAttack: true) };
+            }
+            var fxSwitches = ChapterBackdrops.FxSwitches(battle.Backdrop, battle.Night);
+
             var controller = new GameObject("Battle Controller").AddComponent<BattleController>();
+            controller.AllyViews = allyViews;
+            controller.FxSwitches = fxSwitches;
             controller.Catalog = catalog;
             controller.EncounterId = battle.EncounterId;
             controller.NextScene = battle.Next;

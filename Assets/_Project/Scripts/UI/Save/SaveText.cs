@@ -25,6 +25,7 @@ namespace ThreeKingdoms.UI.Save
         public static string Slot(int index) => $"存档 {index}";
 
         public static string Place(string location) => location == SaveData.TownLocation ? "涿郡・酒馆"
+            : location == SaveData.CampLocation ? "广宗・卢植大营" : location == SaveData.AnxiLocation ? "中山・安喜县"
             : location != null && location.StartsWith("battle_") ? $"第{location.Substring(7)}战　战前准备" : location;
 
         // Slot summary (save-system answer 4): chapter, place, Liu Bei's level, copper, time saved.

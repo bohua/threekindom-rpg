@@ -281,7 +281,7 @@ namespace ThreeKingdoms.EditorTools
             var saveDoc = saveGo.AddComponent<UIDocument>();
             saveDoc.panelSettings = doc.panelSettings;
             saveDoc.sortingOrder = 10;
-            var saveHud = saveGo.AddComponent<SaveHud>(); saveHud.Controller = c; saveHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
+            var saveHud = saveGo.AddComponent<SaveHud>(); saveHud.Host = c; saveHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             var archeryGo = new GameObject("Archery HUD");
             var archeryDoc = archeryGo.AddComponent<UIDocument>();
             archeryDoc.panelSettings = doc.panelSettings;
@@ -291,7 +291,7 @@ namespace ThreeKingdoms.EditorTools
                 .Where(t => t).ToArray();   // sky and stone platform reuse town textures (user 2026-10-23) archeryHud.Skin = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Battle.BattleUiSkin>(BattleUiSkinBuilder.SkinPath);
             // The travel menu (行旅, GAME_MENU_UI_REDESIGN.md) draws itself (IMGUI) over the town.
             var menuGo = new GameObject("Main Menu HUD");
-            var mainMenu = menuGo.AddComponent<ThreeKingdoms.UI.Menu.MainMenuHud>(); mainMenu.Controller = c;
+            var mainMenu = menuGo.AddComponent<ThreeKingdoms.UI.Menu.MainMenuHud>(); mainMenu.Host = c;
             TravelMenuArtImporter.Import(out mainMenu.Art, out mainMenu.Borders);
             mainMenu.BingshuArt = TravelMenuArtImporter.BingshuSlices();
             mainMenu.Portraits = townHud.Portraits;
