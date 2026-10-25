@@ -216,7 +216,7 @@ namespace ThreeKingdoms.UI.Battle
                     def.Units.Add(u);
                 }
 
-                Events(id, def, rows);
+                Events(id, def, rows, run, data);
                 def.OpeningLines = Lines(BattleScenes.BeforeBattle(id));
                 def.VictoryLines = Lines(BattleScenes.AfterVictory(id));   // C4 / C8 play here, as the battle's aftermath
                 return def;
@@ -230,7 +230,7 @@ namespace ThreeKingdoms.UI.Battle
             static TacticsAction Banner(string text) => new TacticsAction { Kind = TacticsActionKind.Banner, Text = text };
 
             // The round battles' scripted events, re-timed for a map where both sides have to close in first.
-            static void Events(string id, TacticsStageDef def, string[] rows)
+            static void Events(string id, TacticsStageDef def, string[] rows, GameRun run, BattleData data)
             {
                 switch (id)
                 {
@@ -257,10 +257,13 @@ namespace ThreeKingdoms.UI.Battle
                         def.Events.Add(new TacticsEvent
                         {
                             Round = 6,
+                            // User 2026-10-25: the reinforcements join as allies; the Yellow Turbans stay and must all be beaten.
                             Actions = new[]
                             {
-                                Banner("援军杀到！"), Line("zhang_fei", "b4_cavalry.1"), Line("zhang_liang", "b4_cavalry.2"),
-                                new TacticsAction { Kind = TacticsActionKind.RetreatAll, Team = Team.Enemy },
+                                Banner("援军杀到！"), Line("zhang_fei", "b4_cavalry.1"),
+                                new TacticsAction { Kind = TacticsActionKind.Spawn, Units = Reinforcements(rows, run, data) },
+                                new TacticsAction { Kind = TacticsActionKind.Line, Speaker = StoryText.Speaker("cao_cao"), Text = "沛国曹操在此！诸位义士，随我破贼！" },
+                                Goal("与援军合力，消灭全部黄巾"),
                             },
                         });
                         break;
@@ -283,6 +286,24 @@ namespace ThreeKingdoms.UI.Battle
                         def.Objective = "剿灭山贼";
                         break;
                 }
+            }
+
+            // Yingchuan: Cao Cao (骑都尉) and two Han cavalry troops ride in from the east edge (story-only generals, not in the catalog).
+            static TacticsUnitDef[] Reinforcements(string[] rows, GameRun run, BattleData data)
+            {
+                var cao = new GeneralSpec("cao_cao", "曹操", TroopType.Cavalry, 72, 90, 91);
+                var rider = new GeneralSpec("han_cavalry", "官军骑兵", TroopType.Cavalry, 58, 52, 30);
+                var list = new List<TacticsUnitDef>();
+                var c = Unit(cao, 6, BattleRules.Compute(cao, 6, default, data.Troops, data.Config), Team.Player, At(rows, 15, 7));
+                c.Ai = true; c.Leader = true; c.Key = "CaoCao"; c.Crafts = new[] { "突击" };
+                list.Add(c);
+                for (int i = 0; i < 2; i++)
+                {
+                    var r = Unit(rider, 4, BattleRules.Compute(rider, 4, default, data.Troops, data.Config), Team.Player, At(rows, 15, i == 0 ? 6 : 8));
+                    r.Ai = true; r.Key = "HanSoldier"; r.Name = "官军骑兵" + "甲乙"[i];
+                    list.Add(r);
+                }
+                return list.ToArray();
             }
 
             static TacticsUnitDef Unit(GeneralSpec g, int level, UnitStats s, Team team, Vector2Int pos)

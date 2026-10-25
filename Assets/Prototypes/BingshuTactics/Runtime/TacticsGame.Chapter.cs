@@ -25,7 +25,7 @@ namespace Prototype.BingshuTactics
         public Element Element = Element.None;
     }
 
-    public enum TacticsActionKind { Banner, Line, Objective, Damage, Chaos, RetreatAll, Retreat, Fire, Win }
+    public enum TacticsActionKind { Banner, Line, Objective, Damage, Chaos, RetreatAll, Retreat, Fire, Win, Spawn }
 
     public sealed class TacticsAction
     {
@@ -35,6 +35,7 @@ namespace Prototype.BingshuTactics
         public float Value;
         public int Turns;
         public Vector2Int[] Tiles = new Vector2Int[0];
+        public TacticsUnitDef[] Units = new TacticsUnitDef[0];   // Spawn：登场的单位（落在最近的空格）
     }
 
     // Round > 0：到该回合时触发；HpBelow：该单位兵力低于 Ratio 时触发。每个事件只触发一次。
@@ -98,6 +99,12 @@ namespace Prototype.BingshuTactics
 
         void BuildChapterUnits()
         {
+            foreach (var d in Chapter.Units) SpawnUnit(d, d.Pos);
+            objective = Chapter.Objective;
+        }
+
+        Unit SpawnUnit(TacticsUnitDef d, Vector2Int pos)
+        {
             var crafts = new Dictionary<string, SkillDef>
             {
                 ["整队"] = Craft("整队", "单体友军回复30%兵力", Effect.Heal, Area.Single, 3, 0, 0.30f, 20),
@@ -107,15 +114,27 @@ namespace Prototype.BingshuTactics
                 ["横扫"] = Craft("横扫", "自身周围2格内敌军物理0.65倍", Effect.Damage, Area.SelfCircle, 0, 2, 0.65f, 30, might: true),
                 ["威慑"] = Craft("威慑", "自身周围3格内敌军物攻-20% 2回合", Effect.Debuff, Area.SelfCircle, 0, 3, 0f, 25, turns: 2, amount: 0.2f),
             };
-            foreach (var d in Chapter.Units)
-            {
-                var u = NewUnit(d.Name, d.Key, d.Team, d.Troop, d.School, d.Hp, d.Atk, d.Def, d.Mat, d.Mdef, d.Speed, d.Move, d.Range, d.Ep, d.Pos);
-                u.Int = d.Int; u.Wu = d.Wu; u.Level = d.Level; u.Ai = d.Ai; u.Escort = d.Escort; u.Leader = d.Leader; u.Focus = d.Focus;
-                if (d.Element != Element.None) u.Element = d.Element;
-                foreach (var c in d.Crafts) if (crafts.TryGetValue(c, out var s)) u.Crafts.Add(s);
-                DefaultBooks(u);
-            }
-            objective = Chapter.Objective;
+            var u = NewUnit(d.Name, d.Key, d.Team, d.Troop, d.School, d.Hp, d.Atk, d.Def, d.Mat, d.Mdef, d.Speed, d.Move, d.Range, d.Ep, pos);
+            u.Int = d.Int; u.Wu = d.Wu; u.Level = d.Level; u.Ai = d.Ai; u.Escort = d.Escort; u.Leader = d.Leader; u.Focus = d.Focus;
+            if (d.Element != Element.None) u.Element = d.Element;
+            foreach (var c in d.Crafts) if (crafts.TryGetValue(c, out var s)) u.Crafts.Add(s);
+            DefaultBooks(u);
+            return u;
+        }
+
+        // 离 want 最近、能站人的空格
+        Vector2Int NearestFree(Vector2Int want)
+        {
+            Vector2Int best = want; int bd = int.MaxValue;
+            for (int x = 0; x < W; x++)
+                for (int y = 0; y < H; y++)
+                {
+                    var p = new Vector2Int(x, y);
+                    if (Grid.Impassable(grid.TerrainAt(p)) || At(p) != null) continue;
+                    int d = Grid.Dist(p, want);
+                    if (d < bd) { bd = d; best = p; }
+                }
+            return best;
         }
 
         Material CharMat(string key) => CharMats.FirstOrDefault(m => m && (m.name.StartsWith(key + "_") || m.name.StartsWith("Npc" + key + "_")));
@@ -213,6 +232,16 @@ namespace Prototype.BingshuTactics
                         yield return new WaitForSeconds(0.6f);
                         CheckChapterEnd(forced: a.Team == Team.Enemy);
                         if (mode == Mode.Victory) yield break;
+                        break;
+                    case TacticsActionKind.Spawn:   // 援军登场（用户 2026-10-25：援军加入成为友军，不让敌军撤退）
+                        for (int i = 0; i < a.Units.Length; i++)
+                        {
+                            var u = SpawnUnit(a.Units[i], NearestFree(a.Units[i].Pos));
+                            u.At = now + 5f * (i + 1);
+                            popups.Add((views[u].position + Vector3.up * (2.2f * HeadK), "援军", new Color(0.6f, 1f, 0.75f), 0f));
+                            flashes.Add((new List<Vector2Int> { u.Pos }, new Color(0.5f, 1f, 0.7f), 0f));
+                        }
+                        yield return new WaitForSeconds(0.6f);
                         break;
                     case TacticsActionKind.Win:
                         CheckChapterEnd(forced: true);
@@ -395,7 +424,7 @@ namespace Prototype.BingshuTactics
             foreach (var u in units.Where(u => u.Alive && (u.Leader || u.Escort)))
             {
                 var g = ToGui(views[u].position + Vector3.up * (2.25f * HeadK));
-                string col = u.Escort ? "#7fe0a0" : "#ff8a70";
+                string col = u.Team == Team.Player ? "#7fe0a0" : "#ff8a70";
                 GUI.Label(new Rect(g.x - 50, g.y - 10, 100, 20), $"<color={col}><b>{(u.Escort ? "护·" : "")}{u.Name}</b></color>", new GUIStyle(center) { fontSize = 15 });
             }
         }

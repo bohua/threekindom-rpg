@@ -19,7 +19,7 @@ namespace ThreeKingdoms.EditorTools
         const string Chars = "Assets/_Project/Art/Sprites/Characters";
         const string GroundDir = "Assets/_Project/Art/Chapter2/Tactics";
         const string DefaultGroundSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v02-tactics-ground";
-        static readonly string[] CharKeys = { "ZhangBao", "ZhangLiang", "NpcDongZhuo", "NpcBandit", "NpcBanditChief", "NpcYellowGuard", "YellowTurban" };
+        static readonly string[] CharKeys = { "ZhangBao", "ZhangLiang", "NpcDongZhuo", "NpcBandit", "NpcBanditChief", "NpcYellowGuard", "YellowTurban", "NpcCaoCao", "NpcHanSoldier" };
 
         static string GroundSource
         {
@@ -39,6 +39,7 @@ namespace ThreeKingdoms.EditorTools
         public static void Build(BattleCatalog catalog)
         {
             var ground = ImportGround();
+            EnsurePixelMaterials();
             var ids = new[] { "battle_4", "battle_5", "battle_6" };
             for (int i = 0; i < ids.Length; i++)
             {
@@ -56,6 +57,25 @@ namespace ThreeKingdoms.EditorTools
             }
             AssetDatabase.SaveAssets();
             Debug.Log("CHAPTER_TACTICS_BUILT ground=" + ground.Length);
+        }
+
+        // Characters that only had an atlas (no battle material yet, e.g. Cao Cao): a material like the Han soldier's, with
+        // that atlas.
+        static void EnsurePixelMaterials()
+        {
+            var template = AssetDatabase.LoadAssetAtPath<Material>($"{Chars}/NpcHanSoldier/NpcHanSoldier_Pixel.mat");
+            if (!template) return;
+            foreach (var k in CharKeys)
+            {
+                string matPath = $"{Chars}/{k}/{k}_Pixel.mat", atlas = $"{Chars}/{k}/{k}_Atlas.png";
+                if (AssetDatabase.LoadAssetAtPath<Material>(matPath)) continue;
+                var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(atlas);
+                if (!tex) continue;
+                var m = new Material(template) { name = k + "_Pixel" };
+                m.SetTexture("_BaseMap", tex); m.mainTexture = tex;
+                AssetDatabase.CreateAsset(m, matPath);
+            }
+            AssetDatabase.SaveAssets();
         }
 
         // hd_grass, hd_road, hd_sand, hd_camp, hd_ford, hd_bridge …: high-resolution painterly tiles, one per 4 m (ZTile).
