@@ -211,6 +211,66 @@
    "filename": "plain_meadow.png",
    "tile_axes": "xy",
    "source": "art/bohai-ground-v2"
+  },
+  {
+   "filename": "dirt_road_v2.png",
+   "tile_axes": "y",
+   "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "pebble_flat_v2.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "pond_water_v2.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "river_water_v2.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "road_edge_band.png",
+   "tile_axes": "x",
+   "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "sand_flat_v2.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "shore_embankment_band.png",
+   "tile_axes": "x",
+   "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "shore_pebble_band.png",
+   "tile_axes": "x",
+   "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "shore_reed_mud_band.png",
+   "tile_axes": "x",
+   "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "shore_sand_band.png",
+   "tile_axes": "x",
+   "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "stone_road_v2.png",
+   "tile_axes": "y",
+   "source": "art/bohai-water-v2"
+  },
+  {
+   "filename": "yellow_river_v2.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-water-v2"
   }
  ]
 }

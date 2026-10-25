@@ -53,13 +53,15 @@ namespace ThreeKingdoms.EditorTools
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.78f, 0.80f, 0.92f);
-            RenderSettings.ambientEquatorColor = new Color(0.70f, 0.64f, 0.58f);
-            RenderSettings.ambientGroundColor = new Color(0.36f, 0.30f, 0.24f);
+            // Bright midday (user 2026-10-25: the plain looked like dawn or dusk): cooler, brighter sky light and a pale blue
+            // haze instead of Zhuojun's warm late-afternoon set; the town scenes keep theirs.
+            RenderSettings.ambientSkyColor = new Color(0.88f, 0.93f, 1.05f);
+            RenderSettings.ambientEquatorColor = new Color(0.80f, 0.80f, 0.76f);
+            RenderSettings.ambientGroundColor = new Color(0.46f, 0.42f, 0.34f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Exponential;
-            RenderSettings.fogDensity = 0.0035f;
-            RenderSettings.fogColor = new Color(0.80f, 0.76f, 0.68f);
+            RenderSettings.fogDensity = 0.0022f;
+            RenderSettings.fogColor = new Color(0.80f, 0.87f, 0.94f);
 
             var env = new GameObject("Environment").transform;
             Ground(env);
@@ -85,13 +87,13 @@ namespace ThreeKingdoms.EditorTools
             Scatter(env);
             T.EndSession();
 
-            var sun = new GameObject("Late-afternoon sun").AddComponent<Light>();
+            var sun = new GameObject("Midday sun").AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.color = new Color(1f, 0.92f, 0.80f);
-            sun.intensity = 2.2f;
+            sun.color = new Color(1f, 0.98f, 0.93f);
+            sun.intensity = 2.35f;
             sun.shadows = LightShadows.Soft;
-            sun.shadowStrength = 0.8f;
-            sun.transform.rotation = Quaternion.Euler(42f, -32f, 0f);
+            sun.shadowStrength = 0.65f;
+            sun.transform.rotation = Quaternion.Euler(58f, -28f, 0f);
 
             var map = BakeMinimap();
             Locations();
@@ -205,8 +207,8 @@ namespace ThreeKingdoms.EditorTools
             var g = T.Group(parent, name);
             for (int i = 0; i + 1 < points.Length; i++)
             {
-                Strip(g, "Road", "ground_packed_earth", points[i], points[i + 1], width, 0.004f + i * 0.0002f);
-                if (width >= 7f && T.Tex("ground_earth_ruts", optional: true))
+                Strip(g, "Road", K("dirt_road_v2", "ground_packed_earth"), points[i], points[i + 1], width, 0.004f + i * 0.0002f);
+                if (width >= 7f && T.Tex("ground_earth_ruts", optional: true) && !T.Tex("dirt_road_v2", optional: true))
                     Strip(g, "Ruts", "ground_earth_ruts", points[i], points[i + 1], width * 0.55f, 0.006f + i * 0.0002f);
             }
         }
@@ -269,7 +271,7 @@ namespace ThreeKingdoms.EditorTools
             var g = T.Group(env, "Yellow River");
             if (!water)
             {
-                water = new Material(T.Mat(K("water_yellow_river", "wb_water_muddy"))) { name = "yellow_river_water" };
+                water = new Material(T.Mat(K("yellow_river_v2", K("water_yellow_river", "wb_water_muddy")))) { name = "yellow_river_water" };
                 water.SetFloat("_Smoothness", 0.55f);
                 water.SetFloat("_SpecularHighlights", 1f); water.DisableKeyword("_SPECULARHIGHLIGHTS_OFF");
                 string path = $"{MaterialDir}/{water.name}.mat";
@@ -277,7 +279,7 @@ namespace ThreeKingdoms.EditorTools
                 AssetDatabase.CreateAsset(water, path);
             }
             var size = new Vector2(XMax - XMin + 200f, WaterN - WaterS);
-            T.Quad(g, "Water", new Vector3(0, WaterY, (WaterN + WaterS) / 2f), new Vector3(90f, 0, 0), size, water, T.Repeat(K("water_yellow_river", "wb_water_muddy"), size), castShadows: false);
+            T.Quad(g, "Water", new Vector3(0, WaterY, (WaterN + WaterS) / 2f), new Vector3(90f, 0, 0), size, water, T.Repeat(K("yellow_river_v2", K("water_yellow_river", "wb_water_muddy")), size), castShadows: false);
             // Mud shelf from the levee foot down into the water, and the far (south) bank: R6, not open.
             float shelf = WaterN - 1f - LeveeSouth;   // negative run southward
             var mud = new Vector2(XMax - XMin + 200f, Mathf.Sqrt(shelf * shelf + WaterY * WaterY));
@@ -1091,7 +1093,7 @@ namespace ThreeKingdoms.EditorTools
             for (int i = 0; i + 1 < points.Length; i++)
             {
                 Vector3 a = points[i], b = points[i + 1];
-                Strip(g, "Stone paving", "ground_street_stone", a, b, width, 0.005f + i * 0.0002f);
+                Strip(g, "Stone paving", K("stone_road_v2", "ground_street_stone"), a, b, width, 0.005f + i * 0.0002f);
                 var d = (b - a); d.y = 0f; float len = d.magnitude; d /= len;
                 float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
                 var right = new Vector3(d.z, 0, -d.x);
@@ -1105,6 +1107,16 @@ namespace ThreeKingdoms.EditorTools
                             T.Mat(side, twoSided: true), new Vector2(len / T.Metres(side).x, 1f), castShadows: false);
                 }
             }
+            if (T.Tex("road_edge_band", optional: true))
+                for (int i = 0; i + 1 < points.Length; i++)
+                {
+                    var d = points[i + 1] - points[i]; d.y = 0f; float len = d.magnitude; d /= len;
+                    float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg; var right = new Vector3(d.z, 0, -d.x);
+                    float dep = T.Metres("road_edge_band").y;
+                    foreach (int s2 in new[] { -1, 1 })
+                        T.Quad(g, "Road edge", (points[i] + points[i + 1]) / 2f + right * s2 * (width / 2f + CurbWidth + dep / 2f - 0.2f) + new Vector3(0, 0.0058f, 0),
+                            new Vector3(90f, yaw + (s2 > 0 ? 90f : -90f), 0), new Vector2(len + 0.6f, dep), T.Mat("road_edge_band", clip: true), new Vector2((len + 0.6f) / T.Metres("road_edge_band").x, 1f), castShadows: false);
+                }
             Avenue(g, width, points);
         }
 
@@ -1397,7 +1409,19 @@ namespace ThreeKingdoms.EditorTools
             go.transform.SetParent(pg, false);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var r = go.AddComponent<MeshRenderer>();
-            r.sharedMaterial = T.Mat(K("water_channel", "water_yellow_river"));
+            r.sharedMaterial = T.Mat(K("pond_water_v2", K("water_channel", "water_yellow_river")));
+            if (T.Tex("pond_water_v2", optional: true)) { for (int u = 0; u < uvs.Count; u++) uvs[u] = uvs[u] / 6f; mesh.SetUVs(0, uvs); }   // 12 m tiles
+            string shoreBand = T.Tex("shore_reed_mud_band", optional: true) ? "shore_reed_mud_band" : null;
+            if (shoreBand != null)
+                for (int i = 0; i < ReedPond.Length; i++)
+                {
+                    var a2 = ReedPond[i]; var b2 = ReedPond[(i + 1) % ReedPond.Length];
+                    var d2 = (b2 - a2); float l2 = d2.magnitude; d2 /= l2;
+                    var outw = new Vector2(d2.y, -d2.x); if (Vector2.Dot(outw, (a2 + b2) / 2f - centre) < 0f) outw = -outw;
+                    float dep = T.Metres(shoreBand).y; var m2 = (a2 + b2) / 2f + outw * (dep / 2f - 0.8f);
+                    float yaw2 = Mathf.Atan2(outw.x, outw.y) * Mathf.Rad2Deg;   // texture up (away from water) along outw
+                    T.Quad(pg, "Pond shore", new Vector3(m2.x, 0.0145f + i * 0.00002f, m2.y), new Vector3(90f, yaw2, 0), new Vector2(l2 + 1.2f, dep), T.Mat(shoreBand, clip: true), new Vector2((l2 + 1.2f) / T.Metres(shoreBand).x, 1f), castShadows: false);
+                }
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             // Mud and reeds round the shore.
             var rng = new System.Random(59);
@@ -1436,8 +1460,12 @@ namespace ThreeKingdoms.EditorTools
         static void RiverStrips(Transform g)
         {
             var rg = T.Group(g, "Rivers (plan)");
-            string water = K("water_channel", "water_yellow_river");
+            string water = K("river_water_v2", K("water_channel", "water_yellow_river"));
             string bank = T.Tex("river_bank_slope", optional: true) ? "river_bank_slope" : T.Tex("river_bank", optional: true) ? "river_bank" : null;
+            // Shore bands (art/bohai-water-v2): sand, pebble or reed mud chosen along the river by noise, so the shore
+            // changes from stretch to stretch (user 2026-10-25: water needs a gradual edge, not one look everywhere).
+            string[] shores = Have("shore_sand_band", "shore_pebble_band", "shore_reed_mud_band");
+            if (shores.Length > 0) bank = null;
             string[] mud = Have("decal_mud_bank_a", "decal_mud_bank_b"), meadow = Have("decal_green_meadow_a", "decal_green_meadow_b");
             string reeds = K("prop_reeds", "prop_grass_tuft");
             foreach (var (name, width, raw) in Rivers)
@@ -1459,9 +1487,17 @@ namespace ThreeKingdoms.EditorTools
                     foreach (int s2 in new[] { -1, 1 })
                     {
                         var edge = mid + right * s2 * (width / 2f);
+                        if (shores.Length > 0)
+                        {
+                            float n = Mathf.PerlinNoise(mid.x * 0.012f + (s2 > 0 ? 40f : 0f), mid.z * 0.012f);
+                            string key = shores[Mathf.Min(shores.Length - 1, (int)(n * shores.Length))];
+                            float depth = T.Metres(key).y;
+                            T.Quad(r, "Shore", edge + right * s2 * (depth / 2f - 0.8f) + new Vector3(0, 0.015f + (i % 50) * 0.00002f, 0),
+                                new Vector3(90f, yaw + (s2 > 0 ? 90f : -90f), 0), new Vector2(len + 0.8f, depth), T.Mat(key, clip: true), new Vector2((len + 0.8f) / T.Metres(key).x, 1f), castShadows: false);
+                        }
                         if (bank != null)
                             T.Quad(r, "Bank", edge + right * s2 * (bankDepth / 2f - 0.6f) + new Vector3(0, 0.015f + (i % 50) * 0.00002f, 0),
-                                new Vector3(90f, yaw + (s2 > 0 ? -90f : 90f), 0), new Vector2(len + 0.6f, bankDepth), T.Mat(bank, clip: true), new Vector2((len + 0.6f) / T.Metres(bank).x, 1f), castShadows: false);
+                                new Vector3(90f, yaw + (s2 > 0 ? 90f : -90f), 0), new Vector2(len + 0.6f, bankDepth), T.Mat(bank, clip: true), new Vector2((len + 0.6f) / T.Metres(bank).x, 1f), castShadows: false);
                         if (UnderBridge(edge, 4f)) continue;
                         if (mud.Length > 0 && rng.Next(3) == 0) Decal(r, mud[rng.Next(mud.Length)], edge.x + right.x * s2 * 1.5f, edge.z + right.z * s2 * 1.5f, rng, 0.7f + (float)rng.NextDouble() * 0.5f);
                         if (meadow.Length > 0 && rng.Next(4) == 0) { var m = edge + right * s2 * (5f + (float)rng.NextDouble() * 6f); if (!Near(m.x, m.z)) Decal(r, meadow[rng.Next(meadow.Length)], m.x, m.z, rng, 0.8f + (float)rng.NextDouble() * 0.6f); }
@@ -1723,7 +1759,7 @@ namespace ThreeKingdoms.EditorTools
                     string[] set = null; float chance = 0f, scale = 1f;
                     if (river < 26f && meadow.Length > 0) { set = meadow; chance = Ramp(26f - river, 0f, 10f); }
                     else if (river < 26f) continue;
-                    else if (salt.Length > 0 && saltness > 0.63f) { set = salt; chance = Ramp(saltness, 0.63f, 0.12f) * 0.6f; }
+                    else if (salt.Length > 0 && saltness > 0.63f) { set = salt; chance = Ramp(saltness, 0.66f, 0.12f) * 0.3f; scale = 0.7f; }
                     else if (dirt.Length > 0 && dryness > 0.68f) { set = dirt; chance = Ramp(dryness, 0.68f, 0.08f) * 0.8f; }
                     else if (dryness > 0.46f && dry.Length > 0) { set = dry; chance = Ramp(dryness, 0.46f, 0.1f); scale = 1.2f; }
                     else if (flowers.Length > 0) { set = flowers; chance = 0.12f; }
@@ -1864,6 +1900,29 @@ namespace ThreeKingdoms.EditorTools
 
         // ---------- camera ----------
 
+        // The region's own post profiles: the shared HD-2D look minus most of Zhuojun's warm LUT, a touch more exposure and
+        // saturation, a lighter vignette (user 2026-10-25: brighter daytime).
+        static (VolumeProfile high, VolumeProfile low) DaylightProfiles()
+        {
+            VolumeProfile Make(string src, string dst)
+            {
+                AssetDatabase.CopyAsset(src, dst);
+                var p = AssetDatabase.LoadAssetAtPath<VolumeProfile>(dst);
+                if (p.TryGet<UnityEngine.Rendering.Universal.ColorLookup>(out var lut)) lut.contribution.Override(0.25f);
+                if (p.TryGet<UnityEngine.Rendering.Universal.ColorAdjustments>(out var c)) { c.postExposure.Override(0f); c.saturation.Override(18f); c.contrast.Override(10f); }
+                if (p.TryGet<UnityEngine.Rendering.Universal.Vignette>(out var v)) v.intensity.Override(0.15f);
+                var wb = p.TryGet<UnityEngine.Rendering.Universal.WhiteBalance>(out var w) ? w : p.Add<UnityEngine.Rendering.Universal.WhiteBalance>(true);
+                if (!AssetDatabase.IsSubAsset(wb)) AssetDatabase.AddObjectToAsset(wb, p);
+                wb.temperature.Override(-8f);
+                EditorUtility.SetDirty(p);
+                return p;
+            }
+            var high = Make(HD2DSampleBuilder.HighProfilePath, ArtDir + "/Bohai_Daylight_High.asset");
+            var low = Make(HD2DSampleBuilder.LowProfilePath, ArtDir + "/Bohai_Daylight_Low.asset");
+            AssetDatabase.SaveAssets();
+            return (high, low);
+        }
+
         static void Camera(Transform player)
         {
             var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
@@ -1885,8 +1944,7 @@ namespace ThreeKingdoms.EditorTools
             follow.Pitch = HD2DSampleBuilder.CameraPitch; follow.Distance = HD2DSampleBuilder.CameraDistance; follow.Fov = HD2DSampleBuilder.CameraFov;
             camGo.AddComponent<SeeThroughOccluders>().Target = player;
 
-            var high = AssetDatabase.LoadAssetAtPath<VolumeProfile>(HD2DSampleBuilder.HighProfilePath);
-            var low = AssetDatabase.LoadAssetAtPath<VolumeProfile>(HD2DSampleBuilder.LowProfilePath);
+            var (high, low) = DaylightProfiles();
             var volumeGo = new GameObject("Global Volume");
             var volume = volumeGo.AddComponent<Volume>();
             volume.isGlobal = true;
