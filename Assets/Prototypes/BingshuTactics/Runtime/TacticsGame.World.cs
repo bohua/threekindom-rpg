@@ -427,7 +427,7 @@ namespace Prototype.BingshuTactics
                     switch (t)
                     {
                         case Terrain.JuMa: JuMa(c); break;
-                        case Terrain.Woods: Tree(c + new Vector3((Hash(x, y, 5) - 0.5f) * 0.3f, 0, (Hash(x, y, 6) - 0.5f) * 0.3f), (int)(Hash(x, y, 7) * 3)); break;
+                        case Terrain.Woods: Tree(c + new Vector3((Hash(x, y, 5) - 0.5f) * 0.3f, 0, (Hash(x, y, 6) - 0.5f) * 0.3f), (int)(Hash(x, y, 7) * 3), 0.5f); break;   // 树林格里的树缩小，不挡住战场
                         case Terrain.Rock:   // 精修件：岩石露头精灵；没有时退回低多边形岩块
                             if (!Billboard("sprite_rock_outcrop_a", c, 0.7f)) RockMesh(B(Stone), c, 0.5f, x * 7 + y);
                             break;
@@ -704,9 +704,9 @@ namespace Prototype.BingshuTactics
         readonly Dictionary<int, Material> treeMats = new Dictionary<int, Material>();
 
         // 树：六棱柱树干＋与人物同角度的树冠公告板
-        void Tree(Vector3 c, int kind)
+        void Tree(Vector3 c, int kind, float scale = 1f)
         {
-            if (Billboard(kind == 0 ? "prop_tree_cypress" : kind == 1 ? "prop_tree_elm" : "prop_tree_willow", c, 1f)) return;   // 涿郡整树精灵
+            if (Billboard(kind == 0 ? "prop_tree_cypress" : kind == 1 ? "prop_tree_elm" : "prop_tree_willow", c, scale)) return;   // 涿郡整树精灵
             var trunk = B(Wood);
             float th = kind == 0 ? 0.9f : 0.7f;
             for (int i = 0; i < 6; i++)

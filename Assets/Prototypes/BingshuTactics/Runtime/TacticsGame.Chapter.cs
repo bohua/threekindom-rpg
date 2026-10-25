@@ -126,11 +126,11 @@ namespace Prototype.BingshuTactics
         void ChapterLighting(Light sun)
         {
             if (!Chapter.Night) return;
-            sun.color = new Color(0.62f, 0.72f, 1f); sun.intensity = 0.75f;
+            sun.color = new Color(0.70f, 0.78f, 1f); sun.intensity = 1.5f;
             sun.transform.rotation = Quaternion.Euler(55f, 200f, 0f);
-            RenderSettings.ambientSkyColor = new Color(0.22f, 0.27f, 0.42f);
-            RenderSettings.ambientEquatorColor = new Color(0.16f, 0.18f, 0.28f);
-            RenderSettings.ambientGroundColor = new Color(0.08f, 0.08f, 0.12f);
+            RenderSettings.ambientSkyColor = new Color(0.50f, 0.56f, 0.78f);
+            RenderSettings.ambientEquatorColor = new Color(0.40f, 0.42f, 0.56f);
+            RenderSettings.ambientGroundColor = new Color(0.22f, 0.22f, 0.28f);
             RenderSettings.fogColor = new Color(0.10f, 0.12f, 0.20f);
             cam.backgroundColor = new Color(0.04f, 0.05f, 0.09f);
         }
@@ -323,14 +323,14 @@ namespace Prototype.BingshuTactics
                 var q = GameObject.CreatePrimitive(PrimitiveType.Quad);
                 Destroy(q.GetComponent<Collider>());
                 q.transform.SetParent(root, false);
-                q.transform.localPosition = new Vector3((k - 1) * 0.3f, 0.45f, (k % 2) * 0.2f - 0.1f);
-                q.transform.localScale = new Vector3(0.6f, 0.9f, 1f);
+                q.transform.localPosition = new Vector3((k - 1) * 0.28f, 0.25f, (k % 2) * 0.2f - 0.1f);
+                q.transform.localScale = new Vector3(0.32f, 0.5f, 1f);
                 var r = q.GetComponent<MeshRenderer>(); r.sharedMaterial = fireMat; r.shadowCastingMode = ShadowCastingMode.Off;
                 billboards.Add(q.transform);
             }
             var l = new GameObject("Fire light").AddComponent<Light>();
             l.transform.SetParent(root, false); l.transform.localPosition = Vector3.up * 0.8f;
-            l.type = LightType.Point; l.color = new Color(1f, 0.55f, 0.2f); l.range = 4.5f; l.intensity = 2.5f;
+            l.type = LightType.Point; l.color = new Color(1f, 0.55f, 0.2f); l.range = 3f; l.intensity = 1f;
             fires.Add((root, l, Random.value * 10f));
             flashes.Add((new List<Vector2Int> { p }, new Color(1f, 0.5f, 0.1f), 0f));
         }
@@ -342,8 +342,8 @@ namespace Prototype.BingshuTactics
             foreach (var (t, l, ph) in fires)
             {
                 float f = Mathf.PerlinNoise(Time.time * 3f, ph);
-                l.intensity = 1.8f + 1.6f * f;
-                foreach (Transform q in t) if (q != l.transform) q.localScale = new Vector3(0.6f, 0.75f + 0.35f * f, 1f);
+                l.intensity = 0.7f + 0.6f * f;
+                foreach (Transform q in t) if (q != l.transform) q.localScale = new Vector3(0.32f, 0.42f + 0.18f * f, 1f);
             }
         }
 
@@ -364,7 +364,7 @@ namespace Prototype.BingshuTactics
         {
             if (!string.IsNullOrEmpty(objective) && mode != Mode.Circuit)
             {
-                var r = new Rect(sw - 330, 84, 316, 30);
+                var r = new Rect(sw - 330, 272, 316, 30);   // 小地图下方
                 Rect(r, new Color(Ink.r, Ink.g, Ink.b, 0.88f));
                 Rect(new Rect(r.x, r.y, 3, r.height), Teal);
                 GUI.Label(new Rect(r.x + 12, r.y, r.width - 16, r.height), "目标：" + objective, St(15, Ivory, TextAnchor.MiddleLeft));
