@@ -147,6 +147,62 @@
    "width": 1440,
    "height": 480,
    "tile_axes": "x"
+  },
+  {
+   "filename": "gaotang_gate_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "gaotang_hall_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "gaotang_hall_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "gaotang_shop_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "gaotang_shop_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "gaotang_wall_face_hd.png",
+   "tile_axes": "x"
+  },
+  {
+   "filename": "gaotang_wall_top_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "gaotang_roof_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "levee_slope_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "levee_stone_toe_hd.png",
+   "tile_axes": "x"
+  },
+  {
+   "filename": "levee_fence_hd.png",
+   "tile_axes": "x"
+  },
+  {
+   "filename": "dock_planks_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "bridge_deck_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "bridge_rail_hd.png",
+   "tile_axes": "x"
   }
  ]
 }
