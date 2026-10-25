@@ -239,11 +239,29 @@ namespace ThreeKingdoms.UI.Story
             if (key != shownComic)
             {
                 shownComic = key; comicT = 0f;
+                ComicShot(key);
                 comicImage.style.backgroundImage = tex ? new StyleBackground(tex) : new StyleBackground(StyleKeyword.None);
             }
             comic.style.display = key != null ? DisplayStyle.Flex : DisplayStyle.None;
             comicT += Time.unscaledDeltaTime;
             comicFrame.style.opacity = Mathf.Clamp01(comicT / 0.35f);   // each new panel fades in
+        }
+
+        // -comicShots <dir>: save each comic panel as it appears (screenshots for review).
+        void ComicShot(string key)
+        {
+            if (key == null) return;
+            var args = System.Environment.GetCommandLineArgs();
+            int i = System.Array.IndexOf(args, "-comicShots");
+            if (i < 0 || i + 1 >= args.Length) return;
+            StartCoroutine(Shoot(System.IO.Path.Combine(args[i + 1], key + ".png")));
+        }
+
+        static System.Collections.IEnumerator Shoot(string path)
+        {
+            yield return new WaitForSecondsRealtime(0.7f);
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
+            ScreenCapture.CaptureScreenshot(path);
         }
 
         void ShowChoices(IReadOnlyList<string> keys)

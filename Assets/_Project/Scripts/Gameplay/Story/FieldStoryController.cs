@@ -83,13 +83,30 @@ namespace ThreeKingdoms.Gameplay.Story
             ObjectiveText = () => FieldScripts.Objective(this);
             var arrival = FieldScripts.OnArrive(this);
             if (arrival != null) Play(arrival);
+            if (DevTalk != null && Run.IsDevelopment) StartCoroutine(DevTalkRoutine());
             Changed?.Invoke();
         }
 
         // Opened on its own (development): a run at this place's step.
         GameRun DevRun()
         {
-            return GameRun.ForChapter(Catalog, Location == Place.Camp ? ChapterStep.Camp : ChapterStep.Anxi, Location == Place.Camp ? 60 : 150, 260, 2, development: true);
+            var step = DevStep ?? (Location == Place.Camp ? ChapterStep.Camp : ChapterStep.Anxi);
+            return GameRun.ForChapter(Catalog, step, Location == Place.Camp ? 60 : step >= ChapterStep.AnxiBandits ? 210 : 150, 260, 2, development: true);
+        }
+
+        // Development (-chapterStep, -fieldTalk): open at a later step and talk to someone once the arrival scene is over.
+        public static ChapterStep? DevStep;
+        public static string DevTalk;
+
+        System.Collections.IEnumerator DevTalkRoutine()
+        {
+            while (Busy) yield return null;
+            yield return new WaitForSeconds(0.5f);
+            var who = Find(DevTalk);
+            if (!who) yield break;
+            PlaceAt(Player.transform, who.position + new Vector3(0, 0, -1.4f));
+            yield return null; yield return null;
+            Interact();
         }
 
         void Update()

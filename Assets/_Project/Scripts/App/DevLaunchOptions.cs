@@ -20,6 +20,9 @@ namespace ThreeKingdoms.App
         static void Boot()
         {
             // 0.2: -stage <id> picks the story-stage script; -stageAuto <seconds> moves lines on and takes the first choice.
+            if (System.Enum.TryParse(LaunchArgs.Get("-chapterStep") ?? "", out ThreeKingdoms.Core.Story.ChapterStep chapterStep))
+                ThreeKingdoms.Gameplay.Story.FieldStoryController.DevStep = chapterStep;
+            ThreeKingdoms.Gameplay.Story.FieldStoryController.DevTalk = LaunchArgs.Get("-fieldTalk");
             string stageId = LaunchArgs.Get("-stage");
             if (stageId != null) ThreeKingdoms.Gameplay.Story.StageController.DevOverride = stageId;
             if (float.TryParse(LaunchArgs.Get("-stageAuto"), NumberStyles.Float, CultureInfo.InvariantCulture, out float stageAuto))

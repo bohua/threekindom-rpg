@@ -73,7 +73,11 @@ public sealed class ChapterFlowTests
             }
             Assert.Less(Time.realtimeSinceStartup, deadline, "scene " + scene + " stuck");
             var hud = Object.FindFirstObjectByType<ThreeKingdoms.UI.Story.StageHud>();
-            if (hud && hud.ShownComic != null) comics.Add(hud.ShownComic);
+            if (hud && hud.ShownComic != null && comics.Add(hud.ShownComic))
+            {
+                var shots = System.Environment.GetEnvironmentVariable("CHAPTER_TEST_SHOTS");
+                if (!string.IsNullOrEmpty(shots)) { System.IO.Directory.CreateDirectory(shots); yield return new WaitForSecondsRealtime(0.5f); ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(shots, hud.ShownComic + ".png")); }
+            }
             if (screen.Choices != null) player.Choose(picks.Count > 0 ? picks.Dequeue() : 0);
             else player.Advance();
             yield return null;
