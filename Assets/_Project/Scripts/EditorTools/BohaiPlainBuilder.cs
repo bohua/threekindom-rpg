@@ -481,7 +481,8 @@ namespace ThreeKingdoms.EditorTools
             OnPlinth(c, "House NW2", new Vector3(-75f, 0, -123f), hf, hs, null, "thatch", Thatch);
             var green = T.Group(c, "Yard greens");
             foreach (var (gx0, gx1, gz0, gz1) in new[] { (-108f, -100f, -128f, -118f), (-20f, -12f, -193f, -188f), (-108f, -101f, -193f, -189f), (-48f, -40f, -160f, -150f) })
-                T.Patch(green, "Green", "ground_grass", gx0, gx1, gz0, gz1, 0.0035f);
+                if (HdGroundIn) SoftPatch(green, "Green", "ground_grass", gx0, gx1, gz0, gz1, 0.0035f, (int)(gx0 * 7 + gz0), wobble: 0.5f, corner: 2f, edge: "earth_edge_hd", edgeWidth: 1.6f, inward: true);
+                else T.Patch(green, "Green", "ground_grass", gx0, gx1, gz0, gz1, 0.0035f);
             (string key, float x, float z)[] trees = { ("prop_tree_elm", -104f, -123f), ("prop_tree_willow", -16f, -190f), ("prop_tree_elm", -104f, -191f),
                 ("prop_tree_locust", -44f, -155f), ("prop_tree_willow", -80f, -140f), ("prop_tree_elm", -40f, -133f), ("prop_tree_locust", -89f, -176f) };
             foreach (var (key, x, z) in trees) T.Prop(green, key, x, z, scale: 0.85f, solid: true);
@@ -735,6 +736,7 @@ namespace ThreeKingdoms.EditorTools
             // marsh on both sides so the reason is visible.
             var b = T.Group(env, "Jinan-road checkpoint (屏障口)");
             float bx = 545f;
+            if (HdGroundIn) EarthPatch(env, new Vector3(bx - 8f, 0, 22f), 12f, 14f, 47);
             float stake = T.Metres("palisade_stakes").y;
             T.Strip(b, "Palisade N", "palisade_stakes", new Vector3(bx, 0, 26f), new Vector3(bx, 0, 90f), stake);
             T.Strip(b, "Palisade S", "palisade_stakes", new Vector3(bx, 0, -50f), new Vector3(bx, 0, 14f), stake);
@@ -747,8 +749,16 @@ namespace ThreeKingdoms.EditorTools
             else Box(b, "Closed gate", new Vector3(bx, 0, 20f), new Vector3(0.6f, 3f, 12f), 0.32f);
             if (T.Tex("watchtower_front", optional: true))
                 T.Building(b, "Watchtower", new Vector3(bx - 6f, 0, 31f), 0f, "watchtower_front", "watchtower_side", "watchtower_front", interior: "wall_rammed_earth");
-            T.Patch(b, "Marsh N", "wb_water_muddy", bx - 6f, bx + 15f, 34f, 110f, 0.002f);
-            T.Patch(b, "Marsh S", "wb_water_muddy", bx - 6f, bx + 15f, -80f, 8f, 0.002f);
+            if (T.Tex("pond_water_hd", optional: true))
+            {
+                SoftPatch(b, "Marsh N", "pond_water_v2", bx - 6f, bx + 15f, 34f, 110f, 0.004f, 71, wobble: 2.5f, corner: 6f, edge: "shore_reed_mud_hd", edgeWidth: 4f);
+                SoftPatch(b, "Marsh S", "pond_water_v2", bx - 6f, bx + 15f, -80f, 8f, 0.004f, 73, wobble: 2.5f, corner: 6f, edge: "shore_reed_mud_hd", edgeWidth: 4f);
+            }
+            else
+            {
+                T.Patch(b, "Marsh N", "wb_water_muddy", bx - 6f, bx + 15f, 34f, 110f, 0.002f);
+                T.Patch(b, "Marsh S", "wb_water_muddy", bx - 6f, bx + 15f, -80f, 8f, 0.002f);
+            }
             T.Prop(b, "prop_banner_han", bx - 1.5f, 13.5f);
             T.Prop(b, "prop_banner_han", bx - 1.5f, 26.5f);
             Label(labels, "济南方向哨卡（屏障：193年开放）", new Vector3(bx, 0, 20f), 7f);
@@ -784,7 +794,10 @@ namespace ThreeKingdoms.EditorTools
             for (int i = 0; i < 4; i++)
             {
                 float x = -60f + i * 30f + (float)rng.NextDouble() * 6f, z = -26f - (float)rng.NextDouble() * 10f;
-                T.Patch(v, "Field", "ground_vegetable_plot", x - 11f, x + 11f, z - 9f, z + 2f, 0.002f);
+                if (T.Tex("farm_field_hd", optional: true))
+                    SoftPatch(env, "Field", "farm_field", centre.x + x - 11f, centre.x + x + 11f, centre.z + z - 9f, centre.z + z + 2f, 0.0052f, seed * 7 + i,
+                        wobble: 0.5f, corner: 2.5f, edge: "earth_edge_hd", edgeWidth: 2.2f);
+                else T.Patch(v, "Field", "ground_vegetable_plot", x - 11f, x + 11f, z - 9f, z + 2f, 0.002f);
             }
             for (int i = 0; i < 9; i++)
             {
@@ -801,6 +814,7 @@ namespace ThreeKingdoms.EditorTools
         {
             // 1 Beacon ruin by the levee: a broken rammed-earth tower, rubble, a dead tree.
             var b = T.Group(env, "Beacon ruin (废烽燧)", new Vector3(-330f, 0, -170f));
+            if (HdGroundIn) EarthPatch(env, b.position + new Vector3(0, 0, -2f), 13f, 11f, 41);   // trodden earth round the ruin's foot
             if (!Landmark(b, "beacon"))
             {
             Box(b, "Tower stump", Vector3.zero, new Vector3(6f, 7f, 6f), 0.5f);
@@ -831,6 +845,7 @@ namespace ThreeKingdoms.EditorTools
 
             // 3 Tomb mound with a pair of stone que pillars on its spirit road.
             var t = T.Group(env, "Tomb mound (古冢石阙)", new Vector3(-220f, 0, 260f));
+            if (HdGroundIn) EarthPatch(env, t.position + new Vector3(0, 0, -6f), 19f, 15f, 43);
             if (!Landmark(t, "tomb"))
             {
             for (int i = 0; i < 4; i++) Box(t, "Mound tier", Vector3.zero + new Vector3(0, i * 1.6f, 0), new Vector3(24f - i * 5f, 1.6f, 20f - i * 4.5f), 0.48f);
@@ -1754,6 +1769,7 @@ namespace ThreeKingdoms.EditorTools
                 float noise = Mathf.PerlinNoise(x * 0.035f, z * 0.035f);
                 return Mathf.Min(36f, Mathf.Pow(d, 0.85f) * 1.4f) * (0.6f + 0.8f * noise);
             }
+            float hillTile = T.Metres(K("hill_slope", "wb_levee_face")).x;
             var verts = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
             var index = new int[gw, gh];
             for (int gz = 0; gz < gh; gz++)
@@ -1770,7 +1786,7 @@ namespace ThreeKingdoms.EditorTools
                     if (!near) continue;
                     index[gx, gz] = verts.Count;
                     verts.Add(new Vector3(XMin + x, Height(x, z) - 0.05f, ZMin + z));
-                    uvs.Add(new Vector2(x / 4f, z / 4f));   // hill_slope is 4 m per tile
+                    uvs.Add(new Vector2(x / hillTile, z / hillTile));
                 }
             for (int gz = 0; gz + 1 < gh; gz++)
                 for (int gx = 0; gx + 1 < gw; gx++)
@@ -1842,6 +1858,13 @@ namespace ThreeKingdoms.EditorTools
                 if (!clear) continue;
                 string key = z < -100f && rng.Next(2) == 0 ? salt : farm;
                 if (key == salt && T.Tex("decal_saline_a", optional: true)) continue;   // saline ground comes as decals (GroundVariety)
+                if (T.IsHd(T.Tex(key)))
+                {
+                    // HD: rounded field with a worn earth headland fading into the grass.
+                    SoftPatch(fg, key == farm ? "Field" : "Saline flat", key, x - bw / 2f, x + bw / 2f, z - bd / 2f, z + bd / 2f, 0.0055f + i * 0.00002f, 300 + i,
+                        wobble: key == farm ? 0.5f : 2.5f, corner: key == farm ? 3f : 8f, edge: K("earth_edge_hd", "road_edge_band"), edgeWidth: 2.4f);
+                    continue;
+                }
                 T.Patch(fg, key == farm ? "Field" : "Saline flat", key, x - bw / 2f, x + bw / 2f, z - bd / 2f, z + bd / 2f, 0.0055f + i * 0.00002f);
                 if (key == farm && T.Tex("decal_field_edge", optional: true))
                 {
@@ -1866,7 +1889,8 @@ namespace ThreeKingdoms.EditorTools
         static string[] Have(params string[] keys) => keys.Where(k => T.Tex(k, optional: true)).ToArray();
 
         // Pixel grass/earth decals look like stains on the high-res painted ground, so they stay out once it is in.
-        static readonly string[] PixelGroundDecals = { "decal_loess_dirt", "decal_dry_grass", "decal_saline", "decal_wild_flowers", "decal_green_meadow" };
+        static readonly string[] PixelGroundDecals = { "decal_loess_dirt", "decal_dry_grass", "decal_saline", "decal_wild_flowers", "decal_green_meadow",
+            "decal_forest_litter", "decal_scree", "decal_mud_bank", "decal_field_edge" };
         static bool HdGroundIn => T.IsHd(T.Tex("plain_grass_a", optional: true));
 
         static void Decal(Transform parent, string key, float x, float z, System.Random rng, float scale = 1f)
@@ -1969,6 +1993,39 @@ namespace ThreeKingdoms.EditorTools
 
         static bool splatGround;
 
+        // 0..1 share of cells within `radius` that match, by two box-blur passes.
+        static float[,] BlurredMask(int w, int h, System.Func<Cell, bool> match, int radius)
+        {
+            var a = new float[w, h]; var b = new float[w, h];
+            for (int z = 0; z < h; z++) for (int x = 0; x < w; x++) a[x, z] = match(At(XMin + x + 0.5f, ZMin + z + 0.5f)) ? 1f : 0f;
+            for (int pass = 0; pass < 2; pass++)
+            {
+                for (int z = 0; z < h; z++)
+                {
+                    float sum = 0f; int n = 0;
+                    for (int x = -radius; x < w + radius; x++)
+                    {
+                        int add = x + radius, rem = x - radius - 1;
+                        if (add >= 0 && add < w) { sum += a[add, z]; n++; }
+                        if (rem >= 0 && rem < w) { sum -= a[rem, z]; n--; }
+                        if (x >= 0 && x < w) b[x, z] = n > 0 ? sum / n : 0f;
+                    }
+                }
+                for (int x = 0; x < w; x++)
+                {
+                    float sum = 0f; int n = 0;
+                    for (int z = -radius; z < h + radius; z++)
+                    {
+                        int add = z + radius, rem = z - radius - 1;
+                        if (add >= 0 && add < h) { sum += b[x, add]; n++; }
+                        if (rem >= 0 && rem < h) { sum -= b[x, rem]; n--; }
+                        if (z >= 0 && z < h) a[x, z] = n > 0 ? sum / n : 0f;
+                    }
+                }
+            }
+            return a;
+        }
+
         static void SplatGround(Transform env)
         {
             splatGround = false;
@@ -1977,6 +2034,10 @@ namespace ThreeKingdoms.EditorTools
             if (!shader || keys.Any(k => !T.Tex(k, optional: true))) return;
             int w = Mathf.RoundToInt(XMax - XMin), h = Mathf.RoundToInt(ZMax - ZMin);
             var px = new Color32[w * h];
+            // Near the hills and woods the plain turns dry and bare (blurred masks), so they rise out of a matching
+            // ground instead of a hard line on green grass (user 2026-10-25: every terrain change has a transition).
+            var hillNear = BlurredMask(w, h, c => c == Cell.Mountain || c == Cell.Foothill, 10);
+            var woodNear = BlurredMask(w, h, c => c == Cell.Forest, 6);
             for (int z = 0; z < h; z++)
                 for (int x = 0; x < w; x++)
                 {
@@ -1986,6 +2047,10 @@ namespace ThreeKingdoms.EditorTools
                     float river = RiverDistance(wx, wz, out _);
                     float bare = Mathf.PerlinNoise(wx * 0.02f + 31f, wz * 0.02f + 17f);
                     byte B(float v) => (byte)Mathf.RoundToInt(Mathf.Clamp01(v) * 255f);
+                    float hn = hillNear[x, z], wn = woodNear[x, z];
+                    dryness = Mathf.Max(dryness, 0.48f + hn * 0.35f);
+                    second = Mathf.Max(second, 0.45f + wn * 0.4f);
+                    if (hn > 0.35f) bare = 1f;
                     px[z * w + x] = new Color32(
                         B((second - 0.45f) / 0.15f),                       // R: the yellower main grass in broad drifts
                         B((dryness - 0.48f) / 0.12f),                      // G: dry grass zones
@@ -2148,7 +2213,14 @@ namespace ThreeKingdoms.EditorTools
             T.Quad(gate, "Passage ceiling", new Vector3(0, 4.5f, 0), new Vector3(-90f, 0, 0), new Vector2(4f, 4f), T.Mat("timber_beam"), T.Repeat("timber_beam", new Vector2(4f, 4f)), castShadows: false);
             T.Solid(gate, new Vector3(0, (4.5f + gf.y) / 2f, 0), new Vector3(4f, gf.y - 4.5f, 4f));
             string square = K("gaotang_square", "ground_street_stone");
-            T.Patch(g, "Gaotang square", square, cx - 16f, cx + 16f, wz + 2f, wz + 30f, 0.006f);
+            if (T.IsHd(T.Tex(square)))
+            {
+                // The whole yard inside the walls is beaten earth (concept: art/gaotang-b1); the square before the hall
+                // is the cleaner, lighter earth, fading into it at its edge.
+                T.Patch(g, "Gaotang yard", "ground_packed_earth", cx - 38f, cx + 38f, wz + 1f, wz + 52f, 0.0055f);
+                SoftPatch(g, "Gaotang square", square, cx - 18f, cx + 18f, wz + 1f, wz + 31f, 0.006f, 83, wobble: 1.2f, corner: 6f, edge: "earth_edge_hd", edgeWidth: 2.5f);
+            }
+            else T.Patch(g, "Gaotang square", square, cx - 16f, cx + 16f, wz + 2f, wz + 30f, 0.006f);
             EarthPatch(g, new Vector3(cx, 0, wz - 12f), 12f, 10f, 67);
             string roof = T.Tex("gaotang_roof", optional: true) ? "gaotang_roof" : null;
             var hall = T.Building(g, "County hall (县府)", new Vector3(cx, 0, wz + 31f), 0f, "gaotang_hall_front", "gaotang_hall_side", null, roofKey: "tile", roofTexture: roof);
@@ -2369,6 +2441,58 @@ namespace ThreeKingdoms.EditorTools
             {
                 float a = (float)rng.NextDouble() * Mathf.PI * 2f, d = 1.05f + (float)rng.NextDouble() * 0.2f;
                 Decal(parent, dirt[rng.Next(dirt.Length)], centre.x + Mathf.Cos(a) * rx * d, centre.z + Mathf.Sin(a) * rz * d, rng, 0.5f + (float)rng.NextDouble() * 0.3f);
+            }
+        }
+
+        // A ground patch with rounded corners and a wandering outline, ringed by a soft edge band, in place of a square
+        // T.Patch (user 2026-10-25: no rough square tiles, terrain always changes through a transition; rule for every
+        // map from now on). Coordinates are world space. edge: band texture whose solid side is v = 0; inward = true puts
+        // the solid side outside the outline (a patch of grass on earth fading out from its rim).
+        static void SoftPatch(Transform parent, string name, string key, float x0, float x1, float z0, float z1, float y, int seed,
+            float wobble = 0.8f, float corner = 2.5f, string edge = null, float edgeWidth = 0f, bool inward = false)
+        {
+            var rng = new System.Random(seed);
+            float ph = (float)rng.NextDouble() * 50f;
+            float cx = (x0 + x1) / 2f, cz = (z0 + z1) / 2f, hx = (x1 - x0) / 2f, hz = (z1 - z0) / 2f;
+            corner = Mathf.Min(corner, hx * 0.9f, hz * 0.9f);
+            // Rounded-rectangle perimeter, about every metre, pushed in or out by smooth noise.
+            var rim = new List<Vector3>();
+            float perim = 4f * (hx + hz);
+            int n = Mathf.Clamp(Mathf.CeilToInt(perim / 1.2f), 24, 600);
+            for (int i = 0; i < n; i++)
+            {
+                float a = i / (float)n * Mathf.PI * 2f;
+                var d = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                // Superellipse-like rounded rectangle: clamp the ray to the inner box, then add the corner radius.
+                float ix = hx - corner, iz = hz - corner;
+                float t = Mathf.Min(Mathf.Abs(d.x) > 1e-4f ? ix / Mathf.Abs(d.x) : 1e9f, Mathf.Abs(d.y) > 1e-4f ? iz / Mathf.Abs(d.y) : 1e9f);
+                var q = d * t;
+                q = new Vector2(Mathf.Clamp(q.x, -ix, ix), Mathf.Clamp(q.y, -iz, iz));
+                var outward = (d * 1000f - q).normalized;
+                var pnt = q + outward * corner;
+                float u = i / (float)n * perim;
+                float w = (Mathf.PerlinNoise(u * 0.11f + ph, ph) - 0.5f) * 2f * wobble + (Mathf.PerlinNoise(u * 0.4f + ph, 3f) - 0.5f) * wobble * 0.6f;
+                pnt += pnt.normalized * w;
+                rim.Add(new Vector3(cx + pnt.x, 0, cz + pnt.y));
+            }
+            var tile = T.Metres(key);
+            var verts = new List<Vector3> { new Vector3(cx, y, cz) }; var uvs = new List<Vector2> { new Vector2(cx / tile.x, cz / tile.y) }; var tris = new List<int>();
+            foreach (var r in rim) { verts.Add(r + Vector3.up * y); uvs.Add(new Vector2(r.x / tile.x, r.z / tile.y)); }
+            for (int i = 0; i < n; i++) tris.AddRange(new[] { 0, 1 + (i + 1) % n, 1 + i });
+            var mesh = new Mesh { name = $"{name} {ribbonCount++}", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            mesh.SetVertices(verts); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals();
+            if (mesh.normals[0].y < 0f) { tris.Reverse(); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals(); }
+            mesh.RecalculateBounds();
+            AssetDatabase.AddObjectToAsset(mesh, roadContainer);
+            var go = new GameObject(name); go.transform.SetParent(parent, false); go.transform.position = Vector3.zero;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterial = T.Mat(key); mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            if (edge != null && T.Tex(edge, optional: true))
+            {
+                rim.Add(rim[0]);
+                float dep = edgeWidth > 0f ? edgeWidth : T.Metres(edge).y;
+                if (inward) Ribbon(parent, name + " rim", T.Mat(edge, clip: true), rim.ToArray(), dep * 0.35f, -dep * 0.65f, y + 0.0004f, T.Metres(edge).x, vAcross: true, band: true);
+                else Ribbon(parent, name + " rim", T.Mat(edge, clip: true), rim.ToArray(), -dep * 0.4f, dep * 0.6f, y + 0.0004f, T.Metres(edge).x, vAcross: true, band: true);
             }
         }
 
