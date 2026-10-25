@@ -1723,7 +1723,7 @@ namespace ThreeKingdoms.EditorTools
                     string[] set = null; float chance = 0f, scale = 1f;
                     if (river < 26f && meadow.Length > 0) { set = meadow; chance = Ramp(26f - river, 0f, 10f); }
                     else if (river < 26f) continue;
-                    else if (salt.Length > 0 && saltness > 0.55f) { set = salt; chance = Ramp(saltness, 0.55f, 0.12f); }
+                    else if (salt.Length > 0 && saltness > 0.63f) { set = salt; chance = Ramp(saltness, 0.63f, 0.12f) * 0.6f; }
                     else if (dirt.Length > 0 && dryness > 0.68f) { set = dirt; chance = Ramp(dryness, 0.68f, 0.08f) * 0.8f; }
                     else if (dryness > 0.46f && dry.Length > 0) { set = dry; chance = Ramp(dryness, 0.46f, 0.1f); scale = 1.2f; }
                     else if (flowers.Length > 0) { set = flowers; chance = 0.12f; }

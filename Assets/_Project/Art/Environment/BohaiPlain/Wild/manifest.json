@@ -186,6 +186,31 @@
    "filename": "river_bank_slope.png",
    "tile_axes": "x",
    "source": "art/bohai-transitions"
+  },
+  {
+   "filename": "plain_grass_a.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-ground-v2"
+  },
+  {
+   "filename": "plain_grass_b.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-ground-v2"
+  },
+  {
+   "filename": "plain_grass_dry.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-ground-v2"
+  },
+  {
+   "filename": "plain_loess.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-ground-v2"
+  },
+  {
+   "filename": "plain_meadow.png",
+   "tile_axes": "xy",
+   "source": "art/bohai-ground-v2"
   }
  ]
 }
