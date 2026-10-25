@@ -19,7 +19,8 @@ namespace ThreeKingdoms.EditorTools
         public const string SuanzaoPath = "Assets/_Project/Scenes/Camp_Suanzao.unity";
         const string ArtRoot3 = "Assets/_Project/Art/Chapter3";
 
-        static void BuildChapter3()
+        // The art first: the story stage (built before the 0.3 scenes) reads the stage paintings.
+        static void ImportChapter3Art()
         {
             Copy(Path.Combine(Art, "v03-gongsun-camp-hd"), $"{ArtRoot3}/Gongsun");
             Copy(Path.Combine(Art, "v03-suanzao-camp-hd"), $"{ArtRoot3}/Suanzao");
@@ -49,6 +50,10 @@ namespace ThreeKingdoms.EditorTools
                     importer.SaveAndReimport();
                 }
             }
+        }
+
+        static void BuildChapter3()
+        {
             BuildGongsun();
             BuildSuanzao();
         }

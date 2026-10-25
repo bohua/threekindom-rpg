@@ -43,6 +43,7 @@ namespace ThreeKingdoms.EditorTools
         public static void Build()
         {
             ImportArt();
+            ImportChapter3Art();
             BuildStage();
             BuildCamp();
             BuildAnxi();
