@@ -120,6 +120,19 @@ namespace ThreeKingdoms.UI.Story
             choiceList.style.display = DisplayStyle.None;
             root.Add(choiceList);
 
+            // Letterbox bars while the oath plays (user 2026-10-24), under the dialogue box.
+            for (int i = 0; i < 2; i++)
+            {
+                var bar = new VisualElement { pickingMode = PickingMode.Ignore };
+                bar.style.position = Position.Absolute;
+                bar.style.left = 0; bar.style.right = 0; bar.style.height = 96;
+                if (i == 0) bar.style.top = 0; else bar.style.bottom = 0;
+                bar.style.backgroundColor = Color.black;
+                bar.style.display = DisplayStyle.None;
+                root.Insert(root.IndexOf(dialogue.Box), bar);
+                letterbox[i] = bar;
+            }
+
             fade = new VisualElement { pickingMode = PickingMode.Ignore };
             Place(fade, 0, 0, 0, 0);
             fade.style.backgroundColor = Color.black;
@@ -131,10 +144,17 @@ namespace ThreeKingdoms.UI.Story
 
         void OnDisable() { if (Controller) Controller.Changed -= Refresh; }
 
+        readonly VisualElement[] letterbox = new VisualElement[2];
+        public bool LetterboxShown => letterbox[0] != null && letterbox[0].style.display == DisplayStyle.Flex;
+
         void Refresh()
         {
             if (!Controller || Controller.Run == null) { fade.style.opacity = 0; dialogue.Hide(); return; }
             objective.text = StoryText.Objective(Controller.Run.Story);
+            bool cinema = Controller.Letterbox || Controller.Cinematic;
+            objective.style.display = cinema ? DisplayStyle.None : DisplayStyle.Flex;
+            foreach (var bar in letterbox) if (bar != null) bar.style.display = Controller.Letterbox ? DisplayStyle.Flex : DisplayStyle.None;
+            dialogue.PortraitsEnabled = !Controller.Letterbox;
             prompt.text = Controller.Busy ? "" : StoryText.Prompt(Controller.Prompt);
             prompt.style.display = string.IsNullOrEmpty(prompt.text) ? DisplayStyle.None : DisplayStyle.Flex;
             var l = Controller.Line;

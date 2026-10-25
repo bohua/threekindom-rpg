@@ -1108,6 +1108,19 @@ namespace ThreeKingdoms.EditorTools
             }
         }
 
+        // Plain pink petals until the Codex petal sprite arrives.
+        static Material PetalMaterial()
+        {
+            var m = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = "oath_petal_plain" };
+            m.SetColor("_BaseColor", new Color(0.98f, 0.70f, 0.78f));
+            m.SetFloat("_Smoothness", 0f);
+            m.SetFloat("_Cull", (float)CullMode.Off);
+            string path = $"{materialDir}/oath_petal_plain.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(path)) AssetDatabase.DeleteAsset(path);
+            AssetDatabase.CreateAsset(m, path);
+            return m;
+        }
+
         static void Outside(Transform env)
         {
             var o = Group(env, "Outside");
@@ -1124,6 +1137,16 @@ namespace ThreeKingdoms.EditorTools
                 if (Mathf.Abs(z) < 3f) continue;   // keep the lane clear
                 Prop(o, i % 3 == 0 ? "prop_tree_peach_small" : "prop_tree_peach", x, z, solid: true);
             }
+            // The peach-garden oath (user 2026-10-24): the altar with incense, offerings and wine in front of the
+            // three, and petals drifting down; both shown only while the oath plays (TownStoryController.Oath).
+            var altar = Group(o, "Oath altar");
+            if (Tex("oath_altar", optional: true)) Prop(altar, "oath_altar", -66f, -1.7f, scale: 0.6f);   // a low table, so Liu Bei kneeling behind it stays in view
+            altar.gameObject.SetActive(false);
+            var petals = new GameObject("Oath petals").AddComponent<ThreeKingdoms.Gameplay.PetalFall>();
+            petals.transform.SetParent(o, false);
+            petals.transform.position = new Vector3(-66f, 0f, -0.6f);
+            petals.Material = Tex("oath_petal", optional: true) ? Mat("oath_petal", clip: true, twoSided: true) : PetalMaterial();
+            petals.gameObject.SetActive(false);
             // Distant hills beyond the north wall.
             Prop(o, "bg_hills_far", 0f, 70f, scale: 7f);
             Prop(o, "bg_town_rooftops_far", -70f, 60f, scale: 3f);

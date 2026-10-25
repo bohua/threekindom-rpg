@@ -24,6 +24,13 @@ namespace ThreeKingdoms.Gameplay
         public bool Walking { get; private set; }
         public bool Mirrored => billboard && billboard.Flip;
         public bool HasWalkCycle => Animator && Animator.Columns >= WalkStart + 4 * WalkFramesPerRow;
+        // Story poses after the walk cycle (user 2026-10-24, the peach-garden oath): frames 25 onward.
+        public const int StoryPoseStart = WalkStart + 4 * WalkFramesPerRow;
+        // A story pose shown instead of the walk while set (-1 = none); see OathPose.
+        public int PoseOverride { get; set; } = -1;
+        // Extra height for a hop in a story scene (laughing, raising a bowl), in world units.
+        public float StageLift { get; set; }
+        public bool HasStoryPose(int pose) => Animator && pose >= 0 && Animator.Columns > StoryPoseStart + pose;
         public int CurrentFrame => Animator ? Animator.Frame : -1;
 
         // Awake, not Start: a follower switched on mid-frame must already know its atlas has walk frames.
@@ -49,6 +56,12 @@ namespace ThreeKingdoms.Gameplay
             delta.y = 0f;
             if (delta.sqrMagnitude > 4f) delta = Vector3.zero;   // a teleport (fade, spawn, follower snap) is not a step
             if (!Animator) return;
+            if (PoseOverride >= 0 && HasStoryPose(PoseOverride))
+            {
+                if (Animator.Frame != StoryPoseStart + PoseOverride) Animator.Frame = StoryPoseStart + PoseOverride;
+                if (billboard) { billboard.Flip = false; billboard.Lift = StageLift; }
+                return;
+            }
             float speed = Time.deltaTime > 0f ? delta.magnitude / Time.deltaTime : 0f;
             Walking = speed > 0.3f;
             if (Walking)
@@ -86,7 +99,7 @@ namespace ThreeKingdoms.Gameplay
             }
 
             if (Animator.Frame != frame) Animator.Frame = frame;
-            if (billboard) { billboard.Flip = flip; billboard.Lift = lift; }
+            if (billboard) { billboard.Flip = flip; billboard.Lift = lift + StageLift; }
         }
     }
 }

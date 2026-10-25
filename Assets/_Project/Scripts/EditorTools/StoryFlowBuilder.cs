@@ -27,6 +27,7 @@ namespace ThreeKingdoms.EditorTools
             CodexArtImporter.Import();    // gambling house, street props, dice and archery art (2026-10-22 deliveries)
             WalkCycleImporter.Import();   // 9 poses + 16 walk frames per character atlas (CHARACTER_WALK_CYCLES.md)
             ResidentImporter.Import();    // the 12 Zhuojun residents (ZHUOJUN_RESIDENTS.md)
+            CinematicsArtImporter.Import();   // ink scroll, oath altar and petals, opening film (story-cinematics GDD)
             BattleSceneBuilder.Build();
             ZhuojunTownBuilder.Build();
             WireTown();
@@ -195,6 +196,10 @@ namespace ThreeKingdoms.EditorTools
             // Zhang Fei walks up to the notice board (user 2026-10-22): a walk cycle, and no collider to snag on.
             Object.DestroyImmediate(c.ZhangFei.GetComponent<Collider>());
             c.ZhangFei.gameObject.AddComponent<ThreeKingdoms.Gameplay.PixelWalkFrames>().Animator = c.ZhangFei.GetComponentInChildren<ThreeKingdoms.Gameplay.SpriteFrameAnimator>();
+            // Guan Yu too walks up the grove path to the oath (user 2026-10-24).
+            Object.DestroyImmediate(c.GuanYu.GetComponent<Collider>());
+            if (!c.GuanYu.GetComponent<ThreeKingdoms.Gameplay.PixelWalkFrames>())
+                c.GuanYu.gameObject.AddComponent<ThreeKingdoms.Gameplay.PixelWalkFrames>().Animator = c.GuanYu.GetComponentInChildren<ThreeKingdoms.Gameplay.SpriteFrameAnimator>();
             c.Player.gameObject.AddComponent<ThreeKingdoms.Gameplay.PartyTrail>();
             c.GuanYuFollower = Follower("Guan Yu (follower)", "GuanYu");
             c.ZhangFeiFollower = Follower("Zhang Fei (follower)", "ZhangFei");
@@ -227,9 +232,29 @@ namespace ThreeKingdoms.EditorTools
             c.NoticeSpot = Spot("Read the notice", c.NoticeBoard.position + new Vector3(0, 0, -1.4f));
             c.ZhangFeiEntrance = new[] { new Vector3(21f, 0, -9.6f), new Vector3(4.0f, 0, -9.6f), new Vector3(3.2f, 0, -8.8f) };
             c.TavernDoor = Spot("Tavern door", new Vector3(-21f, 0, -4.4f));
+            // The oath scene (user 2026-10-24): a close shot on the altar, the altar and petals the town builder made.
+            var oathShot = new GameObject("Oath shot").AddComponent<CameraZone>();
+            oathShot.transform.SetParent(spots, false);
+            oathShot.transform.position = new Vector3(-66f, 0, -0.6f);
+            oathShot.Size = new Vector2(30f, 20f);
+            oathShot.Pitch = 28f; oathShot.Distance = 17f; oathShot.Yaw = 0f; oathShot.Fov = 20f; oathShot.LookOffset = new Vector3(0, 1.1f, 0); oathShot.Priority = 5;
+            oathShot.gameObject.SetActive(false);
+            c.OathShot = oathShot;
+            c.OathEntrance = new Vector3(-57f, 0, -0.6f);
+            c.OathAltar = GameObject.Find("Oath altar");
+            c.OathPetals = GameObject.Find("Oath petals");
+            if (!c.OathAltar || !c.OathPetals)
+            {
+                // Inactive objects are not found by name; look under the town's outside group.
+                foreach (var t in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                {
+                    if (t.name == "Oath altar") c.OathAltar = t.gameObject;
+                    if (t.name == "Oath petals") c.OathPetals = t.gameObject;
+                }
+            }
             c.GroveSpots = new[]
             {
-                Spot("Grove Liu Bei", new Vector3(-66f, 0, -1.2f)),
+                Spot("Grove Liu Bei", new Vector3(-66f, 0, 0.6f)),
                 Spot("Grove Guan Yu", new Vector3(-67.8f, 0, 0.2f)),
                 Spot("Grove Zhang Fei", new Vector3(-64.2f, 0, 0.2f)),
             };
@@ -243,6 +268,7 @@ namespace ThreeKingdoms.EditorTools
             townHud.DiceFaces = Enumerable.Range(1, 6).Select(i => CodexArtImporter.Load(CodexArtImporter.CasinoUiDir, "dice_" + i)).ToArray();
             if (townHud.DiceFaces.Any(t => !t)) townHud.DiceFaces = new Texture2D[0];
             townHud.DiceMat = CodexArtImporter.Load(CodexArtImporter.CasinoUiDir, "dice_mat");
+            CinematicsArtImporter.AddView(doc.panelSettings);
             townHud.DiceCup = CodexArtImporter.Load(CodexArtImporter.CasinoUiDir, "dice_cup");
 
             // The shop sits above the town HUD; menus need an EventSystem for gamepad and keyboard navigation.

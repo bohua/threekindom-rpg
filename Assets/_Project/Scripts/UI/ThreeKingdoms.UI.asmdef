@@ -1,11 +1,12 @@
 {
-  "name": "ThreeKingdoms.UI",
-  "rootNamespace": "ThreeKingdoms.UI",
-  "references": [
-    "ThreeKingdoms.Gameplay",
-    "ThreeKingdoms.Core",
-    "UnityEngine.UI",
-    "ThreeKingdoms.Save"
-  ],
-  "autoReferenced": true
+    "name": "ThreeKingdoms.UI",
+    "rootNamespace": "ThreeKingdoms.UI",
+    "references": [
+        "ThreeKingdoms.Gameplay",
+        "ThreeKingdoms.Core",
+        "UnityEngine.UI",
+        "ThreeKingdoms.Save",
+        "Unity.InputSystem"
+    ],
+    "autoReferenced": true
 }

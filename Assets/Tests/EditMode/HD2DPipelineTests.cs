@@ -68,7 +68,9 @@ public sealed class HD2DPipelineTests
             Assert.IsNotNull(texture, key);
             Assert.AreEqual(FilterMode.Point, texture.filterMode, key);
             Assert.AreEqual(1, texture.mipmapCount, key);
-            Assert.AreEqual((WalkCycleImporter.PoseFrames + WalkCycleImporter.WalkFrames) * HD2DSampleBuilder.FrameSize, texture.width, key + ": 9 poses + 16 walk frames");
+            // The three brothers also carry the six peach-garden oath poses (user 2026-10-24).
+            int oath = key == "YellowTurban" ? 0 : WalkCycleImporter.OathFrames;
+            Assert.AreEqual((WalkCycleImporter.PoseFrames + WalkCycleImporter.WalkFrames + oath) * HD2DSampleBuilder.FrameSize, texture.width, key + ": 9 poses + 16 walk frames (+ 6 oath poses)");
             Assert.AreEqual(HD2DSampleBuilder.FrameSize, texture.height, key);
         }
     }
