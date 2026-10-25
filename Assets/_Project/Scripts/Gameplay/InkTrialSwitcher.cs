@@ -4,7 +4,7 @@ using UnityEngine.Rendering;
 namespace ThreeKingdoms.Gameplay
 {
     // Ink-wash art trial (Bohai_InkTrial scene, user 2026-10-25): flips the trial patch between the probe's original look,
-    // ink A (paper-white, ink only) and ink B (ink with light colour) so the three can be compared on the spot.
+    // the ink-wash painting look so the two can be compared on the spot.
     // V key or the gamepad's left shoulder cycles; -ink 0|1|2 picks one at launch (screenshots). Trial tool, not shipping UI.
     public sealed class InkTrialSwitcher : MonoBehaviour
     {
@@ -12,6 +12,7 @@ namespace ThreeKingdoms.Gameplay
         public sealed class Look
         {
             public string Name;
+            public int Renderer;   // index in the pipeline's renderer list (the ink look draws through the ink-wash renderer)
             public VolumeProfile High, Low;
             public Color Fog, Sky, Equator, Ground, Sun;
             public float FogDensity, SunIntensity, ShadowStrength;
@@ -30,7 +31,7 @@ namespace ThreeKingdoms.Gameplay
 
         void Start()
         {
-            int start = Mathf.Min(1, Looks.Length - 1);   // ink A first
+            int start = Looks.Length - 1;   // the ink look first
             var args = System.Environment.GetCommandLineArgs();
             int i = System.Array.IndexOf(args, "-ink");
             if (i >= 0 && i + 1 < args.Length && int.TryParse(args[i + 1], out int pick)) start = Mathf.Clamp(pick, 0, Looks.Length - 1);
@@ -59,7 +60,12 @@ namespace ThreeKingdoms.Gameplay
             RenderSettings.ambientSkyColor = l.Sky;
             RenderSettings.ambientEquatorColor = l.Equator;
             RenderSettings.ambientGroundColor = l.Ground;
-            if (Camera.main) Camera.main.backgroundColor = l.Fog;
+            if (Camera.main)
+            {
+                Camera.main.backgroundColor = l.Fog;
+                var data = Camera.main.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+                if (data) data.SetRenderer(l.Renderer);
+            }
             if (Sun)
             {
                 Sun.color = l.Sun; Sun.intensity = l.SunIntensity; Sun.shadowStrength = l.ShadowStrength;

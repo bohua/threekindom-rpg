@@ -12,11 +12,13 @@ using UnityEngine.Rendering.Universal;
 
 namespace ThreeKingdoms.EditorTools
 {
-    // Ink-wash trial (user 2026-10-25: the Bohai wild looks ugly and yellow; try ink-wash ground textures on a small
+    // Ink-wash trial (user 2026-10-25: the Bohai wild looks ugly and yellow; try an ink-wash painting look on a small
     // piece, leave the whole map alone). Copies the probe scene Bohai_Plain into Bohai_InkTrial, keeps only the patch
-    // north of Pingyuan (north road, its bridge, the river, a wood and a hill), fences it in, swaps every texture that has an
-    // ink version in BohaiPlain/Ink (same file name and size, so tiling and prop sizes stay) and replaces the warm LUT
-    // grading with a neutral one. The probe scene and its materials are never written.
+    // north of Pingyuan (north road, its bridge, the river, a wood and a hill), fences it in, swaps every texture that has a
+    // painted version in BohaiPlain/Ink/Painted (same file name at 4x the size, so tiling and prop sizes stay), replaces the
+    // warm LUT grading with a neutral one and renders through a second renderer whose full-screen pass adds ink lines and
+    // rice paper (Art/Shaders/InkWashScreen). The probe scene, its materials and the default renderer are never written.
+    // The first try (paper-white pixel textures, versions A/B) read as winter, not as a painting, and was dropped.
     public static class BohaiInkTrialBuilder
     {
         public const string ScenePath = "Assets/_Project/Scenes/Bohai_InkTrial.unity";
@@ -24,6 +26,10 @@ namespace ThreeKingdoms.EditorTools
         const string InkMaterialDir = InkDir + "/Materials";
         public const string HighProfilePath = "Assets/_Project/Settings/HD2D_InkTrial.asset";
         public const string LowProfilePath = "Assets/_Project/Settings/HD2D_InkTrial_Low.asset";
+        public const string RendererPath = "Assets/_Project/Settings/HD2D_InkRenderer.asset";
+        const string DefaultRendererPath = "Assets/_Project/Settings/HD2D_Renderer.asset";
+        const string PipelinePath = "Assets/_Project/Settings/HD2D_URP.asset";
+        public const string ScreenMaterialPath = "Assets/_Project/Art/Shaders/InkWashScreen.mat";
 
         // The trial patch (metres, x east, z north) and how far beyond it scenery is kept for the camera.
         public const float X0 = -40f, X1 = 340f, Z0 = 10f, Z1 = 250f, Keep = 60f;
@@ -138,7 +144,7 @@ namespace ThreeKingdoms.EditorTools
         // Ink versions live in Ink/A (paper-white, ink only) and Ink/B (ink with light colour), same file names as the probe
         // textures. Every single-material renderer whose texture has an ink version gets one cloned material per look; the
         // switcher in the scene flips between the original and the two.
-        static readonly string[] Variants = { "A", "B" };
+        static readonly string[] Variants = { "Painted" };
         static InkTrialSwitcher switcher;
 
         static int SwapTextures()
@@ -155,8 +161,9 @@ namespace ThreeKingdoms.EditorTools
                     var importer = (TextureImporter)AssetImporter.GetAtPath(p);
                     if (importer == null) continue;
                     importer.textureType = TextureImporterType.Default;
-                    importer.filterMode = FilterMode.Point;
-                    importer.mipmapEnabled = false;
+                    // Painted, not pixel art: smooth filtering and mipmaps so brush strokes stay soft at a distance.
+                    importer.filterMode = FilterMode.Bilinear;
+                    importer.mipmapEnabled = true;
                     importer.textureCompression = TextureImporterCompression.Uncompressed;
                     importer.npotScale = TextureImporterNPOTScale.None;
                     importer.alphaIsTransparency = true;
@@ -185,8 +192,10 @@ namespace ThreeKingdoms.EditorTools
                     c = new Material(m) { name = $"{m.name}_ink{Variants[v]}" };
                     c.SetTexture("_BaseMap", inkTex);
                     if (c.HasProperty("_MainTex")) c.SetTexture("_MainTex", inkTex);
-                    // Water drawn as near-blank paper reads as ground in play (river looked walkable): a wash keeps it apart.
-                    if (tex.name.Contains("water")) c.SetColor("_BaseColor", v == 0 ? new Color(0.70f, 0.72f, 0.74f) : new Color(0.60f, 0.75f, 0.82f));
+                    // The reference plain is green: the probe's dry-grass, loess and saline blotches cover too much of it and turn
+                    // the painting sepia, so the ink look leaves them out (alpha 0 under the 0.5 clip hides the decal).
+                    if (tex.name.StartsWith("decal_dry_grass") || tex.name.StartsWith("decal_loess") || tex.name.StartsWith("decal_saline"))
+                        c.SetColor("_BaseColor", new Color(1f, 1f, 1f, 0f));
                     string path = $"{InkMaterialDir}/{c.name}.mat";
                     if (AssetDatabase.LoadAssetAtPath<Material>(path)) AssetDatabase.DeleteAsset(path);
                     AssetDatabase.CreateAsset(c, path);
@@ -228,9 +237,11 @@ namespace ThreeKingdoms.EditorTools
                 Sky = RenderSettings.ambientSkyColor, Equator = RenderSettings.ambientEquatorColor, Ground = RenderSettings.ambientGroundColor,
                 Sun = sun.color, SunIntensity = sun.intensity, ShadowStrength = sun.shadowStrength, SunEuler = sun.transform.eulerAngles,
             };
+            int inkRenderer = InkRenderer();
             InkTrialSwitcher.Look Ink(string name, string variant, float saturation) => new InkTrialSwitcher.Look
             {
                 Name = name,
+                Renderer = inkRenderer,
                 High = Profile(HighProfilePath.Replace(".asset", $"_{variant}.asset"), HD2DSampleBuilder.HighProfilePath, saturation),
                 Low = Profile(LowProfilePath.Replace(".asset", $"_{variant}.asset"), HD2DSampleBuilder.LowProfilePath, saturation),
                 Fog = new Color(0.92f, 0.91f, 0.87f), FogDensity = 0.0030f,
@@ -238,7 +249,7 @@ namespace ThreeKingdoms.EditorTools
                 Sun = new Color(1f, 0.99f, 0.96f), SunIntensity = 1.9f, ShadowStrength = 0.55f, SunEuler = new Vector3(50f, -28f, 0f),
             };
             if (!switcher) switcher = new GameObject("Ink trial switcher").AddComponent<InkTrialSwitcher>();
-            switcher.Looks = new[] { original, Ink("水墨留白（A）", "A", -15f), Ink("水墨淡彩（B）", "B", -4f) };
+            switcher.Looks = new[] { original, Ink("水墨淡彩画", "Painted", 15f) };
             switcher.Volume = volume;
             switcher.Sun = sun;
             switcher.Renderers ??= new Renderer[0];
@@ -249,6 +260,49 @@ namespace ThreeKingdoms.EditorTools
             switcher = null;
         }
 
+        // A copy of the HD-2D renderer with the ink-wash full-screen pass, added to the pipeline's renderer list; the trial
+        // camera switches to it for the ink look. Returns its index in the list.
+        static int InkRenderer()
+        {
+            // Recreated each build so the shader's default strengths are the ones in use.
+            if (AssetDatabase.LoadAssetAtPath<Material>(ScreenMaterialPath)) AssetDatabase.DeleteAsset(ScreenMaterialPath);
+            var mat = new Material(Shader.Find("ThreeKingdoms/InkWashScreen")) { name = "InkWashScreen" };
+            AssetDatabase.CreateAsset(mat, ScreenMaterialPath);
+            var pipeline = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(PipelinePath);
+            var ps = new SerializedObject(pipeline);
+            var list = ps.FindProperty("m_RendererDataList");
+            var old = AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(RendererPath);
+            int index = -1;
+            for (int i = 0; i < list.arraySize; i++)
+                if (old && list.GetArrayElementAtIndex(i).objectReferenceValue == old) index = i;
+            if (old) AssetDatabase.DeleteAsset(RendererPath);
+            AssetDatabase.CopyAsset(DefaultRendererPath, RendererPath);
+            var data = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(RendererPath);
+            var feature = ScriptableObject.CreateInstance<FullScreenPassRendererFeature>();
+            feature.name = "Ink wash";
+            feature.passMaterial = mat;
+            feature.injectionPoint = FullScreenPassRendererFeature.InjectionPoint.AfterRenderingPostProcessing;
+            feature.requirements = ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color;
+            feature.fetchColorBuffer = true;
+            AssetDatabase.AddObjectToAsset(feature, data);
+            data.rendererFeatures.Add(feature);
+            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(feature, out string _, out long id);
+            var so = new SerializedObject(data);
+            var map = so.FindProperty("m_RendererFeatureMap");
+            map.arraySize++;
+            map.GetArrayElementAtIndex(map.arraySize - 1).longValue = id;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(data);
+
+            ps.Update();
+            if (index < 0) { index = list.arraySize; list.arraySize++; }
+            list.GetArrayElementAtIndex(index).objectReferenceValue = data;
+            ps.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(pipeline);
+            AssetDatabase.SaveAssets();
+            return index;
+        }
+
         static VolumeProfile Profile(string path, string source, float saturation)
         {
             if (AssetDatabase.LoadAssetAtPath<VolumeProfile>(path)) AssetDatabase.DeleteAsset(path);
@@ -257,7 +311,7 @@ namespace ThreeKingdoms.EditorTools
             if (profile.TryGet(out ColorLookup lookup)) lookup.active = false;
             if (profile.TryGet(out ColorAdjustments color))
             {
-                color.postExposure.Override(-0.3f);   // paper-white textures clip under the old exposure
+                color.postExposure.Override(0f);
                 color.contrast.Override(4f);
                 color.saturation.Override(saturation);
                 color.colorFilter.Override(Color.white);

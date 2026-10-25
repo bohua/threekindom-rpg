@@ -1,6 +1,6 @@
 {
   "name": "ThreeKingdoms.Gameplay",
   "rootNamespace": "ThreeKingdoms.Gameplay",
-  "references": ["ThreeKingdoms.Save", "ThreeKingdoms.Data", "ThreeKingdoms.Core", "Unity.InputSystem", "Unity.RenderPipelines.Core.Runtime"],
+  "references": ["ThreeKingdoms.Save", "ThreeKingdoms.Data", "ThreeKingdoms.Core", "Unity.InputSystem", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
   "autoReferenced": true
 }
