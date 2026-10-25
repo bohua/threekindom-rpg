@@ -92,5 +92,7 @@ public sealed class RegionHudTests
         Assert.IsTrue(Blocked(new Vector3(-135f, 0, 95f)), "the 笃马河 is impassable");
         Assert.IsTrue(Blocked(new Vector3(-150f, 0, 320f)), "the northern hills are impassable");
         Assert.IsFalse(Blocked(new Vector3(-2.9f, 0, 59.9f)), "the road bridge is open");
+        Assert.IsTrue(Blocked(new Vector3(285f, 0, -62f)), "the reed pond is impassable over its middle too");
+        Assert.IsNotNull(GameObject.Find("Pond water"), "the reed pond shows its water (user 2026-10-25: it looked like grass)");
     }
 }

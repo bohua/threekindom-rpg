@@ -78,6 +78,7 @@ namespace ThreeKingdoms.EditorTools
             Explore(env, labels);
             Exits(env, labels);
             Terrain(env, labels);
+            SplatGround(env);
             GroundVariety(env);
             EdgeDecals(env);
             Signposts(env, labels);
@@ -1199,6 +1200,7 @@ namespace ThreeKingdoms.EditorTools
             Spot("Forest edge", new Vector3(-180f, 0, -58f));
             Spot("Hill pass", new Vector3(40f, 0, 286f));
             Spot("Hills", new Vector3(-100f, 0, 262f));
+            Spot("Pond", new Vector3(256f, 0, -54f));
             // On the levee crest above the ferry (terrain plan sign_dike).
             Sign("大堤渡口", new Vector3(CityCx + 10f, LeveeH, LeveeCrestN - 0.8f),
                 ("平原城", new Vector3(CityCx, 0, CityZ0), 40f), ("平原津", new Vector3(CityCx, 0, -258f), 30f),
@@ -1309,7 +1311,12 @@ namespace ThreeKingdoms.EditorTools
             bool Wall(int x, int z)
             {
                 var c = mask[x, z];
-                if (c == Cell.River) return RiverDistance(XMin + x + 0.5f, ZMin + z + 0.5f, out _) > 3f;   // the pond; rivers get their own walls
+                if (c == Cell.River)
+                {
+                    float px = XMin + x + 0.5f, pz = ZMin + z + 0.5f;
+                    // The pond blocks over its whole outline (its water is drawn from it); rivers get their own walls.
+                    return InPolygon(ReedPond, new Vector2(px, pz)) || RiverDistance(px, pz, out _) > 3f;
+                }
                 // Woods and hills block only where they visibly stand (user 2026-10-25: invisible walls on grass): the
                 // wall starts 2 m inside a wood (its edge row of trees stands there) and 3 m inside a hill (where the slope rises).
                 if (c == Cell.Forest) return Inside(x, z, 2, k => k == Cell.Forest);
@@ -1330,6 +1337,7 @@ namespace ThreeKingdoms.EditorTools
                 T.Quad(wg, "Water", new Vector3(cx, 0.011f, cz), new Vector3(90f, 0, 0), size, T.Mat(water), T.Repeat(water, size), castShadows: false);
             }
             RiverStrips(g);
+            Ponds(g);
             Forests(g);
             ForestEdgeRow(g);
             Mountains(g);
@@ -1349,6 +1357,66 @@ namespace ThreeKingdoms.EditorTools
             (new Vector3(-14.56f, 0, 43.62f), new Vector3(8.69f, 0, 76.17f), 10f),
             (new Vector3(-299.45f, 0, 160.61f), new Vector3(-272.61f, 0, 190.27f), 7f),
         };
+
+        // The reed pond at the end of the 盐苇汊 (plan pond reed_pond): drawn as its own water surface from the plan's
+        // outline, with mud and reeds round it. Its wall comes from the mask (user 2026-10-25: the pond blocked the way
+        // but showed as grass, because the strip-shaped water skipped it).
+        static readonly Vector2[] ReedPond =
+        {
+            new Vector2(267f, -40f), new Vector2(276.74f, -40.02f), new Vector2(286f, -37f), new Vector2(296.98f, -43.27f), new Vector2(307f, -51f),
+            new Vector2(308.12f, -61.47f), new Vector2(308f, -72f), new Vector2(299.93f, -79.43f), new Vector2(292f, -87f), new Vector2(281.4f, -82.26f),
+            new Vector2(270f, -80f), new Vector2(263.82f, -71.65f), new Vector2(260f, -62f), new Vector2(262.15f, -50.57f),
+        };
+
+        static bool InPolygon(Vector2[] poly, Vector2 p)
+        {
+            bool inside = false;
+            for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
+                if ((poly[i].y > p.y) != (poly[j].y > p.y) && p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x)
+                    inside = !inside;
+            return inside;
+        }
+
+        static void Ponds(Transform g)
+        {
+            var pg = T.Group(g, "Reed pond");
+            var centre = ReedPond.Aggregate(Vector2.zero, (a, b) => a + b) / ReedPond.Length;
+            var verts = new List<Vector3> { new Vector3(centre.x, 0.013f, centre.y) };
+            var uvs = new List<Vector2> { centre / 2f };   // water_channel is 2 m per tile
+            foreach (var p in ReedPond) { verts.Add(new Vector3(p.x, 0.013f, p.y)); uvs.Add(p / 2f); }
+            var tris = new List<int>();
+            for (int i = 0; i < ReedPond.Length; i++) { int a = 1 + i, b = 1 + (i + 1) % ReedPond.Length; tris.AddRange(new[] { 0, b, a }); }
+            var mesh = new Mesh { name = "Reed pond" };
+            mesh.SetVertices(verts); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            if (Vector3.Dot(mesh.normals[0], Vector3.up) < 0f) { tris.Reverse(); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals(); }
+            string meshPath = TerrainDir + "/Bohai_ReedPond.asset";
+            if (AssetDatabase.LoadAssetAtPath<Mesh>(meshPath)) AssetDatabase.DeleteAsset(meshPath);
+            AssetDatabase.CreateAsset(mesh, meshPath);
+            var go = new GameObject("Pond water");
+            go.transform.SetParent(pg, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.AddComponent<MeshRenderer>();
+            r.sharedMaterial = T.Mat(K("water_channel", "water_yellow_river"));
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            // Mud and reeds round the shore.
+            var rng = new System.Random(59);
+            string[] mud = Have("decal_mud_bank_a", "decal_mud_bank_b");
+            string reeds = K("prop_reeds", "prop_grass_tuft");
+            for (int i = 0; i < ReedPond.Length; i++)
+            {
+                var a = ReedPond[i]; var b = ReedPond[(i + 1) % ReedPond.Length];
+                for (float t = 0f; t < 1f; t += 0.34f)
+                {
+                    var q = Vector2.Lerp(a, b, t);
+                    var outward = (q - centre).normalized;
+                    var shore = q + outward * 0.8f;
+                    if (mud.Length > 0 && rng.Next(2) == 0) Decal(pg, mud[rng.Next(mud.Length)], shore.x, shore.y, rng, 0.6f + (float)rng.NextDouble() * 0.4f);
+                    var reed = q + outward * (0.3f + (float)rng.NextDouble());
+                    T.Prop(pg, reeds, reed.x, reed.y);
+                }
+            }
+        }
 
         static float RiverDistance(float x, float z, out float halfWidth)
         {
@@ -1638,6 +1706,7 @@ namespace ThreeKingdoms.EditorTools
             string[] dry = Have("decal_dry_grass_a", "decal_dry_grass_b", "decal_dry_grass_c"), dirt = Have("decal_loess_dirt_a", "decal_loess_dirt_b"),
                 salt = Have("decal_saline_a", "decal_saline_b"), meadow = Have("decal_green_meadow_a", "decal_green_meadow_b"), flowers = Have("decal_wild_flowers");
             if (dry.Length == 0) return;
+            if (splatGround) { dry = new string[0]; meadow = new string[0]; }   // the splat ground already paints dry grass and meadow
             var g = T.Group(env, "Ground variety");
             var rng = new System.Random(131);
             // Broad zones from noise; inside a zone the decals overlap into one continuous ground, toward its edge they
@@ -1653,9 +1722,10 @@ namespace ThreeKingdoms.EditorTools
                     float river = RiverDistance(px, pz, out _);
                     string[] set = null; float chance = 0f, scale = 1f;
                     if (river < 26f && meadow.Length > 0) { set = meadow; chance = Ramp(26f - river, 0f, 10f); }
+                    else if (river < 26f) continue;
                     else if (salt.Length > 0 && saltness > 0.55f) { set = salt; chance = Ramp(saltness, 0.55f, 0.12f); }
                     else if (dirt.Length > 0 && dryness > 0.68f) { set = dirt; chance = Ramp(dryness, 0.68f, 0.08f) * 0.8f; }
-                    else if (dryness > 0.46f) { set = dry; chance = Ramp(dryness, 0.46f, 0.1f); scale = 1.2f; }
+                    else if (dryness > 0.46f && dry.Length > 0) { set = dry; chance = Ramp(dryness, 0.46f, 0.1f); scale = 1.2f; }
                     else if (flowers.Length > 0) { set = flowers; chance = 0.12f; }
                     if (set == null || rng.NextDouble() > chance) continue;
                     Decal(g, set[rng.Next(set.Length)], px, pz, rng, scale * (0.9f + (float)rng.NextDouble() * 0.8f));
@@ -1714,6 +1784,62 @@ namespace ThreeKingdoms.EditorTools
                 float t = Mathf.Clamp01(Vector2.Dot(q - a, c - a) / (c - a).sqrMagnitude);
                 return (a + t * (c - a) - q).magnitude < b.width / 2f + margin;
             });
+
+        // ---------- splat ground (user 2026-10-25: the plain looked like one small repeating carpet) ----------
+        // One ground quad over the region drawn by ThreeKingdoms/GroundSplat with the Codex V2 ground set (12 m tiles,
+        // art/bohai-ground-v2): base grass, then a second grass, dry grass, meadow and loess where a 1 px/m control map
+        // says so; the shader breaks every border into ragged pixel clusters.
+
+        static bool splatGround;
+
+        static void SplatGround(Transform env)
+        {
+            splatGround = false;
+            var shader = Shader.Find("ThreeKingdoms/GroundSplat");
+            string[] keys = { "plain_grass_a", "plain_grass_b", "plain_grass_dry", "plain_meadow", "plain_loess" };
+            if (!shader || keys.Any(k => !T.Tex(k, optional: true))) return;
+            int w = Mathf.RoundToInt(XMax - XMin), h = Mathf.RoundToInt(ZMax - ZMin);
+            var px = new Color32[w * h];
+            for (int z = 0; z < h; z++)
+                for (int x = 0; x < w; x++)
+                {
+                    float wx = XMin + x + 0.5f, wz = ZMin + z + 0.5f;
+                    float second = Mathf.PerlinNoise(wx * 0.012f + 5f, wz * 0.012f + 9f);
+                    float dryness = Mathf.PerlinNoise(wx * 0.007f + 11f, wz * 0.007f + 3f) * 0.75f + Mathf.PerlinNoise(wx * 0.03f, wz * 0.03f) * 0.25f;
+                    float river = RiverDistance(wx, wz, out _);
+                    float bare = Mathf.PerlinNoise(wx * 0.02f + 31f, wz * 0.02f + 17f);
+                    byte B(float v) => (byte)Mathf.RoundToInt(Mathf.Clamp01(v) * 255f);
+                    px[z * w + x] = new Color32(
+                        B((second - 0.45f) / 0.15f),                       // R: the yellower main grass in broad drifts
+                        B((dryness - 0.48f) / 0.12f),                      // G: dry grass zones
+                        B((22f - river) / 12f),                            // B: meadow along the rivers
+                        B((dryness - 0.66f) / 0.08f * (bare > 0.45f ? 1f : 0.3f)));   // A: bare loess inside the driest zones
+                }
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false, linear: true);
+            tex.SetPixels32(px); tex.Apply();
+            string path = TerrainDir + "/bohai_ground_control.png";
+            File.WriteAllBytes(path, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(path);
+            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+            imp.sRGBTexture = false; imp.mipmapEnabled = false; imp.npotScale = TextureImporterNPOTScale.None;
+            imp.textureCompression = TextureImporterCompression.Uncompressed; imp.filterMode = FilterMode.Bilinear; imp.wrapMode = TextureWrapMode.Clamp;
+            imp.alphaIsTransparency = false;
+            imp.SaveAndReimport();
+
+            var m = new Material(shader) { name = "bohai_ground_splat" };
+            m.SetTexture("_Control", AssetDatabase.LoadAssetAtPath<Texture2D>(path));
+            m.SetTexture("_Base", T.Tex(keys[0])); m.SetTexture("_LayerR", T.Tex(keys[1])); m.SetTexture("_LayerG", T.Tex(keys[2]));
+            m.SetTexture("_LayerB", T.Tex(keys[3])); m.SetTexture("_LayerA", T.Tex(keys[4]));
+            m.SetFloat("_TileMetres", T.Metres(keys[0]).x);
+            m.SetVector("_Bounds", new Vector4(XMin, ZMin, XMax, ZMax));
+            string mp = $"{MaterialDir}/bohai_ground_splat.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(mp)) AssetDatabase.DeleteAsset(mp);
+            AssetDatabase.CreateAsset(m, mp);
+            var size = new Vector2(XMax - XMin + 120f, ZMax + 80f - LeveeNorth + 4f);
+            T.Quad(env, "Splat ground", new Vector3((XMin + XMax) / 2f, -0.009f, (LeveeNorth - 4f + ZMax + 80f) / 2f), new Vector3(90f, 0, 0), size, m, castShadows: false);
+            splatGround = true;
+        }
 
         // ---------- people ----------
 
@@ -1779,7 +1905,7 @@ namespace ThreeKingdoms.EditorTools
                 z.Size = new Vector2(x1 - x0, z1 - z0);
                 z.Pitch = pitchDeg; z.Distance = distance; z.Fov = fov; z.LookOffset = new Vector3(0, 0.8f, 0); z.Priority = priority;
             }
-            Zone("Open plain", XMin, XMax, LeveeNorth, ZMax, 34f, 52f, fov: 22f);
+            Zone("Open plain", XMin, XMax, LeveeNorth, ZMax, 32f, 40f, fov: 21f);   // closer than before (52 m) so ground texels read larger (user 2026-10-25)
             Zone("Pingyuan city", CityX0, CityX1, CityZ0, CityZ1, 28f, 36f, priority: 1);
             Zone("Levee and ferry", CityCx - 30f, CityCx + 30f, -270f, CityZ0, 22f, 32f, priority: 1);
             Zone("Gaotang", 290f, 370f, -180f, -98f, 26f, 34f, priority: 1);
