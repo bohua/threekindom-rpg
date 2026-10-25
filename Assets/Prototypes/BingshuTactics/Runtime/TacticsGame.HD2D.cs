@@ -21,7 +21,7 @@ namespace Prototype.BingshuTactics
         // 涿郡贴图（缺图时退回虎牢关贴图包）
         string ZTop(Terrain t) => t switch
         {
-            Terrain.Grass => "ground_grass", Terrain.Road => "ground_earth_ruts", Terrain.Sand => "ground_packed_earth", Terrain.Camp => "ground_earth_gravel",
+            Terrain.Grass => "ground_grass", Terrain.Road => "ground_earth_ruts", Terrain.Sand => "ground_packed_earth", Terrain.Camp => "ground_earth_gravel", Terrain.Ford => "ground_ford_shallows", Terrain.Bridge => "bridge_deck",
             Terrain.Wall or Terrain.Gate => "citywall_walkway", _ => null
         };
 

@@ -336,7 +336,7 @@ namespace Prototype.BingshuTactics
                     var uvs = new[] { new Vector2(v / 4f, 0), new Vector2(v / 4f, 1), new Vector2((v + 1) / 4f, 1), new Vector2((v + 1) / 4f, 0) };
                     var r = Enumerable.Range(0, 4).Select(i => uvs[(i + rot) % 4]).ToArray();
                     var zTop = groundT == Terrain.River ? null : ZMat(ZTop(groundT));
-                    if (zTop)
+                    if (zTop || (groundT == Terrain.River && zWater))
                     {
                         Vector2 W2(float wx, float wz) => new Vector2(wx / ZTile, wz / ZTile);
                         r = new[] { W2(x0 + iW, z0 + iS), W2(x0 + iW, z1 - iN), W2(x1 - iE, z1 - iN), W2(x1 - iE, z0 + iS) };
@@ -387,7 +387,14 @@ namespace Prototype.BingshuTactics
                 var ab = a + Vector3.up * yb + inward * botIn; var bb = b + Vector3.up * yb + inward * botIn;
                 float v1 = seg / HS;
                 var zWall = IsWallish(p) ? ZMat("citywall_face") : null;
-                if (zWall)
+                var zSide = zWall ? null : ZMat(s == Side.WetBank ? "side_river_bank" : s == Side.Dirt || s == Side.GrassLip ? "side_earth_cliff" : null);
+                if (zSide)
+                {
+                    // 涿郡同款侧面：120×30 一张对应 4 米宽、1 米高，按世界坐标铺
+                    float ua = (d.y != 0 ? a.x : a.z) / ZTile, ub = (d.y != 0 ? b.x : b.z) / ZTile;
+                    B(zSide).Quad(ab, at, bt, bb, new Vector2(ua, yb), new Vector2(ua, y), new Vector2(ub, y), new Vector2(ub, yb));
+                }
+                else if (zWall)
                 {
                     // 涿郡城墙立面：120×150 一张对应 4 米宽、5 米高，按世界坐标连续铺
                     float ua = (d.y != 0 ? a.x : a.z) / ZTile, ub = (d.y != 0 ? b.x : b.z) / ZTile;
@@ -450,6 +457,7 @@ namespace Prototype.BingshuTactics
         // 拒马：横木上斜插三组 X 形削尖木桩
         void JuMa(Vector3 c)
         {
+            if (Billboard("prop_juma", c, 1f)) return;
             var b = B(LogWood);
             b.Box(c + Vector3.up * 0.45f, new Vector3(T * 0.98f, 0.12f, 0.12f), 2f);
             for (int k = -1; k <= 1; k++)
@@ -464,6 +472,28 @@ namespace Prototype.BingshuTactics
 
         void Palisade(Vector2Int p, Vector3 c)
         {
+            var pw = SpriteMat("palisade_wall");
+            if (pw)
+            {
+                // 涿郡同款营寨木墙：120×75 一张 4 米宽，按道具比例缩小；双面，寨门处留空
+                float hgt = 2.5f * ZPropScale;
+                foreach (var d in Dirs4)
+                {
+                    var nb = p + d;
+                    if (grid.In(nb) && (grid.TerrainAt(nb) == Terrain.Camp || grid.TerrainAt(nb) == Terrain.Wall)) continue;
+                    bool gate = grid.In(nb) && !Grid.Impassable(grid.TerrainAt(nb));
+                    var along = new Vector3(Mathf.Abs(d.y), 0, Mathf.Abs(d.x)); var edge = c + new Vector3(d.x, 0, d.y) * T * 0.47f;
+                    var spans = gate ? new[] { (-0.5f, -0.2f), (0.2f, 0.5f) } : new[] { (-0.5f, 0.5f) };
+                    foreach (var (s0, s1) in spans)
+                    {
+                        Vector3 a0 = edge + along * (s0 * T), a1 = edge + along * (s1 * T);
+                        float u0 = (along.x > 0 ? a0.x : a0.z) / (ZTile * ZPropScale), u1 = (along.x > 0 ? a1.x : a1.z) / (ZTile * ZPropScale);
+                        B(pw).Quad(a0, a0 + Vector3.up * hgt, a1 + Vector3.up * hgt, a1, new Vector2(u0, 0), new Vector2(u0, 1), new Vector2(u1, 1), new Vector2(u1, 0));
+                        B(pw).Quad(a1, a1 + Vector3.up * hgt, a0 + Vector3.up * hgt, a0, new Vector2(u1, 0), new Vector2(u1, 1), new Vector2(u0, 1), new Vector2(u0, 0));
+                    }
+                }
+                return;
+            }
             var b = B(LogWood);
             foreach (var d in Dirs4)
             {
@@ -506,10 +536,13 @@ namespace Prototype.BingshuTactics
             var door = B(DoorMat);
             // 深门洞（暗色内壁）＋包铁双扇门＋平顶木过梁
             B(LitMat("passage", Env("side_rammed") ?? (Texture2D)Stone.mainTexture, new Color(0.45f, 0.40f, 0.36f))).Box(new Vector3(c.x, 1.1f, zf + 0.25f), new Vector3(T * 0.86f, 2.2f, 0.5f), 1f);
+            // 涿郡同款门洞贴图是两扇门画在一张上：左右各取一半；旧贴图包是单扇，镜像成一对
+            bool pair = Env("gate_passage_doors");
+            float um = pair ? 0.5f : 1f, ur0 = pair ? 0.5f : 1f, ur1 = pair ? 1f : 0f;
             door.Quad(new Vector3(c.x - T * 0.40f, 0, zf), new Vector3(c.x - T * 0.40f, 2.0f, zf), new Vector3(c.x, 2.0f, zf), new Vector3(c.x, 0, zf),
-                new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0));
+                new Vector2(0, 0), new Vector2(0, 1), new Vector2(um, 1), new Vector2(um, 0));
             door.Quad(new Vector3(c.x, 0, zf), new Vector3(c.x, 2.0f, zf), new Vector3(c.x + T * 0.40f, 2.0f, zf), new Vector3(c.x + T * 0.40f, 0, zf),
-                new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 1), new Vector2(0, 0));
+                new Vector2(ur0, 0), new Vector2(ur0, 1), new Vector2(ur1, 1), new Vector2(ur1, 0));
             B(Wood).Box(new Vector3(c.x, 2.1f, zf - 0.05f), new Vector3(T * 1.0f, 0.18f, 0.14f), 2f);
             foreach (float s in new[] { -1f, 1f }) B(Pillar).Box(new Vector3(c.x + s * T * 0.46f, 1.05f, zf - 0.05f), new Vector3(0.12f, 2.1f, 0.12f), 2f);
         }
@@ -518,6 +551,30 @@ namespace Prototype.BingshuTactics
         void GateTower(Vector2Int gate)
         {
             var baseC = Tile(gate); float y0 = baseC.y;
+            var ft = SpriteMat("gate_tower_front"); var st = SpriteMat("gate_tower_side");
+            if (ft && st)
+            {
+                // 涿郡同款关门城楼：正立面 8×5 米、侧立面 4×5 米的贴图，缩到 3.6 米宽；四面立面＋顶上补瓦面封顶
+                float fw = T * 3f, fh = fw * 5f / 8f, fd = fh * 4f / 5f;
+                float tx = baseC.x, tz = baseC.z;
+                Vector3 P(float x, float y, float z) => new Vector3(tx + x, y0 + y, tz + z);
+                float hx = fw / 2f, hz = fd / 2f;
+                B(ft).Quad(P(-hx, 0, -hz), P(-hx, fh, -hz), P(hx, fh, -hz), P(hx, 0, -hz), new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0));
+                B(ft).Quad(P(hx, 0, hz), P(hx, fh, hz), P(-hx, fh, hz), P(-hx, 0, hz), new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0));
+                B(st).Quad(P(-hx, 0, hz), P(-hx, fh, hz), P(-hx, fh, -hz), P(-hx, 0, -hz), new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0));
+                B(st).Quad(P(hx, 0, -hz), P(hx, fh, -hz), P(hx, fh, hz), P(hx, 0, hz), new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0));
+                // 立面里的屋顶从上往下看是空的：用瓦面四坡顶把顶封上
+                var rt = ZMat("roof_tiles_grey") ?? RoofTile;
+                float ey = fh * 0.62f, ry = fh * 0.97f, ox2 = hx * 0.80f, oz2 = hz * 0.86f, rx2 = hx * 0.36f;
+                var tRoof = B(rt);
+                tRoof.Quad(P(-ox2, ey, -oz2), P(-rx2, ry, 0), P(rx2, ry, 0), P(ox2, ey, -oz2), new Vector2(0, 0), new Vector2(0.2f, 1), new Vector2(0.8f, 1), new Vector2(1, 0));
+                tRoof.Quad(P(ox2, ey, oz2), P(rx2, ry, 0), P(-rx2, ry, 0), P(-ox2, ey, oz2), new Vector2(0, 0), new Vector2(0.2f, 1), new Vector2(0.8f, 1), new Vector2(1, 0));
+                tRoof.Tri(P(-ox2, ey, oz2), P(-rx2, ry, 0), P(-ox2, ey, -oz2), new Vector2(0, 0), new Vector2(0.5f, 1), new Vector2(1, 0));
+                tRoof.Tri(P(ox2, ey, -oz2), P(rx2, ry, 0), P(ox2, ey, oz2), new Vector2(0, 0), new Vector2(0.5f, 1), new Vector2(1, 0));
+                B(Whitewash).Box(P(0, ey * 0.5f, 0), new Vector3(fw * 0.7f, ey, fd * 0.7f), 1.2f);
+                Flag(P(-hx - 0.2f, 0, -hz * 0.3f)); Flag(P(hx + 0.2f, 0, -hz * 0.3f));
+                return;
+            }
             float w = T * 3f, dz = T * 1.0f; float cx = baseC.x, cz = baseC.z;
             var wood = B(Wood);
             // 柱与平坐
@@ -708,7 +765,16 @@ namespace Prototype.BingshuTactics
             }
         }
 
-        Texture2D[] waterFrames;
+        Texture2D[] waterFrames; bool zWater;
+
+        // 涿郡同款河水：4 帧横排，每帧单独一张可平铺贴图，按世界坐标铺
+        static Texture2D WaterFrame(Texture2D src, int f)
+        {
+            int n = src.height;
+            var t = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Repeat };
+            t.SetPixels(src.GetPixels(f * n, 0, n, n)); t.Apply(false, false);
+            return t;
+        }
 
         // 贴图包的河水是 4 帧横排；把第 f 帧重复 4 次拼成与地面相同的“4 变体”条带
         static Texture2D WaterStrip(Texture2D src, int f)
@@ -723,8 +789,11 @@ namespace Prototype.BingshuTactics
 
         void BuildWorld3D()
         {
+            var zw = Env("ground_river_water");
+            zWater = zw && zw.isReadable && zw.width == zw.height * 4;
             var wt = Env("top_water");
-            waterFrames = wt && wt.isReadable && wt.width == wt.height * 4
+            waterFrames = zWater ? Enumerable.Range(0, 4).Select(f => WaterFrame(zw, f)).ToArray()
+                : wt && wt.isReadable && wt.width == wt.height * 4
                 ? Enumerable.Range(0, 4).Select(f => WaterStrip(wt, f)).ToArray()
                 : Enumerable.Range(0, 4).Select(f => TopStrip(Terrain.River, f)).ToArray();
             waterMat = LitMat("water", waterFrames[0]);
