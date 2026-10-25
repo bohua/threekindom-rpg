@@ -9,7 +9,7 @@ namespace ThreeKingdoms.Gameplay.Story
     public enum StageOp
     {
         Line, Choice, Card, Background, Actor, Move, Hide, Face, Remember, Flag, Scroll, March, Fade, Rations,
-        Advance, Load, Battle, Wait, Music, Reputation, Item, Autosave, Shake, Flash, Call,
+        Advance, Load, Battle, Wait, Music, Reputation, Item, Autosave, Shake, Flash, Call, Comic,
     }
 
     public sealed class StageStep
@@ -43,6 +43,9 @@ namespace ThreeKingdoms.Gameplay.Story
             new StageStep { Op = StageOp.Choice, A = speaker, B = prompt, C = choiceFlag, Options = options, Branches = branches };
         // A black card with white text (place and year), seconds on screen.
         public static StageStep Card(string key, float seconds = 2f) => new StageStep { Op = StageOp.Card, A = key, Seconds = seconds };
+        // A comic (连环画) panel stays on screen behind the following lines until the next panel or ComicEnd (user 2026-10-25).
+        public static StageStep Comic(string panel) => new StageStep { Op = StageOp.Comic, A = panel };
+        public static StageStep ComicEnd() => new StageStep { Op = StageOp.Comic, A = null };
         public static StageStep Background(string id) => new StageStep { Op = StageOp.Background, A = id };
         // An actor (id, sprite key) appears at a normalised stage position (0–1, left to right / bottom to top), facing
         // "left", "right", "front" or "back". In a walkable scene, x and y are ignored when the actor already stands there.

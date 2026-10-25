@@ -281,10 +281,13 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return Show("courier", 25.5f, 11.5f, "left");
             yield return Show("du_you_aide", 22f, 11.6f, "front");
             yield return Fade(0f);
+            // The whole 鞭督邮 story plays as a 连环画 (user 2026-10-25): one panel behind each beat's lines.
+            yield return Comic(ChapterScripts.ComicRefused);
             foreach (var s in Lines("du_you_aide", "c11.1", "zhang_fei", "c11.2", "liu_bei", "c11.3", "du_you_aide", "c11.4", "narrator", "c11.5",
                 "du_you_aide", "c11.6", "liu_bei", "c11.7", "du_you_aide", "c11.8"))
                 yield return s;
             yield return Hide("du_you_aide");
+            yield return Comic(ChapterScripts.ComicReport);
             yield return L("narrator", "c11.9");
 
             // C12: Liu Bei himself (史实) or Zhang Fei first (演义); the seal ends on the inspector's neck either way.
@@ -293,7 +296,8 @@ namespace ThreeKingdoms.Gameplay.Story
                 {
                     L("zhang_fei", "c12.a.1"), Move("zhang_fei", 22.8f, 9.6f, 0.5f), L("liu_bei", "c12.a.2"), Move("zhang_fei", 23.6f, 7.6f, 0.4f),
                     L("liu_bei", "c12.a.3"), Fade(1f, 0.3f), Show("du_you_bound", 20f, 9f, "back"), Show("liu_bei", 21.2f, 8.6f, "left"), Fade(0f, 0.3f),
-                    L("narrator", "c12.a.4"), L("du_you", "c12.a.5"), L("liu_bei", "c12.a.6"), Shake(0.4f), L("narrator", "c12.a.7"), L("guan_yu", "c12.a.8"),
+                    Comic(ChapterScripts.ComicBind), L("narrator", "c12.a.4"), L("du_you", "c12.a.5"), L("liu_bei", "c12.a.6"),
+                    Comic(ChapterScripts.ComicCane), Shake(0.4f), L("narrator", "c12.a.7"), L("guan_yu", "c12.a.8"),
                     Remember("liu_bei", "liubei_duyou", "A_self", "mem.liubei_duyou.A"),
                     Remember("guan_yu", "guanyu_duyou", "A_self", "mem.guanyu_duyou.A"),
                 },
@@ -301,14 +305,16 @@ namespace ThreeKingdoms.Gameplay.Story
                 {
                     L("narrator", "c12.b.1"), Move("zhang_fei", 22f, 11.4f, 0.6f), Hide("zhang_fei"), L("liu_bei", "c12.b.2"),
                     Fade(1f, 0.3f), Show("du_you_bound", 20f, 9f, "back"), Show("zhang_fei", 21.2f, 8.6f, "left"), Fade(0f, 0.3f),
-                    L("narrator", "c12.b.3"), L("zhang_fei", "c12.b.4"), Shake(0.4f), L("du_you", "c12.b.5"),
-                    Move("liu_bei", 21.8f, 8.2f, 0.4f), L("liu_bei", "c12.b.6"), L("zhang_fei", "c12.b.7"), L("liu_bei", "c12.b.8"), L("guan_yu", "c12.b.9"),
+                    Comic(ChapterScripts.ComicDrag), L("narrator", "c12.b.3"), L("zhang_fei", "c12.b.4"), Shake(0.4f), L("du_you", "c12.b.5"),
+                    Move("liu_bei", 21.8f, 8.2f, 0.4f), Comic(ChapterScripts.ComicStop), L("liu_bei", "c12.b.6"), L("zhang_fei", "c12.b.7"), L("liu_bei", "c12.b.8"), L("guan_yu", "c12.b.9"),
                     Remember("liu_bei", "liubei_duyou", "B_zhangfei", "mem.liubei_duyou.B"),
                     Remember("guan_yu", "guanyu_duyou", "B_zhangfei", "mem.guanyu_duyou.B"),
                 });
             yield return Remember("zhang_fei", "zhangfei_duyou", "held_back", "mem.zhangfei_duyou");
+            yield return Comic(ChapterScripts.ComicSeal);
             foreach (var s in Lines("narrator", "c12.end.1", "liu_bei", "c12.end.2", "zhang_fei", "c12.end.3", "guan_yu", "c12.end.4", "liu_bei", "c12.end.5"))
                 yield return s;
+            yield return ComicEnd();
 
             // C13 at the east gate: who comes to see them off depends on what was done in the county.
             yield return Fade(1f);
@@ -336,8 +342,10 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return L("zhang_fei", "c13.zhang.a").When(ChapterScripts.DuyouChoice + "0");
             yield return L("zhang_fei", "c13.zhang.b").When(ChapterScripts.DuyouChoice + "1");
             yield return Move("liu_bei", 36f, 0f, 1.4f);
+            yield return Comic(ChapterScripts.ComicLeave);
             yield return L("narrator", "c13.end");
             yield return Fade(1f);
+            yield return ComicEnd();
             // 后事预告 (V02_HUANGJIN_PLAN §5 C13): not written into the story state.
             for (int i = 1; i <= 6; i++) yield return Card("after." + i, 3.5f);
             yield return Scroll(ChapterScripts.ScrollAnxi);

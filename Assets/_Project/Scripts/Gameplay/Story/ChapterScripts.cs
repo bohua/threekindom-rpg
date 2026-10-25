@@ -128,6 +128,10 @@ namespace ThreeKingdoms.Gameplay.Story
 
         // ---------- battles ----------
 
+        // The 鞭督邮 连环画 panels (Codex art/v02-duyou-comic, user 2026-10-25).
+        public const string ComicRefused = "P1_refused", ComicReport = "P2_report", ComicBind = "P3A_bind", ComicCane = "P4A_cane",
+            ComicDrag = "P3B_drag", ComicStop = "P4B_stop", ComicSeal = "P5_seal", ComicLeave = "P6_leave";
+
         // Short lines a battle event plays (SYSTEMS_V02 §1.2 dialogue(id)).
         public static IReadOnlyList<DialogueLine> BattleDialogue(string id) => id switch
         {

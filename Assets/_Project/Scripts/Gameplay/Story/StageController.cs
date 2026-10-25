@@ -27,6 +27,7 @@ namespace ThreeKingdoms.Gameplay.Story
         public IReadOnlyList<string> Choices => Player.Choices;
         public void Choose(int index) => Player.Choose(index);
         public string Card => Player.Card;
+        public string Comic => Player.Comic;
         public float Fade => Player.Fade;
         public bool Cinematic => Player.Cinematic;
         public StagePlayer.MarchShot March => Player.March;

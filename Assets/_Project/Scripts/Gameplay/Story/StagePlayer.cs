@@ -30,6 +30,8 @@ namespace ThreeKingdoms.Gameplay.Story
         void Choose(int index);
         // A full-screen card (place and year, or narration), or null.
         string Card { get; }
+        // The comic panel now on screen, or null.
+        string Comic { get; }
         float Fade { get; }
         bool Cinematic { get; }
         // The march on the realm map now playing, or null.
@@ -64,6 +66,7 @@ namespace ThreeKingdoms.Gameplay.Story
         public DialogueLine? Line { get; private set; }
         public IReadOnlyList<string> Choices { get; private set; }
         public string Card { get; private set; }
+        public string Comic { get; private set; }
         public float Fade { get; private set; }
         public bool Cinematic { get; private set; }
         public MarchShot March { get; private set; }
@@ -106,7 +109,7 @@ namespace ThreeKingdoms.Gameplay.Story
             try { yield return Steps(steps); }
             finally
             {
-                Line = null; Choices = null; Card = null; March = null; Cinematic = false;
+                Line = null; Choices = null; Card = null; Comic = null; March = null; Cinematic = false;
                 Playing = false;
                 Changed?.Invoke();
             }
@@ -158,6 +161,7 @@ namespace ThreeKingdoms.Gameplay.Story
                     yield return WaitConfirmOr(s.Seconds);
                     Card = null;
                     break;
+                case StageOp.Comic: Comic = s.A; Changed?.Invoke(); break;
                 case StageOp.Background: Actors?.Background(s.A); break;
                 case StageOp.Actor: Actors?.Show(s.A, s.B, s.X, s.Y, s.C); break;
                 case StageOp.Move: if (Actors != null) yield return Actors.Move(s.A, s.X, s.Y, s.Seconds); break;

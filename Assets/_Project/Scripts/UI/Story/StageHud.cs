@@ -20,6 +20,7 @@ namespace ThreeKingdoms.UI.Story
         public DialoguePortraitSet Portraits;
         [Tooltip("The realm map the marches play on (art/world-map-chapter1)")] public Texture2D Map;
         public Texture2D[] MarchPiece = new Texture2D[0];
+        [Tooltip("Comic (连环画) panels by name (art/v02-duyou-comic)")] public Texture2D[] ComicPanels = new Texture2D[0];
 
         static readonly Color Base = new Color(0.063f, 0.110f, 0.188f, 0.94f);
         static readonly Color Silver = new Color(0.549f, 0.655f, 0.729f);
@@ -38,6 +39,8 @@ namespace ThreeKingdoms.UI.Story
         };
 
         IStoryScreen S => Screen as IStoryScreen;
+        VisualElement comic, comicFrame, comicImage;
+        string shownComic; float comicT;
         VisualElement root, fade, card, march, mapImage, piece, routeLayer, choiceList, toastBox, cinemaHide;
         Label cardText, objective, prompt, yearLabel, fromLabel, toLabel, toastText;
         DialogueView dialogue;
@@ -85,6 +88,26 @@ namespace ThreeKingdoms.UI.Story
             cinemaHide.Add(prompt);
 
             BuildMarch();
+            // Comic panel (user 2026-10-25: the 鞭督邮 story as a 连环画): a paper-framed picture over a dimmed scene, the
+            // dialogue box below it. Under everything else so lines, choices and fades stay on top.
+            comic = new VisualElement { pickingMode = PickingMode.Ignore };
+            Place(comic, 0, 0, 0, 0);
+            comic.style.backgroundColor = new Color(0.04f, 0.035f, 0.03f, 0.88f);
+            comic.style.alignItems = Align.Center;
+            comicFrame = new VisualElement { pickingMode = PickingMode.Ignore };
+            comicFrame.style.position = Position.Absolute;
+            comicFrame.style.top = Length.Percent(4);
+            comicFrame.style.height = Length.Percent(62);
+            comicFrame.style.width = Length.Percent(62 * 4f / 3f * 9f / 16f);
+            comicFrame.style.backgroundColor = new Color(0.90f, 0.85f, 0.74f);
+            foreach (var side in new System.Action<float>[] { v => comicFrame.style.paddingTop = v, v => comicFrame.style.paddingBottom = v, v => comicFrame.style.paddingLeft = v, v => comicFrame.style.paddingRight = v }) side(10);
+            comicImage = new VisualElement { pickingMode = PickingMode.Ignore };
+            comicImage.style.flexGrow = 1;
+            comicImage.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+            comicFrame.Add(comicImage);
+            comic.Add(comicFrame);
+            comic.style.display = DisplayStyle.None;
+            root.Insert(0, comic);
             dialogue = new DialogueView(root, Skin, Portraits);
 
             choiceList = new VisualElement();
@@ -191,6 +214,7 @@ namespace ThreeKingdoms.UI.Story
             if (line.HasValue && !cinema && s.Card == null) dialogue.Show(line.Value.Speaker, line.Value.Line);
             else dialogue.Hide();
             ShowChoices(s.Choices);
+            ShowComic(s.Comic);
             card.style.display = s.Card != null ? DisplayStyle.Flex : DisplayStyle.None;
             if (s.Card != null) cardText.text = StoryText.Line(s.Card);
             fade.style.opacity = s.Fade;
@@ -204,6 +228,22 @@ namespace ThreeKingdoms.UI.Story
                 first?.Blur();
                 first?.Focus();
             }
+        }
+
+        public string ShownComic => comic != null && comic.style.display == DisplayStyle.Flex ? shownComic : null;
+
+        void ShowComic(string key)
+        {
+            Texture2D tex = null;
+            if (key != null) foreach (var t in ComicPanels) if (t && t.name == key) { tex = t; break; }
+            if (key != shownComic)
+            {
+                shownComic = key; comicT = 0f;
+                comicImage.style.backgroundImage = tex ? new StyleBackground(tex) : new StyleBackground(StyleKeyword.None);
+            }
+            comic.style.display = key != null ? DisplayStyle.Flex : DisplayStyle.None;
+            comicT += Time.unscaledDeltaTime;
+            comicFrame.style.opacity = Mathf.Clamp01(comicT / 0.35f);   // each new panel fades in
         }
 
         void ShowChoices(IReadOnlyList<string> keys)
