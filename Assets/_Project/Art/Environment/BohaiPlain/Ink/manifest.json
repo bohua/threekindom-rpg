@@ -1,0 +1,18 @@
+{
+ "purpose": "Bohai ink-wash trial textures, A = paper-white ink, B = ink with light colour; drop-in replacements for the same-named probe textures (Codex, approved 2026-10-25)",
+ "pixel_density": 30,
+ "sources": [
+  {
+   "source": "art/bohai-ink-ground",
+   "files": 95
+  },
+  {
+   "source": "art/bohai-ink-decals",
+   "files": 55
+  },
+  {
+   "source": "art/bohai-ink-props",
+   "files": 95
+  }
+ ]
+}

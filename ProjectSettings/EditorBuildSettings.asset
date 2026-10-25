@@ -41,5 +41,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Bohai_Plain.unity
     guid: 7aeceefe67a5b3f4ea2d196cfd3119fb
+  - enabled: 1
+    path: Assets/_Project/Scenes/Bohai_InkTrial.unity
+    guid: cd63165ee65a74140b8490577f1ce356
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
