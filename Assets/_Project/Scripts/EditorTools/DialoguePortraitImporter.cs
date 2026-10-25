@@ -49,8 +49,15 @@ namespace ThreeKingdoms.EditorTools
             ("hua_xiong", V03, "HUA_XIONG_PORTRAIT", true, false, 0.6f, 0.5f),
             ("chen_gong", V03, "CHEN_GONG_PORTRAIT", true, false, 0.6f, 0.5f),
             ("lu_bu", @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-poc-8dir-v3", "char_lubu_mainpose", true, false, 0.55f, 0.5f),
+            // 0.4 (Codex art/v04-portraits); Zhao Yun's main portrait from the four heroes.
+            ("zhao_yun", Heroes, "ZHAO_YUN_MAIN_POSE", true, false, 0.6f, 0.5f),
+            ("wen_chou", V04, "WEN_CHOU_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("qu_yi", V04, "QU_YI_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("tian_kai", V04, "TIAN_KAI_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("assassin", V04, "ASSASSIN_PORTRAIT", true, false, 0.6f, 0.5f),
             ("tao_qian", @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\tao-qian-portrait", "TAO_QIAN_MAIN_PORTRAIT", true, false, 0.6f, 0.5f),
         };
+        const string V04 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v04-portraits";
         const string V03 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v03-portraits";
         const string V02 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v02-portraits";
 

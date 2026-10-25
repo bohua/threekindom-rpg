@@ -22,6 +22,8 @@ namespace Prototype.BingshuTactics
         void AddChapter3Crafts(Unit u, TacticsUnitDef d, Dictionary<string, SkillDef> crafts)
         {
             crafts["众望"] = Craft("众望", "替相邻友军承受下一次攻击，并提高其物防（随声望增强）2回合", Effect.Guard, Area.Single, 1, 0, 0f, 25, turns: 2);
+            crafts["援护"] = Craft("援护", "相邻友军与自身本回合受伤-30%", Effect.Guard, Area.Single, 1, 0, 0f, 20, turns: 1, amount: 0.3f);   // 0.4 赵云
+            crafts["连击"] = Craft("连击", "近战单体两段，合计物理1.5倍", Effect.Damage, Area.Single, -1, 0, 1.5f, 25, might: true);
             crafts["三英"] = Craft("三英", "合体技：关张与吕布相邻、刘备在两格内时，三人合击吕布（每场一次）", Effect.Damage, Area.Single, 2, 0, 1.2f, 0, might: true);
             if (d.Key == "LuBu")
             {
@@ -137,6 +139,11 @@ namespace Prototype.BingshuTactics
                 case TacticsActionKind.Cancel:
                     foreach (var e in Chapter.Events.Where(e => e.Id == a.Unit)) e.Fired = true;
                     break;
+                case TacticsActionKind.OpenExit:
+                    exitOpen = true;
+                    if (Chapter.ExitZone is RectInt z) flashes.Add((AllIn(z), new Color(0.38f, 0.84f, 0.91f), 0f));
+                    yield return new WaitForSeconds(0.4f);
+                    break;
             }
         }
 
@@ -170,6 +177,49 @@ namespace Prototype.BingshuTactics
                 GUI.Label(new Rect(r.x + 16, r.y, r.width - 20, r.height), choice.Options[i], St(18, sel ? Ivory : new Color(0.71f, 0.78f, 0.84f), TextAnchor.MiddleLeft));
                 if (Event.current.type == EventType.MouseDown && r.Contains(Event.current.mousePosition)) { choiceSel = i; choicePicked = i; }
             }
+        }
+
+        // ---------------- 0.4 阈值撤离 ----------------
+        bool exitOpen;
+        readonly List<Unit> exited = new List<Unit>();
+        public bool ExitOpen => exitOpen;
+
+        List<Vector2Int> AllIn(RectInt z)
+        {
+            var l = new List<Vector2Int>();
+            for (int x = z.xMin; x < z.xMax; x++) for (int y = z.yMin; y < z.yMax; y++) l.Add(new Vector2Int(x, y));
+            return l;
+        }
+
+        bool InExit(Vector2Int p) => exitOpen && Chapter.ExitZone is RectInt z && z.Contains(p);
+
+        // 进入撤离区即撤出战场；我方可操作单位全部撤出（至少一人）即胜利
+        bool ExitCheck()
+        {
+            if (!exitOpen) return false;
+            foreach (var u in units.Where(x => x.Alive && x.Team == Team.Player && InExit(x.Pos)).ToList())
+            {
+                exited.Add(u);
+                u.Hp = 0; u.PendingCast = null; u.PendingFollow = null;
+                popups.Add((views[u].position + Vector3.up * (2.3f * HeadK), "撤离", new Color(0.6f, 0.9f, 1f), 0f));
+                Log($"{u.Name} 撤到了南岸");
+            }
+            if (exited.Count > 0 && !units.Any(x => x.Alive && x.Team == Team.Player && !x.Ai))
+            {
+                mode = Mode.Victory;
+                Log("全军撤离！");
+                StartCoroutine(VictorySequence());
+                return true;
+            }
+            return false;
+        }
+
+        // 自动代打：撤离区开放后朝撤离区走
+        Vector2Int? ExitTarget(Unit u)
+        {
+            if (!exitOpen || !(Chapter.ExitZone is RectInt z) || u.Team != Team.Player) return null;
+            var c = new Vector2Int(z.xMin + z.width / 2, z.yMin + z.height / 2);
+            return c;
         }
 
         // 自动代打（测试、截图）时我方武将用合体技

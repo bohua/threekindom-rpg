@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f58774cdd05485f4a9f581414a12d3d3, type: 3}
+  m_Name: Battle10_Panhe
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.EncounterDefinition
+  Id: battle_10
+  DisplayName: "\u7B2C\u5341\u6218 \xB7 \u78D0\u6CB3\u6551\u516C\u5B59\u74D2"
+  Enemies:
+  - General: {fileID: 11400000, guid: af34b1917accd154eaebcc53b463b077, type: 2}
+    Level: 12
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 66188c58825370247b1662f978d5dc03, type: 2}
+    Level: 11
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 66188c58825370247b1662f978d5dc03, type: 2}
+    Level: 11
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 66188c58825370247b1662f978d5dc03, type: 2}
+    Level: 10
+    FocusEscort: 0
+  Ai: 1
+  SkillEveryRounds: 3
+  ExpReward: 110
+  CopperReward: 120
+  Allies: []
+  Events: []

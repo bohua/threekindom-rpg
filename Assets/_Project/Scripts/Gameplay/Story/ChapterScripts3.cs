@@ -26,7 +26,7 @@ namespace ThreeKingdoms.Gameplay.Story
             Huimeng => HuimengSteps().ToList(),
             ToHulao => ToHulaoSteps().ToList(),
             AfterHulao => AfterHulaoSteps().ToList(),
-            _ => null,
+            _ => ChapterScripts4.Stage(id),
         };
 
         // D1 漂泊 (186–189), D2 洛阳之变 (the realm-map chronicle), D3 献刀与捉放, then north to Gongsun Zan (190).
@@ -199,14 +199,10 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return L("guan_yu", "d11.4");
             foreach (var s in Lines("liu_bei", "d11.5", "zhang_fei", "d11.6", "liu_bei", "d11.7")) yield return s;
             yield return Fade(1f);
-            // 后事预告 (not written into the story state).
-            for (int i = 1; i <= 5; i++) yield return Card("after3." + i, 3.5f);
+            // 0.4: scroll ⑥ without the seal, then section six (the 后事预告 moved to the end of 0.4).
             yield return Scroll(ScrollFenLuoyang);
             yield return Advance(ChapterStep.Luoyang, ChapterStep.Done03);
-            yield return Card("end3.title", 4f);
-            yield return Card("end3.thanks", 4f);
-            yield return Call(GameRun.Clear);
-            yield return Load(GameRun.TitleScene);
+            yield return Load(GameRun.StageScene, ChapterScripts4.HebeiOpen);
         }
 
         // ---------- battles ----------
@@ -224,14 +220,14 @@ namespace ThreeKingdoms.Gameplay.Story
                 ("zhang_fei", "zhangfei_trust", "?" + HulaoChoice + "1|trusted", "mem.zhangfei_trust"),
                 ("zhang_fei", "zhangfei_shield", "?" + HulaoChoice + "0|shielded", "mem.zhangfei_shield"),
             },
-            _ => null,
+            _ => ChapterScripts4.VictoryMemories(encounterId),
         };
 
         public static (string scene, string stage) AfterVictory(string encounterId) => encounterId switch
         {
             "battle_7" => (GameRun.GongsunScene, null),
             "battle_8" => (GameRun.StageScene, AfterHulao),
-            _ => (null, null),
+            _ => ChapterScripts4.AfterVictory(encounterId),
         };
     }
 }

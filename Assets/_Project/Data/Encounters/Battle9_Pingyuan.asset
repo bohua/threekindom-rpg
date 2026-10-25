@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f58774cdd05485f4a9f581414a12d3d3, type: 3}
+  m_Name: Battle9_Pingyuan
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.EncounterDefinition
+  Id: battle_9
+  DisplayName: "\u7B2C\u4E5D\u6218 \xB7 \u5E73\u539F\u5FA1\u5BC7"
+  Enemies:
+  - General: {fileID: 11400000, guid: 1c18ea9639e5f4042a73f0bea1e35324, type: 2}
+    Level: 10
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 6827ae0822c55034a8e4ddf15ee95b8d, type: 2}
+    Level: 9
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 6827ae0822c55034a8e4ddf15ee95b8d, type: 2}
+    Level: 9
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 6827ae0822c55034a8e4ddf15ee95b8d, type: 2}
+    Level: 9
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 6827ae0822c55034a8e4ddf15ee95b8d, type: 2}
+    Level: 9
+    FocusEscort: 0
+  Ai: 1
+  SkillEveryRounds: 3
+  ExpReward: 90
+  CopperReward: 100
+  Allies: []
+  Events: []

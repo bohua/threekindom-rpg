@@ -18,7 +18,7 @@ namespace ThreeKingdoms.Gameplay.Story
     // does is FieldScripts; cutscenes play through the StagePlayer like on the story stage.
     public sealed class FieldStoryController : MonoBehaviour, IStoryScreen, IStageActors, IFieldHost, IShopTier, IFieldMarks
     {
-        public enum Place { Camp, Anxi, Gongsun, Suanzao }   // 0.3: Gongsun Zan's garrison, the Suanzao camp (FieldScripts3)
+        public enum Place { Camp, Anxi, Gongsun, Suanzao, Pingyuan }   // 0.3: Gongsun Zan's garrison, the Suanzao camp (FieldScripts3)
 
         public Place Location;
         public BattleCatalog Catalog;
@@ -53,9 +53,10 @@ namespace ThreeKingdoms.Gameplay.Story
         BattleCatalog IFieldHost.Catalog => Catalog;
         public string SaveLocation => Location switch
         {
-            Place.Camp => SaveData.CampLocation, Place.Gongsun => SaveData.GongsunLocation, Place.Suanzao => SaveData.SuanzaoLocation, _ => SaveData.AnxiLocation,
+            Place.Camp => SaveData.CampLocation, Place.Gongsun => SaveData.GongsunLocation, Place.Suanzao => SaveData.SuanzaoLocation,
+            Place.Pingyuan => FieldScripts4.RegionLocation, _ => SaveData.AnxiLocation,
         };
-        public int ShopTier => Location switch { Place.Anxi => 2, Place.Gongsun or Place.Suanzao => 3, _ => 1 };
+        public int ShopTier => Location switch { Place.Anxi => 2, Place.Gongsun or Place.Suanzao or Place.Pingyuan => 3, _ => 1 };
         public Camera MarkCamera => View;
         public IEnumerable<Transform> Marks => Run == null || Busy ? Enumerable.Empty<Transform>()
             : People.Concat(Spots).Where(t => t && t.gameObject.activeInHierarchy && FieldScripts.Marked(this, IdOf(t)));
@@ -76,7 +77,7 @@ namespace ThreeKingdoms.Gameplay.Story
             Run = GameRun.Current ?? DevRun();
             Stage.Actors = this;
             Stage.Changed += () => Changed?.Invoke();
-            var spot = Run.NextArrival == GameRun.Arrival.ReturnFromBattle && ReturnSpot && (Location == Place.Anxi && Run.Chapter2.Step == ChapterStep.AnxiBandits || Location == Place.Gongsun || Location == Place.Suanzao)
+            var spot = Run.NextArrival == GameRun.Arrival.ReturnFromBattle && ReturnSpot && (Location == Place.Anxi && Run.Chapter2.Step == ChapterStep.AnxiBandits || Location == Place.Gongsun || Location == Place.Suanzao || Location == Place.Pingyuan)
                 ? ReturnSpot : ArrivalSpot;
             Run.NextArrival = GameRun.Arrival.NewGame;
             PlaceAt(Player.transform, spot ? spot.position : Player.transform.position);
@@ -91,6 +92,8 @@ namespace ThreeKingdoms.Gameplay.Story
         // Opened on its own (development): a run at this place's step.
         GameRun DevRun()
         {
+            if (Location == Place.Pingyuan)
+                return GameRun.ForChapter(Catalog, ChapterStep.Pingyuan, 370, 500, 2, development: true);
             if (Location == Place.Gongsun || Location == Place.Suanzao)
                 return GameRun.ForChapter(Catalog, Location == Place.Gongsun ? ChapterStep.Gongsun : ChapterStep.Suanzao, 210, 400, 2, development: true);
             return GameRun.ForChapter(Catalog, Location == Place.Camp ? ChapterStep.Camp : ChapterStep.Anxi, Location == Place.Camp ? 60 : 150, 260, 2, development: true);

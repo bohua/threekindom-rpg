@@ -18,13 +18,14 @@ namespace ThreeKingdoms.UI.Story
             ["ji"] = new Vector2(0.392f, 0.270f), ["gaotang"] = new Vector2(0.384f, 0.520f), ["pingyuan"] = new Vector2(0.411f, 0.424f),
             ["suanzao"] = new Vector2(0.271f, 0.667f), ["hulao"] = new Vector2(0.204f, 0.690f), ["luoyang"] = new Vector2(0.172f, 0.694f),
             ["ye"] = new Vector2(0.294f, 0.562f), ["xuzhou"] = new Vector2(0.483f, 0.727f),
+            ["jieqiao"] = new Vector2(0.334f, 0.463f), ["zhending"] = new Vector2(0.290f, 0.460f),
         };
 
         // Powers: name and banner colour.
         static readonly Dictionary<string, (string name, Color color)> Lords = new Dictionary<string, (string, Color)>
         {
             ["dong"] = ("董卓", new Color(0.56f, 0.16f, 0.16f)), ["liuyu"] = ("刘虞", new Color(0.36f, 0.52f, 0.62f)),
-            ["gongsun"] = ("公孙瓒", new Color(0.88f, 0.88f, 0.86f)), ["yuan_shao"] = ("袁绍（盟主）", new Color(0.62f, 0.12f, 0.20f)),
+            ["gongsun"] = ("公孙瓒", new Color(0.88f, 0.88f, 0.86f)), ["yuan_shao"] = ("袁绍", new Color(0.62f, 0.12f, 0.20f)),
             ["coalition"] = ("关东诸侯", new Color(0.62f, 0.12f, 0.20f)), ["sun"] = ("孙坚", new Color(0.86f, 0.30f, 0.22f)),
             ["han"] = ("韩馥", new Color(0.36f, 0.56f, 0.45f)), ["tao"] = ("陶谦", new Color(0.52f, 0.70f, 0.70f)),
             ["none"] = ("焦土", new Color(0.35f, 0.35f, 0.35f)),
@@ -36,6 +37,8 @@ namespace ThreeKingdoms.UI.Story
             ["y186"] = (new Dictionary<string, string> { ["ji"] = "liuyu", ["luoyang"] = "han_court" }, "gaotang"),
             ["y189"] = (new Dictionary<string, string> { ["ji"] = "liuyu", ["ye"] = "han", ["xuzhou"] = "tao" }, "gaotang"),
             ["y190"] = (new Dictionary<string, string> { ["ji"] = "gongsun", ["luoyang"] = "dong", ["hulao"] = "dong", ["suanzao"] = "coalition", ["ye"] = "han", ["xuzhou"] = "tao" }, "suanzao"),
+            ["y191b"] = (new Dictionary<string, string> { ["ji"] = "gongsun", ["ye"] = "han", ["xuzhou"] = "tao" }, "ji"),
+            ["y192"] = (new Dictionary<string, string> { ["ji"] = "gongsun", ["ye"] = "yuan_shao", ["xuzhou"] = "tao", ["pingyuan"] = "gongsun" }, "pingyuan"),
             ["y191"] = (new Dictionary<string, string> { ["ji"] = "gongsun", ["luoyang"] = "none", ["suanzao"] = "none", ["ye"] = "han", ["xuzhou"] = "tao" }, "ji"),
         };
 

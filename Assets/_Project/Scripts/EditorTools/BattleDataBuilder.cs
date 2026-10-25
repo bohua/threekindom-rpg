@@ -24,7 +24,7 @@ namespace ThreeKingdoms.EditorTools
             var config = Asset<BattleConfigDefinition>("Battle/BattleConfig", c =>
             {
                 c.AdvantagePercent = 140; c.GuardPercent = 50; c.MinModifierPercent = 20; c.MaxAttribute = 100;
-                c.ExpTable = new[] { 0, 10, 30, 60, 100, 150, 210, 280, 370 };   // 0.2: level cap 5 → 7 (SYSTEMS_V02 §4); 0.3: → 9 (SYSTEMS_V03 §4)
+                c.ExpTable = new[] { 0, 10, 30, 60, 100, 150, 210, 280, 370, 480, 610, 760 };   // 0.2: level cap 5 → 7 (SYSTEMS_V02 §4); 0.3: → 9 (SYSTEMS_V03 §4); 0.4: → 12 (SYSTEMS_V04 §6)
             });
             var troops = Asset<TroopTableDefinition>("Battle/TroopTable", t =>
             {
@@ -126,6 +126,20 @@ namespace ThreeKingdoms.EditorTools
             var luBu = General("lu_bu", "LuBu", "吕布", TroopType.Cavalry, 100, 85, 30, 0, 0, 0, (1, enemyCharge), (1, enemySweep));
             var bingzhou = General("bingzhou_cavalry", "BingzhouCavalry", "并州骑", TroopType.Cavalry, 66, 55, 25, 0, 0, 0);
             var b7 = Encounter("battle_7", "Battle7_Drill", "选做 · 校场演武", EnemyAiKind.FacingSlot, 70, 60, (baimaRider, 7), (baimaRider, 7), (baimaRider, 6));
+            // 0.4 河北篇 (V04_HEBEI_PLAN §4): Pingyuan's raiders, Wen Chou at the Panhe, Qu Yi's vanguard and crossbows at Jieqiao.
+            var raiderChief = General("liukou_chief", "RaiderChief", "流寇头目", TroopType.Infantry, 74, 58, 30, 0, 0, 0, (1, enemyCharge));
+            var raider = General("liukou", "Raider", "流寇", TroopType.Infantry, 52, 44, 20, 0, 0, 0);
+            var wenChou = General("wen_chou", "WenChou", "文丑", TroopType.Cavalry, 94, 78, 40, 0, 0, 0, (1, enemyCharge), (1, enemySweep));
+            var yuanCav = General("yuan_cavalry", "YuanCavalry", "袁军骑", TroopType.Cavalry, 66, 56, 25, 0, 0, 0);
+            var quYi = General("qu_yi", "QuYi", "麴义", TroopType.Infantry, 82, 90, 62, 0, 0, 0, (1, enemyCharge));
+            var xiandeng = General("xiandeng", "Xiandeng", "先登死士", TroopType.Infantry, 72, 76, 20, 0, 0, 0);
+            var crossbow = General("qiangnu", "Crossbow", "强弩手", TroopType.Archer, 70, 50, 30, 0, 0, 0);
+            var b9 = Encounter("battle_9", "Battle9_Pingyuan", "第九战 · 平原御寇", EnemyAiKind.FacingSlot, 90, 100,
+                (raiderChief, 10), (raider, 9), (raider, 9), (raider, 9), (raider, 9));
+            var b10 = Encounter("battle_10", "Battle10_Panhe", "第十战 · 磐河救公孙瓒", EnemyAiKind.FacingSlot, 110, 120,
+                (wenChou, 12), (yuanCav, 11), (yuanCav, 11), (yuanCav, 10));
+            var b11 = Encounter("battle_11", "Battle11_Jieqiao", "第十一战 · 界桥殿后", EnemyAiKind.FacingSlot, 130, 150,
+                (quYi, 12), (xiandeng, 11), (xiandeng, 11), (crossbow, 11), (crossbow, 11));
             var b8 = Encounter("battle_8", "Battle8_Hulao", "第八战 · 虎牢关·三英战吕布", EnemyAiKind.FacingSlot, 90, 120, (luBu, 9), (bingzhou, 7), (bingzhou, 7));
 
             // Equipment catalogue (equipment-items GDD, adopted 2026-10-19; names provisional, values to be tuned).
@@ -171,7 +185,7 @@ namespace ThreeKingdoms.EditorTools
             {
                 c.Config = config; c.Troops = troops; c.Ration = ration; c.Economy = economy;
                 c.Party = new[] { liu, guan, zhang };
-                c.Encounters = new[] { b1, b2, b3, b4, b5, b6, b7, b8 };
+                c.Encounters = new[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11 };
             });
             AssetDatabase.SaveAssets();
             catalog.ToRuntime();   // validate

@@ -75,6 +75,9 @@ namespace ThreeKingdoms.Save
             SaveData.AnxiLocation => step == ChapterStep.Anxi || step == ChapterStep.AnxiBandits,
             SaveData.GongsunLocation => step == ChapterStep.Gongsun,
             SaveData.SuanzaoLocation => step == ChapterStep.Suanzao,
+            // 0.4: the Bohai plain (Pingyuan base) only while the chapter is there (REVIEW_V04 R6).
+            _ when location != null && location.StartsWith(SaveData.RegionPrefix) => step < ChapterStep.Done03 || step == ChapterStep.Pingyuan
+                || step == ChapterStep.PingyuanSafe || step == ChapterStep.Zhending,
             _ => true,
         };
 

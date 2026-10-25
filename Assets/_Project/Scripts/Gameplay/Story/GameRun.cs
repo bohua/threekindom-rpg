@@ -27,6 +27,9 @@ namespace ThreeKingdoms.Gameplay.Story
         // optional drill) and battle 8 (Hulao Pass) on the tactics map.
         public const string GongsunScene = "Camp_Gongsun", SuanzaoScene = "Camp_Suanzao";
         public static readonly string[] Chapter3BattleScenes = { "Battle_Drill07", "Battle_Hulao08" };
+        // 0.4 河北篇 (design/v0.4-hebei): the Bohai plain (RegionScenes R4) and battles 9–11 on the tactics map.
+        public static readonly string[] Chapter4BattleScenes = { "Battle_Pingyuan09", "Battle_Panhe10", "Battle_Jieqiao11" };
+        public const string BohaiScene = "Bohai_Plain";
         public const string Chapter = "第一章　涿郡起兵";
         // Walkable open regions (chapter 1 art probe, 2026-10-24): region id → scene.
         public static readonly System.Collections.Generic.IReadOnlyDictionary<string, string> RegionScenes =
@@ -97,7 +100,7 @@ namespace ThreeKingdoms.Gameplay.Story
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() { Current = null; SaveDirectoryOverride = null; }
 
-        public static int BattleIndex(string encounterId) => Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6", "battle_7", "battle_8" }, encounterId);
+        public static int BattleIndex(string encounterId) => Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6", "battle_7", "battle_8", "battle_9", "battle_10", "battle_11" }, encounterId);
 
         public static string SceneFor(string encounterId) => encounterId switch
         {
@@ -109,6 +112,9 @@ namespace ThreeKingdoms.Gameplay.Story
             "battle_6" => ChapterBattleScenes[2],
             "battle_7" => Chapter3BattleScenes[0],
             "battle_8" => Chapter3BattleScenes[1],
+            "battle_9" => Chapter4BattleScenes[0],
+            "battle_10" => Chapter4BattleScenes[1],
+            "battle_11" => Chapter4BattleScenes[2],
             _ => null,
         };
 
@@ -127,7 +133,8 @@ namespace ThreeKingdoms.Gameplay.Story
         }
 
         // Header of a save slot: the chapter part the play-through is in.
-        public string ChapterTitle => Chapter2.Step >= ChapterStep.Done ? "第一篇章　讨董"
+        public string ChapterTitle => Chapter2.Step >= ChapterStep.Done03 ? "第一篇章　河北"
+            : Chapter2.Step >= ChapterStep.Done ? "第一篇章　讨董"
             : Chapter2.Step >= ChapterStep.Anxi ? "第一篇章　安喜县尉"
             : Chapter2.Step >= ChapterStep.Camp ? "第一篇章　黄巾转战" : Chapter;
 
