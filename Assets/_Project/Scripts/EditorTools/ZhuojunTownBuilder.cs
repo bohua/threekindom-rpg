@@ -33,12 +33,20 @@ namespace ThreeKingdoms.EditorTools
         const string MeshPath = TownDir + "/Town_Meshes.asset";
         static string materialDir = TownMaterialDir;
         const float Ppm = 30f;
+        // High-res painted environment art (user 2026-10-25): textures in a folder named HD are 120 px per metre,
+        // smoothly filtered with mipmaps, and their soft alpha is blended rather than clipped.
+        const float HdPpm = 120f;
+        internal static bool IsHd(Texture2D t) => t && AssetDatabase.GetAssetPath(t).Contains("/HD/");
+        static float PpmOf(Texture2D t) => IsHd(t) ? HdPpm : Ppm;
+        // A builder can swap a key for its HD counterpart (key -> HD key), used whenever the HD file exists.
+        internal static readonly Dictionary<string, string> HdAliases = new Dictionary<string, string>();
         public static readonly Vector3 PlayerStart = new Vector3(0f, 0f, -46f);   // outside the south gate (design §5 step 1)
 
         static Mesh container;
         static readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
         static readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
         static readonly Dictionary<string, string> axes = new Dictionary<string, string>();
+        static string[] extraDirs = System.Array.Empty<string>();
 
         [MenuItem("JRPG/Build Zhuojun Town (native textures)")]
         public static void Build()
@@ -252,11 +260,14 @@ namespace ThreeKingdoms.EditorTools
 
         // Other builders (the battle backdrop diorama) reuse the building and prop helpers with their own material
         // folder and mesh asset, so the town scene's materials keep their GUIDs.
-        internal static void BeginSession(string materials, string meshPath)
+        // extraTextureDirs (the Bohai plain probe's own art) are searched before the town folders and imported the same way.
+        internal static void BeginSession(string materials, string meshPath, params string[] extraTextureDirs)
         {
+            extraDirs = extraTextureDirs ?? System.Array.Empty<string>();
             ReadManifests();
             ConfigureTextures(TownDir);
             if (Directory.Exists(MapDir)) ConfigureTextures(MapDir);
+            foreach (string dir in extraDirs) if (Directory.Exists(dir)) ConfigureTextures(dir);
             ZhuojunTownBuilder.materials.Clear();
             materialDir = materials;
             Directory.CreateDirectory(materialDir);
@@ -266,6 +277,8 @@ namespace ThreeKingdoms.EditorTools
         internal static void EndSession()
         {
             EndMeshes();
+            extraDirs = System.Array.Empty<string>();
+            HdAliases.Clear();
             materialDir = TownMaterialDir;
         }
 
@@ -275,7 +288,7 @@ namespace ThreeKingdoms.EditorTools
         static void ReadManifests()
         {
             axes.Clear();
-            foreach (var dir in new[] { CornerDir, TownDir, MapDir })
+            foreach (var dir in new[] { CornerDir, TownDir, MapDir }.Concat(extraDirs))
             {
                 if (!File.Exists($"{dir}/manifest.json")) continue;
                 var m = JsonUtility.FromJson<Manifest>(File.ReadAllText($"{dir}/manifest.json"));
@@ -283,7 +296,7 @@ namespace ThreeKingdoms.EditorTools
             }
         }
 
-        static void ConfigureTextures(string dir)
+        internal static void ConfigureTextures(string dir)
         {
             foreach (string path in Directory.GetFiles(dir, "*.png"))
             {
@@ -293,6 +306,22 @@ namespace ThreeKingdoms.EditorTools
                 if (importer == null) continue;
                 axes.TryGetValue(key, out string a); a ??= "none";
                 bool mask = key.Contains("mask");
+                if (assetPath.Contains("/HD/"))
+                {
+                    importer.textureType = TextureImporterType.Default;
+                    importer.filterMode = FilterMode.Trilinear;
+                    importer.mipmapEnabled = true;
+                    importer.anisoLevel = 4;
+                    importer.maxTextureSize = 2048;
+                    importer.textureCompression = TextureImporterCompression.CompressedHQ;
+                    importer.npotScale = TextureImporterNPOTScale.None;
+                    importer.sRGBTexture = true;
+                    importer.alphaIsTransparency = true;
+                    importer.wrapModeU = a.Contains("x") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                    importer.wrapModeV = a.Contains("y") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                    importer.SaveAndReimport();
+                    continue;
+                }
                 importer.textureType = TextureImporterType.Default;
                 importer.filterMode = FilterMode.Point;
                 importer.mipmapEnabled = false;
@@ -306,16 +335,26 @@ namespace ThreeKingdoms.EditorTools
             }
         }
 
-        static Texture2D Tex(string key) =>
-            AssetDatabase.LoadAssetAtPath<Texture2D>($"{MapDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png")
+        internal static Texture2D Tex(string key) =>
+            Extra(key) ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{MapDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png")
             ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png") ?? throw new FileNotFoundException("Missing town texture " + key);
 
+        static Texture2D Extra(string key)
+        {
+            if (HdAliases.TryGetValue(key, out string hd))
+            {
+                var h = extraDirs.Select(d => AssetDatabase.LoadAssetAtPath<Texture2D>($"{d}/{hd}.png")).FirstOrDefault(t => t);
+                if (h) return h;
+            }
+            return extraDirs.Select(d => AssetDatabase.LoadAssetAtPath<Texture2D>($"{d}/{key}.png")).FirstOrDefault(t => t);
+        }
+
         // Null when a not-yet-delivered texture is missing (art still with Codex).
-        static Texture2D Tex(string key, bool optional) =>
-            AssetDatabase.LoadAssetAtPath<Texture2D>($"{MapDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png")
+        internal static Texture2D Tex(string key, bool optional) =>
+            Extra(key) ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{MapDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png")
             ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png") ?? (optional ? null : throw new FileNotFoundException("Missing town texture " + key));
 
-        static Material Mat(string key, bool clip = false, bool twoSided = false, string emissionMask = null, Color? glow = null)
+        internal static Material Mat(string key, bool clip = false, bool twoSided = false, string emissionMask = null, Color? glow = null)
         {
             string id = key + (clip ? "_clip" : "") + (twoSided ? "_2s" : "");
             if (materials.TryGetValue(id, out var cached)) return cached;
@@ -325,7 +364,19 @@ namespace ThreeKingdoms.EditorTools
             m.SetFloat("_Smoothness", 0f);
             m.SetFloat("_SpecularHighlights", 0f); m.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
             m.SetFloat("_EnvironmentReflections", 0f); m.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
-            if (clip)
+            if (clip && IsHd(Tex(key)))
+            {
+                // Soft painted edge: alpha blend, drawn after the opaque ground.
+                m.SetFloat("_Surface", 1f); m.SetFloat("_Blend", 0f);
+                m.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha); m.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+                m.SetFloat("_SrcBlendAlpha", (float)BlendMode.One); m.SetFloat("_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
+                // Without this URP keeps ambient/sky light on fully transparent texels: a pale blue film past the edge.
+                m.SetFloat("_BlendModePreserveSpecular", 0f);
+                m.SetFloat("_ZWrite", 0f); m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                m.SetOverrideTag("RenderType", "Transparent");
+                m.renderQueue = (int)RenderQueue.Transparent - 50;
+            }
+            else if (clip)
             {
                 m.SetFloat("_AlphaClip", 1f); m.SetFloat("_Cutoff", 0.5f); m.EnableKeyword("_ALPHATEST_ON");
                 m.renderQueue = (int)RenderQueue.AlphaTest;
@@ -373,7 +424,7 @@ namespace ThreeKingdoms.EditorTools
             return mesh;
         }
 
-        static GameObject Quad(Transform parent, string name, Vector3 center, Vector3 euler, Vector2 size, Material m, Vector2? repeat = null, bool castShadows = true)
+        internal static GameObject Quad(Transform parent, string name, Vector3 center, Vector3 euler, Vector2 size, Material m, Vector2? repeat = null, bool castShadows = true)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -386,15 +437,15 @@ namespace ThreeKingdoms.EditorTools
             return go;
         }
 
-        static Vector2 Repeat(string key, Vector2 size)
+        internal static Vector2 Repeat(string key, Vector2 size)
         {
             var t = Tex(key);
-            return new Vector2(size.x * Ppm / t.width, size.y * Ppm / t.height);
+            return new Vector2(size.x * PpmOf(t) / t.width, size.y * PpmOf(t) / t.height);
         }
 
-        static Vector2 Metres(string key) { var t = Tex(key); return new Vector2(t.width / Ppm, t.height / Ppm); }
+        internal static Vector2 Metres(string key) { var t = Tex(key); return new Vector2(t.width / PpmOf(t), t.height / PpmOf(t)); }
 
-        static Transform Group(Transform parent, string name, Vector3 at = default, float yaw = 0f)
+        internal static Transform Group(Transform parent, string name, Vector3 at = default, float yaw = 0f)
         {
             var g = new GameObject(name).transform;
             g.SetParent(parent, false);
@@ -437,7 +488,7 @@ namespace ThreeKingdoms.EditorTools
             }
         }
 
-        static void Solid(Transform parent, Vector3 center, Vector3 size)
+        internal static void Solid(Transform parent, Vector3 center, Vector3 size)
         {
             var box = new GameObject("Collider").AddComponent<BoxCollider>();
             box.transform.SetParent(parent, false);
@@ -454,7 +505,7 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A grass block with an irregular grass fringe over its hard edges onto the earth (grass_border, when delivered).
-        static void GrassBlock(Transform parent, string name, float xMin, float xMax, float zMin, float zMax)
+        internal static void GrassBlock(Transform parent, string name, float xMin, float xMax, float zMin, float zMax)
         {
             Patch(parent, name, "ground_grass", xMin, xMax, zMin, zMax, 0.003f);
             if (!Tex("grass_border", optional: true)) return;
@@ -483,7 +534,7 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A grass fringe lying on a road edge at `edge`, its ragged side pointing along `yaw` onto the road.
-        static void RoadFringe(Transform parent, string name, Vector3 edge, float yaw, float length)
+        internal static void RoadFringe(Transform parent, string name, Vector3 edge, float yaw, float length)
         {
             float depth = Metres("grass_border").y, o = depth / 2f - depth / 3f;
             var size = new Vector2(length, depth);
@@ -495,7 +546,7 @@ namespace ThreeKingdoms.EditorTools
 
         // A low stone curb along a paved edge from a to b (along X or Z), lying on the paving; `outward` (+1/-1) is the
         // side the earth is on (+x/+z or -x/-z). Dedicated curb art when delivered, else the stone-step treads and risers.
-        static void Curb(Transform parent, Vector3 a, Vector3 b, int outward)
+        internal static void Curb(Transform parent, Vector3 a, Vector3 b, int outward)
         {
             bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
             float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
@@ -512,7 +563,7 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A square curb stone covering the meeting of two curb runs.
-        static void CurbCorner(Transform parent, Vector3 at)
+        internal static void CurbCorner(Transform parent, Vector3 at)
         {
             string key = Tex("curb_corner", optional: true) ? "curb_corner" : "steps_tread";
             var c = Group(parent, "Curb corner", at);
@@ -525,7 +576,7 @@ namespace ThreeKingdoms.EditorTools
 
         // A square post or quoin column at a corner, `size` across and `height` tall, with a top cap. `face` stretches
         // over each side when it is dedicated corner art, else tiles.
-        static void Column(Transform parent, string name, Vector3 baseCentre, float size, float height, string face, string cap)
+        internal static void Column(Transform parent, string name, Vector3 baseCentre, float size, float height, string face, string cap)
         {
             var c = Group(parent, name, baseCentre);
             bool tiled = axes.TryGetValue(face, out string ax) && ax != "none";
@@ -662,7 +713,7 @@ namespace ThreeKingdoms.EditorTools
 
         // A square bastion 6 m across standing proud of the wall, with a timber arrow tower on top (watchtower_* art when
         // delivered). The whole tower is one occluder.
-        static void ArrowTower(Transform walls, string name, Vector3 at)
+        internal static void ArrowTower(Transform walls, string name, Vector3 at)
         {
             const float side = 6f, baseH = WallH + 0.4f;
             var t = Group(walls, name, at);
@@ -732,7 +783,8 @@ namespace ThreeKingdoms.EditorTools
         // A building whose front faces south (yaw 0) or north (yaw 180, back toward the camera). Size comes from the
         // textures: front = width × wall height, side = depth × (wall + gable). roofKey "tile" or "thatch".
         internal static Transform Building(Transform parent, string name, Vector3 frontCenter, float yaw, string front, string side, string back,
-            string roofKey = "tile", string glowMask = null, bool collide = true, string interior = null, string floor = null, float interiorFrom = 0f)
+            string roofKey = "tile", string glowMask = null, bool collide = true, string interior = null, string floor = null, float interiorFrom = 0f,
+            string roofTexture = null, string eaveTexture = null)
         {
             var f = Metres(front); var sd = Metres(side);
             float width = f.x, wall = f.y, depth = sd.x, gable = Mathf.Max(0.4f, sd.y - wall);
@@ -777,12 +829,13 @@ namespace ThreeKingdoms.EditorTools
             float run = half + eave, length = run / Mathf.Cos(slope), drop = run * Mathf.Tan(slope);
             float eaveY = ridgeY - drop, deg = slope * Mathf.Rad2Deg;
             var roofSize = new Vector2(roofW, length);
-            string roofTex = thatch ? "roof_thatch" : "roof_tiles_grey";
+            // Another town's own roofing (Pingyuan's golden reed thatch) can replace the Zhuojun roof textures.
+            string roofTex = roofTexture ?? (thatch ? "roof_thatch" : "roof_tiles_grey");
             var roofMat = Mat(roofTex);
             Quad(b, "Roof front", new Vector3(0, (ridgeY + eaveY) / 2f + 0.05f, half - run / 2f), new Vector3(90f - deg, 0, 0), roofSize, roofMat, Repeat(roofTex, roofSize));
             Quad(b, "Roof back", new Vector3(0, (ridgeY + eaveY) / 2f + 0.05f, half + run / 2f), new Vector3(90f - deg, 180, 0), roofSize, roofMat, Repeat(roofTex, roofSize));
             Quad(b, "Roof underside", new Vector3(0, (ridgeY + eaveY) / 2f - 0.02f, half - run / 2f), new Vector3(-90f - deg, 0, 0), roofSize, Mat("roof_underside"), Repeat("roof_underside", roofSize), castShadows: false);
-            string eaveTex = thatch ? "roof_thatch_eave" : "roof_eave";
+            string eaveTex = eaveTexture ?? (thatch ? "roof_thatch_eave" : "roof_eave");
             var eaveSize = new Vector2(roofW, 0.6f);
             foreach (int s in new[] { 1, -1 })
                 Quad(b, "Eave", new Vector3(0, eaveY - 0.22f, s > 0 ? -eave - 0.02f : depth + eave + 0.02f), new Vector3(deg * 0.5f * s, s > 0 ? 0 : 180, 0), eaveSize,
@@ -801,7 +854,7 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // Signboards are flat on the façade, not billboards.
-        static void Plaque(Transform parent, string key, Vector3 at, float yaw) =>
+        internal static void Plaque(Transform parent, string key, Vector3 at, float yaw) =>
             Quad(parent, key, at, new Vector3(0, yaw, 0), Metres(key), Mat(key, clip: true, twoSided: true), castShadows: false);
 
         // Height of the eave line for a building made from these textures (same geometry as Building()).
@@ -818,7 +871,7 @@ namespace ThreeKingdoms.EditorTools
             Plaque(building, key, new Vector3(0, EaveY(front, side) - 0.25f, -0.72f), 0f);
 
         // A flat run of a tileable fence-like strip (courtyard wall, palisade, wattle) along X or Z.
-        static void Strip(Transform parent, string name, string key, Vector3 a, Vector3 b, float height, bool solid = true, string capKey = null)
+        internal static void Strip(Transform parent, string name, string key, Vector3 a, Vector3 b, float height, bool solid = true, string capKey = null)
         {
             bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
             float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
@@ -1158,7 +1211,7 @@ namespace ThreeKingdoms.EditorTools
         {
             key ??= name;
             var t = Tex(key);
-            var size = new Vector2(t.width / Ppm, t.height / Ppm) * scale;
+            var size = new Vector2(t.width / PpmOf(t), t.height / PpmOf(t)) * scale;
             var root = new GameObject(name).transform;
             root.SetParent(parent, false);
             root.localPosition = new Vector3(x, y, z);

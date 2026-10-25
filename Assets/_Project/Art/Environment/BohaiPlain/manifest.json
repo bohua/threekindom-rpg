@@ -1,0 +1,41 @@
+{
+  "purpose": "Bohai plain art probe whitebox stand-ins (2026-10-24); not final art",
+  "pixel_density": 30,
+  "files": [
+    {
+      "filename": "wb_sand_bank.png",
+      "tile_axes": "xy",
+      "source": "battle-poc-hulao-texpack/top_sand.png frame 0"
+    },
+    {
+      "filename": "wb_road_ruts.png",
+      "tile_axes": "xy",
+      "source": "battle-poc-hulao-texpack/top_road.png frame 0"
+    },
+    {
+      "filename": "wb_plain_grass.png",
+      "tile_axes": "xy",
+      "source": "battle-poc-hulao-texpack/top_grass.png frame 0"
+    },
+    {
+      "filename": "wb_wet_bank.png",
+      "tile_axes": "x",
+      "source": "battle-poc-hulao-texpack/side_wetbank.png"
+    },
+    {
+      "filename": "wb_dock_planks.png",
+      "tile_axes": "xy",
+      "source": "battle-poc-hulao-texpack/wood_plank.png"
+    },
+    {
+      "filename": "wb_levee_face.png",
+      "tile_axes": "xy",
+      "source": "battle-poc-hulao-texpack/side_rammed.png"
+    },
+    {
+      "filename": "wb_water_muddy.png",
+      "tile_axes": "xy",
+      "source": "battle-poc-hulao-texpack/top_water.png frame 0, hue shifted to ochre (whitebox stand-in)"
+    }
+  ]
+}

@@ -28,6 +28,9 @@ namespace ThreeKingdoms.Gameplay.Story
         public const string GongsunScene = "Camp_Gongsun", SuanzaoScene = "Camp_Suanzao";
         public static readonly string[] Chapter3BattleScenes = { "Battle_Drill07", "Battle_Hulao08" };
         public const string Chapter = "第一章　涿郡起兵";
+        // Walkable open regions (chapter 1 art probe, 2026-10-24): region id → scene.
+        public static readonly System.Collections.Generic.IReadOnlyDictionary<string, string> RegionScenes =
+            new System.Collections.Generic.Dictionary<string, string> { [Chapter1Chronicle.R4] = "Bohai_Plain" };
 
         public enum Arrival { NewGame, ReturnFromBattle, AtTavern, FromTavernInside, AtSouthGate }
 
@@ -42,6 +45,8 @@ namespace ThreeKingdoms.Gameplay.Story
         public DevPartyProgress Progress { get; }
         // Reputation and the like (user 2026-10-22).
         public TownLife Life { get; private set; } = new TownLife();
+        // Year node, open regions and dangerous places (chapter 1 chronicle).
+        public ChronicleState Chronicle { get; set; } = ChronicleState.Start();
         // One random source for town games, so tests can seed it.
         public System.Random Random { get; set; } = new System.Random();
         // Teaching hints already shown this play-through (each appears once; story-events answer 8).
@@ -78,6 +83,12 @@ namespace ThreeKingdoms.Gameplay.Story
             var data = catalog.ToRuntime();
             return Current = new GameRun(data, StoryState.Restore(true, true, SequenceState.Done, StoryState.BattleCount, SequenceState.Done),
                 new DevPartyProgress(data, new Inventory(data.Economy, copper, rations), exp), development) { Chapter2 = ChapterState.At(step) };
+        }
+
+        // The probe's region chronicle follows the chapter's year (REVIEW_V04 R5): it only ever moves forward.
+        public void SyncChronicle()
+        {
+            while (Chronicle.Year < Chapter2.Year && Chronicle.Advance()) { }
         }
 
         public static void Clear() => Current = null;
@@ -133,9 +144,10 @@ namespace ThreeKingdoms.Gameplay.Story
         // location: SaveData.TownLocation (the tavern) or the battle id whose pre-battle state this is.
         public SaveData Capture(string location)
         {
+            SyncChronicle();
             var leader = Progress.Party.Count > 0 ? Progress.Party[0] : null;
             return SaveCodec.Capture(Story, Progress.Inventory, Progress.ExpByGeneral, location, leader != null ? Progress.Level(leader) : 1,
-                ChapterTitle, Application.version, DateTime.Now, Life, Chapter2);
+                ChapterTitle, Application.version, DateTime.Now, Life, Chapter2, Chronicle);
         }
 
         public void SaveTo(string slot, string location) => Slots().Write(slot, Capture(location));
@@ -147,7 +159,7 @@ namespace ThreeKingdoms.Gameplay.Story
             if (!SaveCodec.TryRestore(save, data.Economy, out var restored, out error)) return false;
             var progress = new DevPartyProgress(data, restored.Inventory);
             progress.RestoreExp(restored.Exp);
-            Current = new GameRun(data, restored.Story, progress, false) { Life = restored.Life, Chapter2 = restored.Chapter ?? new ChapterState() };
+            Current = new GameRun(data, restored.Story, progress, false) { Life = restored.Life, Chapter2 = restored.Chapter ?? new ChapterState(), Chronicle = restored.Chronicle };
             if (restored.Location == SaveData.TownLocation)
             {
                 Current.NextArrival = Arrival.AtTavern;
@@ -157,6 +169,12 @@ namespace ThreeKingdoms.Gameplay.Story
             else if (restored.Location == SaveData.AnxiLocation) SceneManager.LoadScene(AnxiScene);
             else if (restored.Location == SaveData.GongsunLocation) SceneManager.LoadScene(GongsunScene);
             else if (restored.Location == SaveData.SuanzaoLocation) SceneManager.LoadScene(SuanzaoScene);
+            else if (restored.Location.StartsWith(SaveData.RegionPrefix))
+            {
+                if (!RegionScenes.TryGetValue(restored.Location.Substring(SaveData.RegionPrefix.Length), out string scene))
+                { error = $"区域 {restored.Location} 还没有场景"; Current = null; return false; }
+                SceneManager.LoadScene(scene);
+            }
             else SceneManager.LoadScene(SceneFor(restored.Location));
             return true;
         }
