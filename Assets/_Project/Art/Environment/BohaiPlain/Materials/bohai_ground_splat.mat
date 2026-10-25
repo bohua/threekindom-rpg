@@ -24,7 +24,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _Base:
-        m_Texture: {fileID: 2800000, guid: fffc872d6c5b2f94fbfa1d4134706757, type: 3}
+        m_Texture: {fileID: 2800000, guid: 84ba228be52d7f1489b18ed70f8d9790, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Control:
@@ -32,25 +32,26 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _LayerA:
-        m_Texture: {fileID: 2800000, guid: 5182e68374f7f1a419a5a3ab6379f401, type: 3}
+        m_Texture: {fileID: 2800000, guid: ecfc520da6272784fb47abb7060af69b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _LayerB:
-        m_Texture: {fileID: 2800000, guid: e4585236b77ddba48b7f661037b58b87, type: 3}
+        m_Texture: {fileID: 2800000, guid: 7b88c5c7de475444eb3461dc678d54bc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _LayerG:
-        m_Texture: {fileID: 2800000, guid: e292596ca37ddba40a876632a285ab42, type: 3}
+        m_Texture: {fileID: 2800000, guid: b26f81b558e641041b09fb8598ecba3f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _LayerR:
-        m_Texture: {fileID: 2800000, guid: 85cda57b711474e46a98e8a50b27a886, type: 3}
+        m_Texture: {fileID: 2800000, guid: 7b88c5c7de475444eb3461dc678d54bc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _PixelsPerMetre: 30
     - _Ragged: 0.22
+    - _Smooth: 1
     - _TileMetres: 12
     m_Colors:
     - _Bounds: {r: -560, g: -330, b: 560, a: 340}

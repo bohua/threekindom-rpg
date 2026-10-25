@@ -33,6 +33,13 @@ namespace ThreeKingdoms.EditorTools
         const string MeshPath = TownDir + "/Town_Meshes.asset";
         static string materialDir = TownMaterialDir;
         const float Ppm = 30f;
+        // High-res painted environment art (user 2026-10-25): textures in a folder named HD are 120 px per metre,
+        // smoothly filtered with mipmaps, and their soft alpha is blended rather than clipped.
+        const float HdPpm = 120f;
+        internal static bool IsHd(Texture2D t) => t && AssetDatabase.GetAssetPath(t).Contains("/HD/");
+        static float PpmOf(Texture2D t) => IsHd(t) ? HdPpm : Ppm;
+        // A builder can swap a key for its HD counterpart (key -> HD key), used whenever the HD file exists.
+        internal static readonly Dictionary<string, string> HdAliases = new Dictionary<string, string>();
         public static readonly Vector3 PlayerStart = new Vector3(0f, 0f, -46f);   // outside the south gate (design §5 step 1)
 
         static Mesh container;
@@ -271,6 +278,7 @@ namespace ThreeKingdoms.EditorTools
         {
             EndMeshes();
             extraDirs = System.Array.Empty<string>();
+            HdAliases.Clear();
             materialDir = TownMaterialDir;
         }
 
@@ -298,6 +306,22 @@ namespace ThreeKingdoms.EditorTools
                 if (importer == null) continue;
                 axes.TryGetValue(key, out string a); a ??= "none";
                 bool mask = key.Contains("mask");
+                if (assetPath.Contains("/HD/"))
+                {
+                    importer.textureType = TextureImporterType.Default;
+                    importer.filterMode = FilterMode.Trilinear;
+                    importer.mipmapEnabled = true;
+                    importer.anisoLevel = 4;
+                    importer.maxTextureSize = 2048;
+                    importer.textureCompression = TextureImporterCompression.CompressedHQ;
+                    importer.npotScale = TextureImporterNPOTScale.None;
+                    importer.sRGBTexture = true;
+                    importer.alphaIsTransparency = true;
+                    importer.wrapModeU = a.Contains("x") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                    importer.wrapModeV = a.Contains("y") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                    importer.SaveAndReimport();
+                    continue;
+                }
                 importer.textureType = TextureImporterType.Default;
                 importer.filterMode = FilterMode.Point;
                 importer.mipmapEnabled = false;
@@ -315,8 +339,15 @@ namespace ThreeKingdoms.EditorTools
             Extra(key) ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{MapDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png")
             ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png") ?? throw new FileNotFoundException("Missing town texture " + key);
 
-        static Texture2D Extra(string key) =>
-            extraDirs.Select(d => AssetDatabase.LoadAssetAtPath<Texture2D>($"{d}/{key}.png")).FirstOrDefault(t => t);
+        static Texture2D Extra(string key)
+        {
+            if (HdAliases.TryGetValue(key, out string hd))
+            {
+                var h = extraDirs.Select(d => AssetDatabase.LoadAssetAtPath<Texture2D>($"{d}/{hd}.png")).FirstOrDefault(t => t);
+                if (h) return h;
+            }
+            return extraDirs.Select(d => AssetDatabase.LoadAssetAtPath<Texture2D>($"{d}/{key}.png")).FirstOrDefault(t => t);
+        }
 
         // Null when a not-yet-delivered texture is missing (art still with Codex).
         internal static Texture2D Tex(string key, bool optional) =>
@@ -333,7 +364,19 @@ namespace ThreeKingdoms.EditorTools
             m.SetFloat("_Smoothness", 0f);
             m.SetFloat("_SpecularHighlights", 0f); m.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
             m.SetFloat("_EnvironmentReflections", 0f); m.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
-            if (clip)
+            if (clip && IsHd(Tex(key)))
+            {
+                // Soft painted edge: alpha blend, drawn after the opaque ground.
+                m.SetFloat("_Surface", 1f); m.SetFloat("_Blend", 0f);
+                m.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha); m.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+                m.SetFloat("_SrcBlendAlpha", (float)BlendMode.One); m.SetFloat("_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
+                // Without this URP keeps ambient/sky light on fully transparent texels: a pale blue film past the edge.
+                m.SetFloat("_BlendModePreserveSpecular", 0f);
+                m.SetFloat("_ZWrite", 0f); m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                m.SetOverrideTag("RenderType", "Transparent");
+                m.renderQueue = (int)RenderQueue.Transparent - 50;
+            }
+            else if (clip)
             {
                 m.SetFloat("_AlphaClip", 1f); m.SetFloat("_Cutoff", 0.5f); m.EnableKeyword("_ALPHATEST_ON");
                 m.renderQueue = (int)RenderQueue.AlphaTest;
@@ -397,10 +440,10 @@ namespace ThreeKingdoms.EditorTools
         internal static Vector2 Repeat(string key, Vector2 size)
         {
             var t = Tex(key);
-            return new Vector2(size.x * Ppm / t.width, size.y * Ppm / t.height);
+            return new Vector2(size.x * PpmOf(t) / t.width, size.y * PpmOf(t) / t.height);
         }
 
-        internal static Vector2 Metres(string key) { var t = Tex(key); return new Vector2(t.width / Ppm, t.height / Ppm); }
+        internal static Vector2 Metres(string key) { var t = Tex(key); return new Vector2(t.width / PpmOf(t), t.height / PpmOf(t)); }
 
         internal static Transform Group(Transform parent, string name, Vector3 at = default, float yaw = 0f)
         {
@@ -1145,7 +1188,7 @@ namespace ThreeKingdoms.EditorTools
         {
             key ??= name;
             var t = Tex(key);
-            var size = new Vector2(t.width / Ppm, t.height / Ppm) * scale;
+            var size = new Vector2(t.width / PpmOf(t), t.height / PpmOf(t)) * scale;
             var root = new GameObject(name).transform;
             root.SetParent(parent, false);
             root.localPosition = new Vector3(x, y, z);

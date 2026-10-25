@@ -1,0 +1,11 @@
+{ "px_per_m": 120, "files": [
+ {"filename":"gaotang_square_hd.png","width":1440,"height":1440,"tile_axes":"xy","use":"Gaotang square / inner yards"},
+ {"filename":"packed_earth_hd.png","width":1440,"height":1440,"tile_axes":"xy","use":"gate aprons, village yards, threshing floors"},
+ {"filename":"plain_grass_hd_a.png","width":1440,"height":1440,"tile_axes":"xy","use":"plain grass A"},
+ {"filename":"plain_grass_hd_b.png","width":1440,"height":1440,"tile_axes":"xy","use":"plain grass B"},
+ {"filename":"plain_grass_dry_hd.png","width":1440,"height":1440,"tile_axes":"xy","use":"dry grass"},
+ {"filename":"dirt_road_hd.png","width":960,"height":1440,"tile_axes":"y","use":"dirt road 8 m"},
+ {"filename":"stone_road_hd.png","width":960,"height":1440,"tile_axes":"y","use":"stone post road 8 m"},
+ {"filename":"road_edge_hd.png","width":1440,"height":240,"tile_axes":"x","use":"road edge band, soft alpha"},
+ {"filename":"earth_edge_hd.png","width":1440,"height":360,"tile_axes":"x","use":"earth patch rim, soft alpha"}
+]}

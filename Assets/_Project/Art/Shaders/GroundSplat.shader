@@ -17,6 +17,7 @@ Shader "ThreeKingdoms/GroundSplat"
         _Bounds ("Control map bounds (x min, z min, x max, z max)", Vector) = (-560, -330, 560, 340)
         _PixelsPerMetre ("Pixels per metre", Float) = 30
         _Ragged ("Border raggedness", Range(0, 0.5)) = 0.22
+        _Smooth ("High-res painted layers (1 = no pixel snapping, soft noisy blends)", Float) = 0
     }
     SubShader
     {
@@ -37,12 +38,14 @@ Shader "ThreeKingdoms/GroundSplat"
             TEXTURE2D(_Control); SAMPLER(sampler_Control);
             TEXTURE2D(_Base); TEXTURE2D(_LayerR); TEXTURE2D(_LayerG); TEXTURE2D(_LayerB); TEXTURE2D(_LayerA);
             SAMPLER(sampler_point_repeat);
+            SAMPLER(sampler_trilinear_repeat);
             CBUFFER_START(UnityPerMaterial)
                 float4 _Control_ST;
                 float _TileMetres;
                 float4 _Bounds;
                 float _PixelsPerMetre;
                 float _Ragged;
+                float _Smooth;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
@@ -70,8 +73,42 @@ Shader "ThreeKingdoms/GroundSplat"
                 return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
             }
 
+            // High-res painted ground (user 2026-10-25): layers fade into each other over a metre or two, the fade
+            // broken up by two octaves of noise so borders wander like real patches of grass and bare earth.
+            float Noise(float2 p)
+            {
+                float2 c = floor(p), f = frac(p);
+                float a = Hash(c), b = Hash(c + float2(1, 0)), d = Hash(c + float2(0, 1)), e = Hash(c + float2(1, 1));
+                float2 u = f * f * (3.0 - 2.0 * f);
+                return lerp(lerp(a, b, u.x), lerp(d, e, u.x), u.y);
+            }
+
+            half3 SmoothAlbedo(float2 xz)
+            {
+                float2 cuv = (xz - _Bounds.xy) / (_Bounds.zw - _Bounds.xy);
+                float4 w = SAMPLE_TEXTURE2D(_Control, sampler_Control, cuv);
+                float2 uv = xz / _TileMetres;
+                float n = Noise(xz * 0.35) * 0.65 + Noise(xz * 1.7) * 0.35;
+                float4 t = 0.5 + (float4(n, frac(n + 0.37), frac(n + 0.61), frac(n + 0.83)) - 0.5) * 2.0 * _Ragged;
+                float4 k = smoothstep(t - 0.09, t + 0.09, w);
+                half3 albedo = SAMPLE_TEXTURE2D(_Base, sampler_trilinear_repeat, uv).rgb;
+                albedo = lerp(albedo, SAMPLE_TEXTURE2D(_LayerR, sampler_trilinear_repeat, uv + 0.31).rgb, k.r);
+                albedo = lerp(albedo, SAMPLE_TEXTURE2D(_LayerG, sampler_trilinear_repeat, uv + 0.57).rgb, k.g);
+                albedo = lerp(albedo, SAMPLE_TEXTURE2D(_LayerB, sampler_trilinear_repeat, uv * 0.83 + 0.13).rgb, k.b);
+                albedo = lerp(albedo, SAMPLE_TEXTURE2D(_LayerA, sampler_trilinear_repeat, uv + 0.79).rgb, k.a);
+                return albedo;
+            }
+
             half4 frag(Varyings i) : SV_Target
             {
+                if (_Smooth > 0.5)
+                {
+                    half3 a = SmoothAlbedo(i.positionWS.xz);
+                    float3 nn = normalize(i.normalWS);
+                    Light ml = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
+                    half3 c = a * (ml.color * (ml.shadowAttenuation * ml.distanceAttenuation) * saturate(dot(nn, ml.direction)) + SampleSH(nn));
+                    return half4(MixFog(c, i.fog), 1);
+                }
                 float2 texel = floor(i.positionWS.xz * _PixelsPerMetre) + 0.5;
                 float2 snapped = texel / _PixelsPerMetre;
                 float2 cuv = (snapped - _Bounds.xy) / (_Bounds.zw - _Bounds.xy);

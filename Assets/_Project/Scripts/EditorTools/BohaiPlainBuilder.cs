@@ -31,6 +31,7 @@ namespace ThreeKingdoms.EditorTools
         public const string PingyuanDir = ArtDir + "/Pingyuan";
         // Open-country textures and props (Codex bohai-wild-b1).
         public const string WildDir = ArtDir + "/Wild";
+        public const string HdDir = ArtDir + "/HD";
         const string MaterialDir = ArtDir + "/Materials";
         const string MeshPath = ArtDir + "/Bohai_Meshes.asset";
 
@@ -49,7 +50,10 @@ namespace ThreeKingdoms.EditorTools
         {
             greys.Clear(); water = null;
             MountedImporter.Import();
-            T.BeginSession(MaterialDir, MeshPath, PingyuanDir, WildDir, ArtDir);
+            // High-res painted ground replaces the pixel set wherever Codex has delivered it (user 2026-10-25).
+            T.HdAliases.Clear();
+            foreach (var (pixel, hd) in HdGround) T.HdAliases[pixel] = hd;
+            T.BeginSession(MaterialDir, MeshPath, HdDir, PingyuanDir, WildDir, ArtDir);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
@@ -373,6 +377,14 @@ namespace ThreeKingdoms.EditorTools
         const float PlinthH = 0.99f, WallTk = 3f, TownWallH = 3.5f;
 
         // The Pingyuan texture if delivered, else the fallback.
+        static readonly (string pixel, string hd)[] HdGround =
+        {
+            ("plain_grass_a", "plain_grass_hd_a"), ("plain_grass_b", "plain_grass_hd_b"), ("plain_grass_dry", "plain_grass_dry_hd"),
+            ("dirt_road_v2", "dirt_road_hd"), ("stone_road_v2", "stone_road_hd"), ("road_edge_band", "road_edge_hd"),
+            ("gaotang_square", "gaotang_square_hd"), ("ground_packed_earth", "packed_earth_hd"),
+            ("plain_meadow", "plain_grass_hd_b"), ("plain_loess", "packed_earth_hd"),
+        };
+
         static string K(string key, string fallback) => T.Tex(key, optional: true) ? key : fallback;
         static string Thatch => T.Tex("roof_thatch_gold", optional: true) ? "roof_thatch_gold" : null;
 
@@ -1832,8 +1844,13 @@ namespace ThreeKingdoms.EditorTools
 
         static string[] Have(params string[] keys) => keys.Where(k => T.Tex(k, optional: true)).ToArray();
 
+        // Pixel grass/earth decals look like stains on the high-res painted ground, so they stay out once it is in.
+        static readonly string[] PixelGroundDecals = { "decal_loess_dirt", "decal_dry_grass", "decal_saline", "decal_wild_flowers", "decal_green_meadow" };
+        static bool HdGroundIn => T.IsHd(T.Tex("plain_grass_a", optional: true));
+
         static void Decal(Transform parent, string key, float x, float z, System.Random rng, float scale = 1f)
         {
+            if (HdGroundIn && !T.IsHd(T.Tex(key)) && PixelGroundDecals.Any(key.StartsWith)) return;
             var size = T.Metres(key) * scale;
             float y = 0.0062f + (decalCount++ % 400) * 0.000004f;
             var q = T.Quad(parent, key, new Vector3(x, y, z), new Vector3(90f, rng.Next(4) * 90f, 0), size, T.Mat(key, clip: true), castShadows: false);
@@ -1971,6 +1988,7 @@ namespace ThreeKingdoms.EditorTools
             m.SetTexture("_Base", T.Tex(keys[0])); m.SetTexture("_LayerR", T.Tex(keys[1])); m.SetTexture("_LayerG", T.Tex(keys[2]));
             m.SetTexture("_LayerB", T.Tex(keys[3])); m.SetTexture("_LayerA", T.Tex(keys[4]));
             m.SetFloat("_TileMetres", T.Metres(keys[0]).x);
+            m.SetFloat("_Smooth", T.IsHd(T.Tex(keys[0])) ? 1f : 0f);
             m.SetVector("_Bounds", new Vector4(XMin, ZMin, XMax, ZMax));
             string mp = $"{MaterialDir}/bohai_ground_splat.mat";
             if (AssetDatabase.LoadAssetAtPath<Material>(mp)) AssetDatabase.DeleteAsset(mp);
@@ -2307,7 +2325,8 @@ namespace ThreeKingdoms.EditorTools
             }
             rim[n] = rim[0];
             // Loess fill, the same light earth as the road edge band, so the rim reads as worn ground and not an outline.
-            string fill = K("sand_flat_v2", "ground_packed_earth"); var tile = T.Metres(fill);
+            string fill = T.Tex("packed_earth_hd", optional: true) ? "ground_packed_earth" : K("sand_flat_v2", "ground_packed_earth");
+            var tile = T.Metres(fill);
             var verts = new List<Vector3> { centre + Vector3.up * 0.0040f }; var uvs = new List<Vector2> { new Vector2(centre.x / tile.x, centre.z / tile.y) }; var tris = new List<int>();
             for (int i = 0; i < n; i++) { verts.Add(rim[i] + Vector3.up * 0.0040f); uvs.Add(new Vector2(rim[i].x / tile.x, rim[i].z / tile.y)); }
             for (int i = 0; i < n; i++) tris.AddRange(new[] { 0, 1 + (i + 1) % n, 1 + i });
@@ -2320,7 +2339,10 @@ namespace ThreeKingdoms.EditorTools
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterial = T.Mat(fill); mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             if (T.Tex("road_edge_band", optional: true))
-                Ribbon(parent, "Earth patch rim", T.Mat("road_edge_band", clip: true), rim, -0.8f, T.Metres("road_edge_band").y * 0.8f, 0.0044f, T.Metres("road_edge_band").x, vAcross: true, band: true);
+            {
+                string edge = K("earth_edge_hd", "road_edge_band");
+                Ribbon(parent, "Earth patch rim", T.Mat(edge, clip: true), rim, -0.8f, T.Metres(edge).y * 0.8f, 0.0044f, T.Metres(edge).x, vAcross: true, band: true);
+            }
             string[] dirt = Have("decal_loess_dirt_a", "decal_loess_dirt_b");
             for (int i = 0; i < 4 && dirt.Length > 0; i++)
             {
