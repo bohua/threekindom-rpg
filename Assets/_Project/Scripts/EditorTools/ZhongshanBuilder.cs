@@ -571,6 +571,10 @@ namespace ThreeKingdoms.EditorTools
         // Inside the walls the town scene has its own streets; the region draws only what lies outside.
         static bool InTown(string id) => id.StartsWith("town_") || id == "magistrate_path" || id == "inn_path";
 
+        // Layout roads left out: the west-fork shortcut to the terraces crossed the post station's plot, and the road
+        // from the station north already reaches the same fork.
+        static bool Dropped(string id) => id == "west_fork_terraces";
+
         static bool NearTown(Vector3 p, float margin) =>
             p.x > ZhongshanLayout.TownX0 - margin && p.x < ZhongshanLayout.TownX1 + margin && p.z > ZhongshanLayout.TownZ0 - margin && p.z < ZhongshanLayout.TownZ1 + margin;
 
@@ -583,7 +587,7 @@ namespace ThreeKingdoms.EditorTools
         };
 
         static IEnumerable<(string id, float width, string surface, Vector3[] points)> AllRoads =>
-            ZhongshanLayout.Roads.Where(r => !InTown(r.id)).Concat(Links);
+            ZhongshanLayout.Roads.Where(r => !InTown(r.id) && !Dropped(r.id)).Concat(Links);
 
         static bool NearOtherRoad(Vector3 p, Vector3[] self, float r)
         {
@@ -637,7 +641,7 @@ namespace ThreeKingdoms.EditorTools
                 (pts, k) = RoundEnds(pts, k, o0, o1, half);
                 var tile = T.Metres(key);
                 // Every road surface lies above every edge band, so where roads meet no grass fringe crosses a road.
-                float y = 0.0050f + (ribbonCount % 40) * 0.00002f, ye = 0.0042f + (ribbonCount % 40) * 0.000005f;
+                float y = 0.0050f + (ribbonCount % 40) * 0.00002f, ye = 0.0034f + (ribbonCount % 40) * 0.000005f;
                 Band(rg, "Road", Graded(key, RoadTint), pts, k.Select(f => -half * f).ToList(), k.Select(f => half * f).ToList(), y, tile.y * (road.width / tile.x));
                 float dep = T.Metres(edge).y;
                 Band(rg, "Edge R", Graded(edge, RoadTint, clip: true), pts, k.Select(f => half * f - 0.5f).ToList(), k.Select(f => half * f - 0.5f + dep).ToList(), ye, T.Metres(edge).x, vAcross: true);
@@ -1051,16 +1055,27 @@ namespace ThreeKingdoms.EditorTools
         {
             var at = Loc("post_station");
             var p = T.Group(env, "Post station (井陉路口驿站)");
-            EarthPatch(env, at + new Vector3(0, 0, -1f), 11f, 7f, 61);
-            // Stands north of its yard, door facing the road (south); the yard stays clear (open space before landmarks).
-            var front = at + new Vector3(0, 0, 7f);
+            EarthPatch(env, at + new Vector3(3f, 0, 1f), 12f, 7f, 61);
+            // Stands north-east of its yard, door facing the road (south), clear of every road; the yard stays open
+            // (open space before landmarks).
+            var front = at + new Vector3(6f, 0, 7f);
             string pf = K("zs_post_front", "yiguan_front"), ps = K("zs_post_side", "yiguan_side");
-            T.Building(p, "Post station", front, 0f, pf, ps, null, roofTexture: K("roof_anxi_tiles", "roof_tiles_grey"), eaveTexture: K("roof_anxi_eave", "roof_eave"));
+            WildHouse(env, p, "Post station", front, pf, ps, K("roof_anxi_tiles", "roof_tiles_grey"), false, 67);
             T.Prop(p, K("hitching_post", "prop_hitching_post"), at.x + 7f, at.z + 2f, solid: true);
             T.Prop(p, K("prop_millet_stack_hd", "prop_hay_pile"), at.x - 8.5f, at.z + 3.5f, solid: true);
             T.Prop(p, K("prop_tree_jujube_hd", "prop_tree_jujube"), at.x - 11f, at.z + 6f, solid: true);
             Label(labels, "井陉路口驿站", at + new Vector3(0, 0, 4f), 9f);
             Spot("Post station", at + new Vector3(0, 0, -6f));
+        }
+
+        // A house out in the country stands on its own worn apron of beaten earth, a few metres wider than the house
+        // all round and a little deeper at the door, with a ragged edge into the grass, so it never sits straight on
+        // the turf or across a road (user 2026-10-26).
+        static void WildHouse(Transform env, Transform parent, string name, Vector3 front, string frontKey, string sideKey, string roof, bool thatch, int seed)
+        {
+            float w = T.Metres(frontKey).x, d = T.Metres(sideKey).x;
+            EarthPatch(env, front + new Vector3(0, 0, d / 2f - 0.8f), w / 2f + 3.4f, d / 2f + 3.4f, seed);
+            T.Building(parent, name, front + new Vector3(0, 0.001f, 0), 0f, frontKey, sideKey, null, roofKey: thatch ? "thatch" : "tile", roofTexture: roof, eaveTexture: K("roof_anxi_eave", "roof_eave"));
         }
 
         // ---------- villages ----------
@@ -1076,7 +1091,7 @@ namespace ThreeKingdoms.EditorTools
             {
                 var at = c + new Vector3(dx, 0, dz);
                 if (Blocked(At(at.x, at.z + 3f))) continue;
-                T.Building(v, "Stone house", at, 0f, f, s, null, roofTexture: roof, eaveTexture: K("roof_anxi_eave", "roof_eave"));
+                WildHouse(env, v, "Stone house", at, f, s, roof, false, (int)(at.x * 7 + at.z));
             }
             T.Prop(v, K("prop_well_stone_hd", "prop_well"), c.x + 3f, c.z - 1f, solid: true);
             T.Prop(v, K("prop_millet_stack_hd", "prop_hay_pile"), c.x - 5f, c.z + 1.5f, solid: true);
@@ -1097,7 +1112,7 @@ namespace ThreeKingdoms.EditorTools
             {
                 var at = c + new Vector3(dx, 0, dz);
                 if (Blocked(At(at.x, at.z + 3f))) continue;
-                T.Building(v, "River house", at, 0f, f, s, null, roofKey: "thatch", roofTexture: roof, eaveTexture: K("roof_anxi_eave", "roof_eave"));
+                WildHouse(env, v, "River house", at, f, s, roof, true, (int)(at.x * 7 + at.z));
             }
             foreach (var (dx, dz) in new[] { (-16f, 2f), (7f, 14f), (20f, 8f) }) T.Prop(v, K("prop_tree_persimmon_hd", "locust_tree"), c.x + dx, c.z + dz, solid: true);
             T.Prop(v, K("prop_persimmon_rack_hd", "prop_firewood"), c.x + 5f, c.z + 3f);
@@ -1253,7 +1268,7 @@ namespace ThreeKingdoms.EditorTools
                 s.Metres = ways.Select(w => w.metres).ToArray();
             }
             Sign("西岔口", new Vector3(172f, 0, 129f),
-                ("井陉路口驿站", new Vector3(150f, 0, 133f), 30f), ("石坎村", new Vector3(150f, 0, 144f), 60f), ("安喜", new Vector3(195f, 0, 144f), 70f));
+                ("井陉路口驿站", new Vector3(150f, 0, 133f), 30f), ("石坎村", new Vector3(150f, 0, 133f), 75f), ("安喜", new Vector3(195f, 0, 144f), 70f));
             Sign("驿站后路", new Vector3(134f, 0, 128f),
                 ("井陉哨卡", new Vector3(122f, 0, 121f), 80f), ("石坎村", new Vector3(132f, 0, 145f), 50f));
             Sign("梯田岔口", new Vector3(137f, 0, 156f),
@@ -1329,8 +1344,9 @@ namespace ThreeKingdoms.EditorTools
             }
             string fill = "packed_earth_hd";
             var tile = T.Metres(fill);
-            var verts = new List<Vector3> { centre + Vector3.up * 0.004f }; var uvs = new List<Vector2> { new Vector2(centre.x / tile.x, centre.z / tile.y) }; var tris = new List<int>();
-            foreach (var r in rim) { verts.Add(r + Vector3.up * 0.004f); uvs.Add(new Vector2(r.x / tile.x, r.z / tile.y)); }
+            // Fills above every rim, so where yards overlap no grass fringe crosses a yard.
+            var verts = new List<Vector3> { centre + Vector3.up * 0.0041f }; var uvs = new List<Vector2> { new Vector2(centre.x / tile.x, centre.z / tile.y) }; var tris = new List<int>();
+            foreach (var r in rim) { verts.Add(r + Vector3.up * 0.0041f); uvs.Add(new Vector2(r.x / tile.x, r.z / tile.y)); }
             for (int i = 0; i < n; i++) tris.AddRange(new[] { 0, 1 + (i + 1) % n, 1 + i });
             var mesh = new Mesh { name = $"Earth patch {ribbonCount++}" };
             mesh.SetVertices(verts); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals();
@@ -1343,7 +1359,7 @@ namespace ThreeKingdoms.EditorTools
             rim.Add(rim[0]);
             string edge = "road_edge_hd";
             float dep = T.Metres(edge).y;
-            Band(parent, "Earth patch rim", Graded(edge, RoadTint, clip: true), rim, Fill(rim.Count, -0.6f), Fill(rim.Count, dep - 0.6f), 0.0044f, T.Metres(edge).x, vAcross: true);
+            Band(parent, "Earth patch rim", Graded(edge, RoadTint, clip: true), rim, Fill(rim.Count, -0.6f), Fill(rim.Count, dep - 0.6f), 0.0038f, T.Metres(edge).x, vAcross: true);
         }
 
         // ---------- names, people, camera, HUD ----------
