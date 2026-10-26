@@ -31,7 +31,8 @@ namespace ThreeKingdoms.EditorTools
         public const string CampPath = "Assets/_Project/Scenes/Camp_LuZhi.unity";
         public const string AnxiPath = "Assets/_Project/Scenes/Anxi_Town.unity";
         const string ArtRoot = "Assets/_Project/Art/Chapter2";
-        static Transform hitchingPost;   // Anxi: the 鞭督邮 scene hides it while the bound poses draw their own
+        static Transform hitchingPost;
+        static string roofKey, ridgeKey, eaveKey;   // this place's roof (Building)   // Anxi: the 鞭督邮 scene hides it while the bound poses draw their own
         const string PanelSettingsPath = "Assets/_Project/Settings/BattlePanelSettings.asset";
         const float Ppm = 120f;   // the HD environment art's density
         const string Art = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art";
@@ -68,6 +69,9 @@ namespace ThreeKingdoms.EditorTools
         {
             Copy(Path.Combine(Art, "v02-luzhi-camp-hd"), $"{ArtRoot}/Camp");
             Copy(Path.Combine(Art, "v02-anxi-town-hd"), $"{ArtRoot}/Anxi");
+            // Roofs (user 2026-10-26: "安喜城里的房顶都是灰模"; Codex art/v02-roofs-hd): grey tiles in Anxi, thatch in the camp.
+            Copy(Path.Combine(Art, "v02-roofs-hd"), $"{ArtRoot}/Anxi", f => f.StartsWith("roof_anxi_"));
+            Copy(Path.Combine(Art, "v02-roofs-hd"), $"{ArtRoot}/Camp", f => f.StartsWith("roof_camp_"));
             Copy(Path.Combine(Art, "v02-characters-sprites"), $"{ArtRoot}/Props", f => f.StartsWith("PROP_") || f == "DU_YOU_BOUND.png" || f == "LU_ZHI_CART_SIT.png");
             Copy(Path.Combine(Art, "world-map-chapter1"), $"{ArtRoot}/Map", f => f == "worldmap_chapter1_zoom.png");
             Copy(Path.Combine(Art, "v02-battle-bg-hd"), $"{ArtRoot}/Stage", f => f.StartsWith("stage_") || f == "B2_road_scene.png");
@@ -85,6 +89,7 @@ namespace ThreeKingdoms.EditorTools
                     string key = Path.GetFileNameWithoutExtension(path);
                     axes.TryGetValue(key, out string a);
                     if (a == null) a = key.StartsWith("ground_") || key.StartsWith("water_") ? "xy" : "none";
+                    if (key.StartsWith("roof_")) a = key.EndsWith("_tiles") || key.EndsWith("_thatch") ? "xy" : "x";
                     bool pixel = sub == "Props" || sub == "UI";
                     importer.textureType = TextureImporterType.Default;
                     importer.filterMode = pixel ? FilterMode.Point : FilterMode.Bilinear;
@@ -257,16 +262,31 @@ namespace ThreeKingdoms.EditorTools
                 Quad(b, "Gable L", new Vector3(-width / 2f, (wall + gable) / 2f, depth / 2f), new Vector3(0, 90, 0), new Vector2(depth, wall + gable), Mat(side, s, Color.white, true), Vector2.one);
                 Quad(b, "Gable R", new Vector3(width / 2f, (wall + gable) / 2f, depth / 2f), new Vector3(0, -90, 0), new Vector2(depth, wall + gable), Mat(side, s, Color.white, true), Vector2.one);
             }
-            // Roof: two slopes in the Zhuojun grey tiles (Anxi and the camp offices share 青灰板瓦).
-            var roofTex = AssetDatabase.LoadAssetAtPath<Texture2D>($"{ZhuojunTownBuilder.TownDir}/roof_tiles_grey.png");
-            var roofMat = Mat("roof_tiles_grey", roofTex, new Color(0.36f, 0.38f, 0.42f), false);
+            // Roof: two slopes of this place's roof (Anxi grey tiles, the camp's thatch; Codex art/v02-roofs-hd, one tile ≈ 4 m),
+            // a ridge along the top and a row of eave tiles at the front edge. Before the art arrives: the Zhuojun grey tiles.
+            var roofTex = Tex(roofKey) ?? AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Art/Environment/ZhuojunMap/roof_tiles_grey.png");
+            bool hd = roofTex && roofTex.name == roofKey;
+            var roofMat = Mat(roofTex ? roofTex.name : "roof_grey", roofTex, new Color(0.36f, 0.38f, 0.42f), false);
             float half = depth / 2f + 0.5f, slope = Mathf.Atan2(gable, depth / 2f);
             float len = half / Mathf.Cos(slope);
             var roofSize = new Vector2(width + 0.7f, len);
-            var tiling = roofTex ? new Vector2(roofSize.x * 30f / roofTex.width, roofSize.y * 30f / roofTex.height) : Vector2.one;
+            var tiling = !roofTex ? Vector2.one : hd ? roofSize / 4f : new Vector2(roofSize.x * 30f / roofTex.width, roofSize.y * 30f / roofTex.height);
             float y = wall + gable / 2f - 0.15f;
             Quad(b, "Roof front", new Vector3(0, y + 0.05f, depth / 2f - half / 2f), new Vector3(90f - slope * Mathf.Rad2Deg, 0, 0), roofSize, roofMat, tiling);
             Quad(b, "Roof back", new Vector3(0, y + 0.05f, depth / 2f + half / 2f), new Vector3(90f - slope * Mathf.Rad2Deg, 180, 0), roofSize, roofMat, tiling);
+            float rise = Mathf.Sin(slope) * len / 2f;
+            var ridge = Tex(ridgeKey);
+            if (ridge)
+            {
+                float h = 0.38f, tileW = h * ridge.width / ridge.height;
+                Quad(b, "Ridge", new Vector3(0, y + 0.05f + rise + h * 0.3f, depth / 2f), Vector3.zero, new Vector2(width + 0.9f, h), Mat(ridgeKey, ridge, Color.white, true), new Vector2((width + 0.9f) / tileW, 1f));
+            }
+            var eave = Tex(eaveKey);
+            if (eave)
+            {
+                float h = 0.26f, tileW = h * eave.width / eave.height;
+                Quad(b, "Eave", new Vector3(0, y + 0.05f - rise - h * 0.25f, depth / 2f - half - 0.02f), Vector3.zero, new Vector2(width + 0.7f, h), Mat(eaveKey, eave, Color.white, true), new Vector2((width + 0.7f) / tileW, 1f));
+            }
             return b;
         }
 
@@ -486,6 +506,7 @@ namespace ThreeKingdoms.EditorTools
         static void BuildCamp()
         {
             dir = $"{ArtRoot}/Camp";
+            roofKey = "roof_camp_thatch"; ridgeKey = "roof_camp_ridge"; eaveKey = null;
             matDir = $"{ArtRoot}/Materials/Camp";
             var f = NewField("Camp", new Vector3(0, 0, -17f), new Color(0.80f, 0.86f, 0.92f));
             var env = f.Env;
@@ -578,6 +599,7 @@ namespace ThreeKingdoms.EditorTools
         static void BuildAnxi()
         {
             dir = $"{ArtRoot}/Anxi";
+            roofKey = "roof_anxi_tiles"; ridgeKey = "roof_anxi_ridge"; eaveKey = "roof_anxi_eave";
             matDir = $"{ArtRoot}/Materials/Anxi";
             var f = NewField("Anxi", new Vector3(0, 0, -21f), new Color(0.82f, 0.88f, 0.94f));
             var env = f.Env;
