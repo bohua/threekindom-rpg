@@ -115,7 +115,8 @@ namespace ThreeKingdoms.EditorTools
                 if (name == "preview.png" || (keep != null && !keep(name))) continue;
                 File.Copy(f, Path.Combine(to, name), true);
             }
-            if (File.Exists(Path.Combine(from, "manifest.json"))) File.Copy(Path.Combine(from, "manifest.json"), Path.Combine(to, "manifest.json"), true);
+            // A filtered copy adds a few files to a folder: it keeps that folder's own manifest (its tiling axes).
+            if (keep == null && File.Exists(Path.Combine(from, "manifest.json"))) File.Copy(Path.Combine(from, "manifest.json"), Path.Combine(to, "manifest.json"), true);
         }
 
         [System.Serializable] sealed class ManifestFile { public string filename; public string tile_axes; }
