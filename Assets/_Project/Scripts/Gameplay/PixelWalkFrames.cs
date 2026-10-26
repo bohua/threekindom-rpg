@@ -28,6 +28,8 @@ namespace ThreeKingdoms.Gameplay
         public const int StoryPoseStart = WalkStart + 4 * WalkFramesPerRow;
         // A story pose shown instead of the walk while set (-1 = none); see OathPose.
         public int PoseOverride { get; set; } = -1;
+        // A story pose drawn facing screen right shown mirrored (facing left).
+        public bool PoseFlip { get; set; }
         // Extra height for a hop in a story scene (laughing, raising a bowl), in world units.
         public float StageLift { get; set; }
         public bool HasStoryPose(int pose) => Animator && pose >= 0 && Animator.Columns > StoryPoseStart + pose;
@@ -59,7 +61,7 @@ namespace ThreeKingdoms.Gameplay
             if (PoseOverride >= 0 && HasStoryPose(PoseOverride))
             {
                 if (Animator.Frame != StoryPoseStart + PoseOverride) Animator.Frame = StoryPoseStart + PoseOverride;
-                if (billboard) { billboard.Flip = false; billboard.Lift = StageLift; }
+                if (billboard) { billboard.Flip = PoseFlip; billboard.Lift = StageLift; }
                 return;
             }
             float speed = Time.deltaTime > 0f ? delta.magnitude / Time.deltaTime : 0f;

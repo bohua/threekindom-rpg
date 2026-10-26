@@ -9,7 +9,7 @@ namespace ThreeKingdoms.Gameplay.Story
     public enum StageOp
     {
         Line, Choice, Card, Background, Actor, Move, Hide, Face, Remember, Flag, Scroll, March, Fade, Rations,
-        Advance, Load, Battle, Wait, Music, Reputation, Item, Autosave, Shake, Flash, Call,
+        Advance, Load, Battle, Wait, Music, Reputation, Item, Autosave, Shake, Flash, Call, Comic, Pose, Letterbox, Focus,
         Chronicle, ChronicleEvent, EndChronicle,   // 0.3: the realm-map chronicle (SYSTEMS_V03 §2)
     }
 
@@ -34,6 +34,16 @@ namespace ThreeKingdoms.Gameplay.Story
     {
         // speaker, line key
         public static StageStep L(string speaker, string key) => new StageStep { Op = StageOp.Line, A = speaker, B = key };
+        // A timed line (automatic scenes like the oath, user 2026-10-26): moves on by itself after seconds; confirm moves on early.
+        public static StageStep TL(string speaker, string key, float seconds) => new StageStep { Op = StageOp.Line, A = speaker, B = key, Seconds = seconds };
+        // A story pose (the 鞭督邮 set, DuyouPoseImporter) held until changed; -1 back to standing. flip: face screen left.
+        public static StageStep Pose(string id, int pose, bool flip = false) => new StageStep { Op = StageOp.Pose, A = id, X = pose, C = flip ? "flip" : null };
+        // Letterbox bars and subtitle dialogue while an automatic scene plays.
+        public static StageStep Letterbox(bool on) => new StageStep { Op = StageOp.Letterbox, A = on ? "on" : null };
+        // The camera looks at a point of the scene from a distance (0 = back to following the player).
+        public static StageStep Focus(float x, float z, float distance) => new StageStep { Op = StageOp.Focus, X = x, Y = z, Seconds = distance };
+        // Like Move, but the script goes on while the actor walks (two people moving together).
+        public static StageStep MoveWith(string id, float x, float y, float seconds = 1f) => new StageStep { Op = StageOp.Move, A = id, X = x, Y = y, Seconds = seconds, D = "async" };
         // Several lines in a row: pairs of speaker, key.
         public static IEnumerable<StageStep> Lines(params string[] pairs)
         {
@@ -44,6 +54,9 @@ namespace ThreeKingdoms.Gameplay.Story
             new StageStep { Op = StageOp.Choice, A = speaker, B = prompt, C = choiceFlag, Options = options, Branches = branches };
         // A black card with white text (place and year), seconds on screen.
         public static StageStep Card(string key, float seconds = 2f) => new StageStep { Op = StageOp.Card, A = key, Seconds = seconds };
+        // A comic (连环画) panel stays on screen behind the following lines until the next panel or ComicEnd (user 2026-10-25).
+        public static StageStep Comic(string panel) => new StageStep { Op = StageOp.Comic, A = panel };
+        public static StageStep ComicEnd() => new StageStep { Op = StageOp.Comic, A = null };
         public static StageStep Background(string id) => new StageStep { Op = StageOp.Background, A = id };
         // An actor (id, sprite key) appears at a normalised stage position (0–1, left to right / bottom to top), facing
         // "left", "right", "front" or "back". In a walkable scene, x and y are ignored when the actor already stands there.

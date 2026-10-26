@@ -46,6 +46,8 @@ namespace ThreeKingdoms.Gameplay.Story
         public IReadOnlyList<string> Choices => Stage.Choices;
         public void Choose(int index) => Stage.Choose(index);
         public string Card => Stage.Card;
+        public string Comic => Stage.Comic;
+        public bool Letterbox => Stage.Letterbox;
         public float Fade => Stage.Fade;
         public bool Cinematic => Stage.Cinematic;
         public StagePlayer.MarchShot March => Stage.March;
@@ -86,19 +88,36 @@ namespace ThreeKingdoms.Gameplay.Story
             ObjectiveText = () => FieldScripts.Objective(this);
             var arrival = FieldScripts.OnArrive(this);
             if (arrival != null) Play(arrival);
+            if (DevTalk != null && Run.IsDevelopment) StartCoroutine(DevTalkRoutine());
             Changed?.Invoke();
         }
 
         // Opened on its own (development): a run at this place's step.
         GameRun DevRun()
         {
-            if (Location == Place.Xiapi)
+            if (DevStep == null && Location == Place.Xiapi)
                 return GameRun.ForChapter(Catalog, ChapterStep.Xiapi, 810, 900, 2, development: true);
             if (Location == Place.Pingyuan)
                 return GameRun.ForChapter(Catalog, ChapterStep.Pingyuan, 370, 500, 2, development: true);
             if (Location == Place.Gongsun || Location == Place.Suanzao)
                 return GameRun.ForChapter(Catalog, Location == Place.Gongsun ? ChapterStep.Gongsun : ChapterStep.Suanzao, 210, 400, 2, development: true);
-            return GameRun.ForChapter(Catalog, Location == Place.Camp ? ChapterStep.Camp : ChapterStep.Anxi, Location == Place.Camp ? 60 : 150, 260, 2, development: true);
+            var step = DevStep ?? (Location == Place.Camp ? ChapterStep.Camp : ChapterStep.Anxi);
+            return GameRun.ForChapter(Catalog, step, Location == Place.Camp ? 60 : step >= ChapterStep.AnxiBandits ? 210 : 150, 260, 2, development: true);
+        }
+
+        // Development (-chapterStep, -fieldTalk): open at a later step and talk to someone once the arrival scene is over.
+        public static ChapterStep? DevStep;
+        public static string DevTalk;
+
+        System.Collections.IEnumerator DevTalkRoutine()
+        {
+            while (Busy) yield return null;
+            yield return new WaitForSeconds(0.5f);
+            var who = Find(DevTalk);
+            if (!who) yield break;
+            PlaceAt(Player.transform, who.position + new Vector3(0, 0, -1.4f));
+            yield return null; yield return null;
+            Interact();
         }
 
         void Update()
@@ -264,7 +283,47 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public void Hide(string id) { var t = Actor(id); if (t && t != Player.transform) { Pin(t); t.gameObject.SetActive(false); } }
 
-        public void Shake(float seconds) { }
+        // 鞭督邮 story poses (DuyouPoseImporter): the brothers' atlases hold them as story poses 6–13 after the oath's six,
+        // the inspector's after his nine standing poses.
+        public const int HeroDuyouPose = 6, NpcDuyouFrame = 9;
+
+        public void Pose(string id, int pose, bool flip)
+        {
+            var t = Actor(id);
+            if (!t) return;
+            var walk = t.GetComponent<PixelWalkFrames>();
+            if (walk)
+            {
+                walk.PoseOverride = pose < 0 ? -1 : HeroDuyouPose + pose;
+                walk.PoseFlip = flip;
+                return;
+            }
+            var animator = t.GetComponentInChildren<SpriteFrameAnimator>();
+            if (!animator) return;
+            int frame = pose < 0 ? 0 : NpcDuyouFrame + pose;
+            if (frame < animator.Columns * animator.Rows) { animator.Frame = frame; animator.Apply(); }
+            var board = animator.GetComponent<PixelBillboard>();
+            if (board) board.Flip = flip;
+        }
+
+        Transform focus;
+
+        public void Focus(float x, float z, float distance)
+        {
+            if (!Camera) return;
+            if (distance <= 0f)
+            {
+                Camera.StageDistance = 0f;
+                Camera.Target = Player.transform;
+                return;
+            }
+            if (!focus) focus = new GameObject("Stage focus").transform;
+            focus.position = new Vector3(x, Player.transform.position.y, z);
+            Camera.Target = focus;
+            Camera.StageDistance = distance;
+        }
+
+        public void Shake(float seconds) { if (Camera) Camera.ShakeSeconds = seconds; }
         public void Flash() { }
 
         // A standing person turns to Liu Bei (pose frames 0 front, 1 left, 2 right, 3 back).
