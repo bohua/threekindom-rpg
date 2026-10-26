@@ -193,6 +193,42 @@ MonoBehaviour:
     Flip: 0
     Crop: 0.6
     Axis: 0.5
+  - Speaker: taishi_ci
+    Texture: {fileID: 2800000, guid: 5b07b6c6499b67144b6d57918338a9e3, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: mi_zhu
+    Texture: {fileID: 2800000, guid: 614c8f7e9b5dca04a9340b0ecfa97fb0, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: chen_deng
+    Texture: {fileID: 2800000, guid: bffa95adb364a5449abba61f42b0ebde, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: yu_jin
+    Texture: {fileID: 2800000, guid: 9144ef51cfbddcf449111aa46980b896, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: cao_ren
+    Texture: {fileID: 2800000, guid: d78423f443d3289419a49b293fb6fc25, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: cao_bao
+    Texture: {fileID: 2800000, guid: 0425e52d6ce4d024cbb2ac9289b9505a, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
   - Speaker: tao_qian
     Texture: {fileID: 2800000, guid: 39f3fc23b4ebba74f809220efbb19a7d, type: 3}
     Right: 1

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using ThreeKingdoms.Gameplay.Story;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -42,6 +43,12 @@ namespace ThreeKingdoms.EditorTools
             Ground(env, "Gate road and market", "ground_xp_market", market, -14, 14, -40, -6, 0f);
             Fringe(env, "ground_xp_market_fringe", -14, 14, -40, -6, 0.005f);
             Ground(env, "Hall square", "ground_xp_plaza", plaza, -16, 16, 2, 22, 0.01f);
+            // The pale stone reads washed out at noon under the HD-2D grade: tone the city's stone down a little.
+            foreach (var m in mats.Where(kv => kv.Key.StartsWith("ground_xp_plaza") || kv.Key.StartsWith("ground_xp_paving")).Select(kv => kv.Value))
+            {
+                m.SetColor("_BaseColor", new Color(0.80f, 0.80f, 0.80f));
+                EditorUtility.SetDirty(m);
+            }
             // The bridge over the moat to the east gate (the brothers come in here).
             Ground(env, "Gate bridge", "ground_xp_paving", paving, -4, 4, -56, -44, 0.012f);
 
