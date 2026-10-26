@@ -19,6 +19,8 @@ namespace ThreeKingdoms.Gameplay.Story
         void Hide(string id);
         void Shake(float seconds);
         void Flash();
+        void Pose(string id, int pose, bool flip) { }
+        void Focus(float x, float z, float distance) { }
     }
 
     // What the dialogue overlay reads (StageHud): the same in the story stage and the walkable 0.2 scenes.
@@ -30,6 +32,8 @@ namespace ThreeKingdoms.Gameplay.Story
         void Choose(int index);
         // A full-screen card (place and year, or narration), or null.
         string Card { get; }
+        // Letterbox and subtitles while an automatic scene plays (the oath look).
+        bool Letterbox { get; }
         // The comic panel now on screen, or null.
         string Comic { get; }
         float Fade { get; }
@@ -67,6 +71,8 @@ namespace ThreeKingdoms.Gameplay.Story
         public IReadOnlyList<string> Choices { get; private set; }
         public string Card { get; private set; }
         public string Comic { get; private set; }
+        public bool Letterbox { get; private set; }
+        [Tooltip("Shortest time a timed line stays up before confirm can move on")] public float MinTimedSeconds = 0.4f;
         public float Fade { get; private set; }
         public bool Cinematic { get; private set; }
         public MarchShot March { get; private set; }
@@ -109,7 +115,7 @@ namespace ThreeKingdoms.Gameplay.Story
             try { yield return Steps(steps); }
             finally
             {
-                Line = null; Choices = null; Card = null; Comic = null; March = null; Cinematic = false;
+                Line = null; Choices = null; Card = null; Comic = null; March = null; Cinematic = false; Letterbox = false;
                 Playing = false;
                 Changed?.Invoke();
             }
@@ -140,7 +146,8 @@ namespace ThreeKingdoms.Gameplay.Story
             {
                 case StageOp.Line:
                     Line = new DialogueLine(s.A, s.B);
-                    yield return WaitConfirm();
+                    if (s.Seconds > 0f) yield return WaitTimed(s.Seconds);
+                    else yield return WaitConfirm();
                     Line = null;
                     break;
                 case StageOp.Choice:
@@ -162,9 +169,16 @@ namespace ThreeKingdoms.Gameplay.Story
                     Card = null;
                     break;
                 case StageOp.Comic: Comic = s.A; Changed?.Invoke(); break;
+                case StageOp.Pose: Actors?.Pose(s.A, (int)s.X, s.C == "flip"); break;
+                case StageOp.Letterbox: Letterbox = s.A != null; Changed?.Invoke(); break;
+                case StageOp.Focus: Actors?.Focus(s.X, s.Y, s.Seconds); break;
                 case StageOp.Background: Actors?.Background(s.A); break;
                 case StageOp.Actor: Actors?.Show(s.A, s.B, s.X, s.Y, s.C); break;
-                case StageOp.Move: if (Actors != null) yield return Actors.Move(s.A, s.X, s.Y, s.Seconds); break;
+                case StageOp.Move:
+                    if (Actors == null) break;
+                    if (s.D == "async") StartCoroutine(Actors.Move(s.A, s.X, s.Y, s.Seconds));
+                    else yield return Actors.Move(s.A, s.X, s.Y, s.Seconds);
+                    break;
                 case StageOp.Face: Actors?.Face(s.A, s.C); break;
                 case StageOp.Hide: Actors?.Hide(s.A); break;
                 case StageOp.Shake: Actors?.Shake(s.Seconds); break;
@@ -238,6 +252,18 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return null;   // the press that started the line must not skip it
             advance = false;
             while (!advance) yield return null;
+        }
+
+        // A timed line: on by itself after seconds (development auto-play makes it shorter), or on confirm after a moment.
+        IEnumerator WaitTimed(float seconds)
+        {
+            advance = false;
+            Changed?.Invoke();
+            float started = Time.time;
+            if (AutoSeconds > 0f) seconds = Mathf.Min(seconds, AutoSeconds);
+            yield return null;
+            advance = false;
+            while (Time.time - started < seconds && !(advance && Time.time - started >= MinTimedSeconds)) yield return null;
         }
 
         IEnumerator WaitConfirmOr(float seconds)

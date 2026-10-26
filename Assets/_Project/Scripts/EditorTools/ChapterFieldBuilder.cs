@@ -42,6 +42,7 @@ namespace ThreeKingdoms.EditorTools
         [MenuItem("JRPG/Build 0.2 Scenes (stage, camp, Anxi)")]
         public static void Build()
         {
+            DuyouPoseImporter.Import();   // the 鞭督邮 story poses into the brothers' and the inspector's atlases
             ImportArt();
             BuildStage();
             BuildCamp();
@@ -434,33 +435,6 @@ namespace ThreeKingdoms.EditorTools
             return t;
         }
 
-        // The 鞭督邮 连环画 panels (Codex art/v02-duyou-comic, user 2026-10-25); painted pictures, so bilinear and mipmapped.
-        const string ComicSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v02-duyou-comic";
-        static Texture2D[] comicPanels;
-
-        static Texture2D[] ComicPanels()
-        {
-            if (comicPanels != null) return comicPanels;
-            string dir = $"{ArtRoot}/Comic";
-            Directory.CreateDirectory(dir);
-            if (Directory.Exists(ComicSource))
-                foreach (var f in Directory.GetFiles(ComicSource, "P*.png")) File.Copy(f, $"{dir}/{Path.GetFileName(f)}", true);
-            AssetDatabase.Refresh();
-            var list = new System.Collections.Generic.List<Texture2D>();
-            foreach (var path in Directory.GetFiles(dir, "P*.png"))
-            {
-                string p = path.Replace('\\', '/');
-                var imp = (TextureImporter)AssetImporter.GetAtPath(p);
-                if (imp == null) continue;
-                imp.textureType = TextureImporterType.Default; imp.mipmapEnabled = true; imp.filterMode = FilterMode.Trilinear;
-                imp.npotScale = TextureImporterNPOTScale.None; imp.maxTextureSize = 2048; imp.wrapMode = TextureWrapMode.Clamp;
-                imp.textureCompression = TextureImporterCompression.CompressedHQ; imp.alphaIsTransparency = false;
-                imp.SaveAndReimport();
-                list.Add(AssetDatabase.LoadAssetAtPath<Texture2D>(p));
-            }
-            return comicPanels = list.ToArray();
-        }
-
         // The overlay, the shop, the save slots, the travel menu, the ink scroll and an EventSystem.
         static void Huds(FieldStoryController c)
         {
@@ -473,7 +447,6 @@ namespace ThreeKingdoms.EditorTools
             var hud = hudGo.AddComponent<StageHud>();
             hud.Screen = c; hud.Skin = skin; hud.Portraits = portraits;
             hud.Map = AssetDatabase.LoadAssetAtPath<Texture2D>($"{ArtRoot}/Map/worldmap_chapter1_zoom.png");
-            hud.ComicPanels = ComicPanels();
             CinematicsArtImporter.AddView(panel);
             foreach (var (name, add) in new (string, System.Action<GameObject>)[]
             {
@@ -695,6 +668,10 @@ namespace ThreeKingdoms.EditorTools
             };
             var aide = people.Last();
             aide.gameObject.SetActive(false);
+            // The inspector himself, for the 鞭督邮 scene (his story poses after his nine, DuyouPoseImporter); hidden until then.
+            var duyou = Person(p, "du_you 督邮", Folk("C06"), new Vector3(23f, 0, 13.2f));
+            duyou.gameObject.SetActive(false);
+            people.Add(duyou);
             var bound = Billboard(p, "du_you_bound 督邮", "DU_YOU_BOUND", 20f, 9f, new Vector3(0.8f, 1.6f, 0.6f), new Color(0.46f, 0.24f, 0.46f));
             bound.gameObject.SetActive(false);
             var ox = Billboard(p, "ox 黄牛", "PROP_OX_WALK_STRIP", 0, -1.2f, new Vector3(1.8f, 1.3f, 0.8f), new Color(0.62f, 0.42f, 0.22f), frames: 4);

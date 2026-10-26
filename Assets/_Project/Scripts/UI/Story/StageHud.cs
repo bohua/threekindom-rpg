@@ -40,6 +40,8 @@ namespace ThreeKingdoms.UI.Story
 
         IStoryScreen S => Screen as IStoryScreen;
         VisualElement comic, comicFrame, comicImage;
+        readonly VisualElement[] letterbox = new VisualElement[2];
+        public bool LetterboxShown => letterbox[0] != null && letterbox[0].style.display == DisplayStyle.Flex;
         string shownComic; float comicT;
         VisualElement root, fade, card, march, mapImage, piece, routeLayer, choiceList, toastBox, cinemaHide;
         Label cardText, objective, prompt, yearLabel, fromLabel, toLabel, toastText;
@@ -109,6 +111,18 @@ namespace ThreeKingdoms.UI.Story
             comic.style.display = DisplayStyle.None;
             root.Insert(0, comic);
             dialogue = new DialogueView(root, Skin, Portraits);
+            // Letterbox bars while an automatic scene plays (鞭督邮, user 2026-10-26: like the oath), under the dialogue box.
+            for (int i = 0; i < 2; i++)
+            {
+                var bar = new VisualElement { pickingMode = PickingMode.Ignore };
+                bar.style.position = Position.Absolute;
+                bar.style.left = 0; bar.style.right = 0; bar.style.height = 96;
+                if (i == 0) bar.style.top = 0; else bar.style.bottom = 0;
+                bar.style.backgroundColor = Color.black;
+                bar.style.display = DisplayStyle.None;
+                root.Insert(root.IndexOf(dialogue.Box), bar);
+                letterbox[i] = bar;
+            }
 
             choiceList = new VisualElement();
             Place(choiceList, -1, -1, 300, 230);
@@ -210,6 +224,8 @@ namespace ThreeKingdoms.UI.Story
             objective.style.display = string.IsNullOrEmpty(s.Objective) || s.Busy ? DisplayStyle.None : DisplayStyle.Flex;
             prompt.text = s.Busy ? "" : StoryText.Prompt(s.Prompt);
             if (s.Prompt != null && s.Prompt.StartsWith("raw:")) prompt.text = s.Busy ? "" : s.Prompt.Substring(4);
+            foreach (var bar in letterbox) if (bar != null) bar.style.display = s.Letterbox && !cinema ? DisplayStyle.Flex : DisplayStyle.None;
+            dialogue.PortraitsEnabled = !s.Letterbox;
             var line = s.Line;
             if (line.HasValue && !cinema && s.Card == null) dialogue.Show(line.Value.Speaker, line.Value.Line);
             else dialogue.Hide();

@@ -27,6 +27,7 @@ namespace ThreeKingdoms.EditorTools
             CodexArtImporter.Import();    // gambling house, street props, dice and archery art (2026-10-22 deliveries)
             WalkCycleImporter.Import();   // 9 poses + 16 walk frames per character atlas (CHARACTER_WALK_CYCLES.md)
             ResidentImporter.Import();    // the 12 Zhuojun residents (ZHUOJUN_RESIDENTS.md)
+            DuyouPoseImporter.Import();   // 鞭督邮 story poses after the oath poses (user 2026-10-26)
             CinematicsArtImporter.Import();   // ink scroll, oath altar and petals, opening film (story-cinematics GDD)
             BattleSceneBuilder.Build();
             ZhuojunTownBuilder.Build();

@@ -23,7 +23,7 @@ public sealed class ChapterFlowTests
 {
     string saveDir;
     readonly Queue<int> picks = new Queue<int>();
-    readonly HashSet<string> comics = new HashSet<string>();
+    bool letterboxSeen, inspectorSeen;
 
     [SetUp] public void Fresh()
     {
@@ -73,11 +73,8 @@ public sealed class ChapterFlowTests
             }
             Assert.Less(Time.realtimeSinceStartup, deadline, "scene " + scene + " stuck");
             var hud = Object.FindFirstObjectByType<ThreeKingdoms.UI.Story.StageHud>();
-            if (hud && hud.ShownComic != null && comics.Add(hud.ShownComic))
-            {
-                var shots = System.Environment.GetEnvironmentVariable("CHAPTER_TEST_SHOTS");
-                if (!string.IsNullOrEmpty(shots)) { System.IO.Directory.CreateDirectory(shots); yield return new WaitForSecondsRealtime(0.5f); ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(shots, hud.ShownComic + ".png")); }
-            }
+            if (hud && hud.LetterboxShown) letterboxSeen = true;
+            if (screen is FieldStoryController fsc && fsc.Find("du_you") is Transform dy && dy.gameObject.activeInHierarchy) inspectorSeen = true;
             if (screen.Choices != null) player.Choose(picks.Count > 0 ? picks.Dequeue() : 0);
             else player.Advance();
             yield return null;
@@ -211,9 +208,9 @@ public sealed class ChapterFlowTests
         Assert.AreEqual(ChapterScripts.ScrollAnxi, StoryCinematics.LastScroll);
         Assert.AreEqual(ChapterStep.Done, run.Chapter2.Step);
         Assert.AreEqual("A_self", run.Chapter2.Recall("liu_bei", "liubei_duyou"));
-        // The 鞭督邮 story plays as a 连环画 (user 2026-10-25): choice A shows the bind and cane panels, not Zhang Fei's.
-        Assert.That(new[] { "P1_refused", "P2_report", "P3A_bind", "P4A_cane", "P5_seal", "P6_leave" }, Is.SubsetOf(comics), string.Join(",", comics));
-        Assert.IsFalse(comics.Contains("P3B_drag"));
+        // 鞭督邮 plays as an automatic in-game scene like the oath (user 2026-10-26): letterbox, the inspector on stage.
+        Assert.IsTrue(letterboxSeen, "letterbox during 鞭督邮");
+        Assert.IsTrue(inspectorSeen, "督邮 on stage");
         Assert.AreEqual(10, run.Chapter2.Memories.Count, "必做 9 条＋宛城 1 条");
         Assert.That(run.Data.Party.Select(g => run.Progress.Level(g)), Is.All.EqualTo(7));
     }

@@ -47,6 +47,7 @@ namespace ThreeKingdoms.Gameplay.Story
         public void Choose(int index) => Stage.Choose(index);
         public string Card => Stage.Card;
         public string Comic => Stage.Comic;
+        public bool Letterbox => Stage.Letterbox;
         public float Fade => Stage.Fade;
         public bool Cinematic => Stage.Cinematic;
         public StagePlayer.MarchShot March => Stage.March;
@@ -272,7 +273,47 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public void Hide(string id) { var t = Actor(id); if (t && t != Player.transform) { Pin(t); t.gameObject.SetActive(false); } }
 
-        public void Shake(float seconds) { }
+        // 鞭督邮 story poses (DuyouPoseImporter): the brothers' atlases hold them as story poses 6–13 after the oath's six,
+        // the inspector's after his nine standing poses.
+        public const int HeroDuyouPose = 6, NpcDuyouFrame = 9;
+
+        public void Pose(string id, int pose, bool flip)
+        {
+            var t = Actor(id);
+            if (!t) return;
+            var walk = t.GetComponent<PixelWalkFrames>();
+            if (walk)
+            {
+                walk.PoseOverride = pose < 0 ? -1 : HeroDuyouPose + pose;
+                walk.PoseFlip = flip;
+                return;
+            }
+            var animator = t.GetComponentInChildren<SpriteFrameAnimator>();
+            if (!animator) return;
+            int frame = pose < 0 ? 0 : NpcDuyouFrame + pose;
+            if (frame < animator.Columns * animator.Rows) { animator.Frame = frame; animator.Apply(); }
+            var board = animator.GetComponent<PixelBillboard>();
+            if (board) board.Flip = flip;
+        }
+
+        Transform focus;
+
+        public void Focus(float x, float z, float distance)
+        {
+            if (!Camera) return;
+            if (distance <= 0f)
+            {
+                Camera.StageDistance = 0f;
+                Camera.Target = Player.transform;
+                return;
+            }
+            if (!focus) focus = new GameObject("Stage focus").transform;
+            focus.position = new Vector3(x, Player.transform.position.y, z);
+            Camera.Target = focus;
+            Camera.StageDistance = distance;
+        }
+
+        public void Shake(float seconds) { if (Camera) Camera.ShakeSeconds = seconds; }
         public void Flash() { }
 
         // A standing person turns to Liu Bei (pose frames 0 front, 1 left, 2 right, 3 back).

@@ -273,52 +273,123 @@ namespace ThreeKingdoms.Gameplay.Story
         static IEnumerable<StageStep> Duyou(FieldStoryController c)
         {
             var ch = c.Run.Chapter2;
-            // C11 at the post station's gate.
+            // 鞭督邮 as an automatic in-game scene like the peach-garden oath (user 2026-10-26: "做成游戏内Q版动画和对白，
+            // 剧情结束后出水墨画卷"): letterbox, a closer shot, the brothers' and the inspector's story poses (DuyouPose), lines
+            // moving on by themselves (confirm moves on early), and the ink scroll as soon as the seal hangs on his neck.
+            // Places: the post station's door (22, 12.4), the hitching post right of it (24, 9.6).
+            const float t = 3f;
             yield return Fade(1f);
+            yield return Letterbox(true);
+            yield return Focus(22.6f, 10f, 18f);
+            yield return Music("anxi_duyou");
             yield return Show("liu_bei", 22f, 8.4f, "back");
-            yield return Show("guan_yu", 20.4f, 7.6f, "back");
-            yield return Show("zhang_fei", 23.6f, 7.6f, "back");
-            yield return Show("courier", 25.5f, 11.5f, "left");
+            yield return Show("guan_yu", 20.4f, 7.8f, "back");
+            yield return Show("zhang_fei", 23.4f, 7.6f, "back");
+            yield return Show("courier", 25.8f, 11.2f, "left");
             yield return Show("du_you_aide", 22f, 11.6f, "front");
+            yield return Show("du_you", 23f, 13.2f, "front");
+            yield return Pose("du_you", DuyouPose.DuLounge);
             yield return Fade(0f);
-            // The whole 鞭督邮 story plays as a 连环画 (user 2026-10-25): one panel behind each beat's lines.
-            yield return Comic(ChapterScripts.ComicRefused);
-            foreach (var s in Lines("du_you_aide", "c11.1", "zhang_fei", "c11.2", "liu_bei", "c11.3", "du_you_aide", "c11.4", "narrator", "c11.5",
-                "du_you_aide", "c11.6", "liu_bei", "c11.7", "du_you_aide", "c11.8"))
-                yield return s;
+            // C11: refused at the gate.
+            yield return TL("du_you_aide", "c11.1", 4f);
+            yield return Pose("zhang_fei", DuyouPose.ZhangAngry);
+            yield return TL("zhang_fei", "c11.2", 2.5f);
+            yield return Pose("zhang_fei", -1);
+            yield return Pose("liu_bei", DuyouPose.LiuRequest);
+            yield return TL("liu_bei", "c11.3", t);
+            yield return Pose("du_you", DuyouPose.DuWaveAway);
+            yield return TL("du_you_aide", "c11.4", 2.5f);
+            yield return Hide("du_you");
+            yield return Shake(0.2f);
+            yield return TL("narrator", "c11.5", 2.5f);
+            yield return Pose("liu_bei", -1);
+            yield return TL("du_you_aide", "c11.6", 3.5f);
+            yield return Pose("liu_bei", DuyouPose.LiuFist);
+            yield return TL("liu_bei", "c11.7", 3.5f);
+            yield return TL("du_you_aide", "c11.8", 2f);
             yield return Hide("du_you_aide");
-            yield return Comic(ChapterScripts.ComicReport);
-            yield return L("narrator", "c11.9");
+            // Two days later the clerk brings word at night.
+            yield return Fade(1f, 0.4f);
+            yield return Show("clerk", 21f, 9.6f, "right");
+            yield return Pose("guan_yu", DuyouPose.GuanStroke);
+            yield return Pose("zhang_fei", DuyouPose.ZhangArmsCrossed);
+            yield return Fade(0f, 0.4f);
+            yield return TL("narrator", "c11.9", 5f);
+            yield return Hide("clerk");
+            yield return Pose("guan_yu", -1); yield return Pose("zhang_fei", -1); yield return Pose("liu_bei", -1);
 
             // C12: Liu Bei himself (史实) or Zhang Fei first (演义); the seal ends on the inspector's neck either way.
             yield return Choice("liu_bei", "c12.prompt", ChapterScripts.DuyouChoice, new[] { "c12.a", "c12.b" },
                 new[]
                 {
-                    L("zhang_fei", "c12.a.1"), Move("zhang_fei", 22.8f, 9.6f, 0.5f), L("liu_bei", "c12.a.2"), Move("zhang_fei", 23.6f, 7.6f, 0.4f),
-                    L("liu_bei", "c12.a.3"), Fade(1f, 0.3f), Show("du_you_bound", 20f, 9f, "back"), Show("liu_bei", 21.2f, 8.6f, "left"), Fade(0f, 0.3f),
-                    Comic(ChapterScripts.ComicBind), L("narrator", "c12.a.4"), L("du_you", "c12.a.5"), L("liu_bei", "c12.a.6"),
-                    Comic(ChapterScripts.ComicCane), Shake(0.4f), L("narrator", "c12.a.7"), L("guan_yu", "c12.a.8"),
+                    Pose("zhang_fei", DuyouPose.ZhangCharge), MoveWith("zhang_fei", 22.8f, 10.2f, 0.5f), TL("zhang_fei", "c12.a.1", 2.5f),
+                    Pose("zhang_fei", -1), Pose("liu_bei", DuyouPose.LiuStop), TL("liu_bei", "c12.a.2", 2.5f),
+                    Pose("zhang_fei", DuyouPose.ZhangHeldBack), Pose("liu_bei", -1), Move("zhang_fei", 23.4f, 7.6f, 0.4f),
+                    TL("liu_bei", "c12.a.3", 2.5f),
+                    // He walks in and drags the inspector out to the hitching post.
+                    Move("liu_bei", 22.4f, 12.2f, 0.8f), Hide("liu_bei"), Wait(0.6f),
+                    Show("du_you", 22.6f, 12.6f, "front"), Pose("du_you", DuyouPose.DuDragged), Show("liu_bei", 23.4f, 12.4f, "right"),
+                    Pose("liu_bei", DuyouPose.LiuDrag), MoveWith("du_you", 24f, 9.6f, 1.6f), Move("liu_bei", 24.8f, 9.8f, 1.6f),
+                    Pose("du_you", DuyouPose.DuBound), Pose("liu_bei", -1), Move("liu_bei", 22.8f, 9.2f, 0.5f),
+                    TL("narrator", "c12.a.4", 3f),
+                    TL("du_you", "c12.a.5", 2.5f),
+                    Pose("liu_bei", DuyouPose.LiuCaneRaise), TL("liu_bei", "c12.a.6", 3.5f),
+                    Pose("liu_bei", DuyouPose.LiuCaneStrike), Pose("du_you", DuyouPose.DuFlinch), Shake(0.25f), Wait(0.35f),
+                    Pose("liu_bei", DuyouPose.LiuCaneRaise), Pose("du_you", DuyouPose.DuBound), Wait(0.3f),
+                    Pose("liu_bei", DuyouPose.LiuCaneStrike), Pose("du_you", DuyouPose.DuFlinch), Shake(0.25f), Wait(0.35f),
+                    Pose("liu_bei", DuyouPose.LiuCaneRaise), Pose("du_you", DuyouPose.DuBeg), Wait(0.3f),
+                    Pose("liu_bei", DuyouPose.LiuCaneStrike), Pose("du_you", DuyouPose.DuFlinch), Shake(0.3f),
+                    TL("narrator", "c12.a.7", 3f),
+                    Pose("guan_yu", DuyouPose.GuanNod), TL("guan_yu", "c12.a.8", 3f),
+                    Pose("guan_yu", -1), Pose("liu_bei", -1),
                     Remember("liu_bei", "liubei_duyou", "A_self", "mem.liubei_duyou.A"),
                     Remember("guan_yu", "guanyu_duyou", "A_self", "mem.guanyu_duyou.A"),
                 },
                 new[]
                 {
-                    L("narrator", "c12.b.1"), Move("zhang_fei", 22f, 11.4f, 0.6f), Hide("zhang_fei"), L("liu_bei", "c12.b.2"),
-                    Fade(1f, 0.3f), Show("du_you_bound", 20f, 9f, "back"), Show("zhang_fei", 21.2f, 8.6f, "left"), Fade(0f, 0.3f),
-                    Comic(ChapterScripts.ComicDrag), L("narrator", "c12.b.3"), L("zhang_fei", "c12.b.4"), Shake(0.4f), L("du_you", "c12.b.5"),
-                    Move("liu_bei", 21.8f, 8.2f, 0.4f), Comic(ChapterScripts.ComicStop), L("liu_bei", "c12.b.6"), L("zhang_fei", "c12.b.7"), L("liu_bei", "c12.b.8"), L("guan_yu", "c12.b.9"),
+                    Pose("zhang_fei", DuyouPose.ZhangCharge), TL("narrator", "c12.b.1", 2f), Move("zhang_fei", 22.4f, 12.2f, 0.6f), Hide("zhang_fei"),
+                    Pose("liu_bei", DuyouPose.LiuStop), TL("liu_bei", "c12.b.2", 1.8f), Pose("liu_bei", -1),
+                    // Zhang Fei drags him out by the hair and ties him to the post.
+                    Show("du_you", 22.6f, 12.6f, "front"), Pose("du_you", DuyouPose.DuDragged), Show("zhang_fei", 23.4f, 12.4f, "right"),
+                    Pose("zhang_fei", DuyouPose.ZhangDragHair), MoveWith("du_you", 24f, 9.6f, 1.4f), Move("zhang_fei", 24.8f, 9.8f, 1.4f),
+                    Pose("du_you", DuyouPose.DuBound), Pose("zhang_fei", -1), Move("zhang_fei", 22.9f, 9.4f, 0.4f),
+                    TL("narrator", "c12.b.3", 3.5f),
+                    Pose("zhang_fei", DuyouPose.ZhangWhipRaise), TL("zhang_fei", "c12.b.4", 2.5f),
+                    Pose("zhang_fei", DuyouPose.ZhangWhipStrike), Pose("du_you", DuyouPose.DuFlinch), Shake(0.25f), Wait(0.3f),
+                    Pose("zhang_fei", DuyouPose.ZhangWhipRaise), Pose("du_you", DuyouPose.DuBound), Wait(0.25f),
+                    Pose("zhang_fei", DuyouPose.ZhangWhipStrike), Pose("du_you", DuyouPose.DuFlinch), Shake(0.25f),
+                    Pose("du_you", DuyouPose.DuBeg), TL("du_you", "c12.b.5", 2f),
+                    Pose("zhang_fei", DuyouPose.ZhangWhipRaise), Move("liu_bei", 21.9f, 9.2f, 0.4f),
+                    Pose("liu_bei", DuyouPose.LiuStop), TL("liu_bei", "c12.b.6", 2.5f),
+                    Pose("zhang_fei", DuyouPose.ZhangHeldBack), TL("zhang_fei", "c12.b.7", 2.5f),
+                    TL("liu_bei", "c12.b.8", 3.5f), Pose("liu_bei", -1),
+                    Pose("guan_yu", DuyouPose.GuanSigh), TL("guan_yu", "c12.b.9", 3.5f), Pose("guan_yu", -1), Pose("zhang_fei", -1),
                     Remember("liu_bei", "liubei_duyou", "B_zhangfei", "mem.liubei_duyou.B"),
                     Remember("guan_yu", "guanyu_duyou", "B_zhangfei", "mem.guanyu_duyou.B"),
                 });
             yield return Remember("zhang_fei", "zhangfei_duyou", "held_back", "mem.zhangfei_duyou");
-            yield return Comic(ChapterScripts.ComicSeal);
-            foreach (var s in Lines("narrator", "c12.end.1", "liu_bei", "c12.end.2", "zhang_fei", "c12.end.3", "guan_yu", "c12.end.4", "liu_bei", "c12.end.5"))
-                yield return s;
-            yield return ComicEnd();
+            // The seal hung on his neck; the three turn to go, Liu Bei looks back, and the moment freezes into the scroll.
+            yield return Move("liu_bei", 23.2f, 9.4f, 0.5f);
+            yield return Pose("liu_bei", DuyouPose.LiuHangSeal);
+            yield return TL("narrator", "c12.end.1", 3.5f);
+            yield return Pose("du_you", DuyouPose.DuSealed);
+            yield return TL("liu_bei", "c12.end.2", 2.5f);
+            yield return Pose("zhang_fei", DuyouPose.ZhangLaugh);
+            yield return TL("zhang_fei", "c12.end.3", 2.5f);
+            yield return Pose("guan_yu", DuyouPose.GuanSalute);
+            yield return TL("guan_yu", "c12.end.4", 3f);
+            yield return Pose("liu_bei", DuyouPose.LiuLookBack, flip: true);
+            yield return Focus(22.6f, 9.6f, 26f);
+            yield return TL("liu_bei", "c12.end.5", 3.5f);
+            yield return Letterbox(false);
+            yield return Music(null);
+            yield return Scroll(ChapterScripts.ScrollAnxi);
+            yield return Fade(1f);
+            yield return Focus(0f, 0f, 0f);
+            yield return Pose("liu_bei", -1); yield return Pose("guan_yu", -1); yield return Pose("zhang_fei", -1);
+            yield return Hide("du_you");
 
             // C13 at the east gate: who comes to see them off depends on what was done in the county.
-            yield return Fade(1f);
-            yield return Hide("du_you_bound");
             yield return Show("liu_bei", 31f, 0f, "left");
             yield return Show("guan_yu", 32.4f, 0.8f, "left");
             yield return Show("zhang_fei", 32.4f, -0.8f, "left");
@@ -342,13 +413,10 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return L("zhang_fei", "c13.zhang.a").When(ChapterScripts.DuyouChoice + "0");
             yield return L("zhang_fei", "c13.zhang.b").When(ChapterScripts.DuyouChoice + "1");
             yield return Move("liu_bei", 36f, 0f, 1.4f);
-            yield return Comic(ChapterScripts.ComicLeave);
             yield return L("narrator", "c13.end");
             yield return Fade(1f);
-            yield return ComicEnd();
             // 后事预告 (V02_HUANGJIN_PLAN §5 C13): not written into the story state.
             for (int i = 1; i <= 6; i++) yield return Card("after." + i, 3.5f);
-            yield return Scroll(ChapterScripts.ScrollAnxi);
             yield return Advance(ChapterStep.AnxiBandits, ChapterStep.Done);
             yield return Card("end.title", 4f);
             yield return Card("end.thanks", 4f);
