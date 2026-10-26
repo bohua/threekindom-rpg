@@ -106,6 +106,20 @@ namespace ThreeKingdoms.Gameplay.Story
             // Unscaled: the scroll freezes time while its music plays.
             music.ignoreListenerPause = sfx.ignoreListenerPause = true;
             go.AddComponent<Fader>();
+            KeepListener();
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += (_, __) => KeepListener();
+        }
+
+        // The town and story scenes have no AudioListener, so nothing was heard (user 2026-10-26: "还是没有任何音乐和
+        // 音效"). The music object carries one, switched on only while no other listener (the battle cameras) is around.
+        static void KeepListener()
+        {
+            if (!music) return;
+            var own = music.GetComponent<AudioListener>();
+            if (!own) own = music.gameObject.AddComponent<AudioListener>();
+            bool other = false;
+            foreach (var l in Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None)) if (l != own && l.isActiveAndEnabled) other = true;
+            own.enabled = !other;
         }
 
         sealed class Fader : MonoBehaviour
