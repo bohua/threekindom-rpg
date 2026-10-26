@@ -92,10 +92,10 @@ def match_cue(name: str, title: str | None, cues: dict[str, Cue]) -> Cue | None:
 def probe_title(path: Path) -> str | None:
     try:
         out = subprocess.run(["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", str(path)],
-                             capture_output=True, text=True, check=True).stdout
+                             capture_output=True, encoding="utf-8", errors="replace", check=True).stdout
         tags = json.loads(out).get("format", {}).get("tags", {})
         return next((v for k, v in tags.items() if k.lower() == "title"), None)
-    except (subprocess.CalledProcessError, json.JSONDecodeError):
+    except (subprocess.CalledProcessError, json.JSONDecodeError, TypeError):
         return None
 
 
@@ -148,7 +148,10 @@ def frame_features(mono: np.ndarray, hop: int = 1024, size: int = 4096) -> np.nd
 def music_end(mono: np.ndarray) -> int:
     """Sample where the track stops being 'full': skip trailing silence and fade-out (RMS below -18 dB of median)."""
     win = RATE // 4
-    rms = np.sqrt(np.convolve(mono ** 2, np.ones(win) / win, mode="same") + 1e-12)
+    # centred moving mean of mono**2 via a cumulative sum (np.convolve with a 12k window is O(n*w), minutes per track)
+    cs = np.concatenate([[0.0], np.cumsum(mono.astype(np.float64) ** 2)])
+    k = np.arange(len(mono)) + (win - 1) // 2
+    rms = np.sqrt((cs[np.minimum(k + 1, len(mono))] - cs[np.maximum(k - win + 1, 0)]) / win + 1e-12)
     ref = np.median(rms[rms > 1e-4]) if np.any(rms > 1e-4) else 1e-4
     loud = np.nonzero(rms > ref * 10 ** (-18 / 20))[0]
     return int(loud[-1]) if len(loud) else len(mono)
@@ -303,6 +306,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--replace", action="store_true", help="overwrite a cue that already exists")
     p.add_argument("--keep-source", action="store_true", help="copy into the archive instead of moving")
     a = p.parse_args(argv)
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # Chinese Windows consoles default to GBK
 
     cues = read_cue_sheet(a.cue_sheet)
     stamp = dt.datetime.now().strftime("%Y%m%dT%H%M%S")
