@@ -115,12 +115,11 @@ public sealed class ZhuojunTownTests
         yield return Stand(new Vector3(0, 0, 12.5f));
         Assert.AreEqual("Commandery steps", follow.ActiveZone.name);
         Assert.AreEqual(17f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "low angle up at the hall");
-        float stepsDistance = Vector3.Distance(follow.transform.position, mover.transform.position);
 
         yield return Stand(new Vector3(0, 0, -15f));
+        yield return new WaitForSeconds(4f);   // the axis eases in slowly
         Assert.AreEqual("Main axis", follow.ActiveZone.name);
-        Assert.AreEqual(32f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "high over the main axis");
-        Assert.Greater(Vector3.Distance(follow.transform.position, mover.transform.position), stepsDistance + 8f, "pulled back");
+        Assert.AreEqual(11f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "low along the main axis, entering the town (user 2026-10-26)");
 
         yield return Stand(new Vector3(30f, 0, -8f));
         Assert.AreEqual(12f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.y), 1f, "turned toward the smithy street");

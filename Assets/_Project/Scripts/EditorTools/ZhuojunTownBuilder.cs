@@ -1349,7 +1349,8 @@ namespace ThreeKingdoms.EditorTools
             petals.Material = Tex("oath_petal", optional: true) ? Mat("oath_petal", clip: true, twoSided: true) : PetalMaterial();
             petals.gameObject.SetActive(false);
             // Distant hills beyond the north wall.
-            Prop(o, "bg_hills_far", 0f, 70f, scale: 7f);
+            // Far enough back and large enough to rise over the commandery roof from the square (user 2026-10-26).
+            Prop(o, "bg_hills_far", 0f, 120f, scale: 12f);
             Prop(o, "bg_town_rooftops_far", -70f, 60f, scale: 3f);
         }
 
@@ -1512,8 +1513,9 @@ namespace ThreeKingdoms.EditorTools
                 z.Pitch = pitch; z.Distance = distance; z.Yaw = yaw; z.Fov = fov; z.LookOffset = new Vector3(0, lookUp, 0); z.Sway = sway; z.Priority = priority; z.BlendSeconds = blend;
             }
             Zone("Outside the south gate", -20f, 20f, -80f, -37f, 15f, 27f, fov: 22f, lookUp: 1.6f);
-            Zone("Inside the south gate", -10f, 10f, -34f, -23f, 22f, 30f);
-            Zone("Main axis", -10f, 10f, -23f, -9f, 32f, 40f, sway: 0.6f);
+            // From the south gate the camera sinks step by step, lowest on the square (user 2026-10-26: 有种进城的感觉).
+            Zone("Inside the south gate", -10f, 10f, -34f, -23f, 15f, 27f, fov: 22f, lookUp: 2.2f, blend: 2.4f);
+            Zone("Main axis", -10f, 10f, -23f, -9f, 11f, 25f, fov: 24f, lookUp: 3f, sway: 0.4f, blend: 2.6f);
             // Stepping onto the market square the camera sinks slowly toward the ground until the Yan hills rise over
             // the commandery roofs (user 2026-10-26).
             Zone("Market square (low, the hills behind)", -10f, 10f, -9f, 11f, 8f, 24f, fov: 26f, lookUp: 3.6f, sway: 0.4f, priority: 2, blend: 2.8f);

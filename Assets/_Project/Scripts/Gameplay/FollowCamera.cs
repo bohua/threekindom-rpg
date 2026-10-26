@@ -25,7 +25,7 @@ namespace Jrpg
 
         void LateUpdate()
         {
-            if (!Target) return;
+            if (!Target || Paused) return;
             if (!UseRig) { transform.position = Target.position + Offset; return; }
 
             ActiveZone = null;
@@ -55,6 +55,10 @@ namespace Jrpg
 
         // Jump straight to the current target's shot (after a teleport or scene load) instead of easing in.
         public void Snap() => started = false;
+
+        // A scripted shot (the first arrival in Zhuojun, user 2026-10-26) moves the camera itself while this is set.
+        public bool Paused;
+        public void FocusAt(float metres) { if (FocusVolume) Focus(FocusVolume, metres); }
 
         // Keeps the tilt-shift focus on the target as the distance changes. The URP depth-of-field override lives in
         // another assembly, so it is handled by type name. A small overlay volume carries a copy of the scene profile's
