@@ -177,6 +177,7 @@ namespace ThreeKingdoms.EditorTools
             }
             Folder("zhongshan-hd-ground");
             Folder("zhongshan-hd-structures");
+            Folder("zhongshan-road-forks");
             Folder("v02-anxi-town-hd", k => AnxiPieces.Contains(k));
             Folder("v02-roofs-hd", k => k.StartsWith("roof_anxi"));
             foreach (var k in new[] { "wall_anxi_rammed", "wall_anxi_coping", "bridge_rail" }) axes[k] = "x";
@@ -201,11 +202,11 @@ namespace ThreeKingdoms.EditorTools
         // midday light; the approved concept has warm earth roads, grey-brown limestone and deep blue-green water).
         static readonly Dictionary<string, Material> graded = new Dictionary<string, Material>();
 
-        static Material Graded(string key, Color tint, bool clip = false, float smoothness = 0f)
+        static Material Graded(string key, Color tint, bool clip = false, float smoothness = 0f, bool twoSided = false)
         {
-            string id = $"zs_{key}{(clip ? "_clip" : "")}";
+            string id = $"zs_{key}{(clip ? "_clip" : "")}{(twoSided ? "_2s" : "")}";
             if (graded.TryGetValue(id, out var m) && m) return m;
-            m = new Material(T.Mat(key, clip: clip)) { name = id };
+            m = new Material(T.Mat(key, clip: clip, twoSided: twoSided)) { name = id };
             m.SetColor("_BaseColor", tint);
             if (smoothness > 0f)
             {
@@ -633,18 +634,26 @@ namespace ThreeKingdoms.EditorTools
                 var raw = VillageCut(road.points);
                 if (raw.Length < 2) continue;
                 var rg = T.Group(g, "Road " + road.id);
-                var pts = Smooth(raw, 2f, null, out _);   // reassigned with its rounded ends below
                 bool o0 = OpenEnd(raw[0], road.points), o1 = OpenEnd(raw[raw.Length - 1], road.points);
+                // Where a side road leaves another road, a fork piece carries its ruts out of the main road's ruts.
+                bool f0 = false, f1 = false;
+                if (!o0) raw = Fork(rg, raw, road.points, true, out f0);
+                if (!o1) raw = Fork(rg, raw, road.points, false, out f1);
+                var pts = Smooth(raw, 2f, null, out _);   // reassigned with its rounded ends below
                 float total = DistAlong(pts, pts.Count - 1), half = road.width / 2f;
                 var k = new float[pts.Count];
+                float outlet = Mathf.Min(1f, ForkOutlet / road.width);
                 for (int i = 0; i < pts.Count; i++)
                 {
                     float at = DistAlong(pts, i), f = 1f;
                     if (o0) f = Mathf.Min(f, Mathf.Lerp(0.35f, 1f, Mathf.SmoothStep(0f, 1f, at / 6f)));
                     if (o1) f = Mathf.Min(f, Mathf.Lerp(0.35f, 1f, Mathf.SmoothStep(0f, 1f, (total - at) / 6f)));
-                    // Mouths flare where a side road meets another road, like worn ground at a fork.
-                    if (!o0 && !NearTown(raw[0], 4f)) f = Mathf.Max(f, Mathf.Lerp(1.6f, 1f, Mathf.SmoothStep(0f, 1f, (at - 4f) / 8f)));
-                    if (!o1 && !NearTown(raw[raw.Length - 1], 4f)) f = Mathf.Max(f, Mathf.Lerp(1.6f, 1f, Mathf.SmoothStep(0f, 1f, (total - at - 4f) / 8f)));
+                    // From a fork piece's outlet the road opens out to its own width.
+                    if (f0) f = Mathf.Min(f, Mathf.Lerp(outlet, 1f, Mathf.SmoothStep(0f, 1f, at / 8f)));
+                    if (f1) f = Mathf.Min(f, Mathf.Lerp(outlet, 1f, Mathf.SmoothStep(0f, 1f, (total - at) / 8f)));
+                    // Other mouths (end-to-end joins) flare a little, like worn ground.
+                    if (!o0 && !f0 && !NearTown(raw[0], 4f)) f = Mathf.Max(f, Mathf.Lerp(1.6f, 1f, Mathf.SmoothStep(0f, 1f, (at - 4f) / 8f)));
+                    if (!o1 && !f1 && !NearTown(raw[raw.Length - 1], 4f)) f = Mathf.Max(f, Mathf.Lerp(1.6f, 1f, Mathf.SmoothStep(0f, 1f, (total - at - 4f) / 8f)));
                     k[i] = f;
                 }
                 (pts, k) = RoundEnds(pts, k, o0, o1, half);
@@ -658,6 +667,104 @@ namespace ThreeKingdoms.EditorTools
                 if (!o0) junctions.Add(raw[0]);
                 if (!o1) junctions.Add(raw[raw.Length - 1]);
             }
+        }
+
+        // ---------- forks (user 2026-10-26: a side road's ruts must branch out of the main road's ruts, like a railway
+        // switch, not be laid on top) ----------
+        // Codex art/zhongshan-road-forks: road_fork_y_hd (16 × 18 m) carries the main road up its left 8 m and a 6 m
+        // branch leaving through the top edge at 35°; road_fork_t_hd (18 × 16 m) a branch leaving the right edge at 90°.
+        // Local frame: origin on the main road's centre line at the piece's bottom edge, z along the main road, x to the
+        // branch side.
+
+        const float ForkOutlet = 6f;
+        static readonly (string key, float w, float l, float fork, Vector2 exit, float exitDeg)[] ForkPieces =
+        {
+            ("road_fork_y_hd", 16f, 18f, 6f, new Vector2(8.5f, 18f), 35f),
+            ("road_fork_t_hd", 18f, 16f, 8f, new Vector2(14f, 8f), 90f),
+        };
+
+        // If the end of `raw` (start or finish) meets another road part-way along it, lays the fork piece there and
+        // returns the road starting from the piece's outlet instead; otherwise returns raw unchanged.
+        static Vector3[] Fork(Transform parent, Vector3[] raw, Vector3[] self, bool atStart, out bool forked)
+        {
+            forked = false;
+            var list = raw.ToList();
+            if (!atStart) list.Reverse();
+            var end = list[0];
+            if (NearTown(end, 6f)) return raw;
+            // The main road: the nearest other road, met away from its own ends.
+            Vector3 best = default, tangent = default; float bestD = 7f;
+            foreach (var road in AllRoads)
+            {
+                if (road.points == self) continue;
+                var m = road.points;
+                float along = 0f, length = 0f;
+                for (int i = 0; i + 1 < m.Length; i++) length += Vector3.Distance(m[i], m[i + 1]);
+                for (int i = 0; i + 1 < m.Length; i++)
+                {
+                    var a = m[i]; var b = m[i + 1]; float seg = Vector3.Distance(a, b);
+                    float t = Mathf.Clamp01(Vector3.Dot(end - a, b - a) / Mathf.Max(0.001f, (b - a).sqrMagnitude));
+                    var q = a + t * (b - a);
+                    float d = Vector3.Distance(q, end), at = along + t * seg;
+                    if (d < bestD && at > 9f && at < length - 9f) { bestD = d; best = q; tangent = (b - a).normalized; }
+                    along += seg;
+                }
+            }
+            // The side road's heading, some metres out from the junction.
+            var away = Heading(list);
+            // Three roads ending at one node: the straightest pair runs through, the third forks off it.
+            if (bestD >= 7f)
+            {
+                var ends = new List<Vector3> { away };
+                foreach (var road in AllRoads)
+                {
+                    if (road.points == self) continue;
+                    var m = road.points.ToList();
+                    if (Vector3.Distance(m[0], end) < 3f) ends.Add(Heading(m));
+                    else if (Vector3.Distance(m[m.Count - 1], end) < 3f) { m.Reverse(); ends.Add(Heading(m)); }
+                }
+                if (ends.Count < 3) return raw;
+                int bi = 0, bj = 1; float straight = 2f;
+                for (int i = 0; i < ends.Count; i++) for (int j = i + 1; j < ends.Count; j++)
+                    if (Vector3.Dot(ends[i], ends[j]) < straight) { straight = Vector3.Dot(ends[i], ends[j]); bi = i; bj = j; }
+                if (bi == 0) return raw;   // this road is part of the through pair
+                best = end; tangent = ends[bj];
+            }
+            if (Vector3.Dot(tangent, away) < 0f) tangent = -tangent;
+            var right = new Vector3(tangent.z, 0, -tangent.x);
+            float side = Mathf.Sign(Vector3.Dot(away, right));
+            float angle = Vector3.Angle(tangent, away);
+            if (angle < 12f) return raw;   // running alongside, not a fork
+            var piece = ForkPieces[angle < 60f ? 0 : 1];
+            var origin = best - tangent * piece.fork;
+            Vector3 Local(float x, float z) => origin + tangent * z + right * side * x;
+            var centre = Local(piece.w / 2f - 4f, piece.l / 2f);
+            float yaw = Mathf.Atan2(tangent.x, tangent.z) * Mathf.Rad2Deg;
+            var q2 = T.Quad(parent, "Fork " + piece.key, centre + Vector3.up * 0.0064f, new Vector3(90f, yaw, 0), new Vector2(piece.w, piece.l),
+                Graded(piece.key, RoadTint, clip: true, twoSided: true), castShadows: false);
+            if (side < 0f) q2.transform.localScale = new Vector3(-1f, 1f, 1f);
+            // The road now starts at the outlet, heading out of it, then picks up its own line past the piece.
+            float rad = piece.exitDeg * Mathf.Deg2Rad;
+            var exitDir = (tangent * Mathf.Cos(rad) + right * side * Mathf.Sin(rad)).normalized;
+            var exit = Local(piece.exit.x, piece.exit.y) - exitDir * 0.3f;
+            float clear = Vector3.Distance(exit, best) + 3f;
+            var rest = list.Where(q => Vector3.Distance(q, best) > clear).ToList();
+            if (rest.Count == 0) return raw;
+            var result = new List<Vector3> { exit, exit + exitDir * 3.5f };
+            result.AddRange(rest);
+            if (!atStart) result.Reverse();
+            forked = true;
+            return result.ToArray();
+        }
+
+        // The direction a road leaves its first point, measured some metres out.
+        static Vector3 Heading(IList<Vector3> list)
+        {
+            Vector3 away = list[Mathf.Min(1, list.Count - 1)] - list[0];
+            float run = 0f;
+            for (int i = 1; i < list.Count && run < 10f; i++) { run += Vector3.Distance(list[i], list[i - 1]); away = list[i] - list[0]; }
+            away.y = 0f;
+            return away.normalized;
         }
 
         // A road that stops in the open finishes in a rounded tip: the centre line runs on by one half-width while the

@@ -9,6 +9,10 @@
             "tile_axes": "y"
         },
         {
+            "filename": "dirt_road_plain_hd.png",
+            "tile_axes": "y"
+        },
+        {
             "filename": "farm_field_hd.png",
             "tile_axes": "xy"
         },
@@ -115,6 +119,14 @@
         {
             "filename": "road_edge_hd.png",
             "tile_axes": "x"
+        },
+        {
+            "filename": "road_fork_t_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "road_fork_y_hd.png",
+            "tile_axes": "none"
         },
         {
             "filename": "roof_anxi_eave.png",
