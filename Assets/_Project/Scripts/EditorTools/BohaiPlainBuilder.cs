@@ -79,8 +79,8 @@ namespace ThreeKingdoms.EditorTools
             Ferry(env, labels);
             Gaotang(env, labels);
             PostStationAndBarrier(env, labels);
-            Village(env, labels, "西村", new Vector3(-380f, 0, 40f), 11);
-            Village(env, labels, "北村", new Vector3(40f, 0, 200f), 17);
+            Village(env, labels, "西村", WestVillage, 11);
+            Village(env, labels, "北村", NorthVillage, 17);
             Explore(env, labels);
             Exits(env, labels);
             Terrain(env, labels);
@@ -253,6 +253,10 @@ namespace ThreeKingdoms.EditorTools
         static readonly Vector3 WestGate = new Vector3(CityX0, 0, -155f), EastGate = new Vector3(CityX1, 0, -155f),
             NorthGate = new Vector3(CityCx, 0, CityZ1), SouthGate = new Vector3(CityCx, 0, CityZ0);
         static readonly Vector3 GaotangFront = new Vector3(330f, 0, -176f), PostFront = new Vector3(460f, 0, 6f);
+        // Villages sit beside the roads with a lane to their edge, never astride a road (user 2026-10-26); the post road
+        // passes in front of the station yard, not through the building.
+        static readonly Vector3 WestVillage = new Vector3(-405f, 0, 80f), NorthVillage = new Vector3(82f, 0, 212f);
+        static readonly Vector3 PostRoadPoint = PostFront + new Vector3(0, 0, -14f);
 
         static void Roads(Transform env)
         {
@@ -262,9 +266,10 @@ namespace ThreeKingdoms.EditorTools
             DirtRibbon(g, "Spur to the beacon", 5f, BeaconSpur);
             DirtRibbon(g, "Spur to the reeds", 5f, ReedSpur);
             DirtRibbon(g, "Spur to the tomb", 5f, TombSpur);
-            DirtRibbon(g, "Lane in the north village", 5f, ExtraRoads[0]);
+            DirtRibbon(g, "Lane to the north village", 5f, ExtraRoads[0]);
             // The ferry road: south gate down to the levee foot (the ramp over the levee is laid in Levee()).
             DirtRibbon(g, "Ferry road", 7f, ExtraRoads[1]);
+            DirtRibbon(g, "Lane to the west village", 5f, ExtraRoads[2]);
             StoneRoad(g, "West road", 8f, WestRoad);
             StoneRoad(g, "North road", 8f, NorthRoad);
             StoneRoad(g, "East road", 8f, EastRoad);
@@ -389,6 +394,37 @@ namespace ThreeKingdoms.EditorTools
             ("shore_sand_band", "shore_sand_hd"), ("shore_pebble_band", "shore_pebble_hd"), ("shore_reed_mud_band", "shore_reed_mud_hd"),
             ("shore_embankment_band", "shore_embankment_hd"), ("hill_slope", "hill_slope_hd"), ("hill_top", "hill_top_hd"),
             ("forest_floor", "forest_floor_hd"), ("farm_field", "farm_field_hd"),
+            // fourth batch (art/bohai-hd-pingyuan-b4): Pingyuan houses, hall, gate, wall, granary
+            ("house_loess_front", "house_loess_front_hd"),
+            ("house_loess_side", "house_loess_side_hd"),
+            ("pingyuan_hall_front", "pingyuan_hall_front_hd"),
+            ("pingyuan_hall_side", "pingyuan_hall_side_hd"),
+            ("town_gate_front", "town_gate_front_hd"),
+            ("town_wall_loess", "town_wall_loess_hd"),
+            ("warehouse_front", "warehouse_front_hd"),
+            ("warehouse_side", "warehouse_side_hd"),
+            ("roof_thatch_gold", "roof_thatch_gold_hd"),
+            ("earth_plinth", "earth_plinth_hd"),
+            ("drain_channel_wall", "drain_channel_wall_hd"),
+            ("ground_loess_paving", "ground_loess_paving_hd"),
+            ("plank_bridge", "plank_bridge_hd"),
+            ("dock_side", "dock_side_hd"),
+            // fifth batch (art/bohai-hd-wild-b5): landmarks, post station, checkpoint
+            ("beacon_ruin_front", "beacon_ruin_front_hd"),
+            ("beacon_ruin_side", "beacon_ruin_side_hd"),
+            ("checkpoint_gate", "checkpoint_gate_hd"),
+            ("que_pillar_front", "que_pillar_front_hd"),
+            ("que_pillar_side", "que_pillar_side_hd"),
+            ("tomb_mound_slope", "tomb_mound_slope_hd"),
+            ("tomb_mound_top", "tomb_mound_top_hd"),
+            ("post_station_front", "post_station_front_hd"),
+            ("post_station_side", "post_station_side_hd"),
+            ("stable_front", "stable_front_hd"),
+            ("stable_side", "stable_side_hd"),
+            ("watchtower_front", "watchtower_front_hd"),
+            ("watchtower_side", "watchtower_side_hd"),
+            ("palisade_stakes", "palisade_stakes_hd"),
+            ("roof_thatch_eave", "roof_thatch_eave_hd"),
             // third batch (art/bohai-hd-structures-b3): Gaotang facades and walls, levee, bridge, dock
             ("gaotang_gate_front", "gaotang_gate_front_hd"),
             ("gaotang_hall_front", "gaotang_hall_front_hd"),
@@ -723,7 +759,7 @@ namespace ThreeKingdoms.EditorTools
         static void PostStationAndBarrier(Transform env, Transform labels)
         {
             var p = T.Group(env, "Post station (驿站)");
-            EarthPatch(p, PostFront + new Vector3(0, 0, -5f), 14f, 7f, 61);
+            EarthPatch(p, PostFront + new Vector3(-4f, 0, -3f), 22f, 11f, 61);   // the station and stable stand in their yard
             T.Building(p, "Post station", PostFront, 0f, "post_station_front", "post_station_side", null);
             T.Building(p, "Stable", PostFront + new Vector3(-11f, 0, 0), 0f, "stable_front", "stable_side", null, roofKey: "thatch", interior: "wall_rammed_earth");
             T.Prop(p, "prop_banner_post", PostFront.x + 4.6f, PostFront.z - 1f, y: 0.9f);
@@ -771,7 +807,9 @@ namespace ThreeKingdoms.EditorTools
         {
             var v = T.Group(env, name + " village", centre);
             // Five houses round a threshing floor with a well; fields outside. Doors face south onto the floor.
-            EarthPatch(env, centre, 16f, 12f, seed);   // threshing floor with a ragged edge
+            // The whole village stands on bare, trodden earth reaching a few metres past the houses (user 2026-10-26):
+            // no house sits on the grass, no ruts run between the houses.
+            EarthPatch(env, centre + new Vector3(0, 0, 3f), 33f, 21f, seed);
             (string front, string side, string back, bool thatch, Vector3 at)[] houses =
             {
                 ("house_b_front", "house_b_side", "house_b_back", true, new Vector3(-12f, 0, 12f)),
@@ -793,7 +831,8 @@ namespace ThreeKingdoms.EditorTools
             var rng = new System.Random(seed);
             for (int i = 0; i < 4; i++)
             {
-                float x = -60f + i * 30f + (float)rng.NextDouble() * 6f, z = -26f - (float)rng.NextDouble() * 10f;
+                float x = -60f + i * 30f + (float)rng.NextDouble() * 6f, z = 36f + (float)rng.NextDouble() * 10f;   // fields behind the village, away from the road
+                if (NearOtherRoad(centre + new Vector3(x, 0, z - 3.5f), null, 16f)) continue;
                 if (T.Tex("farm_field_hd", optional: true))
                     SoftPatch(env, "Field", "farm_field", centre.x + x - 11f, centre.x + x + 11f, centre.z + z - 9f, centre.z + z + 2f, 0.0052f, seed * 7 + i,
                         wobble: 0.5f, corner: 2.5f, edge: "earth_edge_hd", edgeWidth: 2.2f);
@@ -915,7 +954,7 @@ namespace ThreeKingdoms.EditorTools
             {
                 new[] { new Vector3(XMin, 0, 40f), new Vector3(-380f, 0, 40f), new Vector3(-250f, 0, -100f), WestGate },
                 new[] { NorthGate, new Vector3(CityCx, 0, -20f), new Vector3(40f, 0, 120f), new Vector3(40f, 0, ZMax) },
-                new[] { EastGate, new Vector3(150f, 0, -170f), new Vector3(310f, 0, -182f), GaotangFront, new Vector3(420f, 0, -100f), PostFront, new Vector3(XMax, 0, 20f) },
+                new[] { EastGate, new Vector3(150f, 0, -170f), new Vector3(310f, 0, -182f), GaotangFront, new Vector3(420f, 0, -100f), PostRoadPoint, new Vector3(XMax, 0, 20f) },
                 new[] { new Vector3(-250f, 0, -100f), new Vector3(-330f, 0, -165f) },
                 new[] { new Vector3(150f, 0, -170f), new Vector3(215f, 0, -88f) },
                 new[] { new Vector3(-380f, 0, 40f), new Vector3(-300f, 0, 160f), new Vector3(-224f, 0, 244f) },
@@ -982,14 +1021,14 @@ namespace ThreeKingdoms.EditorTools
             Road("平原北 ↔ 北村", NorthGate, new Vector3(CityCx, 0, -20f), new Vector3(40f, 0, 120f), new Vector3(40f, 0, 200f));
             Road("北村 ↔ 往南皮", new Vector3(40f, 0, 200f), new Vector3(40f, 0, ZMax));
             Road("平原东 ↔ 高唐", EastGate, new Vector3(150f, 0, -170f), new Vector3(310f, 0, -182f), GaotangFront);
-            Road("高唐 ↔ 驿站", GaotangFront, new Vector3(420f, 0, -100f), PostFront);
-            Road("驿站 ↔ 济南哨卡", PostFront, new Vector3(XMax, 0, 20f));
+            Road("高唐 ↔ 驿站", GaotangFront, new Vector3(420f, 0, -100f), PostRoadPoint);
+            Road("驿站 ↔ 济南哨卡", PostRoadPoint, new Vector3(XMax, 0, 20f));
             Spur("西路 ↔ 废烽燧", new Vector3(-250f, 0, -100f), new Vector3(-330f, 0, -165f));
             Spur("东路 ↔ 芦苇荡", new Vector3(150f, 0, -170f), new Vector3(215f, 0, -88f));
             Spur("西村 ↔ 古冢", new Vector3(-380f, 0, 40f), new Vector3(-300f, 0, 160f), new Vector3(-224f, 0, 244f));
             // Places
-            Place("西村", -380f, 40f, 40f);
-            Place("北村", 40f, 200f, 40f);
+            Place("西村", WestVillage.x, WestVillage.z - 10f, 42f);
+            Place("北村", NorthVillage.x - 10f, NorthVillage.z, 42f);
             Place("废烽燧", -330f, -170f, 18f);
             Place("芦苇荡", 220f, -70f, 30f);
             Place("古冢石阙", -220f, 252f, 30f);
@@ -1271,7 +1310,7 @@ namespace ThreeKingdoms.EditorTools
         static readonly Vector3[] WestRoad = { new Vector3(XMin, 0, 40f), new Vector3(-380f, 0, 40f), new Vector3(-250f, 0, -100f), WestGate + new Vector3(-6f, 0, 0) };
         static readonly Vector3[] NorthRoad = { NorthGate + new Vector3(0, 0, 6f), new Vector3(CityCx, 0, -20f), new Vector3(40f, 0, 120f), new Vector3(40f, 0, 200f), new Vector3(40f, 0, ZMax) };
         static readonly Vector3[] EastRoad = { EastGate + new Vector3(6f, 0, 0), new Vector3(150f, 0, -170f), new Vector3(310f, 0, -182f), GaotangFront };
-        static readonly Vector3[] PostRoad = { GaotangFront + new Vector3(6f, 0, 0), new Vector3(420f, 0, -100f), PostFront, new Vector3(XMax, 0, 20f) };
+        static readonly Vector3[] PostRoad = { GaotangFront + new Vector3(6f, 0, 0), new Vector3(420f, 0, -100f), PostRoadPoint, new Vector3(XMax, 0, 20f) };
         static readonly Vector3[] BeaconSpur = { new Vector3(-250f, 0, -100f), new Vector3(-330f, 0, -165f) };
         static readonly Vector3[] ReedSpur = { new Vector3(150f, 0, -170f), new Vector3(215f, 0, -88f) };
         static readonly Vector3[] TombSpur = { new Vector3(-380f, 0, 40f), new Vector3(-300f, 0, 160f), new Vector3(-224f, 0, 244f) };
@@ -1293,14 +1332,14 @@ namespace ThreeKingdoms.EditorTools
                 s.Metres = ways.Select(w => w.metres).ToArray();
             }
             Sign("西村口", new Vector3(-392f, 0, 29f),
-                ("西村", new Vector3(-380f, 0, 40f), 20f), ("往清河", new Vector3(-420f, 0, 40f), 200f),
+                ("西村", WestVillage, 40f), ("往清河", new Vector3(-420f, 0, 40f), 200f),
                 ("古冢石阙", new Vector3(-370f, 0, 66f), 330f), ("平原城", new Vector3(-350f, 0, 8f), 330f));
             Sign("烽燧岔口", new Vector3(-242f, 0, -110f),
                 ("废烽燧", new Vector3(-270f, 0, -122f), 105f), ("平原城", new Vector3(-220f, 0, -112f), 150f), ("西村", new Vector3(-262f, 0, -86f), 190f));
             Sign("苇塘岔口", new Vector3(158f, 0, -180f),
                 ("芦苇荡", new Vector3(170f, 0, -145f), 105f), ("平原城", new Vector3(120f, 0, -167f), 160f), ("高唐", new Vector3(190f, 0, -173f), 185f));
             Sign("北村口", new Vector3(52f, 0, 186f),
-                ("北村", new Vector3(40f, 0, 205f), 15f), ("往南皮", new Vector3(40f, 0, 240f), 140f), ("平原城", new Vector3(30f, 0, 160f), 370f));
+                ("北村", NorthVillage, 40f), ("往南皮", new Vector3(40f, 0, 240f), 140f), ("平原城", new Vector3(30f, 0, 160f), 370f));
             Sign("高唐道口", new Vector3(352f, 0, -190f),
                 ("高唐", new Vector3(330f, 0, -160f), 30f), ("驿站", new Vector3(370f, 0, -160f), 150f), ("平原城", new Vector3(300f, 0, -182f), 345f));
             Spot("Sign west", new Vector3(-390f, 0, 24f));
@@ -1687,7 +1726,9 @@ namespace ThreeKingdoms.EditorTools
                     if (At(XMin + x + dx + 0.5f, ZMin + z + dz + 0.5f) != Cell.Forest) return false;
                 return true;
             }
-            foreach (var r in Rects(Inner))
+            // With the HD ground the stepped floor rectangles showed past the tree line; the splat ground already greens
+            // up toward the woods, so the floor is left out.
+            foreach (var r in HdGroundIn ? new List<RectInt>() : Rects(Inner))
             {
                 var size = new Vector2(r.width, r.height);
                 T.Quad(fg, "Forest floor", new Vector3(XMin + r.x + r.width / 2f, 0.009f, ZMin + r.y + r.height / 2f), new Vector3(90f, 0, 0), size, T.Mat(floor), T.Repeat(floor, size), castShadows: false);
@@ -1761,13 +1802,33 @@ namespace ThreeKingdoms.EditorTools
                 if (x > 0 && z < h - 1) d = Mathf.Min(d, dist[x - 1, z + 1] + 1.414f);
                 dist[x, z] = d;
             }
+            // Smooth the distance field (signed: negative outside the hills) so the foot follows a flowing curve instead
+            // of the 1 m mask's stair steps (user 2026-10-25/26: no hard, jagged edges between terrains).
+            var sd = new float[w, h];
+            for (int z = 0; z < h; z++) for (int x = 0; x < w; x++) sd[x, z] = dist[x, z] > 0f ? Mathf.Min(dist[x, z], 12f) : -1f;
+            for (int pass = 0; pass < 3; pass++)
+            {
+                var t = new float[w, h];
+                for (int z = 0; z < h; z++) for (int x = 0; x < w; x++)
+                {
+                    float sum = 0f; int n = 0;
+                    for (int dz = -2; dz <= 2; dz++) for (int dx = -2; dx <= 2; dx++)
+                    {
+                        int cx = Mathf.Clamp(x + dx, 0, w - 1), cz = Mathf.Clamp(z + dz, 0, h - 1);
+                        sum += sd[cx, cz]; n++;
+                    }
+                    t[x, z] = sum / n;
+                }
+                sd = t;
+            }
             float Height(int x, int z)
             {
                 x = Mathf.Clamp(x, 0, w - 1); z = Mathf.Clamp(z, 0, h - 1);
-                float d = dist[x, z];
-                if (d <= 0f) return -0.6f;   // just under the ground, so the hill meets the plain along a sloped line, not a stepped edge
+                float d = sd[x, z] < 12f - 0.01f ? sd[x, z] : dist[x, z];   // deep inside, the true distance keeps the peaks
                 float noise = Mathf.PerlinNoise(x * 0.035f, z * 0.035f);
-                return Mathf.Min(36f, Mathf.Pow(d, 0.85f) * 1.4f) * (0.6f + 0.8f * noise);
+                // A gentle toe that starts just under the ground and rises smoothly, so the hill meets the plain on a curve.
+                float toe = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-0.6f, 2.5f, d));
+                return Mathf.Lerp(-0.6f, Mathf.Min(36f, Mathf.Pow(Mathf.Max(d, 0f), 0.85f) * 1.4f) * (0.6f + 0.8f * noise), toe);
             }
             float hillTile = T.Metres(K("hill_slope", "wb_levee_face")).x;
             var verts = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
@@ -1781,7 +1842,7 @@ namespace ThreeKingdoms.EditorTools
                     for (int dz = -s; dz <= s && !near; dz++) for (int dx = -s; dx <= s && !near; dx++)
                     {
                         int cx = Mathf.Clamp(x + dx, 0, w - 1), cz = Mathf.Clamp(z + dz, 0, h - 1);
-                        near = dist[cx, cz] > 0f;
+                        near = sd[cx, cz] > -0.6f;
                     }
                     if (!near) continue;
                     index[gx, gz] = verts.Count;
@@ -2317,7 +2378,7 @@ namespace ThreeKingdoms.EditorTools
             && !(p.x > CityX0 - 12f && p.x < CityX1 + 12f && p.z > CityZ0 - 12f && p.z < CityZ1 + 12f);
 
         // Width factors: 1 along the road, easing to 0.55 over the last 5 m of an open end.
-        static float[] Taper(Vector3[] pts, bool openStart, bool openEnd, bool flare = true)
+        static float[] Taper(Vector3[] pts, bool openStart, bool openEnd, bool flare = true, bool flareStart = true, bool flareEnd = true)
         {
             var k = new float[pts.Length];
             float total = 0f; var at = new float[pts.Length];
@@ -2329,8 +2390,8 @@ namespace ThreeKingdoms.EditorTools
                 if (openEnd) f = Mathf.Min(f, Mathf.Lerp(0.55f, 1f, Mathf.SmoothStep(0f, 1f, (total - at[i]) / 5f)));
                 // Where a side road meets another road its mouth flares out, like worn ground at a fork (the first 6 m lie
                 // under the main road, so the flare eases back over the 9 m after that).
-                if (flare && !openStart) f = Mathf.Max(f, Mathf.Lerp(1.8f, 1f, Mathf.SmoothStep(0f, 1f, (at[i] - 6f) / 9f)));
-                if (flare && !openEnd) f = Mathf.Max(f, Mathf.Lerp(1.8f, 1f, Mathf.SmoothStep(0f, 1f, (total - at[i] - 6f) / 9f)));
+                if (flare && flareStart && !openStart) f = Mathf.Max(f, Mathf.Lerp(1.8f, 1f, Mathf.SmoothStep(0f, 1f, (at[i] - 6f) / 9f)));
+                if (flare && flareEnd && !openEnd) f = Mathf.Max(f, Mathf.Lerp(1.8f, 1f, Mathf.SmoothStep(0f, 1f, (total - at[i] - 6f) / 9f)));
                 k[i] = f;
             }
             return k;
@@ -2380,7 +2441,8 @@ namespace ThreeKingdoms.EditorTools
             var pts = Smooth(raw, 2f);
             bool o0 = OpenEnd(raw[0], raw), o1 = OpenEnd(raw[raw.Length - 1], raw);
 
-            var taper = Taper(pts, o0, o1);
+            // Only a mouth onto another road flares; a road leaving a town gate keeps its width.
+            var taper = Taper(pts, o0, o1, flareStart: NearOtherRoad(raw[0], raw, 6f), flareEnd: NearOtherRoad(raw[raw.Length - 1], raw, 6f));
             (pts, taper) = RoundEnds(pts, taper, o0, o1, width / 2f);
             string key = K("dirt_road_v2", "ground_packed_earth");
             Ribbon(g, "Road", T.Mat(key), pts, -width / 2f, width / 2f, 0.0045f, T.Metres(key).y * (width / T.Metres(key).x), taper);
@@ -2398,8 +2460,9 @@ namespace ThreeKingdoms.EditorTools
 
         static readonly Vector3[][] ExtraRoads =
         {
-            new[] { new Vector3(40f, 0, 200f), new Vector3(-10f, 0, 214f) },
-            new[] { SouthGate + new Vector3(0, 0, -5f), new Vector3(CityCx, 0, LeveeNorth + 0.5f) },
+            new[] { new Vector3(41f, 0, NorthVillage.z), new Vector3(NorthVillage.x - 26f, 0, NorthVillage.z) },
+            new[] { SouthGate + new Vector3(0, 0, 1.5f), new Vector3(CityCx, 0, LeveeNorth + 0.5f) },   // runs in under the gate, no hard start
+            new[] { new Vector3(WestVillage.x, 0, 41f), new Vector3(WestVillage.x, 0, WestVillage.z - 18f) },
         };
 
         // A patch of bare ground with a ragged outline (village threshing floors, yards): a filled blob whose radius
