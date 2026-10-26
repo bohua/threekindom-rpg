@@ -54,7 +54,8 @@ public sealed class Chapter3RulesTests
     public void OnlyTheLastScrollOfTheVersionIsSealed()
     {
         Assert.IsFalse(InkScrollText.Sealed("anxi"));
-        Assert.IsTrue(InkScrollText.Sealed(ChapterScripts3.ScrollFenLuoyang));
+        Assert.IsFalse(InkScrollText.Sealed(ChapterScripts3.ScrollFenLuoyang), "0.4 moved the seal to 界橋");
+        Assert.IsTrue(InkScrollText.Sealed(ChapterScripts4.ScrollJieqiao));
         foreach (var id in new[] { ChapterScripts3.ScrollWenjiu, ChapterScripts3.ScrollSanying, ChapterScripts3.ScrollFenLuoyang })
         {
             Assert.IsTrue(InkScrollText.TryGet(id, out var e), id);

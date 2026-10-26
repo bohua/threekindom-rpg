@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "task": "0.4 河北篇剧情舞台背景",
+  "type": "texture_set",
+  "files": [
+    {
+      "path": "stage_panhe_bank.png",
+      "width": 1920,
+      "height": 1080,
+      "size": [
+        1920,
+        1080
+      ],
+      "mode": "RGB",
+      "format": "PNG",
+      "opaque": true,
+      "purpose": "磐河岸：春日宽河、芦苇卵石与对岸袁军旗帜。",
+      "design_choices": "蓝绿宽河、春芦苇和远处袁军旗表现磐河岸，前景保留平整砂砾演出区。",
+      "sha256": "6d713d0fcd40f533b1a81fcd7f2344e95c9669d1bd4fda89fcea6360d7c63abc",
+      "source": "_sources/panhe_raw.png",
+      "source_size": [
+        1672,
+        941
+      ]
+    },
+    {
+      "path": "stage_jieqiao_after.png",
+      "width": 1920,
+      "height": 1080,
+      "size": [
+        1920,
+        1080
+      ],
+      "mode": "RGB",
+      "format": "PNG",
+      "opaque": true,
+      "purpose": "界桥战后：长木桥、倒伏公孫白旗与断枪，晴而微灰。",
+      "design_choices": "冷灰泥岸、长木桥、倒伏公孫白旗与断枪表现战后气氛，保持晴日而无暮色。",
+      "sha256": "ffe84f0b7fd4a725298eeb220e8746fba56dab656a494c2354808228dea359fc",
+      "source": "_sources/jieqiao_raw.png",
+      "source_size": [
+        1672,
+        941
+      ]
+    },
+    {
+      "path": "stage_zhending_home.png",
+      "width": 1920,
+      "height": 1080,
+      "size": [
+        1920,
+        1080
+      ],
+      "mode": "RGB",
+      "format": "PNG",
+      "opaque": true,
+      "purpose": "真定赵家：乡间夯土宅院、老槐与太行山。",
+      "design_choices": "朴素夯土宅院、院内老槐和太行山表现赵家乡间身份，门前开阔。",
+      "sha256": "53ed1f85a28cd1310c29ec051ae594c262a2bb6e7a2bf3133e7d354fc2ceefa3",
+      "source": "_sources/zhending_raw.png",
+      "source_size": [
+        1672,
+        941
+      ]
+    },
+    {
+      "path": "stage_gongsun_hall.png",
+      "width": 1920,
+      "height": 1080,
+      "size": [
+        1920,
+        1080
+      ],
+      "mode": "RGB",
+      "format": "PNG",
+      "opaque": true,
+      "purpose": "公孙军府：木构正堂、白帷幔、公孫屏风与低坐榻。",
+      "design_choices": "采用本批指定永久木构军府正堂，白帷幔、公孫屏风及低坐榻集中后方。",
+      "sha256": "db3d32665c80147139a71f7c0de13f75293f003e119c699a12530706bde5a5bf",
+      "source": "_sources/gongsun_raw.png",
+      "source_size": [
+        1672,
+        941
+      ]
+    },
+    {
+      "path": "preview.png",
+      "width": 1920,
+      "height": 1200,
+      "size": [
+        1920,
+        1200
+      ],
+      "mode": "RGB",
+      "format": "PNG",
+      "purpose": "四张舞台背景的总览联系表，标签仅位于预览边框。",
+      "sha256": "5d3c7d8912bc980db70c0c9f1833acb41fedf0de705936a2401c89f0519e1bb3"
+    },
+    {
+      "path": "PROMPTS.md",
+      "purpose": "实际提示词、参考说明、用途与设计取舍。",
+      "sha256": "f2ab32ebadf5ef571a6b545f00071e2c46e3c5c449946e539f562a072c317a79"
+    },
+    {
+      "path": "manifest.json",
+      "purpose": "交付文件、图像规格、用途、设计取舍和验证信息。"
+    }
+  ],
+  "generation": {
+    "tool": "image_gen",
+    "images": 4,
+    "retries": 0,
+    "limit": 12
+  },
+  "composition": {
+    "stage_zone_pixels": [
+      0,
+      648,
+      1920,
+      1080
+    ],
+    "description": "下方40%为连续开阔地面；正式背景无人物、UI、标签。"
+  },
+  "processing": "1672×941原图经LANCZOS居中适配至1920×1080，输出不透明RGB。",
+  "checks": [
+    "_checks/validation.json",
+    "_checks/visual_review.md",
+    "_checks/manifest_validation.json"
+  ],
+  "limitations": [
+    "尚未执行游戏引擎导入或角色站位验收。"
+  ]
+}

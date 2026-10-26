@@ -791,6 +791,7 @@ namespace Prototype.BingshuTactics
         IEnumerator DoCraft(Unit u, SkillDef s, Vector2Int targetTile)
         {
             if (s.Name == "三英") { yield return SanYing(u); yield break; }   // 0.3 合体技
+            if (s.Name == "换人") { yield return SwapOut(u); yield break; }   // 0.5 后备换人
             u.Cp -= s.Cost;
             popups.Add((views[u].position + Vector3.up * (2.4f * HeadK), "武技·" + s.Name, new Color(1f, 0.85f, 0.3f), 0f));
             if (s.Range < 0)
@@ -919,6 +920,14 @@ namespace Prototype.BingshuTactics
                 if (t != null && Random.value < 0.6f) { BeginCast(u, single, 1f, t.Pos); yield break; }
             }
 
+            if (ExitTarget(u) is Vector2Int exitAt && u.Move > 0)   // 0.4：撤离区开放后，电脑代打的我方朝撤离区走
+            {
+                var er = ReachOf(u);
+                var ed = er.Keys.Where(p => CanStop(u, p)).OrderBy(p => Grid.Dist(p, exitAt)).First();
+                yield return Walk(u, Grid.Path(er, ed));
+                u.At = now + AtClock.Delay(70, u.Speed);
+                yield break;
+            }
             var targets = AttackableTargets(u, u.AtkRange);
             if (targets.Count > 0)
             {
@@ -1150,6 +1159,7 @@ namespace Prototype.BingshuTactics
         bool HasTargets(Unit u, SkillDef s)
         {
             if (s.Name == "三英") return ComboReady(u);   // 0.3
+            if (s.Name == "换人") return BenchReady(u);   // 0.5
             bool Ok(Unit t) => t != null && t.Alive && (s.TargetsAllies ? t.Team == u.Team : t.Team != u.Team) && !(s.Name == "众望" && t == u);
             if (s.Range < 0) return !s.TargetsAllies && AttackableTargets(u, 1).Count > 0;
             if (s.Radius >= 99) return Friends(u).Any();

@@ -20,9 +20,12 @@ namespace ThreeKingdoms.EditorTools
         const string GroundDir = "Assets/_Project/Art/Chapter2/Tactics";
         const string DefaultGroundSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v02-tactics-ground";
         static readonly string[] CharKeys = { "ZhangBao", "ZhangLiang", "NpcDongZhuo", "NpcBandit", "NpcBanditChief", "NpcYellowGuard", "YellowTurban", "NpcCaoCao", "NpcHanSoldier",
-            "NpcBaimaRider" };   // 0.3: the White Horse riders of the drill (Lü Bu and the Bingzhou riders use the prototype's own sheets)
+            "NpcBaimaRider", "NpcZhaoYun", "NpcGongsunZan", "NpcWenChou", "NpcQuYi", "NpcXiandeng", "NpcCrossbow" };   // 0.4   // 0.3: the White Horse riders of the drill (Lü Bu and the Bingzhou riders use the prototype's own sheets)
         // 0.3 battles 7–8 (V03_TAODONG_PLAN §4).
         public static readonly string[] Chapter3Paths = { "Assets/_Project/Scenes/Battle_Drill07.unity", "Assets/_Project/Scenes/Battle_Hulao08.unity" };
+        // 0.4 battles 9–11 (V04_HEBEI_PLAN §4).
+        public static readonly string[] Chapter4Paths =
+            { "Assets/_Project/Scenes/Battle_Pingyuan09.unity", "Assets/_Project/Scenes/Battle_Panhe10.unity", "Assets/_Project/Scenes/Battle_Jieqiao11.unity" };
 
         static string GroundSource
         {
@@ -43,8 +46,8 @@ namespace ThreeKingdoms.EditorTools
         {
             var ground = ImportGround();
             EnsurePixelMaterials();
-            var ids = new[] { "battle_4", "battle_5", "battle_6", "battle_7", "battle_8" };
-            var paths = BattleSceneBuilder.ChapterBattlePaths.Concat(Chapter3Paths).ToArray();
+            var ids = new[] { "battle_4", "battle_5", "battle_6", "battle_7", "battle_8", "battle_9", "battle_10", "battle_11" };
+            var paths = BattleSceneBuilder.ChapterBattlePaths.Concat(Chapter3Paths).Concat(Chapter4Paths).ToArray();
             for (int i = 0; i < ids.Length; i++)
             {
                 var game = BingshuTacticsBuilder.CreateScene();

@@ -23,12 +23,18 @@ namespace ThreeKingdoms.Core.Story
         Suanzao = 11,       // the allied camp at Suanzao: D6 the oath, D7 Guan Yu and Hua Xiong
         Hulao = 12,         // Hulao Pass: battle 8
         Luoyang = 13,       // battle 8 won: scroll ⑤, D9 Luoyang burns (191), D10 the ruins, D11
-        Done03 = 14,        // the coalition breaks up: scroll ⑥, the end of 0.3
+        Done03 = 14,        // the coalition breaks up: scroll ⑥; 0.4 goes on with E1 (the chronicle, Ji province changes hands)
+        // 0.4 河北篇 (design/v0.4-hebei/SYSTEMS_V04.md §1)
+        Pingyuan = 15,      // 191, the Bohai plain with the Pingyuan base: E3, commissions, E4 → battle 9
+        PingyuanSafe = 16,  // battle 9 won: free in the region; the Pingyuan ferry leads to section seven
+        Panhe = 17,         // 192: Panhe (battle 10, Zhao Yun), Jieqiao (battle 11)
+        Zhending = 18,      // battle 11 won: scroll ⑦, Zhending, back to Pingyuan for E9 (the assassin)
+        Done04 = 19,        // the end of 0.4
     }
 
     // Main-line node (蓝图 §4.2): 184 until the Yellow Turbans are put down (C9), then 185; 0.3 adds 189 (the interlude
     // after Anxi), 190 (Gongsun Zan, the coalition) and 191 (after Luoyang burns).
-    public enum ChronicleNode { N1 = 1, N2 = 2, N3 = 3, N4 = 4, N5 = 5 }
+    public enum ChronicleNode { N1 = 1, N2 = 2, N3 = 3, N4 = 4, N5 = 5, N6 = 6 }
 
     // One thing a character remembers (SYSTEMS_V02 §3): flags only, no attitude numbers.
     public readonly struct Memory
@@ -54,12 +60,14 @@ namespace ThreeKingdoms.Core.Story
         public IReadOnlyCollection<string> Flags => flags;
         public IReadOnlyList<Memory> Memories => memories;
         // N5 (191) begins when Luoyang has burned (flag Year191, written in D9), not with a step (REVIEW_V03 R12).
-        public ChronicleNode Node => Has(Year191) ? ChronicleNode.N5 : Step >= ChapterStep.Gongsun ? ChronicleNode.N4
+        public ChronicleNode Node => Has(Year192) ? ChronicleNode.N6 : Has(Year191) ? ChronicleNode.N5 : Step >= ChapterStep.Gongsun ? ChronicleNode.N4
             : Step >= ChapterStep.Done ? ChronicleNode.N3 : Step >= ChapterStep.Anxi ? ChronicleNode.N2 : ChronicleNode.N1;
-        public int Year => Node switch { ChronicleNode.N5 => 191, ChronicleNode.N4 => 190, ChronicleNode.N3 => 189, ChronicleNode.N2 => 185, _ => 184 };
+        public int Year => Node switch { ChronicleNode.N6 => 192, ChronicleNode.N5 => 191, ChronicleNode.N4 => 190, ChronicleNode.N3 => 189, ChronicleNode.N2 => 185, _ => 184 };
 
         // 0.3 flags: the optional drill (battle 7) won, Tian Yu met.
         public const string Drill = "drill", TianYu = "tianyu", Year191 = "y191";
+        // 0.4 flags: 192 begins (E5), Zhao Yun rides with Liu Bei as a guest general, battle 10 won.
+        public const string Year192 = "y192", ZhaoYunGuest = "guest_zhao_yun", Panhe10 = "b10";
 
         public event Action<Memory> Remembered;
 
@@ -87,6 +95,8 @@ namespace ThreeKingdoms.Core.Story
             ChapterStep.Guangzong => "battle_5",
             ChapterStep.Anxi => "battle_6",
             ChapterStep.Hulao => "battle_8",
+            ChapterStep.Pingyuan => "battle_9",
+            ChapterStep.Panhe => Has(Panhe10) ? "battle_11" : "battle_10",
             _ => null,
         };
 
@@ -103,11 +113,14 @@ namespace ThreeKingdoms.Core.Story
                 return true;
             }
             if (encounterId == null || encounterId != NextBattleId) return false;
+            if (encounterId == "battle_10") { Set(Panhe10); return true; }   // battle 11 follows in the same step
             Step = Step switch
             {
                 ChapterStep.Yingchuan => ChapterStep.Guangzong,
                 ChapterStep.Guangzong => ChapterStep.ToAnxi,
                 ChapterStep.Hulao => ChapterStep.Luoyang,
+                ChapterStep.Pingyuan => ChapterStep.PingyuanSafe,
+                ChapterStep.Panhe => ChapterStep.Zhending,
                 _ => ChapterStep.AnxiBandits,
             };
             return true;
@@ -136,7 +149,7 @@ namespace ThreeKingdoms.Core.Story
         {
             Step = battleIndex switch
             {
-                3 => ChapterStep.Yingchuan, 4 => ChapterStep.Guangzong, 5 => ChapterStep.Anxi, 6 => ChapterStep.Gongsun, 7 => ChapterStep.Hulao,
+                3 => ChapterStep.Yingchuan, 4 => ChapterStep.Guangzong, 5 => ChapterStep.Anxi, 6 => ChapterStep.Gongsun, 7 => ChapterStep.Hulao, 8 => ChapterStep.Pingyuan, 9 => ChapterStep.Panhe, 10 => ChapterStep.Panhe,
                 _ => ChapterStep.Zhuojun,
             },
         };

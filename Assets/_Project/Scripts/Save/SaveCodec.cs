@@ -12,7 +12,8 @@ namespace ThreeKingdoms.Save
     public static class SaveCodec
     {
         public static SaveData Capture(StoryState story, Inventory inventory, IReadOnlyDictionary<string, int> exp,
-            string location, int leaderLevel, string chapter, string gameVersion, DateTime now, TownLife life = null, ChapterState chapter2 = null)
+            string location, int leaderLevel, string chapter, string gameVersion, DateTime now, TownLife life = null, ChapterState chapter2 = null,
+            ChronicleState chronicle = null)
         {
             story.ToSafeState();   // never save the middle of a sequence (rule 5)
             return new SaveData
@@ -39,6 +40,9 @@ namespace ThreeKingdoms.Save
                 chapterFlags = chapter2?.Flags.ToArray() ?? Array.Empty<string>(),
                 memories = chapter2?.Memories.Select(m => new MemoryEntry { who = m.Who, key = m.Key, value = m.Value, node = (int)m.Node, text = m.Text }).ToArray()
                     ?? Array.Empty<MemoryEntry>(),
+                chronicleNode = chronicle?.NodeId ?? "",
+                openRegions = chronicle?.OpenRegions.OrderBy(r => r).ToArray() ?? Array.Empty<string>(),
+                dangerAreas = chronicle?.DangerAreas.OrderBy(d => d).ToArray() ?? Array.Empty<string>(),
             };
         }
 
@@ -50,6 +54,7 @@ namespace ThreeKingdoms.Save
             public string Location;
             public TownLife Life;
             public ChapterState Chapter;
+            public ChronicleState Chronicle;
         }
 
         static readonly string[] Locations = { SaveData.TownLocation, SaveData.CampLocation, SaveData.AnxiLocation, SaveData.GongsunLocation, SaveData.SuanzaoLocation };
@@ -70,6 +75,9 @@ namespace ThreeKingdoms.Save
             SaveData.AnxiLocation => step == ChapterStep.Anxi || step == ChapterStep.AnxiBandits,
             SaveData.GongsunLocation => step == ChapterStep.Gongsun,
             SaveData.SuanzaoLocation => step == ChapterStep.Suanzao,
+            // 0.4: the Bohai plain (Pingyuan base) only while the chapter is there (REVIEW_V04 R6).
+            _ when location != null && location.StartsWith(SaveData.RegionPrefix) => step < ChapterStep.Done03 || step == ChapterStep.Pingyuan
+                || step == ChapterStep.PingyuanSafe || step == ChapterStep.Zhending,
             _ => true,
         };
 
@@ -79,13 +87,18 @@ namespace ThreeKingdoms.Save
             restored = null; error = null;
             try
             {
-                if (Array.IndexOf(Locations, data.location) < 0 && !data.location.StartsWith("battle_"))
+                bool inRegion = data.location.StartsWith(SaveData.RegionPrefix);
+                if (Array.IndexOf(Locations, data.location) < 0 && !data.location.StartsWith("battle_") && !inRegion)
                     throw new ArgumentException($"未知落点 {data.location}");
                 var story = StoryState.Restore(data.guanYuJoined, data.zhangFeiJoined, (SequenceState)data.oath, data.battlesDone, (SequenceState)data.ending);
                 var chapter = data.formatVersion < 2
                     ? Migrate(story)
                     : ChapterState.Restore((ChapterStep)data.chapterStep, data.chapterFlags,
                         (data.memories ?? Array.Empty<MemoryEntry>()).Select(m => new Memory(m.who, m.key, m.value, (ChronicleNode)m.node, m.text)));
+                var chronicle = ChronicleState.Restore(data.chronicleNode, data.openRegions, data.dangerAreas);
+                // A post-station save must be in a region the chronicle has open (chapter 1 art probe).
+                if (inRegion && !chronicle.IsOpen(data.location.Substring(SaveData.RegionPrefix.Length)))
+                    throw new ArgumentException($"区域落点 {data.location} 尚未开放");
                 // A pre-battle save must be for the battle the story expects next (no Xuzhou or skipped battles, rule 8).
                 string next = story.NextBattleId ?? chapter.NextBattleId;
                 if (data.location.StartsWith("battle_") && data.location != next)
@@ -104,6 +117,7 @@ namespace ThreeKingdoms.Save
                     Location = data.location,
                     Life = new TownLife(data.reputation, data.quizTakenAt, data.archeryRewardedAt),
                     Chapter = chapter,
+                    Chronicle = chronicle,
                 };
                 return true;
             }

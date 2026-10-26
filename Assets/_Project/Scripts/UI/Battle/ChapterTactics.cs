@@ -34,7 +34,8 @@ namespace ThreeKingdoms.UI.Battle
             Run = GameRun.Current ?? GameRun.ForChapter(Catalog, StepFor(EncounterId), ExpFor(EncounterId), 260, development: true);
             var data = Run.Data;
             var encounter = data.Encounter(EncounterId);
-            var def = Stages3.Handles(EncounterId) ? Stages3.Build(EncounterId, encounter, Run, data) : Stages.Build(EncounterId, encounter, Run, data);
+            var def = Stages3.Handles(EncounterId) ? Stages3.Build(EncounterId, encounter, Run, data)
+                : Stages4.Handles(EncounterId) ? Stages4.Build(EncounterId, encounter, Run, data) : Stages.Build(EncounterId, encounter, Run, data);
             def.Reputation = Run.Life.Reputation;
             if (Portraits)
                 foreach (var e in Portraits.Entries)
@@ -76,8 +77,10 @@ namespace ThreeKingdoms.UI.Battle
         void OnDestroy() { if (TacticsGame.Chapter != null && TacticsGame.Chapter.Id == EncounterId) TacticsGame.Chapter = null; }
 
         static ChapterStep StepFor(string id) => id == "battle_4" ? ChapterStep.Yingchuan : id == "battle_5" ? ChapterStep.Guangzong
-            : id == "battle_7" ? ChapterStep.Gongsun : id == "battle_8" ? ChapterStep.Hulao : ChapterStep.Anxi;
-        static int ExpFor(string id) => id == "battle_4" ? 60 : id == "battle_5" ? 100 : id == "battle_7" || id == "battle_8" ? 210 : 150;
+            : id == "battle_7" ? ChapterStep.Gongsun : id == "battle_8" ? ChapterStep.Hulao
+            : id == "battle_9" ? ChapterStep.Pingyuan : id == "battle_10" || id == "battle_11" ? ChapterStep.Panhe : ChapterStep.Anxi;
+        static int ExpFor(string id) => id == "battle_4" ? 60 : id == "battle_5" ? 100 : id == "battle_7" || id == "battle_8" ? 210
+            : id == "battle_9" ? 370 : id == "battle_10" ? 460 : id == "battle_11" ? 570 : 150;
 
         void OnFinished(TacticsOutcome outcome)
         {

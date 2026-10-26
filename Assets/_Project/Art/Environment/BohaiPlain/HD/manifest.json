@@ -1,0 +1,208 @@
+{
+ "px_per_m": 120,
+ "files": [
+  {
+   "filename": "gaotang_square_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy",
+   "use": "Gaotang square / inner yards"
+  },
+  {
+   "filename": "packed_earth_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy",
+   "use": "gate aprons, village yards, threshing floors"
+  },
+  {
+   "filename": "plain_grass_hd_a.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy",
+   "use": "plain grass A"
+  },
+  {
+   "filename": "plain_grass_hd_b.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy",
+   "use": "plain grass B"
+  },
+  {
+   "filename": "plain_grass_dry_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy",
+   "use": "dry grass"
+  },
+  {
+   "filename": "dirt_road_hd.png",
+   "width": 960,
+   "height": 1440,
+   "tile_axes": "y",
+   "use": "dirt road 8 m"
+  },
+  {
+   "filename": "stone_road_hd.png",
+   "width": 960,
+   "height": 1440,
+   "tile_axes": "y",
+   "use": "stone post road 8 m"
+  },
+  {
+   "filename": "road_edge_hd.png",
+   "width": 1440,
+   "height": 240,
+   "tile_axes": "x",
+   "use": "road edge band, soft alpha"
+  },
+  {
+   "filename": "earth_edge_hd.png",
+   "width": 1440,
+   "height": 360,
+   "tile_axes": "x",
+   "use": "earth patch rim, soft alpha"
+  },
+  {
+   "filename": "river_water_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "yellow_river_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "pond_water_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "sand_flat_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "pebble_flat_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "saline_flat_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "hill_slope_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "hill_top_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "forest_floor_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "farm_field_hd.png",
+   "width": 1440,
+   "height": 1440,
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "shore_sand_hd.png",
+   "width": 1440,
+   "height": 480,
+   "tile_axes": "x"
+  },
+  {
+   "filename": "shore_pebble_hd.png",
+   "width": 1440,
+   "height": 480,
+   "tile_axes": "x"
+  },
+  {
+   "filename": "shore_reed_mud_hd.png",
+   "width": 1440,
+   "height": 480,
+   "tile_axes": "x"
+  },
+  {
+   "filename": "shore_embankment_hd.png",
+   "width": 1440,
+   "height": 480,
+   "tile_axes": "x"
+  },
+  {
+   "filename": "gaotang_gate_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "gaotang_hall_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "gaotang_hall_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "gaotang_shop_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "gaotang_shop_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "gaotang_wall_face_hd.png",
+   "tile_axes": "x"
+  },
+  {
+   "filename": "gaotang_wall_top_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "gaotang_roof_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "levee_slope_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "levee_stone_toe_hd.png",
+   "tile_axes": "x"
+  },
+  {
+   "filename": "levee_fence_hd.png",
+   "tile_axes": "x"
+  },
+  {
+   "filename": "dock_planks_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "bridge_deck_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "bridge_rail_hd.png",
+   "tile_axes": "x"
+  }
+ ]
+}

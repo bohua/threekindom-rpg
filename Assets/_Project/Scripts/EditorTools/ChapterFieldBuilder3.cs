@@ -25,6 +25,7 @@ namespace ThreeKingdoms.EditorTools
             Copy(Path.Combine(Art, "v03-gongsun-camp-hd"), $"{ArtRoot3}/Gongsun");
             Copy(Path.Combine(Art, "v03-suanzao-camp-hd"), $"{ArtRoot3}/Suanzao");
             Copy(Path.Combine(Art, "v03-stage-bg"), $"{ArtRoot3}/Stage", f => f.StartsWith("stage_"));
+            Copy(Path.Combine(Art, "v04-stage-bg"), $"{ArtRoot3}/Stage", f => f.StartsWith("stage_"));
             AssetDatabase.Refresh();
             foreach (var sub in new[] { "Gongsun", "Suanzao", "Stage" })
             {
@@ -68,6 +69,11 @@ namespace ThreeKingdoms.EditorTools
             yield return ("mengzhu_tent", T("stage_mengzhu_tent"), new Color(0.50f, 0.18f, 0.16f));
             yield return ("hulao_gate", T("stage_hulao_gate"), new Color(0.62f, 0.58f, 0.50f));
             yield return ("luoyang_ruins", T("stage_luoyang_ruins"), new Color(0.40f, 0.38f, 0.36f));
+            // 0.4 (Codex art/v04-stage-bg)
+            yield return ("panhe_bank", T("stage_panhe_bank"), new Color(0.50f, 0.62f, 0.70f));
+            yield return ("jieqiao_after", T("stage_jieqiao_after"), new Color(0.48f, 0.52f, 0.56f));
+            yield return ("zhending_home", T("stage_zhending_home"), new Color(0.70f, 0.64f, 0.52f));
+            yield return ("gongsun_hall", T("stage_gongsun_hall"), new Color(0.66f, 0.62f, 0.56f));
         }
 
         static IEnumerable<(string name, string key)> Stage3Actors()
@@ -82,6 +88,9 @@ namespace ThreeKingdoms.EditorTools
             yield return ("NpcChenGong", Folk("D11"));
             yield return ("NpcLvBoshe", Folk("D12"));
             yield return ("NpcElderSoldier", Resident("N09"));
+            yield return ("NpcTianKai", Folk("E07"));
+            yield return ("NpcZhaoYun", Folk("E01"));
+            yield return ("NpcZhaoBrother", Folk("E11"));
         }
 
         // ---------- Gongsun Zan's garrison (S4, about 70 × 50 m; south gate z −22, command hall steps z 15.5) ----------

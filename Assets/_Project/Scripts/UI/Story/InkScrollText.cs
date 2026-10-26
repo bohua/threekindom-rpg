@@ -32,10 +32,15 @@ namespace ThreeKingdoms.UI.Story
                 "呂布出虎牢關搦戰，公孫瓚不敵而走。張飛挺矛接戰，關羽、劉備相繼來助，三人圍住呂布轉燈般廝殺，布遮攔不住，撥馬退入關中。——事本《三國演義》第五回，非史實"),
             ["fen_luoyang"] = new Entry("焚洛陽",
                 "董卓焚洛陽宮室，劫天子西遷長安。孫堅入洛，掃除宗廟；諸侯各懷異心，聯軍遂散。劉備隨公孫瓚北還，名聲始聞於天下。——事本《三國志·武帝紀》《孫破虜傳》與《三國演義》第六回"),
+            // 0.4 河北篇 (V04_HEBEI_PLAN §2): ⑦ Panhe, ⑧ Jieqiao closes the version.
+            ["panhe"] = new Entry("磐河·白馬銀槍",
+                "初平三年，公孫瓚與袁紹戰於磐河，為文醜所逐，墜馬坡下。忽一少年將軍白馬銀槍，挺身救之，乃常山趙雲。雲曰：天下洶洶，從仁政所在。——事本《三國演義》第七回，語出裴注引《雲別傳》"),
+            ["jieqiao"] = new Entry("界橋",
+                "袁紹遣麴義以八百先登、千張強弩伏於界橋，白馬義從大敗，嚴綱陣斬。劉備與關、張、趙雲斷後，護公孫瓚南還。——事本《三國志·公孫瓚傳》裴注引《英雄記》；劉備斷後為本作改編"),
         };
 
-        // Only the last scroll of the current version gets the 完成 seal (0.2: 安喜掛印; 0.3: 焚洛陽).
-        public static bool Sealed(string id) => id == "fen_luoyang";
+        // Only the last scroll of the current version gets the 完成 seal (0.2: 安喜掛印; 0.3: 焚洛陽; 0.4: 界橋).
+        public static bool Sealed(string id) => id == "jieqiao";
 
         public static bool TryGet(string id, out Entry entry) => Entries.TryGetValue(id ?? "", out entry);
 

@@ -29,6 +29,8 @@ namespace ThreeKingdoms.EditorTools
             ("scroll_wenjiu", new[] { @"art\v03-ink-scrolls\painting_wenjiu.png", @"art\v03-ink-scrolls-concept\scroll_wenjiu_huaxiong_thumb.png" }),
             ("scroll_sanying", new[] { @"art\v03-ink-scrolls\painting_sanying.png", @"art\v03-ink-scrolls-concept\scroll_sanying_lubu_thumb.png" }),
             ("scroll_fen_luoyang", new[] { @"art\v03-ink-scrolls\painting_fen_luoyang.png", @"art\v03-ink-scrolls-concept\scroll_fen_luoyang_thumb.png" }),
+            ("scroll_panhe", new[] { @"art\v04-ink-scrolls\painting_panhe.png", @"art\v04-ink-scrolls-concept\scroll_panhe_thumb.png" }),
+            ("scroll_jieqiao", new[] { @"art\v04-ink-scrolls\painting_jieqiao.png", @"art\v04-ink-scrolls-concept\scroll_jieqiao_thumb.png" }),
             ("seal_done", new[] { @"art\story-cinematics\seal_done.png", @"art\story-cinematics-concept\_checks\seal_clean_alpha.png" }),
             ("scroll_roller", new[] { @"art\story-cinematics\scroll_roller.png" }),
             ("ink_drop", new[] { @"art\story-cinematics\ink_drop.png" }),
@@ -103,6 +105,8 @@ namespace ThreeKingdoms.EditorTools
                 new StoryCinematicsView.Painting { Id = "wenjiu", Texture = Load("scroll_wenjiu") },
                 new StoryCinematicsView.Painting { Id = "sanying", Texture = Load("scroll_sanying") },
                 new StoryCinematicsView.Painting { Id = "fen_luoyang", Texture = Load("scroll_fen_luoyang") },
+                new StoryCinematicsView.Painting { Id = "panhe", Texture = Load("scroll_panhe") },
+                new StoryCinematicsView.Painting { Id = "jieqiao", Texture = Load("scroll_jieqiao") },
             };
             return view;
         }

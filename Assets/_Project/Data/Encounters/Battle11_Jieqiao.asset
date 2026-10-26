@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f58774cdd05485f4a9f581414a12d3d3, type: 3}
+  m_Name: Battle11_Jieqiao
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.EncounterDefinition
+  Id: battle_11
+  DisplayName: "\u7B2C\u5341\u4E00\u6218 \xB7 \u754C\u6865\u6BBF\u540E"
+  Enemies:
+  - General: {fileID: 11400000, guid: 4e477f74996fdf94ebc03acd36dae821, type: 2}
+    Level: 12
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 72508826fcb753a4eabba6640b55aae7, type: 2}
+    Level: 11
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 72508826fcb753a4eabba6640b55aae7, type: 2}
+    Level: 11
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 78f886521155ba44daaff6df0e051f60, type: 2}
+    Level: 11
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 78f886521155ba44daaff6df0e051f60, type: 2}
+    Level: 11
+    FocusEscort: 0
+  Ai: 1
+  SkillEveryRounds: 3
+  ExpReward: 130
+  CopperReward: 150
+  Allies: []
+  Events: []

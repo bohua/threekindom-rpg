@@ -26,7 +26,7 @@ namespace Prototype.BingshuTactics
         public Element Element = Element.None;
     }
 
-    public enum TacticsActionKind { Banner, Line, Objective, Damage, Chaos, RetreatAll, Retreat, Fire, Win, Spawn, Choice, Guard, Cancel }
+    public enum TacticsActionKind { Banner, Line, Objective, Damage, Chaos, RetreatAll, Retreat, Fire, Win, Spawn, Choice, Guard, Cancel, OpenExit }
 
     public sealed class TacticsAction
     {
@@ -73,7 +73,9 @@ namespace Prototype.BingshuTactics
         public int Seed = 1;                // 混乱恢复的随机数种子（重开同一场结果一致）
         public bool AutoPlay;               // 测试与截图：我方也由电脑代打，台词自动翻页
         public bool NoRetreatOnDefeat;
-        public int Reputation;              // 0.3：声望（“众望”的物防加成随之增强）
+        public int Reputation;
+        public RectInt? ExitZone;
+        public List<TacticsUnitDef> Reserves = new List<TacticsUnitDef>();   // 0.5：后备武将（不在地图上，可换人上阵）           // 0.4：撤离区（OpenExit 之后，我方进入即撤出战场）              // 0.3：声望（“众望”的物防加成随之增强）
     }
 
     public sealed partial class TacticsGame
@@ -108,6 +110,7 @@ namespace Prototype.BingshuTactics
         void BuildChapterUnits()
         {
             foreach (var d in Chapter.Units) SpawnUnit(d, d.Pos);
+            BuildReserves();
             objective = Chapter.Objective;
         }
 
@@ -262,6 +265,7 @@ namespace Prototype.BingshuTactics
                     case TacticsActionKind.Choice:
                     case TacticsActionKind.Guard:
                     case TacticsActionKind.Cancel:
+                    case TacticsActionKind.OpenExit:
                         yield return RunAction3(a);
                         if (mode == Mode.Victory || mode == Mode.Defeat) yield break;
                         break;
@@ -328,8 +332,9 @@ namespace Prototype.BingshuTactics
         bool CheckChapterEnd(bool forced = false)
         {
             if (mode == Mode.Victory || mode == Mode.Defeat) return true;
+            if (ExitCheck()) return true;   // 0.4 阈值撤离
             bool escortDown = units.Any(x => x.Escort && !x.Alive);
-            bool partyDown = !units.Any(x => x.Alive && x.Team == Team.Player && !x.Ai);
+            bool partyDown = !units.Any(x => x.Alive && x.Team == Team.Player && !x.Ai) && exited.Count == 0;
             if (escortDown || partyDown)
             {
                 mode = Mode.Defeat;

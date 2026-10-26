@@ -190,10 +190,15 @@ public sealed class Chapter3FlowTests
         Assert.AreEqual(ChapterScripts3.AfterHulao, stage.StageId);
         rep = run.Life.Reputation;
         yield return Drive(stage, stage.Player, 240f);
-        float deadline = Time.realtimeSinceStartup + 60f;
-        while (SceneManager.GetActiveScene().name != GameRun.TitleScene) { Assert.Less(Time.realtimeSinceStartup, deadline); StoryCinematics.Advance(); yield return null; }
+        // 0.4: scroll ⑥ (no seal), then section six opens on the story stage and leads to the Bohai plain.
+        yield return WaitFor<StageController>();
+        var hebei = Object.FindFirstObjectByType<StageController>();
         Assert.AreEqual(ChapterScripts3.ScrollFenLuoyang, StoryCinematics.LastScroll);
-        Assert.AreEqual(ChapterStep.Done03, run.Chapter2.Step);
+        Assert.AreEqual(ChapterScripts4.HebeiOpen, hebei.StageId);
+        yield return Drive(hebei, hebei.Player);
+        yield return WaitFor<FieldStoryController>(60f);
+        Assert.AreEqual(GameRun.BohaiScene, SceneManager.GetActiveScene().name);
+        Assert.AreEqual(ChapterStep.Pingyuan, run.Chapter2.Step);
         Assert.AreEqual(ChronicleNode.N5, run.Chapter2.Node);
         Assert.AreEqual(rep + 1, run.Life.Reputation, "choice ⑤ A");
         Assert.AreEqual("A_bury", run.Chapter2.Recall("liu_bei", "liubei_ruins"));

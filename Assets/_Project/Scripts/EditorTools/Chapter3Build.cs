@@ -15,6 +15,7 @@ namespace ThreeKingdoms.EditorTools
             DialoguePortraitImporter.Import();
             BattleSceneBuilder.BuildChapterBattles();
             ChapterFieldBuilder.Build();
+            ChapterFieldBuilder.BuildBohaiStory();   // 0.4: the Pingyuan base over the probe's Bohai plain
             AssetDatabase.SaveAssets();
             Debug.Log("CHAPTER3_BUILT");
         }

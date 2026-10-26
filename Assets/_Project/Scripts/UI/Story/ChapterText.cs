@@ -321,6 +321,7 @@ namespace ThreeKingdoms.UI.Story
         };
 
         public static string Remembered(string who) => (Rememberers.TryGetValue(who ?? "", out var n) ? n
-            : ChapterText3.Rememberers.TryGetValue(who ?? "", out var n3) ? n3 : who) + "记住了这件事";
+            : ChapterText3.Rememberers.TryGetValue(who ?? "", out var n3) ? n3
+            : ChapterText4.Rememberers.TryGetValue(who ?? "", out var n4) ? n4 : who) + "记住了这件事";
     }
 }
