@@ -31,6 +31,7 @@ namespace ThreeKingdoms.EditorTools
         public const string CampPath = "Assets/_Project/Scenes/Camp_LuZhi.unity";
         public const string AnxiPath = "Assets/_Project/Scenes/Anxi_Town.unity";
         const string ArtRoot = "Assets/_Project/Art/Chapter2";
+        static Transform hitchingPost;   // Anxi: the 鞭督邮 scene hides it while the bound poses draw their own
         const string PanelSettingsPath = "Assets/_Project/Settings/BattlePanelSettings.asset";
         const float Ppm = 120f;   // the HD environment art's density
         const string Art = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art";
@@ -619,7 +620,7 @@ namespace ThreeKingdoms.EditorTools
             // Post station north-east: 8 m yard and the hitching post where C12 plays.
             Building(env, "Post station", "yiguan_front", "yiguan_side", new Vector3(22f, 0, 14f), 10f, 4f, 7f, house);
             Billboard(env, "Post plaque", "plaque_yiguan", 22f, 13.9f, new Vector3(0.8f, 0.3f, 0.1f), wood).localPosition = new Vector3(22f, 3.3f, 13.9f);
-            Billboard(env, "Hitching post", "hitching_post", 20f, 9f, new Vector3(0.3f, 1.6f, 0.3f), wood, solid: true);
+            hitchingPost = Billboard(env, "hitching_post 马枊", "hitching_post", 20f, 9f, new Vector3(0.3f, 1.6f, 0.3f), wood, solid: true);
             Billboard(env, "Post stable", "stable_shed", 30f, 13f, new Vector3(6f, 4f, 4f), wood, solid: true);
             // Two shops facing the market street; the Wang and Li homes face each other mid-street (the ox case).
             Building(env, "Weapons shop", "shop_weapons_front", "shop_side", new Vector3(-9f, 0, -8f), 7f, 3.5f, 6f, house);
@@ -685,6 +686,7 @@ namespace ThreeKingdoms.EditorTools
                 Spot(f, "timber 木料", new Vector3(-21f, 0, 13.6f)),
                 Spot(f, "seal 石碓后", new Vector3(-21f, 0, 21.4f)),
             };
+            if (hitchingPost) spots.Add(hitchingPost);
             c.Spots = spots.ToArray();
             c.People = c.People.Append(bound).ToArray();
             c.FlagObjects = new[] { broken, mended, gap, timber };

@@ -226,6 +226,7 @@ namespace ThreeKingdoms.UI.Story
             if (s.Prompt != null && s.Prompt.StartsWith("raw:")) prompt.text = s.Busy ? "" : s.Prompt.Substring(4);
             foreach (var bar in letterbox) if (bar != null) bar.style.display = s.Letterbox && !cinema ? DisplayStyle.Flex : DisplayStyle.None;
             dialogue.PortraitsEnabled = !s.Letterbox;
+            if (s.Letterbox) SceneShot();
             var line = s.Line;
             if (line.HasValue && !cinema && s.Card == null) dialogue.Show(line.Value.Speaker, line.Value.Line);
             else dialogue.Hide();
@@ -261,6 +262,20 @@ namespace ThreeKingdoms.UI.Story
             comic.style.display = key != null ? DisplayStyle.Flex : DisplayStyle.None;
             comicT += Time.unscaledDeltaTime;
             comicFrame.style.opacity = Mathf.Clamp01(comicT / 0.35f);   // each new panel fades in
+        }
+
+        // -sceneShots <dir>: while an automatic scene plays, save a frame every 1.5 s (screenshots for review).
+        float nextSceneShot; int sceneShots;
+
+        void SceneShot()
+        {
+            if (Time.unscaledTime < nextSceneShot || sceneShots >= 40) return;
+            var args = System.Environment.GetCommandLineArgs();
+            int i = System.Array.IndexOf(args, "-sceneShots");
+            if (i < 0 || i + 1 >= args.Length) return;
+            nextSceneShot = Time.unscaledTime + 1.5f;
+            System.IO.Directory.CreateDirectory(args[i + 1]);
+            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(args[i + 1], $"scene-{sceneShots++:00}.png"));
         }
 
         // -comicShots <dir>: save each comic panel as it appears (screenshots for review).
