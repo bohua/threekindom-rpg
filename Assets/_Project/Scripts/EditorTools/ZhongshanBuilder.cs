@@ -331,6 +331,15 @@ namespace ThreeKingdoms.EditorTools
                         float dx = (x + 0.5f - cx) / rx, dz = (z + 0.5f - cz) / rz;
                         if (dx * dx + dz * dz <= 1f && (Hill(mask[x, z]) || mask[x, z] == Cell.Forest)) mask[x, z] = Cell.Plain;
                     }
+            // Every country house's plot and apron is flat ground (user 2026-10-26: a house sank into the slope): no
+            // slope, wood or terrace riser within a few metres of its walls.
+            foreach (var (front, fk, sk) in HousePlots())
+            {
+                float hw = T.Metres(fk).x / 2f + 6f, d = T.Metres(sk).x;
+                for (int z = Mathf.Max(0, (int)(front.z - 6f)); z < Mathf.Min(h, (int)(front.z + d + 6f) + 1); z++)
+                    for (int x = Mathf.Max(0, (int)(front.x - hw)); x < Mathf.Min(w, (int)(front.x + hw) + 1); x++)
+                        if (Hill(mask[x, z]) || mask[x, z] == Cell.Forest || mask[x, z] == Cell.Terrace) mask[x, z] = Cell.Plain;
+            }
             return true;
         }
 
@@ -1058,14 +1067,30 @@ namespace ThreeKingdoms.EditorTools
             EarthPatch(env, at + new Vector3(3f, 0, 1f), 12f, 7f, 61);
             // Stands north-east of its yard, door facing the road (south), clear of every road; the yard stays open
             // (open space before landmarks).
-            var front = at + new Vector3(6f, 0, 7f);
-            string pf = K("zs_post_front", "yiguan_front"), ps = K("zs_post_side", "yiguan_side");
-            WildHouse(env, p, "Post station", front, pf, ps, K("roof_anxi_tiles", "roof_tiles_grey"), false, 67);
+            WildHouse(env, p, "Post station", PostFront, PostFrontKey, PostSideKey, K("roof_anxi_tiles", "roof_tiles_grey"), false, 67);
             T.Prop(p, K("hitching_post", "prop_hitching_post"), at.x + 7f, at.z + 2f, solid: true);
             T.Prop(p, K("prop_millet_stack_hd", "prop_hay_pile"), at.x - 8.5f, at.z + 3.5f, solid: true);
             T.Prop(p, K("prop_tree_jujube_hd", "prop_tree_jujube"), at.x - 11f, at.z + 6f, solid: true);
             Label(labels, "井陉路口驿站", at + new Vector3(0, 0, 4f), 9f);
             Spot("Post station", at + new Vector3(0, 0, -6f));
+        }
+
+        // Where the country houses stand: front centre, front and side art (the places below build from the same list).
+        static readonly (float dx, float dz)[] TerraceHouses = { (-9f, 7f), (2f, 9f), (12f, 6f), (-14f, -4f) };
+        static readonly (float dx, float dz)[] RiverHouses = { (-10f, 6f), (1f, 8f), (12f, 6f), (16f, -3f) };
+        static Vector3 PostFront => Loc("post_station") + new Vector3(6f, 0, 7f);
+        static string PostFrontKey => K("zs_post_front", "yiguan_front");
+        static string PostSideKey => K("zs_post_side", "yiguan_side");
+        static string StoneFront => K("zs_stonehouse_front", "house_anxi_a_front");
+        static string StoneSide => K("zs_stonehouse_side", "house_anxi_side");
+        static string RiverFront => K("zs_riverhouse_front", "house_anxi_c_front");
+        static string RiverSide => K("zs_riverhouse_side", "house_anxi_side");
+
+        static IEnumerable<(Vector3 front, string frontKey, string sideKey)> HousePlots()
+        {
+            yield return (PostFront, PostFrontKey, PostSideKey);
+            foreach (var (dx, dz) in TerraceHouses) yield return (Loc("terrace_village") + new Vector3(dx, 0, dz), StoneFront, StoneSide);
+            foreach (var (dx, dz) in RiverHouses) yield return (Loc("river_village") + new Vector3(dx, 0, dz), RiverFront, RiverSide);
         }
 
         // A house out in the country stands on its own worn apron of beaten earth, a few metres wider than the house
@@ -1086,12 +1111,11 @@ namespace ThreeKingdoms.EditorTools
             var c = Loc("terrace_village");
             var v = T.Group(env, "石坎村 (terrace village)");
             EarthPatch(env, c, 9f, 6f, 23);
-            string f = K("zs_stonehouse_front", "house_anxi_a_front"), s = K("zs_stonehouse_side", "house_anxi_side"), roof = K("zs_roof_slate", "roof_anxi_tiles");
-            foreach (var (dx, dz) in new[] { (-9f, 7f), (2f, 9f), (12f, 6f), (-14f, -4f) })
+            string roof = K("zs_roof_slate", "roof_anxi_tiles");
+            foreach (var (dx, dz) in TerraceHouses)
             {
                 var at = c + new Vector3(dx, 0, dz);
-                if (Blocked(At(at.x, at.z + 3f))) continue;
-                WildHouse(env, v, "Stone house", at, f, s, roof, false, (int)(at.x * 7 + at.z));
+                WildHouse(env, v, "Stone house", at, StoneFront, StoneSide, roof, false, (int)(at.x * 7 + at.z));
             }
             T.Prop(v, K("prop_well_stone_hd", "prop_well"), c.x + 3f, c.z - 1f, solid: true);
             T.Prop(v, K("prop_millet_stack_hd", "prop_hay_pile"), c.x - 5f, c.z + 1.5f, solid: true);
@@ -1107,12 +1131,11 @@ namespace ThreeKingdoms.EditorTools
             var c = Loc("river_village");
             var v = T.Group(env, "河湾村 (river village)");
             EarthPatch(env, c, 10f, 6f, 29);
-            string f = K("zs_riverhouse_front", "house_anxi_c_front"), s = K("zs_riverhouse_side", "house_anxi_side"), roof = K("zs_roof_reed", "roof_thatch");
-            foreach (var (dx, dz) in new[] { (-10f, 6f), (1f, 8f), (12f, 6f), (16f, -3f) })
+            string roof = K("zs_roof_reed", "roof_thatch");
+            foreach (var (dx, dz) in RiverHouses)
             {
                 var at = c + new Vector3(dx, 0, dz);
-                if (Blocked(At(at.x, at.z + 3f))) continue;
-                WildHouse(env, v, "River house", at, f, s, roof, true, (int)(at.x * 7 + at.z));
+                WildHouse(env, v, "River house", at, RiverFront, RiverSide, roof, true, (int)(at.x * 7 + at.z));
             }
             foreach (var (dx, dz) in new[] { (-16f, 2f), (7f, 14f), (20f, 8f) }) T.Prop(v, K("prop_tree_persimmon_hd", "locust_tree"), c.x + dx, c.z + dz, solid: true);
             T.Prop(v, K("prop_persimmon_rack_hd", "prop_firewood"), c.x + 5f, c.z + 3f);
