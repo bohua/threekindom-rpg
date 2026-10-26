@@ -92,6 +92,16 @@ Alpha 0.1 需要 3 个涿郡手动存档位、1 个滚动战前自动存档位�
 2. 战前自动存档在战前准备“确认出战”时写入（2026-10-20 已随准备界面实现）。
 3. 标题界面暂用纯色背景与文字标题，正式主视觉待美术。
 
+## 修订 2026-10-24：年份节点与区域标志（第一篇章美术探针）
+
+状态：Proposed（用户 2026-10-24 在「编写第一篇章崛起剧本」线程选定“先跑开放区域美术探针，同时扩展存档与年份节点”；本修订待用户确认后改 Accepted）。
+
+- 新增纯 C# `ChronicleState`（`ThreeKingdoms.Core.Story`）：当前年份节点（N1–N8、尾声，按 CHAPTER1_RISE_SCRIPT.md §3）、已开放区域（R1–R8、R3g 广宗一带、yingchuan 一次性地图）、危险区域（ye、R6、puyang）。节点只能逐个前进；单个剧情点可以关闭区域或解除危险（如拿到通行文书）。节点数据表 `Chapter1Chronicle` 按剧本 §7.5 写死，剧本改了就改表。
+- `SaveData` 新增三个字段 `chronicleNode`、`openRegions`、`dangerAreas`，格式版本仍为 1：旧存档读到空节点时从 N1 开始（与 10-22 的声望字段同一做法），不算“版本不符”。
+- 新落点 `region:<区域id>`（区域驿站存档）。读档时该区域必须已开放，否则报错且不改文件；`GameRun.RegionScenes` 把区域映射到场景（探针只有 R4 → `Bohai_Plain`）。
+- 仍沿用 ADR-0006：`GameRun` 持有 `Chronicle`，跨场景保留。
+- 验证：EditMode `ChronicleTests`（节点开放顺序、只能前进、关闭与解除、未知 id 被拒、存档往返、未开放区域落点被拒、旧存档从 N1 开始）。
+
 ## Related
 
 - ADR-0006 场景流程与剧情标志；ADR-0008 队伍库存与商店

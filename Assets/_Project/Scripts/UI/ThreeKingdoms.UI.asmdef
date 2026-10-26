@@ -5,7 +5,8 @@
     "ThreeKingdoms.Gameplay",
     "ThreeKingdoms.Core",
     "UnityEngine.UI",
-    "ThreeKingdoms.Save"
+    "ThreeKingdoms.Save",
+    "Unity.InputSystem"
   ],
   "autoReferenced": true
 }
