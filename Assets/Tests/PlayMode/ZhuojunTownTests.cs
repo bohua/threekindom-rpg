@@ -118,14 +118,23 @@ public sealed class ZhuojunTownTests
         float stepsDistance = Vector3.Distance(follow.transform.position, mover.transform.position);
 
         yield return Stand(new Vector3(0, 0, -15f));
-        Assert.AreEqual("Main axis and square", follow.ActiveZone.name);
-        Assert.AreEqual(32f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "high over the square");
+        Assert.AreEqual("Main axis", follow.ActiveZone.name);
+        Assert.AreEqual(32f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "high over the main axis");
         Assert.Greater(Vector3.Distance(follow.transform.position, mover.transform.position), stepsDistance + 8f, "pulled back");
 
         yield return Stand(new Vector3(30f, 0, -8f));
         Assert.AreEqual(12f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.y), 1f, "turned toward the smithy street");
         var toPlayer = (mover.transform.position + Vector3.up - follow.transform.position).normalized;
         Assert.Greater(Vector3.Dot(follow.transform.forward, toPlayer), 0.99f, "the player stays in the middle of the shot");
+
+        // On the market square the camera sinks slowly until the hills show over the commandery (user 2026-10-26).
+        cc.enabled = false; mover.transform.position = new Vector3(0, 0, 2f); cc.enabled = true;
+        yield return new WaitForSeconds(1f);
+        float midway = Mathf.DeltaAngle(0, follow.transform.eulerAngles.x);
+        Assert.Greater(midway, 12f, "it lowers gradually, not at once");
+        yield return new WaitForSeconds(6f);
+        Assert.AreEqual("Market square (low, the hills behind)", follow.ActiveZone.name);
+        Assert.AreEqual(8f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "low over the square");
     }
 
     // Speed doubled (user 2026-10-20) and walking plays the drawn 4-frame cycle for the facing direction.

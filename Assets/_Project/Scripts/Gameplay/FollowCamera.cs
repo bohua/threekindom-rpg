@@ -21,6 +21,7 @@ namespace Jrpg
         bool started;
 
         public CameraZone ActiveZone { get; private set; }
+        float zoneBlend;
 
         void LateUpdate()
         {
@@ -37,7 +38,10 @@ namespace Jrpg
             else
             {
                 // Exponential ease: framerate independent, about 95 % of the way after BlendSeconds.
-                float k = 1f - Mathf.Exp(-3f * Time.deltaTime / Mathf.Max(0.05f, BlendSeconds));
+                // A zone may set its own pace (the Zhuojun square lowers slowly, user 2026-10-26); leaving it eases back at the same pace.
+                if (ActiveZone) zoneBlend = ActiveZone.BlendSeconds;
+                float blend = zoneBlend > 0f ? zoneBlend : BlendSeconds;
+                float k = 1f - Mathf.Exp(-3f * Time.deltaTime / Mathf.Max(0.05f, blend));
                 pitch = Mathf.Lerp(pitch, tp, k); distance = Mathf.Lerp(distance, td, k); yaw = Mathf.Lerp(yaw, ty, k);
                 fov = Mathf.Lerp(fov, tf, k); look = Vector3.Lerp(look, tl, k); sway = Mathf.Lerp(sway, ts, k);
             }

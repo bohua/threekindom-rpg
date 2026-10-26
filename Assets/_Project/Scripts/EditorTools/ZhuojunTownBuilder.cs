@@ -1503,17 +1503,20 @@ namespace ThreeKingdoms.EditorTools
         static void CameraZones()
         {
             var g = new GameObject("Camera zones").transform;
-            void Zone(string name, float x0, float x1, float z0, float z1, float pitch, float distance, float yaw = 0f, float fov = 20f, float lookUp = 0.8f, float sway = 0f, int priority = 0)
+            void Zone(string name, float x0, float x1, float z0, float z1, float pitch, float distance, float yaw = 0f, float fov = 20f, float lookUp = 0.8f, float sway = 0f, int priority = 0, float blend = 0f)
             {
                 var z = new GameObject(name).AddComponent<CameraZone>();
                 z.transform.SetParent(g, false);
                 z.transform.position = new Vector3((x0 + x1) / 2f, 0, (z0 + z1) / 2f);
                 z.Size = new Vector2(x1 - x0, z1 - z0);
-                z.Pitch = pitch; z.Distance = distance; z.Yaw = yaw; z.Fov = fov; z.LookOffset = new Vector3(0, lookUp, 0); z.Sway = sway; z.Priority = priority;
+                z.Pitch = pitch; z.Distance = distance; z.Yaw = yaw; z.Fov = fov; z.LookOffset = new Vector3(0, lookUp, 0); z.Sway = sway; z.Priority = priority; z.BlendSeconds = blend;
             }
             Zone("Outside the south gate", -20f, 20f, -80f, -37f, 15f, 27f, fov: 22f, lookUp: 1.6f);
             Zone("Inside the south gate", -10f, 10f, -34f, -23f, 22f, 30f);
-            Zone("Main axis and square", -10f, 10f, -23f, 11f, 32f, 40f, sway: 0.6f);
+            Zone("Main axis", -10f, 10f, -23f, -9f, 32f, 40f, sway: 0.6f);
+            // Stepping onto the market square the camera sinks slowly toward the ground until the Yan hills rise over
+            // the commandery roofs (user 2026-10-26).
+            Zone("Market square (low, the hills behind)", -10f, 10f, -9f, 11f, 8f, 24f, fov: 26f, lookUp: 3.6f, sway: 0.4f, priority: 2, blend: 2.8f);
             Zone("Commandery steps", -12f, 12f, 11f, 34f, 17f, 26f, lookUp: 2.2f, priority: 1);
             Zone("Tavern front", -28f, -11f, -13f, -2f, 24f, 24f, yaw: -12f);
             Zone("Smithy and gambling house", 20f, 46f, -13f, -2f, 24f, 26f, yaw: 12f);
