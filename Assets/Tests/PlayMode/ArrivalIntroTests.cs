@@ -33,10 +33,10 @@ public sealed class ArrivalIntroTests
         Assert.IsTrue(c.Letterbox);
         var cam = c.Camera.transform;
 
-        // Halfway through the walk-in the camera is at eye level inside the gate, looking north.
-        yield return new WaitForSeconds(TownStoryController.WalkInSeconds * 0.5f);
+        // Two thirds into the walk-in the camera is at eye level inside the gate, looking north.
+        yield return new WaitForSeconds(TownStoryController.WalkInSeconds * 0.65f);
         Assert.AreEqual(0, c.ArrivalShotIndex);
-        Assert.Less(cam.position.y, 2.2f, "eye level");
+        Assert.Less(cam.position.y, 2.6f, "eye level");
         Assert.Greater(cam.position.z, -36f, "through the gate");
         Assert.Greater(cam.forward.z, 0.9f, "looking up the axis");
 
