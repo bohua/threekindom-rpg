@@ -1,0 +1,4 @@
+cue_id,source_file,sha256,engine,account_tier,generation_id,download_channel,downloaded_at,terms_snapshot,processed_at,loop_score,status
+taoyuan_oath,taoyuan_oath.mp3,14b7ee01ba7741c79ff8150646db45277f85246b20b622fd9b0d13e8072c956a,suno,paid (user confirmed 2026-10-26),,suno.com official download,2026-10-25,https://suno.com/terms-of-service,,,in_game
+scroll_finale,scroll_finale.mp3,d7fe266c08155b9d3f721ff60c4612cbead0a6d0421fd8f9bcf3c3342759d52a,suno,paid (user confirmed 2026-10-26),,suno.com official download,2026-10-25,https://suno.com/terms-of-service,,,in_game
+victory_aspiration,victory_aspiration.mp3,2232cf43591e5270e90c7fd194c20aac8a497481123b2aba428f5b95c2291cd2,suno,paid (user confirmed 2026-10-26),,suno.com official download,2026-10-25,https://suno.com/terms-of-service,,,in_game
