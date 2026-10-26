@@ -2,11 +2,23 @@
 
 把下载好的配乐（Suno 官方下载，或官方音乐 API 的输出）变成游戏里能直接用的曲目。决策见 `docs/architecture/adr-0011-music-pipeline.md`。
 
-## 用法（Windows）
+## 用法（Windows）：半自动 Suno
 
-1. 在 Suno 按 `design/audio/suno-cards/<cue_id>.md` 生成，歌名填 cue_id，用官方下载按钮下载（WAV 更好，MP3 也行）。
-2. 把文件放进 `D:\BuildArtifacts\Codex\hd2d-jrpg\audio\_inbox\`。
-3. 在仓库根目录运行：
+在仓库根目录的 PowerShell 里运行：
+
+```powershell
+.\tools\music-inbox\Start-SunoSession.ps1                        # 监视你的“下载”文件夹
+.\tools\music-inbox\Start-SunoSession.ps1 -Downloads D:\Suno     # 或者 Chrome 保存到的任何文件夹
+```
+
+它会：
+1. 生成并打开 `D:\BuildArtifacts\Codex\hd2d-jrpg\audio\suno-cards.html`：每张卡片的 Title、Style、Lyrics、Exclude 都有“复制”按钮，已入库的卡片变灰。
+2. 开始监视下载文件夹：文件名或歌名里带曲目编号（如 `mus_battle_boss`）的音频一下载完就移进 `audio\_inbox\` 并处理，结果用中文打印在窗口里。其他下载不受影响；Chrome 未下完的 `.crdownload` 会等它下完。
+3. 也可以在 Chrome 设置 → 下载内容 → 位置，直接设成 `audio\_inbox`，再用 `-Downloads` 指向同一个文件夹，脚本就在原地处理。
+
+你在 suno.com 上自己操作：Custom 模式 → 逐栏复制粘贴 → Create → 听两个候选 → 用官方下载按钮下载挑中的那首。不要用脚本或扩展去操作 Suno 网页（条款禁止，且会让商用权不清楚）。
+
+只想手动跑一次：
 
 ```powershell
 python tools/music-inbox/music_inbox.py `

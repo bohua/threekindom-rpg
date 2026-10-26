@@ -118,3 +118,29 @@ def test_existing_cue_is_not_overwritten_and_unmatched_is_parked(setup):
     assert (out / "mus_battle.wav").read_bytes() == b"keep"
     assert (work / "_unmatched" / "random title.wav").exists()
     assert (inbox / "mus_battle.wav").exists()  # skipped files stay in the inbox
+
+
+def test_watcher_moves_finished_cue_downloads_only(setup, tmp_path):
+    import watch_downloads as wd
+    inbox, out, work, ledger, args = setup
+    downloads = tmp_path / "Downloads"
+    downloads.mkdir()
+    save(downloads / "mus_battle_boss (1).wav", song())
+    (downloads / "mus_battle.mp3.crdownload").write_bytes(b"partial")
+    (downloads / "invoice.wav").write_bytes(b"not music")
+    rest = args[args.index("--cue-sheet"):]
+    assert wd.main(["--downloads", str(downloads), "--inbox", str(inbox), "--interval", "0", "--once", *rest]) == 0
+    assert (out / "mus_battle_boss.wav").exists()
+    assert sorted(f.name for f in downloads.iterdir()) == ["invoice.wav", "mus_battle.mp3.crdownload"]
+
+
+def test_watcher_in_place_processes_inbox_once(setup):
+    import watch_downloads as wd
+    inbox, out, work, ledger, args = setup
+    out.mkdir()
+    (out / "mus_battle.wav").write_bytes(b"keep")
+    save(inbox / "mus_battle.wav", song())
+    rest = args[args.index("--cue-sheet"):]
+    wd.main(["--downloads", str(inbox), "--inbox", str(inbox), "--interval", "0", "--once", *rest])
+    assert (inbox / "mus_battle.wav").exists() and (out / "mus_battle.wav").read_bytes() == b"keep"
+    assert len(list((work / "_review").iterdir())) == 1  # skipped file reported once, not every pass
