@@ -630,11 +630,11 @@ namespace ThreeKingdoms.EditorTools
             string key = "dirt_road_hd", edge = "road_edge_hd";
             foreach (var road in AllRoads)
             {
-                var raw = road.points;
+                var raw = VillageCut(road.points);
                 if (raw.Length < 2) continue;
                 var rg = T.Group(g, "Road " + road.id);
                 var pts = Smooth(raw, 2f, null, out _);   // reassigned with its rounded ends below
-                bool o0 = OpenEnd(raw[0], raw), o1 = OpenEnd(raw[raw.Length - 1], raw);
+                bool o0 = OpenEnd(raw[0], road.points), o1 = OpenEnd(raw[raw.Length - 1], road.points);
                 float total = DistAlong(pts, pts.Count - 1), half = road.width / 2f;
                 var k = new float[pts.Count];
                 for (int i = 0; i < pts.Count; i++)
@@ -1110,7 +1110,7 @@ namespace ThreeKingdoms.EditorTools
         {
             var c = Loc("terrace_village");
             var v = T.Group(env, "石坎村 (terrace village)");
-            EarthPatch(env, c, 9f, 6f, 23);
+            foreach (var g in VillageGrounds().Take(1)) EarthPatch(env, g.centre, g.rx, g.rz, 23);
             string roof = K("zs_roof_slate", "roof_anxi_tiles");
             foreach (var (dx, dz) in TerraceHouses)
             {
@@ -1130,7 +1130,7 @@ namespace ThreeKingdoms.EditorTools
         {
             var c = Loc("river_village");
             var v = T.Group(env, "河湾村 (river village)");
-            EarthPatch(env, c, 10f, 6f, 29);
+            foreach (var g in VillageGrounds().Skip(1)) EarthPatch(env, g.centre, g.rx, g.rz, 29);
             string roof = K("zs_roof_reed", "roof_thatch");
             foreach (var (dx, dz) in RiverHouses)
             {
@@ -1353,6 +1353,32 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A patch of bare ground with a ragged outline (yards, threshing floors), ringed by the road's edge band.
+        // The villages' common ground (user 2026-10-26: no cart ruts among the houses, one sweep of bare earth round
+        // them): an ellipse of beaten earth over the whole cluster; roads stop at its edge.
+        static IEnumerable<(Vector3 centre, float rx, float rz)> VillageGrounds()
+        {
+            yield return (Loc("terrace_village") + new Vector3(-1f, 0, 5f), 22f, 15f);
+            yield return (Loc("river_village") + new Vector3(3f, 0, 5f), 22f, 14f);
+        }
+
+        static bool InVillage(Vector3 p, float scale) => VillageGrounds().Any(v =>
+        {
+            float dx = (p.x - v.centre.x) / (v.rx * scale), dz = (p.z - v.centre.z) / (v.rz * scale);
+            return dx * dx + dz * dz <= 1f;
+        });
+
+        // A road running into a village ends a little inside its earth (its rounded tip hidden in the bare ground).
+        static Vector3[] VillageCut(Vector3[] raw)
+        {
+            var dense = Smooth(raw, 1f, null, out _);
+            if (!dense.Any(q => InVillage(q, 0.8f))) return raw;
+            if (InVillage(dense[0], 0.8f)) dense.Reverse();
+            int n = dense.FindIndex(q => InVillage(q, 0.8f));
+            if (n < 1) return raw;
+            var kept = dense.Take(n + 1).Where((q, i) => i % 4 == 0 || i == n).ToArray();
+            return kept;
+        }
+
         static void EarthPatch(Transform parent, Vector3 centre, float rx, float rz, int seed)
         {
             var rng = new System.Random(seed);
