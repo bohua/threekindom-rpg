@@ -34,7 +34,9 @@ namespace ThreeKingdoms.UI.Story
         public Texture2D InkDrop;
         public Painting[] Paintings = new Painting[0];
         [Header("Timing (seconds)")]
-        public float FreezeTime = 0.5f, UnrollTime = 1.0f, SealTime = 0.22f;
+        public float FreezeTime = 0.5f, UnrollTime = 3.0f, SealTime = 0.22f;
+        [Tooltip("Seconds for the painting to rise from faint to full once the scroll is open (user 2026-10-26)")]
+        public float PaintingFadeTime = 3.0f;
         [Tooltip("Characters typed per second")] public float TypeSpeed = 45f;
         [Tooltip("Characters per column")] public int PerColumn = 13;
         [Header("Opening film")]
@@ -54,7 +56,7 @@ namespace ThreeKingdoms.UI.Story
         Texture2D shot, grey;
         bool advance;
 
-        // "freeze", "unroll", "type", "seal", "wait", "out", "opening", or null when nothing plays.
+        // "freeze", "unroll" (the story writes itself as the paper opens), "paint", "seal", "wait", "out", "opening", or null.
         public string Stage { get; private set; }
         public bool Playing => Stage != null;
         public string ShownId { get; private set; }
@@ -245,48 +247,65 @@ namespace ThreeKingdoms.UI.Story
                 });
                 inkDrop.style.display = DisplayStyle.None;
 
+                // User 2026-10-26: the scroll opens slowly from right to left, the story writing itself column by
+                // column as the paper passes; the painting side stays blank paper until the scroll is fully open, then
+                // the painting rises from faint to full with the music, and the seal comes down last with a bang.
                 Stage = "unroll";
                 StoryMusic.Sfx(StoryMusic.UnrollSfx);
                 Show(scroll);
-                SetOpacity(painting, 0); SetOpacity(titleColumn, 0); SetOpacity(seal, 0);
-                yield return Tween(UnrollTime, k =>
+                SetOpacity(painting, 0); SetOpacity(seal, 0);
+                foreach (var t in titleGlyphs) SetOpacity(t, 0);
+                float started = Time.unscaledTime, typedAt = started;
+                int titleShown = 0;
+                float open = 0f;
+                while (open < ScrollWidth || TypedCount < glyphs.Count)
                 {
-                    float open = ScrollWidth * Ease(k);
-                    float side = (ScrollWidth - open) / 2f;
-                    clip.style.left = RollerWidth + side; clip.style.width = open;
-                    content.style.left = -side;
-                    rollerLeft.style.left = side;
-                    rollerRight.style.left = RollerWidth + side + open;
-                    SetOpacity(painting, Mathf.Clamp01((k - 0.3f) / 0.7f));
-                });
-                SetOpacity(titleColumn, 1);
-
-                Stage = "type";
-                float started = Time.unscaledTime;
-                while (TypedCount < glyphs.Count)
-                {
-                    if (advance) { advance = false; break; }   // confirm shows the rest at once
-                    int shouldBe = Mathf.Min(glyphs.Count, Mathf.FloorToInt((Time.unscaledTime - started) * TypeSpeed) + 1);
-                    while (TypedCount < shouldBe) SetOpacity(glyphs[TypedCount++], 1);
+                    bool rush = advance;   // confirm opens and writes the rest at once
+                    advance = false;
+                    float k = Mathf.Clamp01((Time.unscaledTime - started) / Mathf.Max(0.05f, UnrollTime));
+                    open = rush ? ScrollWidth : Mathf.Max(open, ScrollWidth * Mathf.SmoothStep(0f, 1f, k));
+                    OpenFromRight(open);
+                    // The title, then each glyph once the opened paper has reached its column, at writing speed.
+                    while (titleShown < titleGlyphs.Count && (rush || open >= TitleReach)) SetOpacity(titleGlyphs[titleShown++], 1);
+                    while (TypedCount < glyphs.Count && (rush || (open >= Reach(TypedCount) && Time.unscaledTime >= typedAt)))
+                    {
+                        SetOpacity(glyphs[TypedCount++], 1);
+                        typedAt = Mathf.Max(typedAt, Time.unscaledTime) + 1f / Mathf.Max(1f, TypeSpeed);
+                    }
+                    if (rush) break;
                     yield return null;
                 }
+                OpenFromRight(ScrollWidth);
+                foreach (var t in titleGlyphs) SetOpacity(t, 1);
                 while (TypedCount < glyphs.Count) SetOpacity(glyphs[TypedCount++], 1);
+
+                Stage = "paint";
+                float paintFrom = Time.unscaledTime;
+                advance = false;
+                while (Time.unscaledTime - paintFrom < PaintingFadeTime && !advance)
+                {
+                    float k = (Time.unscaledTime - paintFrom) / PaintingFadeTime;
+                    SetOpacity(painting, k * k * (3f - 2f * k));   // from faint to deep, slow at both ends
+                    yield return null;
+                }
+                SetOpacity(painting, 1);
 
                 // 0.2: the 完成 seal only on the version's last scroll (V02_HUANGJIN_PLAN §1); the others end unsealed.
                 if (InkScrollText.Sealed(id))
                 {
                     Stage = "seal";
+                    yield return WaitUnscaled(0.25f);
                     StoryMusic.Sfx(StoryMusic.SealSfx);
                     yield return Tween(SealTime, k =>
                     {
-                        float s = Mathf.Lerp(2.4f, 1f, k * k);
-                        seal.style.scale = new Scale(new Vector3(s, s, 1));
+                        float sc = Mathf.Lerp(3f, 1f, k * k);
+                        seal.style.scale = new Scale(new Vector3(sc, sc, 1));
                         SetOpacity(seal, k);
                     });
-                    yield return Tween(0.18f, k =>
+                    yield return Tween(0.28f, k =>
                     {
-                        float shake = (1f - k) * 6f * Mathf.Sin(k * 40f);
-                        scroll.style.translate = new Translate(shake, -shake * 0.5f);
+                        float shake = (1f - k) * 10f * Mathf.Sin(k * 46f);
+                        scroll.style.translate = new Translate(shake, -shake * 0.6f);
                     });
                     scroll.style.translate = new Translate(0, 0);
                 }
@@ -315,6 +334,22 @@ namespace ThreeKingdoms.UI.Story
             }
         }
 
+        // The scroll opened from its right end by `open` pixels: the right roller stays, the left one travels left.
+        void OpenFromRight(float open)
+        {
+            float shut = ScrollWidth - open;
+            clip.style.left = RollerWidth + shut; clip.style.width = open;
+            content.style.left = -shut;
+            rollerLeft.style.left = shut;
+            rollerRight.style.left = RollerWidth + ScrollWidth;
+        }
+
+        // How far the paper must be open (from the right) before a column of the story can be written.
+        const float TextRight = 170f, ColumnStep = 36 + 6 + 14, TitleReach = 150f;
+        readonly List<int> glyphColumn = new List<int>();
+        readonly List<Label> titleGlyphs = new List<Label>();
+        float Reach(int glyph) => TextRight + (glyphColumn[glyph] + 1) * ColumnStep;
+
         // Puts the painting, the title and the story (hidden, typed later) on the paper.
         void Fill(InkScrollText.Entry entry, string id)
         {
@@ -323,23 +358,28 @@ namespace ThreeKingdoms.UI.Story
             painting.style.backgroundImage = art;
 
             titleColumn.Clear();
+            titleGlyphs.Clear();
             titleColumn.userData = entry.Title;
             foreach (char c in entry.Title)
             {
                 var l = Glyph(titleColumn, c.ToString(), 76, Ink);
+                titleGlyphs.Add(l);
                 l.style.unityFontStyleAndWeight = FontStyle.Bold;
                 l.style.marginBottom = 6;
             }
 
             textColumns.Clear();
             glyphs.Clear();
+            glyphColumn.Clear();
             TypedCount = 0;
             var columns = InkScrollText.Columns(entry.Body, PerColumn);
             // The seal sits at the foot of the story, just left of its last column (never over the text).
             seal.style.right = 170 + columns.Count * (36 + 6 + 14) + 10;
             seal.style.bottom = 70;
+            int columnIndex = -1;
             foreach (var column in columns)
             {
+                columnIndex++;
                 var col = new VisualElement { pickingMode = PickingMode.Ignore };
                 col.style.flexDirection = FlexDirection.Column;
                 col.style.marginLeft = 14;
@@ -350,6 +390,7 @@ namespace ThreeKingdoms.UI.Story
                     var g = Glyph(col, c.ToString(), source ? 30 : 36, source ? new Color(0.30f, 0.27f, 0.24f) : Ink);
                     SetOpacity(g, 0);
                     glyphs.Add(g);
+                    glyphColumn.Add(columnIndex);
                 }
             }
         }
