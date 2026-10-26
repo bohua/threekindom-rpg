@@ -9,7 +9,7 @@
             "tile_axes": "y"
         },
         {
-            "filename": "dirt_road_plain_hd.png",
+            "filename": "dirt_road_std_hd.png",
             "tile_axes": "y"
         },
         {
@@ -19,6 +19,26 @@
         {
             "filename": "forest_floor_hd.png",
             "tile_axes": "xy"
+        },
+        {
+            "filename": "fork_25.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "fork_40.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "fork_55.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "fork_70.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "fork_90.png",
+            "tile_axes": "none"
         },
         {
             "filename": "hill_slope_hd.png",
@@ -119,14 +139,6 @@
         {
             "filename": "road_edge_hd.png",
             "tile_axes": "x"
-        },
-        {
-            "filename": "road_fork_t_hd.png",
-            "tile_axes": "none"
-        },
-        {
-            "filename": "road_fork_y_hd.png",
-            "tile_axes": "none"
         },
         {
             "filename": "roof_anxi_eave.png",
