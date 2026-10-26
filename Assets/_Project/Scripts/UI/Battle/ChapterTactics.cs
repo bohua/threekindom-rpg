@@ -38,6 +38,17 @@ namespace ThreeKingdoms.UI.Battle
                 : Stages4.Handles(EncounterId) ? Stages4.Build(EncounterId, encounter, Run, data)
                 : Stages5.Handles(EncounterId) ? Stages5.Build(EncounterId, encounter, Run, data) : Stages.Build(EncounterId, encounter, Run, data);
             def.Reputation = Run.Life.Reputation;
+            // 兵书：战场用玩家在行旅菜单兵书页里的同一份书库与镶嵌（用户 2026-10-26），布阵时改动也会带回菜单
+            var shelf = ThreeKingdoms.UI.Menu.BingshuShelf.For(Run);
+            def.Library = shelf.Library;
+            foreach (var u in def.Units.Concat(def.Reserves))
+            {
+                if (u.Team != Team.Player || u.Ai) continue;
+                var g = data.Party.FirstOrDefault(p => p.DisplayName == u.Name);
+                if (g == null) continue;
+                u.Books = shelf.Slots(g.Id);
+                u.School = shelf.SchoolOf(g.Id);
+            }
             if (Portraits)
                 foreach (var e in Portraits.Entries)
                 {

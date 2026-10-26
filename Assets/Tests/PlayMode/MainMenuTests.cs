@@ -46,7 +46,7 @@ public sealed class MainMenuTests
         // 技能: Liu Bei's own skills, 火矢 locked until Lv.3, nothing usable out of battle.
         menu.Show(MainMenuHud.Tab.Skills);
         var skills = menu.SkillRows();
-        Assert.That(skills.Select(s => s.Skill.DisplayName), Is.EqualTo(new[] { "整队", "火矢" }));
+        Assert.That(skills.Take(2).Select(s => s.Skill.DisplayName), Is.EqualTo(new[] { "整队", "火矢" }));
         Assert.IsTrue(menu.Learned(skills[0]));
         Assert.IsFalse(menu.Learned(skills[1]));
         Assert.AreEqual("Lv.3 解锁", menu.SkillUseBlocked(skills[1]));
@@ -77,8 +77,16 @@ public sealed class MainMenuTests
         menu.Show(MainMenuHud.Tab.Bingshu);
         var shelf = BingshuShelf.For(c.Run);
         Assert.AreEqual("儒家", shelf.Circuit("liu_bei").Name);
-        Assert.AreEqual(4, shelf.Slots("liu_bei").Count(b => b != null));
+        Assert.AreEqual(5, shelf.Slots("liu_bei").Count(b => b != null), "four 策略书 on the hub line, one 功法书 outside");
+        Assert.IsTrue(shelf.Techniques("liu_bei", 77).Any(), "the 功法书 gives a technique");
+        // Saved with the play-through and read back the same.
+        var text = c.Run.Capture(ThreeKingdoms.Save.SaveData.TownLocation).bingshu;
+        Assert.AreEqual(shelf.Serialize(), text);
+        var copy = new BingshuShelf();
+        copy.Restore(text);
+        CollectionAssert.AreEqual(shelf.Slots("liu_bei").Select(b => b?.Name), copy.Slots("liu_bei").Select(b => b?.Name));
         Assert.IsTrue(shelf.ShelfFor("liu_bei").All(b => shelf.Owner(b) == null || shelf.Owner(b) == "liu_bei"), "other generals' books hidden");
+        Assert.IsFalse(shelf.ShelfFor("zhang_fei").Any(b => b.Name == "《李将军射法》"), "Liu Bei's 功法书 is not offered to Zhang Fei");
         menu.Confirm();
         Assert.AreEqual(1, menu.BingshuFocus);
         var free = shelf.ShelfFor("liu_bei").First(b => shelf.Owner(b) == null);

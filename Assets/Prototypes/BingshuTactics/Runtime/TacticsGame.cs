@@ -251,12 +251,9 @@ namespace Prototype.BingshuTactics
 
         void BuildLibrary()
         {
-            void B(string n, Element e, int g) => library.Add(new Book(n, e, g));
-            B("《尉缭子》", Element.Metal, 2); B("《吴子》", Element.Metal, 3); B("《六韬·虎韬》", Element.Metal, 1); B("《尉缭子》残卷", Element.Metal, 1);
-            B("《三略》", Element.Wood, 2); B("《司马法》", Element.Wood, 2); B("《管子·牧民》", Element.Wood, 1); B("《司马法》残卷", Element.Wood, 1);
-            B("《管子·度地》", Element.Water, 3); B("《墨子·备水》", Element.Water, 2); B("《孙子·行军》", Element.Water, 1);
-            B("《孙子·火攻》", Element.Fire, 3); B("《六韬·火战》", Element.Fire, 2); B("《火攻》残卷", Element.Fire, 1); B("《火攻》残卷", Element.Fire, 1);
-            B("《孙膑兵法·八阵》", Element.Earth, 3); B("《墨子·备城门》", Element.Earth, 2); B("《六韬·龙韬》", Element.Earth, 1);
+            // 书库与开局镶嵌和行旅菜单的兵书页共用一份（Bookcase）；篇章战斗用玩家当前的书库（同一批 Book 对象）
+            library.Clear();
+            library.AddRange(IsChapter && Chapter.Library != null ? Chapter.Library : Bookcase.NewLibrary());
         }
 
         Book L(string name, int skip = 0) => library.Where(b => b.Name == name).Skip(skip).First();
@@ -264,12 +261,8 @@ namespace Prototype.BingshuTactics
         // 刘关张默认配书（原型配置；兵书页的改动只在本次游玩内存中）
         void DefaultBooks(Unit u)
         {
-            switch (u.Name)
-            {
-                case "刘备": u.Slots[0] = L("《管子·度地》"); u.Slots[1] = L("《三略》"); u.Slots[2] = L("《司马法》"); u.Slots[3] = L("《墨子·备水》"); break;
-                case "关羽": u.Slots[0] = L("《孙子·火攻》"); u.Slots[3] = L("《六韬·火战》"); u.Slots[4] = L("《火攻》残卷"); u.Slots[1] = L("《尉缭子》"); u.Slots[2] = L("《管子·牧民》"); break;
-                case "张飞": u.Slots[0] = L("《孙膑兵法·八阵》"); u.Slots[1] = L("《墨子·备城门》"); u.Slots[5] = L("《六韬·龙韬》"); u.Slots[2] = L("《吴子》"); break;
-            }
+            Bookcase.Default(u.Name, u.Slots, library);
+            RefreshTechniques(u);
         }
 
         void BuildUnits()
@@ -702,8 +695,17 @@ namespace Prototype.BingshuTactics
         }
 
         // ---------------- 战斗主循环 ----------------
+        // 功法书点出的武技（设计稿 15.9）随回路更新：先去掉旧的书武技，再按当前镶嵌重新加上
+        void RefreshTechniques(Unit u)
+        {
+            var bookSkills = new HashSet<SkillDef>(TechniqueTable.All);
+            u.Crafts.RemoveAll(bookSkills.Contains);
+            foreach (var t in CircuitMath.Techniques(u.Circuit, u.Slots, u.Int)) u.Crafts.Add(t.Def);
+        }
+
         IEnumerator BattleLoop()
         {
+            foreach (var pu in units.Where(x => x.Team == Team.Player)) RefreshTechniques(pu);
             Log("开战！左侧行动条从上到下为行动顺序；策略需要咏唱，读条期间会被行动条挤后。");
             if (IsChapter) yield return OpeningLines();
             while (true)

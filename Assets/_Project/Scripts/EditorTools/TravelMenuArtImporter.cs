@@ -15,6 +15,7 @@ namespace ThreeKingdoms.EditorTools
     {
         const string Source = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\travel-menu-ui-slices";
         const string SectorSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\bingshu-sector-highlights";
+        const string KindsSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\bingshu-two-kinds";
         const string VacantSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\bingshu-vacant-dim";
         public const string Dir = "Assets/_Project/Art/UI/TravelMenu";
         public const string BingshuDir = "Assets/Prototypes/BingshuTactics/Art/Destiny";
@@ -32,6 +33,10 @@ namespace ThreeKingdoms.EditorTools
             // The 命盘's lit bagua trapezoids (user 2026-10-24), each on the plate's own 720×720 canvas.
             if (Directory.Exists(SectorSource))
                 foreach (var src in Directory.GetFiles(SectorSource, "sector_lit_*.png"))
+                    File.Copy(src, $"{Dir}/{Path.GetFileName(src)}", true);
+            // 策略书／功法书: technique scrolls and emblems, kind badges, list tabs (user 2026-10-26).
+            if (Directory.Exists(KindsSource))
+                foreach (var src in Directory.GetFiles(KindsSource, "*.png").Where(f => !Path.GetFileName(f).StartsWith("design_") && !Path.GetFileName(f).StartsWith("contact")))
                     File.Copy(src, $"{Dir}/{Path.GetFileName(src)}", true);
             // Dark inactive directions and the hollow empty socket (user 2026-10-26).
             if (Directory.Exists(VacantSource))
@@ -73,6 +78,27 @@ namespace ThreeKingdoms.EditorTools
             }
             borders = b.ToArray();
             Debug.Log($"TRAVEL_MENU_ART {art.Length} textures, {borders.Length} nine-slices");
+        }
+
+        public const string ArtSetPath = "Assets/Resources/TravelMenuArt.asset";
+
+        // Writes the menu's art into Resources/TravelMenuArt (TravelMenuArtSet), which every scene's menu reads, so no
+        // scene has to be re-saved (the town layouts belong to other work).
+        public static void WriteArtSetFromCommandLine()
+        {
+            try
+            {
+                Import(out var art, out var borders);
+                Directory.CreateDirectory("Assets/Resources");
+                var set = AssetDatabase.LoadAssetAtPath<ThreeKingdoms.UI.Menu.TravelMenuArtSet>(ArtSetPath);
+                if (!set) { set = ScriptableObject.CreateInstance<ThreeKingdoms.UI.Menu.TravelMenuArtSet>(); AssetDatabase.CreateAsset(set, ArtSetPath); }
+                set.Art = art; set.Borders = borders; set.BingshuArt = BingshuSlices();
+                EditorUtility.SetDirty(set);
+                AssetDatabase.SaveAssets();
+                Debug.Log("TRAVEL_MENU_ART_SET " + art.Length);
+                EditorApplication.Exit(0);
+            }
+            catch (System.Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
         }
 
         public static Texture2D[] BingshuSlices() =>

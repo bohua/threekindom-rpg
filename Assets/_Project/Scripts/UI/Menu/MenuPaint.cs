@@ -33,6 +33,7 @@ namespace ThreeKingdoms.UI.Menu
             ["card"] = new Vector4(14, 14, 14, 14), ["card_selected"] = new Vector4(16, 16, 16, 16), ["row"] = new Vector4(11, 11, 11, 11), ["row_lit"] = new Vector4(11, 11, 11, 11),
             ["keycap"] = new Vector4(8, 8, 8, 8), ["button_return"] = new Vector4(22, 58, 30, 30), ["count_badge"] = new Vector4(9, 9, 9, 9),
             ["scroll_track"] = new Vector4(4, 4, 5, 5), ["scroll_thumb"] = new Vector4(3, 3, 6, 6),
+            ["list_tab"] = new Vector4(12, 12, 10, 10), ["list_tab_selected"] = new Vector4(12, 12, 10, 10),
         };
 
         public MenuPaint(IEnumerable<Texture2D> menuArt, IEnumerable<Texture2D> sharedArt)

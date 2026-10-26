@@ -57,13 +57,13 @@ public class TacticsRulesTests
     [Test]
     public void Strategy_NeedsTotalsOnOneLine_NotAcrossLines()
     {
-        var dao = Circuits.Of(School.Dao);   // 三条三位短线：0-1-2, 0-3-4, 0-5-6
+        var dao = Circuits.Of(School.Dao);   // 中枢—巽离一线 0-1-2，外圈两段 3-4、5-6
         var slots = new Book[7];
         slots[1] = B(Element.Fire, 2); slots[3] = B(Element.Fire, 2);   // 火分在两条线上，各 2
         var lit = CircuitMath.Lit(dao, slots, 60);
         Assert.IsTrue(Has(lit, "引火"));
         Assert.IsFalse(Has(lit, "火烧营寨"));    // 合计 4 但不在同一条线
-        slots[0] = B(Element.Wood, 1); slots[2] = B(Element.Fire, 2);   // 中枢（锁木）计入每条线：火4、木2
+        slots[0] = B(Element.Wood, 1); slots[2] = B(Element.Fire, 2);   // 中枢（锁木）只在第一条线上：火4、木2
         lit = CircuitMath.Lit(dao, slots, 60);
         Assert.IsTrue(Has(lit, "火烧营寨"));
     }
@@ -293,5 +293,68 @@ public class TacticsRulesTests
         u.AddStatus(new Status { Name = "破阵", DefMul = 0.8f, Turns = 2 });
         Assert.AreEqual(1.2f, u.DefMul, 1e-4);
         Assert.AreEqual(1.5f, u.AtkMul, 1e-4);
+    }
+
+    static Book K(Element e, int g) => new Book("功法", e, g, BookKind.Technique);
+
+    [Test]
+    public void Hub_LinksToExactlyOneDirection()
+    {
+        // 用户 2026-10-26：每个武将的命盘里，有且只有一个方位可以连到八卦中心点
+        foreach (var c in Circuits.All)
+        {
+            var neighbours = c.Lines.SelectMany(line => line.Select((s, i) => (s, i))
+                .Where(x => x.s == 0).SelectMany(x => new[] { x.i > 0 ? line[x.i - 1] : -1, x.i < line.Length - 1 ? line[x.i + 1] : -1 }))
+                .Where(n => n >= 0).Distinct().ToList();
+            Assert.AreEqual(1, neighbours.Count, c.Name);
+            Assert.AreEqual(1, c.Lines.Count(line => line.Contains(0)), c.Name + " 中枢只在一条绳路上");
+        }
+    }
+
+    [Test]
+    public void TechniqueBooks_DoNotCountForStrategies_AndStrategyBooksMakeNoTechniques()
+    {
+        var bing = Circuits.Of(School.Bing);
+        var slots = new Book[6];
+        slots[0] = K(Element.Fire, 3);
+        Assert.IsFalse(Has(CircuitMath.Lit(bing, slots, 100), "引火"), "功法书不给策略计点");
+        Assert.AreEqual("猛击", CircuitMath.Techniques(bing, slots, 100).Single().Def.Name, "一本功法自成小武技");
+        slots[0] = B(Element.Fire, 3);
+        Assert.IsTrue(Has(CircuitMath.Lit(bing, slots, 100), "引火"));
+        Assert.IsEmpty(CircuitMath.Techniques(bing, slots, 100), "策略书不出武技");
+    }
+
+    [Test]
+    public void AdjacentTechniqueBooks_MergeIntoBigTechnique_WhenMainElementReachesFour()
+    {
+        var ru = Circuits.Of(School.Ru);                 // 外圈一段 离4–巽5–震6
+        var slots = new Book[7];
+        slots[4] = K(Element.Metal, 2); slots[5] = K(Element.Metal, 2);
+        var t = CircuitMath.Techniques(ru, slots, 81);
+        Assert.AreEqual("突阵", t.Single().Def.Name, "相邻两本金系合计 4 → 大武技");
+        slots[5] = K(Element.Metal, 1);
+        CollectionAssert.AreEquivalent(new[] { "刺击" }, CircuitMath.Techniques(ru, slots, 81).Select(x => x.Def.Name), "合计 3 不足：各出小武技（同名只留一招）");
+        slots[5] = B(Element.Metal, 3);
+        Assert.AreEqual(1, CircuitMath.Techniques(ru, slots, 81).Count, "中间隔着策略书就不相连");
+    }
+
+    [Test]
+    public void Bookcase_DefaultSocketsFitTheirCircuits_AndDoNotShareBooks()
+    {
+        var lib = Bookcase.NewLibrary();
+        var used = new System.Collections.Generic.HashSet<Book>();
+        foreach (var name in new[] { "刘备", "关羽", "张飞" })
+        {
+            var c = Circuits.Of(Bookcase.SchoolOf(name));
+            var s = new Book[7];
+            Bookcase.Default(name, s, lib);
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (s[i] == null) continue;
+                Assert.IsTrue(CircuitMath.Fits(c, i, s[i]), $"{name} 槽{i} {s[i].Name}");
+                Assert.IsTrue(used.Add(s[i]), $"{s[i].Name} 被两人同时装备");
+            }
+            Assert.IsTrue(s.Any(b => b != null && b.IsTechnique), name + " 开局带一本功法书");
+        }
     }
 }

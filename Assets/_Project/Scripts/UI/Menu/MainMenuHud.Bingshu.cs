@@ -14,7 +14,7 @@ namespace ThreeKingdoms.UI.Menu
     // and the hint bar. Only the joined generals are listed; their intellect (智力) sets how far a cord can run.
     public sealed partial class MainMenuHud
     {
-        int plateSlot, bingshuFocus, bookSel, libScroll, stratScroll, stratSel;
+        int plateSlot, bingshuFocus, libScroll, stratScroll, stratSel;
         public int BingshuFocus => bingshuFocus;
         public int PlateSlot => plateSlot;
 
@@ -43,6 +43,18 @@ namespace ThreeKingdoms.UI.Menu
 
         // ---------- input ----------
 
+        // 藏书阁 has two tabs (user 2026-10-26: "策略书和功法书有两个 tab……切到功法书的话，下面就全部显示功法"): the grid
+        // below shows only the chosen kind, two cards a row. A general rarely uses both kinds, so one list at a time.
+        int libCol;                 // the tab: 0 策略书, 1 功法书
+        readonly int[] libRow = new int[2], libFirst = new int[2];   // per tab: selected card index, first visible row
+        int listTab;   // 策略一览: 0 策略, 1 武技
+        public int LibraryColumn => libCol;
+        public int ListTab => listTab;
+        public void ShowLibraryTab(int tab) { libCol = Mathf.Clamp(tab, 0, 1); }
+
+        List<Book> Column(string id, int col) => Shelf.ShelfFor(id).Where(b => (int)b.Kind == col).ToList();
+        Book SelectedBook(string id) => Column(id, libCol).ElementAtOrDefault(libRow[libCol]);
+
         void MoveBingshu(int dx, int dy)
         {
             var g = General; if (g == null) return;
@@ -54,11 +66,19 @@ namespace ThreeKingdoms.UI.Menu
             }
             else if (bingshuFocus == 1)
             {
-                var shelf = Shelf.ShelfFor(g.Id);
-                if (dy != 0) bookSel = Mathf.Clamp(bookSel + dy * 2, 0, Mathf.Max(0, shelf.Count - 1));
-                if (dx != 0) bookSel = Mathf.Clamp(bookSel + dx, 0, Mathf.Max(0, shelf.Count - 1));
+                var col = Column(g.Id, libCol);
+                int i = libRow[libCol];
+                // Left past the first column / right past the second switch tab.
+                if (dx < 0 && i % 2 == 0 && libCol == 1) { libCol = 0; return; }
+                if (dx > 0 && (i % 2 == 1 || i + 1 >= col.Count) && libCol == 0) { libCol = 1; return; }
+                i += dx + dy * 2;
+                libRow[libCol] = Mathf.Clamp(i, 0, Mathf.Max(0, col.Count - 1));
             }
-            else if (dy != 0) stratSel = Mathf.Clamp(stratSel + dy, 0, Strategies.All.Length - 1);
+            else
+            {
+                if (dx != 0) { listTab = Mathf.Clamp(listTab + dx, 0, 1); stratSel = 0; }
+                if (dy != 0) stratSel = Mathf.Clamp(stratSel + dy, 0, ListRows().Count - 1);
+            }
         }
 
         void ConfirmBingshu()
@@ -68,12 +88,16 @@ namespace ThreeKingdoms.UI.Menu
             if (bingshuFocus == 0)
             {
                 bingshuFocus = 1;
-                var shelf = Shelf.ShelfFor(g.Id);
-                bookSel = Mathf.Max(0, shelf.FindIndex(b => CircuitMath.Fits(c, plateSlot, b) && Shelf.Owner(b) == null));
+                // Open on the first free book that fits the chosen socket, strategy books first.
+                for (int col = 0; col < 2; col++)
+                {
+                    int row = Column(g.Id, col).FindIndex(b => CircuitMath.Fits(c, plateSlot, b) && Shelf.Owner(b) == null);
+                    if (row >= 0) { libCol = col; libRow[col] = row; break; }
+                }
             }
             else if (bingshuFocus == 1)
             {
-                var b = Shelf.ShelfFor(g.Id).ElementAtOrDefault(bookSel);
+                var b = SelectedBook(g.Id);
                 if (b != null) SocketBook(g, b);
             }
         }
@@ -90,7 +114,7 @@ namespace ThreeKingdoms.UI.Menu
             var g = General; if (g == null) return;
             var slots = Shelf.Slots(g.Id);
             if (bingshuFocus == 0) { if (plateSlot < slots.Length) slots[plateSlot] = null; return; }
-            var b = Shelf.ShelfFor(g.Id).ElementAtOrDefault(bookSel);
+            var b = SelectedBook(g.Id);
             int at = b == null ? -1 : System.Array.IndexOf(slots, b);
             if (at >= 0) slots[at] = null;
         }
@@ -296,7 +320,7 @@ namespace ThreeKingdoms.UI.Menu
             p.Fill(new Rect(lg.x + 14, lg.y + 52 * p.K, lg.width - 28, 1), new Color(0.5f, 0.62f, 0.78f, 0.35f));
             for (int l = 0; l < segs.Length && l < 3; l++)
             {
-                float y = 754 + l * 42 - (segs.Length > 2 ? 10 : 0);
+                float y = segs.Length > 2 ? 746 + l * 34 : 754 + l * 42;
                 var t = CircuitMath.LineTotals(c, slots, segs[l]);
                 p.Fill(p.R(360, y + 14, 32, 5), PlateLineColor(l));
                 p.Text(398, y, 40, 34, (l + 1).ToString(), 22, MenuPaint.Ivory);
@@ -311,77 +335,116 @@ namespace ThreeKingdoms.UI.Menu
             }
         }
 
+        // Two small tabs at the top of a panel (策略书｜功法书, 策略｜武技).
+        void PanelTabs(float x, float y, float w, string a, string b, int active, System.Action<int> pick)
+        {
+            var p = paint;
+            for (int i = 0; i < 2; i++)
+            {
+                var r = p.R(x + i * (w / 2 + 6), y, w / 2 - 6, 40);
+                bool on = i == active;
+                p.Frame(r, on ? "list_tab_selected" : "list_tab", on ? MenuPaint.Cyan : (Color?)null, on ? new Color(MenuPaint.SelectBg.r, MenuPaint.SelectBg.g, MenuPaint.SelectBg.b, 0.9f) : (Color?)null);
+                GUI.Label(r, i == 0 ? a : b, p.St(22, on ? Color.white : MenuPaint.Ivory, TextAnchor.MiddleCenter, true));
+                int k = i;
+                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) pick(k);
+            }
+        }
+
         void DrawLibraryPanel(GeneralSpec g, CircuitDef c)
         {
             var p = paint;
             p.PanelBox(892, 92, 436, 760, "藏书阁");
-            var shelf = Shelf.ShelfFor(g.Id);
-            const int cols = 2, rowsVisible = 5;
-            if (bingshuFocus == 1) bookSel = Mathf.Clamp(bookSel, 0, Mathf.Max(0, shelf.Count - 1));
-            int selRow = bookSel / cols, maxFirst = Mathf.Max(0, (shelf.Count + 1) / 2 - rowsVisible);
-            if (bingshuFocus == 1) libScroll = Mathf.Clamp(libScroll, Mathf.Max(0, selRow - rowsVisible + 1), Mathf.Min(selRow, maxFirst));
-            libScroll = Mathf.Clamp(libScroll, 0, maxFirst);
+            PanelTabs(904, 146, 412, "策略书", "功法书", libCol, k => { libCol = k; bingshuFocus = 1; });
             bool lockedSlot = plateSlot >= 0 && plateSlot < c.Slots.Length && c.Slots[plateSlot].Locked != Element.None && bingshuFocus == 1;
-            for (int idx = libScroll * cols; idx < shelf.Count && idx < (libScroll + rowsVisible + 1) * cols; idx++)
+            const int cols = 2, rowsVisible = 6;
+            var books = Column(g.Id, libCol);
+            int sel0 = libRow[libCol] = Mathf.Clamp(libRow[libCol], 0, Mathf.Max(0, books.Count - 1));
+            int maxFirst = Mathf.Max(0, (books.Count + 1) / 2 - rowsVisible);
+            libFirst[libCol] = Mathf.Clamp(libFirst[libCol], Mathf.Max(0, sel0 / cols - rowsVisible + 1), Mathf.Min(sel0 / cols, maxFirst));
+            int first = libFirst[libCol];
+            for (int idx = first * cols; idx < books.Count && idx < (first + rowsVisible) * cols; idx++)
             {
-                var b = shelf[idx]; int row = idx / cols - libScroll, col = idx % cols;
-                bool partial = row >= rowsVisible;
-                var r = p.R(900 + col * 202, 154 + row * 124.5f, 194, partial ? 40 : 108);
-                bool sel = bingshuFocus == 1 && idx == bookSel;
+                var b = books[idx];
+                int row = idx / cols - first, col = idx % cols;
+                float x = 900 + col * 210, y = 194 + row * 102;
+                var r = p.R(x, y, 202, 96);
+                bool sel = bingshuFocus == 1 && idx == sel0;
                 bool mine = Shelf.Owner(b) == g.Id;
                 bool dim = lockedSlot && !CircuitMath.Fits(c, plateSlot, b) && !mine;
-                var o = GUI.color; if (partial) GUI.color = new Color(1, 1, 1, 0.35f); else if (dim) GUI.color = new Color(1, 1, 1, 0.45f);
+                var o = GUI.color; if (dim) GUI.color = new Color(1, 1, 1, 0.45f);
                 p.Frame(r, sel ? "card_selected" : "card", sel ? MenuPaint.Cyan : (Color?)null);
                 if (sel && !p.Has("card_selected")) p.Outline(r, MenuPaint.Cyan, 2);
-                if (!partial)
+                p.Icon(x + 4, y + 4, 20, 20, b.IsTechnique ? "badge_technique" : "badge_strategy");
+                var sr = p.R(x + 8, y + 10, 48, 76);
+                var sc = p.Art((b.IsTechnique ? "tech_scroll_" : "scroll_") + ElemKey(b.Element)) ?? p.Art("scroll_" + ElemKey(b.Element));
+                if (sc) GUI.DrawTexture(b.IsTechnique ? sr : new Rect(sr.center.x - sr.width * 0.75f, sr.center.y - sr.height * 0.75f, sr.width * 1.5f, sr.height * 1.5f), sc, ScaleMode.ScaleToFit);
+                else p.Fill(new Rect(sr.x + sr.width * 0.2f, sr.y, sr.width * 0.6f, sr.height), Wuxing.Tint(b.Element) * 0.8f);
+                var title = BookTitle(b);
+                p.Text(x + 64, y + 6, 132, 32, title, title.Length > 5 ? 18 : 20, MenuPaint.Ivory, TextAnchor.MiddleLeft, true);
+                p.Text(x + 64, y + 36, 92, 24, b.IsTechnique ? "功法·单本成招" : "策略", 13, MenuPaint.Mist);
+                Gem(p.R(x + 66, y + 64, 20, 20), b.Element);
+                p.Text(x + 90, y + 58, 60, 30, $"×{b.Grade}", 17, MenuPaint.Ivory);
+                var pr = p.R(x + 156, y + 40, 38, 38);
+                if (!p.Icon(pr, mine ? "pearl_filled" : "pearl_empty"))
                 {
-                    var sr = p.R(908 + col * 202, 164 + row * 124.5f, 52, 82);
-                    var sc = p.Art("scroll_" + ElemKey(b.Element));
-                    if (sc) GUI.DrawTexture(new Rect(sr.center.x - sr.width * 0.75f, sr.center.y - sr.height * 0.75f, sr.width * 1.5f, sr.height * 1.5f), sc, ScaleMode.ScaleToFit);
-                    else p.Fill(new Rect(sr.x + sr.width * 0.2f, sr.y, sr.width * 0.6f, sr.height), Wuxing.Tint(b.Element) * 0.8f);
-                    var title = BookTitle(b);
-                    p.Text(966 + col * 202, 166 + row * 124.5f, 130, 34, title, title.Length > 5 ? 19 : 21, MenuPaint.Ivory, TextAnchor.MiddleLeft, true);
-                    Gem(p.R(968 + col * 202, 212 + row * 124.5f, 26, 26), b.Element);
-                    p.Text(998 + col * 202, 208 + row * 124.5f, 50, 34, $"×{b.Grade}", 21, MenuPaint.Ivory);
-                    var pr = p.R(1040 + col * 202, 196 + row * 124.5f, 46, 46);
-                    if (!p.Icon(pr, mine ? "pearl_filled" : "pearl_empty"))
-                    {
-                        p.Disc(pr.center, pr.width * 0.46f, new Color(0.45f, 0.55f, 0.68f));
-                        p.Disc(pr.center, pr.width * 0.40f, mine ? new Color(0.92f, 0.90f, 0.82f) : new Color(0.04f, 0.06f, 0.10f));
-                    }
-                    int i = idx;
-                    if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { bookSel = i; bingshuFocus = 1; SocketBook(g, b); }
+                    p.Disc(pr.center, pr.width * 0.46f, new Color(0.45f, 0.55f, 0.68f));
+                    p.Disc(pr.center, pr.width * 0.40f, mine ? new Color(0.92f, 0.90f, 0.82f) : new Color(0.04f, 0.06f, 0.10f));
                 }
+                int i0 = idx;
+                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { libRow[libCol] = i0; bingshuFocus = 1; SocketBook(g, b); }
                 GUI.color = o;
             }
-            ScrollBar(1310, 162, 828, libScroll, rowsVisible, (shelf.Count + 1) / 2);
+            if (books.Count == 0) p.Text(900, 200, 412, 60, libCol == 0 ? "没有空闲的策略书" : "没有空闲的功法书", 18, MenuPaint.Mist, TextAnchor.MiddleCenter);
+            ScrollBar(1312, 200, 828, first, rowsVisible, (books.Count + 1) / 2);
         }
+
+        // 策略一览 rows: every strategy (lit ones highlighted), or every 功法 technique (lit ones first).
+        public List<(SkillDef s, bool on, bool technique)> ListRows()
+        {
+            var g = General;
+            if (g == null) return new List<(SkillDef, bool, bool)>();
+            int intel = Intellect(g);
+            if (listTab == 0)
+            {
+                var lit = Shelf.Strategies(g.Id, intel);
+                return Strategies.All.Select(s => (s, lit.Any(x => x.Def == s), false)).ToList();
+            }
+            var techs = Shelf.Techniques(g.Id, intel);
+            return TechniqueTable.All.Select(s => (s, techs.Any(x => x.Def == s), true)).OrderByDescending(x => x.Item2).ToList();
+        }
+
+        public void ShowListTab(int tab) { listTab = Mathf.Clamp(tab, 0, 1); stratSel = 0; }
 
         void DrawStrategyPanel(GeneralSpec g, CircuitDef c)
         {
             var p = paint;
             p.PanelBox(1350, 92, 298, 760, "策略一览");
-            var lit = CircuitMath.Lit(c, Shelf.Slots(g.Id), Intellect(g));
-            var all = Strategies.All;
-            const int visible = 13;
-            if (bingshuFocus == 2) stratScroll = Mathf.Clamp(stratScroll, Mathf.Max(0, stratSel - visible + 1), Mathf.Min(stratSel, Mathf.Max(0, all.Length - visible)));
-            stratScroll = Mathf.Clamp(stratScroll, 0, Mathf.Max(0, all.Length - visible));
-            for (int k = 0; k < visible && stratScroll + k < all.Length; k++)
+            PanelTabs(1360, 146, 280, "策略", "武技", listTab, k => { ShowListTab(k); bingshuFocus = 2; });
+            var rows = ListRows();
+            const int visible = 12;
+            stratSel = Mathf.Clamp(stratSel, 0, Mathf.Max(0, rows.Count - 1));
+            if (bingshuFocus == 2) stratScroll = Mathf.Clamp(stratScroll, Mathf.Max(0, stratSel - visible + 1), Mathf.Min(stratSel, Mathf.Max(0, rows.Count - visible)));
+            stratScroll = Mathf.Clamp(stratScroll, 0, Mathf.Max(0, rows.Count - visible));
+            for (int k = 0; k < visible && stratScroll + k < rows.Count; k++)
             {
-                var s = all[stratScroll + k]; bool on = lit.Any(x => x.Def == s);
+                var (s, on, tech) = rows[stratScroll + k];
                 bool sel = bingshuFocus == 2 && stratSel == stratScroll + k;
-                var r = p.R(1362, 146 + k * 53.6f, 276, 50);
+                float y = 194 + k * 54.4f;
+                var r = p.R(1362, y, 276, 50);
                 p.Frame(r, on || sel ? "row_lit" : "row", on ? MenuPaint.Cyan : (Color?)null);
                 if (sel) p.Outline(r, MenuPaint.Cyan, 2);
-                var er = p.R(1372, 152 + k * 53.6f, 38, 38);
-                var em = p.Art("emblem_" + ElemKey(s.Main));
-                if (em) GUI.DrawTexture(new Rect(er.center.x - er.width * 0.85f, er.center.y - er.height * 0.85f, er.width * 1.7f, er.height * 1.7f), em, ScaleMode.ScaleToFit);
-                else { p.Disc(er.center, er.width * 0.48f, Wuxing.Tint(s.Main)); p.Disc(er.center, er.width * 0.40f, new Color(0.04f, 0.07f, 0.14f)); Gem(new Rect(er.x + er.width * 0.2f, er.y + er.height * 0.2f, er.width * 0.6f, er.height * 0.6f), s.Main); }
-                var o = GUI.color; if (!on) GUI.color = new Color(1, 1, 1, 0.7f);
-                p.Text(1424, 146 + k * 53.6f, 150, 28, s.Name, 21, MenuPaint.Ivory, TextAnchor.MiddleLeft, true);
-                p.Text(1424, 171 + k * 53.6f, 150, 22, StratBrief.TryGetValue(s.Name, out var bf) ? bf : s.Desc, 15, new Color(0.75f, 0.80f, 0.88f));
+                var el = tech ? s.Element : s.Main;
+                var er = p.R(1372, y + 6, 38, 38);
+                var em = p.Art((tech ? "tech_emblem_" : "emblem_") + ElemKey(el));
+                if (em) GUI.DrawTexture(tech ? er : new Rect(er.center.x - er.width * 0.85f, er.center.y - er.height * 0.85f, er.width * 1.7f, er.height * 1.7f), em, ScaleMode.ScaleToFit);
+                else { p.Disc(er.center, er.width * 0.48f, Wuxing.Tint(el)); p.Disc(er.center, er.width * 0.40f, new Color(0.04f, 0.07f, 0.14f)); Gem(new Rect(er.x + er.width * 0.2f, er.y + er.height * 0.2f, er.width * 0.6f, er.height * 0.6f), el); }
+                var o = GUI.color; if (!on) GUI.color = new Color(1, 1, 1, 0.6f);
+                p.Text(1424, y, 150, 28, s.Name, 21, MenuPaint.Ivory, TextAnchor.MiddleLeft, true);
+                if (tech) p.Text(1490, y, 70, 28, $"气势{s.Cost}", 13, MenuPaint.Gold, TextAnchor.MiddleRight);
+                string brief = tech ? s.Desc : StratBrief.TryGetValue(s.Name, out var bf) ? bf : s.Desc;
+                p.Text(1424, y + 25, 150, 22, brief, 14, new Color(0.75f, 0.80f, 0.88f));
                 GUI.color = o;
-                DrawRangeGrid(p.R(1566, 150 + k * 53.6f, 64, 42), s);
+                DrawRangeGrid(p.R(1566, y + 4, 64, 42), s);
             }
         }
 
@@ -391,8 +454,8 @@ namespace ThreeKingdoms.UI.Menu
             int[,] pat;
             if (s.Area == Area.Line) pat = s.Width >= 3 ? new[,] { { 1, 1, 1, 1 }, { 1, 1, 1, 1 } } : new[,] { { 1, 1, 1, 1 } };
             else if (s.Area == Area.Circle && s.Radius >= 99) pat = new[,] { { 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1 } };
-            else if (s.Area == Area.Circle && s.Radius >= 2) pat = new[,] { { 0, 0, 1, 0, 0 }, { 0, 1, 1, 1, 0 }, { 1, 1, 1, 1, 1 }, { 0, 1, 1, 1, 0 }, { 0, 0, 1, 0, 0 } };
-            else if (s.Area == Area.Circle) pat = new[,] { { 0, 1, 0 }, { 1, 1, 1 }, { 0, 1, 0 } };
+            else if ((s.Area == Area.Circle || s.Area == Area.SelfCircle) && s.Radius >= 2) pat = new[,] { { 0, 0, 1, 0, 0 }, { 0, 1, 1, 1, 0 }, { 1, 1, 1, 1, 1 }, { 0, 1, 1, 1, 0 }, { 0, 0, 1, 0, 0 } };
+            else if ((s.Area == Area.Circle || s.Area == Area.SelfCircle) && s.Radius >= 1) pat = new[,] { { 0, 1, 0 }, { 1, 1, 1 }, { 0, 1, 0 } };
             else pat = new[,] { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 0, 0 } };
             int rows = pat.GetLength(0), cols = pat.GetLength(1);
             float cell = Mathf.Min(box.width / cols, box.height / rows, 11 * p.K), gap = Mathf.Max(1f, cell * 0.14f);

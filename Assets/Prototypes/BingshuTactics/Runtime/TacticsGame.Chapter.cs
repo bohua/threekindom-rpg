@@ -24,6 +24,7 @@ namespace Prototype.BingshuTactics
         public float Floor;                 // 0.3：兵力不低于 MaxHp×Floor（吕布）
         public string[] Crafts = new string[0];
         public Element Element = Element.None;
+        public Book[] Books;                // 玩家当前的镶嵌（与行旅菜单兵书页同一数组）；null 时用开局默认
     }
 
     public enum TacticsActionKind { Banner, Line, Objective, Damage, Chaos, RetreatAll, Retreat, Fire, Win, Spawn, Choice, Guard, Cancel, OpenExit }
@@ -66,6 +67,7 @@ namespace Prototype.BingshuTactics
         public RectInt Deploy;
         public bool Night;
         public List<TacticsUnitDef> Units = new List<TacticsUnitDef>();
+        public List<Book> Library;          // 玩家当前的书库（行旅菜单兵书页的同一份）；null 时用开局书库
         public List<TacticsEvent> Events = new List<TacticsEvent>();
         public System.Action<TacticsOutcome> Finished;
         public List<(string speaker, string text)> OpeningLines = new List<(string, string)>(), VictoryLines = new List<(string, string)>();
@@ -131,7 +133,7 @@ namespace Prototype.BingshuTactics
             AddChapter3Crafts(u, d, crafts);
             if (d.Element != Element.None) u.Element = d.Element;
             foreach (var c in d.Crafts) if (crafts.TryGetValue(c, out var s)) u.Crafts.Add(s);
-            DefaultBooks(u);
+            if (d.Books != null) { u.Slots = d.Books; RefreshTechniques(u); } else DefaultBooks(u);
             return u;
         }
 

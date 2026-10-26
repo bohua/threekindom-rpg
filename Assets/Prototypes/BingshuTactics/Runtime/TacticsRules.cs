@@ -50,11 +50,16 @@ namespace Prototype.BingshuTactics
         public static readonly Element[] All = { Element.Metal, Element.Wood, Element.Water, Element.Fire, Element.Earth };
     }
 
+    // 兵书分两类（用户 2026-10-26：“兵书分两种，策略书和功法书”；设计稿第 15.9 节）：
+    // 策略书在回路上累计五行点数点亮策略；功法书一本自成一招武技，同段相邻两到三本连成大武技。两类互不计点。
+    public enum BookKind { Strategy, Technique }
+
     public sealed class Book
     {
-        public string Name; public Element Element; public int Grade;
-        public Book(string name, Element element, int grade) { Name = name; Element = element; Grade = grade; }
+        public string Name; public Element Element; public int Grade; public BookKind Kind;
+        public Book(string name, Element element, int grade, BookKind kind = BookKind.Strategy) { Name = name; Element = element; Grade = grade; Kind = kind; }
         public string GradeName => Grade switch { 1 => "残卷", 2 => "抄本", _ => "善本" };
+        public bool IsTechnique => Kind == BookKind.Technique;
     }
 
     // 后天八卦：方位（南上北下、东左西右）、五行与三爻（自下而上，1＝阳爻，0＝阴爻）
@@ -100,15 +105,17 @@ namespace Prototype.BingshuTactics
         static SlotDef G(int gua, Element locked = Element.None) => new SlotDef { Gua = gua, Locked = locked };
 
         // 各学派回路是一张八卦盘：中枢（太极）只能放本学派偏向五行的兵书（用户 2026-10-23）；
-        // 其余槽位落在八卦方位上，锁定位与线路走向（五行布局）、自由位多少（包容性）各不相同。中枢计入每条线。
+        // 其余槽位落在八卦方位上，锁定位与线路走向（五行布局）、自由位多少（包容性）各不相同。
+        // 中枢只连一个方位（用户 2026-10-26：“每个武将的命盘里，有且只有一个方位是可以连到八卦中心点的”）：
+        // 第一条绳路从中枢出发，其余绳路在外圈自成一段，不经过中枢。
         public static readonly CircuitDef[] All =
         {
             new CircuitDef
             {
                 School = School.Ru, Name = "儒家", Affinity = Element.Water, Inclusivity = "高",
-                Note = "中枢锁水。阴阳两仪各一线：坎乾兑、离巽震，六位不限五行，中正均衡、易于兼修。",
+                Note = "中枢锁水。中枢—坎乾兑一线，离巽震另成一段，六位不限五行，中正均衡、易于兼修。",
                 Slots = new[] { Hub(Element.Water), G(Bagua.Kan), G(Bagua.Qian), G(Bagua.Dui), G(Bagua.Li), G(Bagua.Xun), G(Bagua.Zhen) },
-                Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 0, 4, 5, 6 } }
+                Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 4, 5, 6 } }
             },
             new CircuitDef
             {
@@ -120,23 +127,23 @@ namespace Prototype.BingshuTactics
             new CircuitDef
             {
                 School = School.Dao, Name = "道家", Affinity = Element.Wood, Inclusivity = "最高",
-                Note = "中枢锁木，其余六位不限五行。三生万物：三条三位短线鼎足而立，策略种类多、高阶难成。",
+                Note = "中枢锁木，其余六位不限五行。三生万物：中枢—巽离一线，兑乾、坎艮两段短线鼎足而立，策略种类多、高阶难成。",
                 Slots = new[] { Hub(Element.Wood), G(Bagua.Xun), G(Bagua.Li), G(Bagua.Dui), G(Bagua.Qian), G(Bagua.Kan), G(Bagua.Gen) },
-                Lines = new[] { new[] { 0, 1, 2 }, new[] { 0, 3, 4 }, new[] { 0, 5, 6 } }
+                Lines = new[] { new[] { 0, 1, 2 }, new[] { 3, 4 }, new[] { 5, 6 } }
             },
             new CircuitDef
             {
                 School = School.Mo, Name = "墨家", Affinity = Element.Metal, Inclusivity = "中",
-                Note = "中枢锁金，兑位锁金、坤位锁土（土生金）。兑乾坎一线（金生水），坤离一线，备守兼用。",
+                Note = "中枢锁金，兑位锁金、坤位锁土（土生金）。中枢—兑乾坎一线（金生水），坤离另成一段，备守兼用。",
                 Slots = new[] { Hub(Element.Metal), G(Bagua.Dui, Element.Metal), G(Bagua.Qian), G(Bagua.Kan), G(Bagua.Kun, Element.Earth), G(Bagua.Li) },
-                Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 0, 4, 5 } }
+                Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 4, 5 } }
             },
             new CircuitDef
             {
                 School = School.Fa, Name = "法家", Affinity = Element.Earth, Inclusivity = "最低",
                 Note = "中枢、坤、艮三位锁土，兑位锁金，只剩乾、坎两位自由。法度森严，土系最强。",
                 Slots = new[] { Hub(Element.Earth), G(Bagua.Kun, Element.Earth), G(Bagua.Dui, Element.Metal), G(Bagua.Qian), G(Bagua.Kan), G(Bagua.Gen, Element.Earth) },
-                Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 0, 5, 4 } }
+                Lines = new[] { new[] { 0, 1, 2, 3 }, new[] { 5, 4 } }
             },
         };
 
@@ -200,6 +207,47 @@ namespace Prototype.BingshuTactics
         }
     }
 
+    public readonly struct LitTechnique
+    {
+        public readonly SkillDef Def; public readonly int Line; public readonly int Overflow; public readonly float PowerMul; public readonly Book[] Books;
+        public LitTechnique(SkillDef def, int line, int overflow, Book[] books)
+        {
+            Def = def; Line = line; Overflow = overflow; PowerMul = CircuitMath.PowerMul(overflow); Books = books;
+        }
+    }
+
+    // 功法书的武技表（设计稿 15.9 技巧表初值，待原型试玩）：耗气势、吃武力。原稿的位移、击退、多段与转伤在本版简化为下列效果。
+    public static class TechniqueTable
+    {
+        static SkillDef T(string name, Element e, string desc, Effect fx, Area area, int range, int radius, float power, int cost, int turns = 0, float amount = 0f, int len = 0) =>
+            new SkillDef { Name = name, Element = e, Desc = desc, Effect = fx, Area = area, Range = range, Radius = radius, Power = power, Cost = cost,
+                Turns = turns, Amount = amount, Length = len, UsesMight = true, IsStrategy = false, Recover = 110 };
+
+        static readonly Dictionary<Element, SkillDef> small = new Dictionary<Element, SkillDef>
+        {
+            [Element.Metal] = T("刺击", Element.Metal, "近战单体1.3倍", Effect.Damage, Area.Single, -1, 0, 1.3f, 20),
+            [Element.Fire] = T("猛击", Element.Fire, "近战单体1.2倍", Effect.Damage, Area.Single, -1, 0, 1.2f, 18),
+            [Element.Water] = T("闪避", Element.Water, "自身受伤-40%", Effect.Guard, Area.SelfCircle, 0, 0, 0f, 15, turns: 1, amount: 0.4f),
+            [Element.Wood] = T("调息", Element.Wood, "自回15%兵力", Effect.Heal, Area.SelfCircle, 0, 0, 0.15f, 20),
+            [Element.Earth] = T("格挡", Element.Earth, "自身受伤-35%", Effect.Guard, Area.SelfCircle, 0, 0, 0f, 15, turns: 1, amount: 0.35f),
+        };
+
+        static readonly Dictionary<Element, SkillDef> big = new Dictionary<Element, SkillDef>
+        {
+            [Element.Metal] = T("突阵", Element.Metal, "直线3格1.1倍", Effect.Damage, Area.Line, 1, 0, 1.1f, 35, len: 3),
+            [Element.Fire] = T("疾风骤雨", Element.Fire, "连击合计1.8倍", Effect.Damage, Area.Single, -1, 0, 1.8f, 35),
+            [Element.Water] = T("迂回", Element.Water, "单体1.4倍并迟滞", Effect.Damage, Area.Single, -1, 0, 1.4f, 30),
+            [Element.Wood] = T("死战", Element.Wood, "自回20%物攻+30%", Effect.Heal, Area.SelfCircle, 0, 0, 0.20f, 35, turns: 2, amount: 0.3f),
+            [Element.Earth] = T("中流砥柱", Element.Earth, "周边友军受伤-35%", Effect.Guard, Area.SelfCircle, 0, 1, 0f, 35, turns: 2, amount: 0.35f),
+        };
+
+        static TechniqueTable() { big[Element.Water].AtDelay = 25; }
+
+        public static SkillDef Small(Element e) => small.TryGetValue(e, out var s) ? s : small[Element.Metal];
+        public static SkillDef Big(Element e) => big.TryGetValue(e, out var s) ? s : big[Element.Metal];
+        public static IEnumerable<SkillDef> All => small.Values.Concat(big.Values);
+    }
+
     public static class CircuitMath
     {
         public const float OverflowStep = 0.08f; public const int OverflowCap = 5;
@@ -249,7 +297,7 @@ namespace Prototype.BingshuTactics
         {
             var t = Wuxing.All.ToDictionary(e => e, e => 0);
             foreach (int i in line)
-                if (i < slots.Length && slots[i] != null) t[slots[i].Element] += Value(c, slots[i]);
+                if (i < slots.Length && slots[i] != null && !slots[i].IsTechnique) t[slots[i].Element] += Value(c, slots[i]);   // 功法书不给策略计点
             return t;
         }
 
@@ -272,6 +320,38 @@ namespace Prototype.BingshuTactics
                 if (best >= 0) result.Add(new LitStrategy(s, best, bestOver));
             }
             return result;
+        }
+
+        // 功法书点出的武技（设计稿 15.9）：沿每段绳路找相邻的功法书（空槽或策略书把它们隔开）；
+        // 单本自成一招小武技；相邻 2–3 本、主五行合计 ≥4 时连成该五行的大武技（≥7 再按溢出加威力），不足则各自出小武技。
+        public static List<LitTechnique> Techniques(CircuitDef c, Book[] slots, int intel)
+        {
+            var result = new List<LitTechnique>();
+            var segs = Segments(c, intel);
+            for (int l = 0; l < segs.Length; l++)
+            {
+                var run = new List<Book>();
+                void Flush()
+                {
+                    for (int k = 0; k < run.Count; k += 3)
+                    {
+                        var part = run.Skip(k).Take(3).ToList();
+                        var totals = part.GroupBy(b => b.Element).ToDictionary(g => g.Key, g => g.Sum(b => Value(c, b)));
+                        var main = totals.OrderByDescending(kv => kv.Value).First();
+                        if (part.Count >= 2 && main.Value >= 4) result.Add(new LitTechnique(TechniqueTable.Big(main.Key), l, main.Value - 4, part.ToArray()));
+                        else foreach (var b in part) result.Add(new LitTechnique(TechniqueTable.Small(b.Element), l, 0, new[] { b }));
+                    }
+                    run.Clear();
+                }
+                foreach (int i in segs[l])
+                {
+                    var b = i < slots.Length ? slots[i] : null;
+                    if (b != null && b.IsTechnique) run.Add(b); else Flush();
+                }
+                Flush();
+            }
+            // 同名武技只留威力最高的一招
+            return result.GroupBy(x => x.Def.Name).Select(g => g.OrderByDescending(x => x.Overflow).First()).ToList();
         }
     }
 
