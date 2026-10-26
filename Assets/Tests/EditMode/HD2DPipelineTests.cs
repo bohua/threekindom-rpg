@@ -69,8 +69,9 @@ public sealed class HD2DPipelineTests
             Assert.AreEqual(FilterMode.Point, texture.filterMode, key);
             Assert.AreEqual(1, texture.mipmapCount, key);
             // The three brothers also carry the six peach-garden oath poses (user 2026-10-24).
-            int oath = key == "YellowTurban" ? 0 : WalkCycleImporter.OathFrames;
-            Assert.AreEqual((WalkCycleImporter.PoseFrames + WalkCycleImporter.WalkFrames + oath) * HD2DSampleBuilder.FrameSize, texture.width, key + ": 9 poses + 16 walk frames (+ 6 oath poses)");
+            // ... and the eight 鞭督邮 poses after them (0.2 Anxi, DuyouPoseImporter).
+            int story = key == "YellowTurban" ? 0 : WalkCycleImporter.OathFrames + DuyouPoseImporter.Frames;
+            Assert.AreEqual((WalkCycleImporter.PoseFrames + WalkCycleImporter.WalkFrames + story) * HD2DSampleBuilder.FrameSize, texture.width, key + ": 9 poses + 16 walk frames (+ 6 oath + 8 鞭督邮 poses)");
             Assert.AreEqual(HD2DSampleBuilder.FrameSize, texture.height, key);
         }
     }
