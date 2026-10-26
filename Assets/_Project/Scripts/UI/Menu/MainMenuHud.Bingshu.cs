@@ -190,6 +190,14 @@ namespace ThreeKingdoms.UI.Menu
             // direction's trapezoid is swapped for its lit form (Codex art/bingshu-sector-highlights, drawn on the
             // plate's own canvas); without that art a glow is drawn instead.
             var plateRect = new Rect(hub.x - half, hub.y - half, half * 2, half * 2);
+            // Directions with no book socketed sit dark and inactive, the opposite of lit (user 2026-10-26; Codex
+            // art/bingshu-vacant-dim, on the plate's own canvas).
+            for (int gua = 0; gua < GuaKeys.Length; gua++)
+            {
+                bool filled = false;
+                for (int i = 0; i < c.Slots.Length; i++) if (c.Slots[i].Gua == gua && slots[i] != null) filled = true;
+                if (!filled) p.Icon(plateRect, "sector_dim_" + GuaKeys[gua], ScaleMode.StretchToFill);
+            }
             for (int i = 0; i < c.Slots.Length; i++)
             {
                 int gua = c.Slots[i].Gua; var book = slots[i];
@@ -249,7 +257,9 @@ namespace ThreeKingdoms.UI.Menu
                 else
                 {
                     if (sel) p.Disc(pos, sock * 0.62f, new Color(0.35f, 0.85f, 1f, 0.30f + 0.15f * Mathf.Sin(Time.unscaledTime * 5f)));
-                    string ring = book != null ? (sel ? "socket_ring_selected" : "socket_ring") : (sel ? "socket_plus" : "socket_empty");
+                    // An empty socket is a hollow pearl seat (user 2026-10-26: the square placeholder was jarring).
+                    string ring = book != null ? (sel ? "socket_ring_selected" : "socket_ring")
+                        : p.Has("socket_vacant") ? (sel ? "socket_vacant_selected" : "socket_vacant") : (sel ? "socket_plus" : "socket_empty");
                     float grow = ring == "socket_ring_selected" ? 1.17f : 1.43f;
                     var gr = new Rect(rr.center.x - rr.width * grow / 2, rr.center.y - rr.height * grow / 2, rr.width * grow, rr.height * grow);
                     // A filled socket's ring takes its book's element colour, the same as the cords into it.
