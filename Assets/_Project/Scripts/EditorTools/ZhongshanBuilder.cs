@@ -666,7 +666,7 @@ namespace ThreeKingdoms.EditorTools
                 var away = new List<Vector3>(lines[f.Side_Road]);
                 if (!f.AtStart) away.Reverse();
                 int from = away.FindIndex(p => !f.Covers(p, 3f) && Vector3.Distance(p, f.Outlet) > 6f);
-                var head = new List<Vector3> { f.Outlet, f.Outlet + f.OutletDir * 5f };
+                var head = new List<Vector3> { f.Outlet - f.OutletDir * Overlap, f.Outlet, f.Outlet + f.OutletDir * 5f };
                 if (from >= 0) head.AddRange(away.Skip(from));
                 if (!f.AtStart) head.Reverse();
                 lines[f.Side_Road] = head;
@@ -709,14 +709,15 @@ namespace ThreeKingdoms.EditorTools
         {
             foreach (var f in forks)
             {
-                if (Vector3.Distance(p, f.Origin) < 1.5f || Vector3.Distance(p, f.Origin + f.Tangent * f.Piece.L) < 1.5f) return f.Right * f.Side;
-                if (Vector3.Distance(p, f.Outlet) < 1.5f) return new Vector3(f.OutletDir.z, 0, -f.OutletDir.x) * f.Side;
+                if (Vector3.Distance(p, f.Origin) < Overlap + 1.5f || Vector3.Distance(p, f.Origin + f.Tangent * f.Piece.L) < Overlap + 1.5f) return f.Right * f.Side;
+                if (Vector3.Distance(p, f.Outlet) < Overlap + 1.5f) return new Vector3(f.OutletDir.z, 0, -f.OutletDir.x) * f.Side;
             }
             return null;
         }
 
         static float JoinWidth(List<ForkPlan> forks, Vector3 p) =>
-            forks.Any(f => Vector3.Distance(p, f.Outlet) < 1.5f) ? 6f : forks.Any(f => Vector3.Distance(p, f.Origin) < 1.5f || Vector3.Distance(p, f.Origin + f.Tangent * f.Piece.L) < 1.5f) ? ForkPiece.MainWidth : 0f;
+            forks.Any(f => Vector3.Distance(p, f.Outlet) < Overlap + 1.5f) ? 6f
+            : forks.Any(f => Vector3.Distance(p, f.Origin) < Overlap + 1.5f || Vector3.Distance(p, f.Origin + f.Tangent * f.Piece.L) < Overlap + 1.5f) ? ForkPiece.MainWidth : 0f;
 
         static void DrawRoad(Transform rg, string key, string edge, List<Vector3> raw, float width, Vector3[] self, bool join0, bool join1, bool flip = false, float joinW0 = 8f, float joinW1 = 8f)
         {
@@ -731,8 +732,8 @@ namespace ThreeKingdoms.EditorTools
                 float at = DistAlong(pts, i), f = 1f;
                 if (o0) f = Mathf.Min(f, Mathf.Lerp(0.35f, 1f, Mathf.SmoothStep(0f, 1f, at / 6f)));
                 if (o1) f = Mathf.Min(f, Mathf.Lerp(0.35f, 1f, Mathf.SmoothStep(0f, 1f, (total - at) / 6f)));
-                if (join0) f = Mathf.Lerp(at0, f, Mathf.SmoothStep(0f, 1f, at / 7f));
-                if (join1) f = Mathf.Lerp(at1, f, Mathf.SmoothStep(0f, 1f, (total - at) / 7f));
+                if (join0) f = Mathf.Lerp(at0, f, Mathf.SmoothStep(0f, 1f, (at - Overlap - 1f) / 7f));
+                if (join1) f = Mathf.Lerp(at1, f, Mathf.SmoothStep(0f, 1f, (total - at - Overlap - 1f) / 7f));
                 // Other mouths (end-to-end joins) flare a little, like worn ground.
                 if (!o0 && !join0 && !NearTown(raw[0], 4f)) f = Mathf.Max(f, Mathf.Lerp(1.4f, 1f, Mathf.SmoothStep(0f, 1f, (at - 3f) / 8f)));
                 if (!o1 && !join1 && !NearTown(raw[raw.Count - 1], 4f)) f = Mathf.Max(f, Mathf.Lerp(1.4f, 1f, Mathf.SmoothStep(0f, 1f, (total - at - 3f) / 8f)));
@@ -759,6 +760,9 @@ namespace ThreeKingdoms.EditorTools
         // manifest gives each outlet's centre. Local frame: origin on the main centre line at the piece's bottom edge,
         // z along the main road, x toward the branch.
 
+        // Roads run this far under a piece, where the piece fades out over them (the seam cross-fades, user 2026-10-26).
+        const float Overlap = 2.5f;
+
         sealed class ForkPiece
         {
             public const float MainWidth = 8f;
@@ -784,6 +788,7 @@ namespace ThreeKingdoms.EditorTools
                 if (f.outlet == null || f.outlet.centre_m == null || f.outlet.centre_m.Length < 2) continue;
                 string key = Path.GetFileNameWithoutExtension(f.filename);
                 if (!Has(key)) continue;
+                if (Has(key + "_blend")) key += "_blend";   // faded over its last 2.5 m, so it cross-fades onto the road strip
                 forkPieces.Add(new ForkPiece
                 {
                     Key = key, W = f.width / ppm, L = f.height / ppm, MainX = f.main_centre_x_m, ForkStart = f.fork_start_m, Angle = f.branch_angle_deg,
@@ -831,7 +836,7 @@ namespace ThreeKingdoms.EditorTools
                         var edge = Vector3.Dot(run[run.Count - 1] - Origin, Tangent) < Piece.L / 2f ? bottom : top;
                         var outward = edge == bottom ? -Tangent : Tangent;
                         run.RemoveAll(p => Vector3.Dot(p - edge, outward) < 2.5f && Vector3.Distance(p, edge) < 6f);
-                        run.Add(edge + outward * 2.5f); run.Add(edge);
+                        run.Add(edge + outward * 2.5f); run.Add(edge); run.Add(edge - outward * Overlap);
                         yield return (run, runJoin0, true);
                         run = new List<Vector3>();
                     }
@@ -842,7 +847,7 @@ namespace ThreeKingdoms.EditorTools
                         var next = pts[i + 1];
                         var edge = Vector3.Dot(next - Origin, Tangent) < Piece.L / 2f ? bottom : top;
                         var outward = edge == bottom ? -Tangent : Tangent;
-                        run.Add(edge); run.Add(edge + outward * 2.5f);
+                        run.Add(edge - outward * Overlap); run.Add(edge); run.Add(edge + outward * 2.5f);
                         while (i + 1 < pts.Count && Vector3.Dot(pts[i + 1] - edge, outward) < 2.5f && Vector3.Distance(pts[i + 1], edge) < 6f) i++;
                         runJoin0 = true;
                     }
