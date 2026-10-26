@@ -67,8 +67,9 @@ namespace ThreeKingdoms.EditorTools
             RenderSettings.ambientGroundColor = new Color(0.42f, 0.40f, 0.36f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Exponential;
-            RenderSettings.fogDensity = 0.005f;
-            RenderSettings.fogColor = new Color(0.80f, 0.87f, 0.94f);
+            // Lighter haze than Anxi: the town camera is close and the painted colours washed out under 0.005.
+            RenderSettings.fogDensity = 0.0025f;
+            RenderSettings.fogColor = new Color(0.82f, 0.88f, 0.93f);
 
             var env = new GameObject("Environment").transform;
             Ground(env);
@@ -350,7 +351,7 @@ namespace ThreeKingdoms.EditorTools
                     importer.alphaIsTransparency = true;
                     importer.wrapModeU = a.Contains("x") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
                     importer.wrapModeV = a.Contains("y") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
-                    importer.SaveAndReimport();
+                    Reimport(importer);
                     continue;
                 }
                 importer.textureType = TextureImporterType.Default;
@@ -362,8 +363,18 @@ namespace ThreeKingdoms.EditorTools
                 importer.alphaIsTransparency = !mask;
                 importer.wrapModeU = a.Contains("x") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
                 importer.wrapModeV = a.Contains("y") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
-                importer.SaveAndReimport();
+                Reimport(importer);
             }
+        }
+
+        // Reimports only when a setting changed, and frees the import memory now and then: the 146 HD textures of the
+        // renovation ran a batch-mode editor out of memory when every one was reimported in a row.
+        static int reimports;
+        static void Reimport(TextureImporter importer)
+        {
+            if (!EditorUtility.IsDirty(importer)) return;
+            importer.SaveAndReimport();
+            if (++reimports % 16 == 0) { EditorUtility.UnloadUnusedAssetsImmediate(); System.GC.Collect(); }
         }
 
         internal static Texture2D Tex(string key) =>
@@ -726,7 +737,7 @@ namespace ThreeKingdoms.EditorTools
                     // Petals under the peach trees, thinning out at the grove's edge.
                     float petals = Soft(RoundRect(x, z, -79f, -55f, -15f, 15f, 6f), x, z, 2f, 6f, 21f);
                     petals *= Mathf.Lerp(0.6f, 1f, Mathf.PerlinNoise(x * 0.1f, z * 0.1f + 9f));
-                    px[iz * w + ix] = new Color32(B(grass * (1f - paving)), B(paving), B(ruts), B(petals * (1f - town)));
+                    px[iz * w + ix] = new Color32(B(grass * (1f - paving)), B(paving), B(ruts), B(petals * (1f - town) * (1f - road)));
                 }
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false, linear: true);
             tex.SetPixels32(px); tex.Apply();
@@ -1320,10 +1331,11 @@ namespace ThreeKingdoms.EditorTools
             Prop(o, "prop_bush", 7f, -44f, scale: 1.6f);
             Prop(o, "prop_flowers", 5.2f, -40.5f);
             var rng = new System.Random(7);
-            for (int i = 0; i < 18; i++)
+            // A full grove in bloom, as in the approved concept (art/zhuojun-hd-concept/zhuojun_concept_peach.png).
+            for (int i = 0; i < 46; i++)
             {
-                float x = -76f + (float)rng.NextDouble() * 19f, z = -12f + (float)rng.NextDouble() * 24f;
-                if (Mathf.Abs(z) < 3f) continue;   // keep the lane clear
+                float x = -77f + (float)rng.NextDouble() * 21f, z = -14f + (float)rng.NextDouble() * 28f;
+                if (Mathf.Abs(z) < 3.2f) continue;   // keep the lane clear
                 Prop(o, i % 3 == 0 ? "prop_tree_peach_small" : "prop_tree_peach", x, z, solid: true);
             }
             // The peach-garden oath (user 2026-10-24): the altar with incense, offerings and wine in front of the

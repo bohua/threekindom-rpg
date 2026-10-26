@@ -55,9 +55,10 @@ public sealed class ZhuojunTownTests
         yield return null;
         foreach (var r in Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
         {
-            var tex = r.sharedMaterial ? r.sharedMaterial.GetTexture("_BaseMap") : null;
+            var tex = r.sharedMaterial && r.sharedMaterial.HasProperty("_BaseMap") ? r.sharedMaterial.GetTexture("_BaseMap") : null;   // the blended ground has its own layers
             if (tex == null || r.name == "Pixel sprite") continue;
-            Assert.AreEqual(FilterMode.Point, tex.filterMode, r.name + " " + tex.name);
+            // Pixel textures stay point-filtered; the HD renovation's painted textures (2026-10-26) are mipmapped instead.
+            Assert.IsTrue(tex.filterMode == FilterMode.Point || tex.mipmapCount > 1, r.name + " " + tex.name + " " + tex.filterMode);
         }
         var smithy = GameObject.Find("02 Weapons shop").transform.Find("Front").GetComponent<MeshRenderer>().sharedMaterial;
         Assert.IsTrue(smithy.IsKeywordEnabled("_EMISSION"), "forge glow kept (RealtimeEmissive)");
