@@ -225,7 +225,7 @@ namespace ThreeKingdoms.UI.Story
             prompt.text = s.Busy ? "" : StoryText.Prompt(s.Prompt);
             if (s.Prompt != null && s.Prompt.StartsWith("raw:")) prompt.text = s.Busy ? "" : s.Prompt.Substring(4);
             foreach (var bar in letterbox) if (bar != null) bar.style.display = s.Letterbox && !cinema ? DisplayStyle.Flex : DisplayStyle.None;
-            dialogue.PortraitsEnabled = !s.Letterbox;
+            dialogue.PortraitsEnabled = true;   // user 2026-10-26: lines in the automatic scenes keep their portraits too
             if (s.Letterbox) SceneShot();
             var line = s.Line;
             if (line.HasValue && !cinema && s.Card == null) dialogue.Show(line.Value.Speaker, line.Value.Line);
