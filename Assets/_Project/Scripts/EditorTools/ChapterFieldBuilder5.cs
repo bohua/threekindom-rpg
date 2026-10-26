@@ -43,12 +43,6 @@ namespace ThreeKingdoms.EditorTools
             Ground(env, "Gate road and market", "ground_xp_market", market, -14, 14, -40, -6, 0f);
             Fringe(env, "ground_xp_market_fringe", -14, 14, -40, -6, 0.005f);
             Ground(env, "Hall square", "ground_xp_plaza", plaza, -16, 16, 2, 22, 0.01f);
-            // The pale stone reads washed out at noon under the HD-2D grade: tone the city's stone down a little.
-            foreach (var m in mats.Where(kv => kv.Key.StartsWith("ground_xp_plaza") || kv.Key.StartsWith("ground_xp_paving")).Select(kv => kv.Value))
-            {
-                m.SetColor("_BaseColor", new Color(0.80f, 0.80f, 0.80f));
-                EditorUtility.SetDirty(m);
-            }
             // The bridge over the moat to the east gate (the brothers come in here).
             Ground(env, "Gate bridge", "ground_xp_paving", paving, -4, 4, -56, -44, 0.012f);
 
@@ -115,6 +109,15 @@ namespace ThreeKingdoms.EditorTools
             c.ArrivalSpot = Spot(f, "Arrival (inside the east gate)", new Vector3(0, 0, -36f));
             c.ReturnSpot = Spot(f, "Return (hall square)", new Vector3(0, 0, 8f));
             Huds(c);
+            // The pale stone reads washed out at noon under the HD-2D grade: tone the city's stone down a little (the tiled
+            // copies of the ground materials included).
+            foreach (var m in Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None).SelectMany(r => r.sharedMaterials)
+                         .Where(m => m && (m.name.StartsWith("ground_xp_plaza") || m.name.StartsWith("ground_xp_paving"))).Distinct())
+            {
+                m.SetColor("_BaseColor", new Color(0.72f, 0.72f, 0.72f));
+                EditorUtility.SetDirty(m);
+            }
+            AssetDatabase.SaveAssets();
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), XiapiPath);
         }
 
