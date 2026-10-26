@@ -45,6 +45,70 @@
             "tile_axes": "xy"
         },
         {
+            "filename": "prop_banner_heishan_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_cheval_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_ferry_boat_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_grass_tuft_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_millet_stack_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_persimmon_rack_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_rock_limestone_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_rock_small_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_scrub_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_signpost_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_tree_cypress_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_tree_jujube_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_tree_persimmon_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_tree_pine_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_well_stone_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_wrecked_boat_hd.png",
+            "tile_axes": "none"
+        },
+        {
             "filename": "river_water_hd.png",
             "tile_axes": "xy"
         },
@@ -83,6 +147,70 @@
         {
             "filename": "wall_anxi_rammed.png",
             "tile_axes": "x"
+        },
+        {
+            "filename": "zs_beacon_front.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_beacon_side.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_cave_shrine_front.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_checkpoint_gate.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_cliff_face.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "zs_dock_planks.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "zs_plank_road_broken.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_post_front.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_post_side.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_riverhouse_front.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_riverhouse_side.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_roof_reed.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "zs_roof_slate.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "zs_stonehouse_front.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_stonehouse_side.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_toll_booth.png",
+            "tile_axes": "none"
         }
     ]
 }
