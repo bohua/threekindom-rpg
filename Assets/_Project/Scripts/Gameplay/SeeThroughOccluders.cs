@@ -9,19 +9,29 @@ namespace ThreeKingdoms.Gameplay
     public sealed class SeeThroughOccluders : MonoBehaviour
     {
         public Transform Target;
+        // Also kept in view, e.g. Guan Yu and Zhang Fei during the peach-garden oath (user 2026-10-26: a peach tree hid
+        // Zhang Fei the whole time).
+        public readonly List<Transform> AlsoVisible = new List<Transform>();
         [Tooltip("Height on the target the camera must be able to see")] public float TargetHeight = 0.9f;
 
         void LateUpdate()
         {
             if (!Target) return;
-            Vector3 from = transform.position, to = Target.position + Vector3.up * TargetHeight;
-            var ray = new Ray(from, to - from);
-            float length = Vector3.Distance(from, to) - 0.3f;
+            Vector3 from = transform.position;
             foreach (var o in Occluder.All)
             {
-                bool blocks = o.Bounds.IntersectRay(ray, out float hit) && hit < length && !o.Bounds.Contains(to);
+                bool blocks = Blocks(o, from, Target);
+                foreach (var t in AlsoVisible) blocks |= t && t.gameObject.activeInHierarchy && Blocks(o, from, t);
                 o.SetHidden(blocks);
             }
+        }
+
+        bool Blocks(Occluder o, Vector3 from, Transform target)
+        {
+            Vector3 to = target.position + Vector3.up * TargetHeight;
+            var ray = new Ray(from, to - from);
+            float length = Vector3.Distance(from, to) - 0.3f;
+            return o.Bounds.IntersectRay(ray, out float hit) && hit < length && !o.Bounds.Contains(to);
         }
     }
 }

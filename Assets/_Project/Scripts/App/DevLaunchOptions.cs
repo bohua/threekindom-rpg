@@ -182,8 +182,12 @@ namespace ThreeKingdoms.App
                 {
                     "equip" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Equip, "skills" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Skills,
                     "bingshu" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Bingshu, "generals" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Generals,
-                    "system" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.System, _ => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Items,
+                    "system" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.System, "achievements" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Achievements,
+                    _ => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Items,
                 };
+                // The achievement page shown with the first four scrolls sealed, as in its design image.
+                if (tab == ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Achievements)
+                    foreach (var s in ThreeKingdoms.UI.Story.InkScrollText.Chapter1.Take(4)) run.Chapter2.UnlockAchievement(s.Id);
                 menu.Show(tab);
                 if (pick > 0) menu.SelectGeneral(pick);
                 if (tab == ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Equip) menu.PickFor(ThreeKingdoms.Core.Economy.EquipSlot.Weapon);
