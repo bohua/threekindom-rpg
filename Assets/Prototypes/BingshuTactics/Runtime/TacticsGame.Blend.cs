@@ -28,7 +28,9 @@ namespace Prototype.BingshuTactics
             _ => Ground.Grass,
         };
 
-        Texture2D GroundTex(Ground g) => g switch
+        Texture2D GroundTex(Ground g) => (HulaoKit ? KitGround(g) : null) ?? GroundTexBase(g);
+
+        Texture2D GroundTexBase(Ground g) => g switch
         {
             Ground.Road => HdNamed("hd_road"),
             Ground.Sand => Chapter.Night ? HdNamed("hd_drygrass") ?? HdNamed("hd_sand") : HdNamed("hd_sand"),
@@ -47,12 +49,12 @@ namespace Prototype.BingshuTactics
         void BakeChapterGround()
         {
             var kinds = new[] { Ground.Grass, Ground.Road, Ground.Sand, Ground.Gravel, Ground.Water };
-            var src = new Dictionary<Ground, (Color32[] px, int w, int h)>();
+            var src = new Dictionary<Ground, (Color32[] px, int w, int h, float m)>();
             foreach (var k in kinds)
             {
                 var t = GroundTex(k);
                 if (!t || !t.isReadable) continue;
-                src[k] = (t.GetPixels32(), t.width, t.height);
+                src[k] = (t.GetPixels32(), t.width, t.height, MetersOf(t));   // 一张贴图铺多少米：高清套件按每米 120 像素
             }
             if (!src.ContainsKey(Ground.Grass)) return;   // 没有高清地块时仍用原型的逐格贴图
 
@@ -83,14 +85,14 @@ namespace Prototype.BingshuTactics
                 for (int i = 0; i < water.Length; i++) water[i] = Mathf.Clamp01((water[i] - 0.4f) / 0.6f);
 
             // 3. 逐像素：取占比、加细噪声碎边、按占比锐化后混合各地面贴图（贴图按 4 米一张平铺）
-            int pw = gw * BlendPx, ph = gh * BlendPx;
+            int bpx = HulaoKit ? 128 : BlendPx;   // 高清套件：烘焙精度提到约每米 107 像素
+            int pw = gw * bpx, ph = gh * bpx;
             var outPx = new Color32[pw * ph];
-            float texPerTile = T / ZTile;
             var weights = new float[present.Length];
             for (int py = 0; py < ph; py++)
                 for (int px = 0; px < pw; px++)
                 {
-                    float u = (px + 0.5f) / BlendPx, v = (py + 0.5f) / BlendPx;
+                    float u = (px + 0.5f) / bpx, v = (py + 0.5f) / bpx;
                     float sum = 0f;
                     for (int i = 0; i < present.Length; i++)
                     {
@@ -106,17 +108,24 @@ namespace Prototype.BingshuTactics
                     }
                     if (sum <= 0f) { weights[0] = 1f; sum = 1f; }
                     float r = 0, gC = 0, b = 0;
-                    float tu = u * texPerTile, tv = v * texPerTile;
                     for (int i = 0; i < present.Length; i++)
                     {
                         if (weights[i] <= 0f) continue;
                         var s = src[present[i]];
+                        float tu = u * T / s.m, tv = v * T / s.m;
                         int sx = ((int)(tu * s.w) % s.w + s.w) % s.w, sy = ((int)(tv * s.h) % s.h + s.h) % s.h;
                         var c = s.px[sy * s.w + sx];
                         float k = weights[i] / sum;
-                        r += c.r * k; gC += c.g * k; b += c.b * k;
+                        if (HulaoKit && present[i] == Ground.Grass) { r += c.r * 0.90f * k; gC += c.g * k; b += c.b * 0.85f * k; }   // 虎牢关草地偏黄：往效果图的黄绿拉一点
+                        else { r += c.r * k; gC += c.g * k; b += c.b * k; }
                     }
-                    outPx[py * pw + px] = new Color32((byte)r, (byte)gC, (byte)b, 255);
+                    if (HulaoKit)
+                    {
+                        // 高清套件的黄土与草地饱和度偏高（实机满屏橙黄）：降 25% 饱和、略压亮度，接近效果图的米黄石路与黄绿草坡
+                        float l = 0.30f * r + 0.59f * gC + 0.11f * b;
+                        r = Mathf.Lerp(r, l, 0.25f) * 0.96f; gC = Mathf.Lerp(gC, l, 0.25f) * 0.96f; b = Mathf.Lerp(b, l, 0.25f) * 0.96f;
+                    }
+                    outPx[py * pw + px] = new Color32((byte)Mathf.Clamp(r, 0, 255), (byte)Mathf.Clamp(gC, 0, 255), (byte)Mathf.Clamp(b, 0, 255), 255);
                 }
             var tex = new Texture2D(pw, ph, TextureFormat.RGBA32, true) { name = "Chapter ground", filterMode = FilterMode.Trilinear, wrapMode = TextureWrapMode.Clamp, anisoLevel = 4 };
             tex.SetPixels32(outPx); tex.Apply(true, true);
