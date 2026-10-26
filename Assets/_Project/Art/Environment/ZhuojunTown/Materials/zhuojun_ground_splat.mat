@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: zhuojun_ground_splat
+  m_Shader: {fileID: 4800000, guid: d022ab087db39c14ab2673aa946c1f4a, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _Base:
+        m_Texture: {fileID: 2800000, guid: 0ee89897e10ec5a49b0058d38de81aee, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Control:
+        m_Texture: {fileID: 2800000, guid: 9db4a7c810e7d624ea6717d4ea666564, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LayerA:
+        m_Texture: {fileID: 2800000, guid: bea6119131eb8bf47a7dd5976f0b1199, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LayerB:
+        m_Texture: {fileID: 2800000, guid: 592680e99d29ed042a212217af512230, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LayerG:
+        m_Texture: {fileID: 2800000, guid: 042f6a1fe0bfdc742933bfa42b4f8c63, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LayerR:
+        m_Texture: {fileID: 2800000, guid: ff425fa914140c14fb273a1200f17a22, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _PixelsPerMetre: 30
+    - _Ragged: 0.18
+    - _Smooth: 0
+    - _TileMetres: 4
+    m_Colors:
+    - _Bounds: {r: -110, g: -80, b: 90, a: 80}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
