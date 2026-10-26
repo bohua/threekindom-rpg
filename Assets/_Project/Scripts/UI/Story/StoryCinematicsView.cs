@@ -369,6 +369,12 @@ namespace ThreeKingdoms.UI.Story
         readonly List<Label> titleGlyphs = new List<Label>();
         float Reach(int glyph) => TextRight + (glyphColumn[glyph] + 1) * ColumnStep;
 
+        public Texture2D PaintingFor(string id)
+        {
+            foreach (var p in Paintings) if (p.Id == id && p.Texture) return p.Texture;
+            return null;
+        }
+
         // Puts the painting, the title and the story (hidden, typed later) on the paper.
         void Fill(InkScrollText.Entry entry, string id)
         {

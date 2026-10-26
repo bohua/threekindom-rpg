@@ -43,6 +43,23 @@ namespace ThreeKingdoms.UI.Story
                 "陶謙病篤，謂別駕麋竺曰：「非劉備不能安此州也。」謙死，竺率州人迎先主，先主未敢當。陳登、孔融皆勸之，先主遂領徐州。——事本《三國志·先主傳》；三讓之數本《三國演義》第十二回"),
         };
 
+        // The chapter's scrolls in story order, with the year each is reached (the achievement page, user 2026-10-26).
+        public readonly struct Chapter1Scroll
+        {
+            public readonly string Id;
+            public readonly int Year;
+            public Chapter1Scroll(string id, int year) { Id = id; Year = year; }
+            public string Title => TryGet(Id, out var e) ? e.Title : Id;
+        }
+
+        public static readonly Chapter1Scroll[] Chapter1 =
+        {
+            new Chapter1Scroll("taoyuan", 184), new Chapter1Scroll("huangjin", 184), new Chapter1Scroll("zhuanzhan", 184),
+            new Chapter1Scroll("anxi", 185), new Chapter1Scroll("wenjiu", 190), new Chapter1Scroll("sanying", 190),
+            new Chapter1Scroll("fen_luoyang", 191), new Chapter1Scroll("panhe", 192), new Chapter1Scroll("jieqiao", 192),
+            new Chapter1Scroll("beihai", 193), new Chapter1Scroll("sanrang", 194),
+        };
+
         public static bool TryGet(string id, out Entry entry) => Entries.TryGetValue(id ?? "", out entry);
 
         public static IEnumerable<string> Ids => Entries.Keys;

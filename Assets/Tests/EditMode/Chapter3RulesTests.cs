@@ -62,6 +62,16 @@ public sealed class Chapter3RulesTests
     }
 
     [Test]
+    public void TheAchievementPageListsEveryScrollOnceInStoryOrder()
+    {
+        var ids = InkScrollText.Chapter1.Select(s => s.Id).ToList();
+        CollectionAssert.AreEquivalent(InkScrollText.Ids.ToList(), ids);
+        CollectionAssert.AllItemsAreUnique(ids);
+        var years = InkScrollText.Chapter1.Select(s => s.Year).ToList();
+        CollectionAssert.IsOrdered(years);
+    }
+
+    [Test]
     public void TheVersionScrollsFitTheirLimit()
     {
         foreach (var id in new[] { ChapterScripts3.ScrollWenjiu, ChapterScripts3.ScrollSanying, ChapterScripts3.ScrollFenLuoyang })
