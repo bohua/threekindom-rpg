@@ -15,6 +15,7 @@ namespace ThreeKingdoms.EditorTools
     {
         const string Source = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\travel-menu-ui-slices";
         const string SectorSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\bingshu-sector-highlights";
+        const string VacantSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\bingshu-vacant-dim";
         public const string Dir = "Assets/_Project/Art/UI/TravelMenu";
         public const string BingshuDir = "Assets/Prototypes/BingshuTactics/Art/Destiny";
 
@@ -31,6 +32,10 @@ namespace ThreeKingdoms.EditorTools
             // The 命盘's lit bagua trapezoids (user 2026-10-24), each on the plate's own 720×720 canvas.
             if (Directory.Exists(SectorSource))
                 foreach (var src in Directory.GetFiles(SectorSource, "sector_lit_*.png"))
+                    File.Copy(src, $"{Dir}/{Path.GetFileName(src)}", true);
+            // Dark inactive directions and the hollow empty socket (user 2026-10-26).
+            if (Directory.Exists(VacantSource))
+                foreach (var src in Directory.GetFiles(VacantSource, "*.png").Where(f => Path.GetFileName(f).StartsWith("sector_dim_") || Path.GetFileName(f).StartsWith("socket_vacant")))
                     File.Copy(src, $"{Dir}/{Path.GetFileName(src)}", true);
             if (Directory.Exists(Source))
             {
