@@ -50,6 +50,7 @@ namespace ThreeKingdoms.UI.Story
         static readonly string[] KaiFamilies = { "KaiTi", "STKaiti", "MingLiU", "SimSun", "Microsoft YaHei" };
         static Font kai;
 
+        Label achievement;
         VisualElement root, freezeColor, freezeGrey, dim, inkDrop, scroll, clip, content, rollerLeft, rollerRight, painting, titleColumn, textColumns, seal, black, film;
         Label hint;
         readonly List<Label> glyphs = new List<Label>();
@@ -162,6 +163,18 @@ namespace ThreeKingdoms.UI.Story
             rollerLeft = MakeRoller(scroll);
             rollerRight = MakeRoller(scroll);
 
+            // The achievement line under the scroll, in the unified UI colours (UI_STYLE_GUIDE: ivory text, cyan edge).
+            achievement = new Label { pickingMode = PickingMode.Ignore };
+            achievement.style.position = Position.Absolute; achievement.style.left = new Length(50, LengthUnit.Percent);
+            achievement.style.bottom = 36; achievement.style.width = 420; achievement.style.marginLeft = -210;
+            achievement.style.unityTextAlign = TextAnchor.MiddleCenter;
+            achievement.style.fontSize = 24; achievement.style.color = new Color(0.957f, 0.945f, 0.910f);
+            achievement.style.backgroundColor = new Color(0.063f, 0.110f, 0.188f, 0.92f);
+            achievement.style.paddingTop = achievement.style.paddingBottom = 8;
+            achievement.style.borderTopWidth = achievement.style.borderBottomWidth = achievement.style.borderLeftWidth = achievement.style.borderRightWidth = 1;
+            achievement.style.borderTopColor = achievement.style.borderBottomColor = achievement.style.borderLeftColor = achievement.style.borderRightColor = new Color(0.384f, 0.843f, 0.910f);
+            root.Add(achievement);
+
             hint = new Label(InkScrollText.Continue) { pickingMode = PickingMode.Ignore };
             hint.style.position = Position.Absolute; hint.style.right = 80; hint.style.bottom = 40;
             hint.style.fontSize = 24; hint.style.color = new Color(0.95f, 0.92f, 0.85f);
@@ -213,13 +226,13 @@ namespace ThreeKingdoms.UI.Story
 
         void Hide()
         {
-            foreach (var v in new[] { freezeColor, freezeGrey, dim, inkDrop, scroll, hint, film, black })
+            foreach (var v in new[] { freezeColor, freezeGrey, dim, inkDrop, scroll, hint, achievement, film, black })
                 v.style.display = DisplayStyle.None;
         }
 
         // ---------- the scroll ----------
 
-        public IEnumerator PlayScroll(string id)
+        public IEnumerator PlayScroll(string id, bool firstUnlock)
         {
             if (!InkScrollText.TryGet(id, out var entry)) yield break;
             Stage = "freeze";
@@ -290,8 +303,7 @@ namespace ThreeKingdoms.UI.Story
                 }
                 SetOpacity(painting, 1);
 
-                // 0.2: the 完成 seal only on the version's last scroll (V02_HUANGJIN_PLAN §1); the others end unsealed.
-                if (InkScrollText.Sealed(id))
+                // User 2026-10-26: every scroll is sealed; the seal unlocks the scroll's achievement (StoryCinematics).
                 {
                     Stage = "seal";
                     yield return WaitUnscaled(0.25f);
@@ -309,6 +321,12 @@ namespace ThreeKingdoms.UI.Story
                     });
                     scroll.style.translate = new Translate(0, 0);
                 }
+                if (firstUnlock)
+                {
+                    achievement.text = InkScrollText.AchievementUnlocked(entry.Title);
+                    Show(achievement);
+                    yield return Tween(0.35f, k => SetOpacity(achievement, k));
+                }
 
                 Stage = "wait";
                 advance = false;
@@ -318,6 +336,7 @@ namespace ThreeKingdoms.UI.Story
 
                 Stage = "out";
                 hint.style.display = DisplayStyle.None;
+                achievement.style.display = DisplayStyle.None;
                 Show(black);
                 yield return Tween(0.4f, k => SetOpacity(black, k));
                 foreach (var v in new[] { freezeColor, freezeGrey, dim, scroll }) v.style.display = DisplayStyle.None;

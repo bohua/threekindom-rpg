@@ -43,9 +43,6 @@ namespace ThreeKingdoms.UI.Story
                 "陶謙病篤，謂別駕麋竺曰：「非劉備不能安此州也。」謙死，竺率州人迎先主，先主未敢當。陳登、孔融皆勸之，先主遂領徐州。——事本《三國志·先主傳》；三讓之數本《三國演義》第十二回"),
         };
 
-        // Only the last scroll of the current version gets the 完成 seal (0.2: 安喜掛印; 0.3: 焚洛陽; 0.4: 界橋).
-        public static bool Sealed(string id) => id == "sanrang";   // the last scroll of the chapter (0.5)
-
         public static bool TryGet(string id, out Entry entry) => Entries.TryGetValue(id ?? "", out entry);
 
         public static IEnumerable<string> Ids => Entries.Keys;
@@ -89,6 +86,7 @@ namespace ThreeKingdoms.UI.Story
         }
 
         public const string Seal = "完成";
+        public static string AchievementUnlocked(string title) => "成就解鎖　" + title;
         public const string Continue = "▼ 確認";
         public const string SkipOpening = "［取消］跳過片頭";
     }

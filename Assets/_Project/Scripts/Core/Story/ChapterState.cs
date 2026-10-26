@@ -79,6 +79,17 @@ namespace ThreeKingdoms.Core.Story
 
         public event Action<Memory> Remembered;
 
+        // User 2026-10-26: every ink scroll ends with the 完成 seal, and the seal unlocks that scroll's achievement,
+        // kept in the save with the other chapter flags. Returns true the first time.
+        public const string AchievementPrefix = "ach:";
+        public bool UnlockAchievement(string scrollId)
+        {
+            if (string.IsNullOrEmpty(scrollId) || Has(AchievementPrefix + scrollId)) return false;
+            Set(AchievementPrefix + scrollId);
+            return true;
+        }
+        public IEnumerable<string> Achievements => flags.Where(f => f.StartsWith(AchievementPrefix, StringComparison.Ordinal)).Select(f => f.Substring(AchievementPrefix.Length));
+
         public bool Has(string flag) => flags.Contains(flag);
         public void Set(string flag) { if (!string.IsNullOrEmpty(flag)) flags.Add(flag); }
 

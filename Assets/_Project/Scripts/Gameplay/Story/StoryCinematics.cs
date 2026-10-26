@@ -13,8 +13,9 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public interface IView
         {
-            // Bullet time: freeze, darken, unroll the scroll, type the story, stamp 完成, wait for confirm.
-            IEnumerator PlayScroll(string id);
+            // Bullet time: freeze, darken, unroll the scroll, type the story, stamp 完成, wait for confirm; a first
+            // unlock also shows the achievement line.
+            IEnumerator PlayScroll(string id, bool firstUnlock);
             // The opening film (opening-assembled-20261021-v1); skippable; ends at once when the file is missing.
             IEnumerator PlayOpening();
             // Confirm from the story side (tests, the auto pilot): types the rest, or closes the waiting scroll.
@@ -31,7 +32,9 @@ namespace ThreeKingdoms.Gameplay.Story
         public static IEnumerator Scroll(string id)
         {
             LastScroll = id;
-            if (View != null) yield return View.PlayScroll(id);
+            // Recorded before it plays, so skipping or closing the scroll still keeps the achievement in this play-through.
+            bool first = GameRun.Current?.Chapter2.UnlockAchievement(id) ?? false;
+            if (View != null) yield return View.PlayScroll(id, first);
         }
 
         public static IEnumerator Opening()

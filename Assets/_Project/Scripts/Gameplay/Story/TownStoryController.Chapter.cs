@@ -52,7 +52,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 yield return Lines(ZouJingLines);
                 Cinematic = true;
                 Changed?.Invoke();
-                yield return StoryCinematics.Scroll(StoryCinematics.YellowTurbanScroll);   // scroll ①, unsealed in 0.2
+                yield return StoryCinematics.Scroll(StoryCinematics.YellowTurbanScroll);   // scroll ①
                 Cinematic = false;
                 Run.Chapter2.Advance(ChapterStep.ZouJingOrders, ChapterStep.ZhuojunFree);
                 ShowZouJing();
