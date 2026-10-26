@@ -61,6 +61,7 @@ namespace ThreeKingdoms.UI.Story
             var m = GUI.matrix;
             GUI.matrix = Matrix4x4.Scale(new Vector3(k, k, 1f));
             float w = sw / k, h = 1080f;
+            if (c.Layout == "settlement") { SettlementPage(w, h); GUI.matrix = m; return; }
 
             // Year banner.
             var yr = new Rect(w / 2 - 260, 24, 520, 64);
@@ -115,6 +116,103 @@ namespace ThreeKingdoms.UI.Story
                 GUI.Label(er, StoryText.Line(c.EventText), small);
             }
             GUI.matrix = m;
+        }
+
+        // 篇章结算 (SYSTEMS_V05 §5; design image art/v05-ui-concept/ui_chapter_settlement): the trail on the realm map,
+        // the ladder of names, and three panels (battles, people, reputation and choices). Read from the play-through only.
+        GUIStyle title, head, big, body, tag, pin;
+        static readonly Color Gold = new Color(0.84f, 0.73f, 0.47f), Orange = new Color(0.93f, 0.52f, 0.18f);
+
+        void SettlementPage(float w, float h)
+        {
+            title ??= new GUIStyle(GUI.skin.label) { fontSize = 48, fontStyle = FontStyle.Bold, normal = { textColor = Ivory } };
+            head ??= new GUIStyle(GUI.skin.label) { fontSize = 28, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft, normal = { textColor = Ivory } };
+            big ??= new GUIStyle(GUI.skin.label) { fontSize = 64, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, normal = { textColor = Teal } };
+            body ??= new GUIStyle(GUI.skin.label) { fontSize = 20, alignment = TextAnchor.MiddleCenter, wordWrap = true, normal = { textColor = new Color(0.71f, 0.78f, 0.84f) } };
+            tag ??= new GUIStyle(GUI.skin.label) { fontSize = 18, alignment = TextAnchor.MiddleCenter, normal = { textColor = Gold } };
+            pin ??= new GUIStyle(GUI.skin.label) { fontSize = 14, alignment = TextAnchor.MiddleLeft, normal = { textColor = Ivory } };
+            Fill(new Rect(0, 0, w, 866), Ink);   // the dialogue box below stays visible (IMGUI draws over it)
+            GUI.Label(new Rect(40, 14, 460, 70), "第一篇章　崛起", title);
+            GUI.Label(new Rect(420, 24, 300, 50), "/　篇章结算", head);
+
+            // The realm map with the trail.
+            var mapBox = new Rect(30, 96, w - 500, 580);
+            Box(mapBox, 1f);
+            var hud = GetComponent<StageHud>();
+            var map = hud ? hud.Map : null;
+            var mr = mapBox;
+            if (map)
+            {
+                float s = Mathf.Min((mapBox.width - 8) / map.width, (mapBox.height - 8) / map.height);
+                mr = new Rect(mapBox.center.x - map.width * s / 2, mapBox.center.y - map.height * s / 2, map.width * s, map.height * s);
+                GUI.DrawTexture(mr, map, ScaleMode.StretchToFill);
+            }
+            Vector2 On(Vector2 p) => new Vector2(mr.x + p.x * mr.width, mr.y + p.y * mr.height);
+            bool Where(string n, out Vector2 p) => StageHud.Nodes.TryGetValue(n, out p) || Cities.TryGetValue(n, out p);
+            Vector2? last = null;
+            foreach (var n in Settlement.TrailNodes())
+            {
+                if (!Where(n, out var p)) continue;
+                var at = On(p);
+                if (last is Vector2 a && a != at) DrawLine(a, at, 3f, new Color(Orange.r, Orange.g, Orange.b, 0.85f));
+                last = at;
+            }
+            var stations = Settlement.Stations();
+            for (int i = 0; i < stations.Count; i++)
+            {
+                if (!Where(stations[i].node, out var p)) continue;
+                var at = On(p);
+                Fill(new Rect(at.x - 6, at.y - 6, 12, 12), i == stations.Count - 1 ? Teal : Orange);
+                // Small tags, alternately right and left of the dot, so neighbouring cities do not cover each other.
+                string text = $"{i + 1:00} {stations[i].name}";
+                float tw = 22 + 15 * stations[i].name.Length;
+                var lr = i % 2 == 0 ? new Rect(at.x + 8, at.y - 10, tw, 20) : new Rect(at.x - 8 - tw, at.y - 10, tw, 20);
+                Fill(lr, new Color(Ink.r, Ink.g, Ink.b, 0.85f));
+                GUI.Label(new Rect(lr.x + 3, lr.y, lr.width, lr.height), text, pin);
+            }
+            var legend = new Rect(mapBox.x + 16, mapBox.y + 14, 250, 34);
+            Fill(legend, new Color(Ink.r, Ink.g, Ink.b, 0.9f));
+            Fill(new Rect(legend.x + 12, legend.center.y - 2, 34, 4), Orange);
+            GUI.Label(new Rect(legend.x + 50, legend.y, 200, 34), $"刘备足迹 · {stations.Count} 站", label);
+
+            // The ladder of names (the top one reached).
+            var lad = new Rect(w - 450, 96, 420, 764);
+            Box(lad, 1f);
+            GUI.Label(new Rect(lad.x, lad.y + 10, lad.width, 50), "名分阶梯", banner);
+            Fill(new Rect(lad.x + 37, lad.y + 120, 2, 560), Silver);
+            for (int i = 0; i < Settlement.LadderSteps.Length; i++)
+            {
+                var r = new Rect(lad.x + 60, lad.y + 80 + i * 108, lad.width - 90, 86);
+                bool top = i == 0;
+                Fill(r, top ? new Color(0.086f, 0.29f, 0.37f) : new Color(0.125f, 0.21f, 0.29f));
+                if (top) { Fill(new Rect(r.x, r.y, r.width, 2), Teal); Fill(new Rect(r.x, r.yMax - 2, r.width, 2), Teal); }
+                Fill(new Rect(lad.x + 30, r.center.y - 8, 16, 16), top ? Teal : Silver);
+                GUI.Label(new Rect(r.x + 24, r.y, 220, r.height), Settlement.LadderSteps[i], head);
+                if (top) GUI.Label(new Rect(r.xMax - 100, r.y + 26, 84, 34), "已达成", tag);
+            }
+
+            // Three panels under the map (above the dialogue box).
+            float py = 692, ph = 168, pw = (w - 500 - 40) / 3f;
+            var p1 = new Rect(30, py, pw, ph);
+            var p2 = new Rect(p1.xMax + 20, py, pw, ph);
+            var p3 = new Rect(p2.xMax + 20, py, pw, ph);
+            foreach (var r in new[] { p1, p2, p3 }) Box(r, 1f);
+            GUI.Label(new Rect(p1.x + 20, p1.y + 8, 200, 40), "战斗", head);
+            GUI.Label(new Rect(p1.x, p1.y + 44, p1.width, 76), "13 / 13", big);
+            GUI.Label(new Rect(p1.x, p1.y + 118, p1.width, 40), $"主线全部告捷 · 选做 {Settlement.OptionalDone}/2", body);
+            GUI.Label(new Rect(p2.x + 20, p2.y + 8, 200, 40), "人物", head);
+            GUI.Label(new Rect(p2.x, p2.y + 44, p2.width, 76), Settlement.Remembering.ToString(), big);
+            GUI.Label(new Rect(p2.x, p2.y + 118, p2.width, 40), $"记住刘备的人 · 下邳回声 {Settlement.EchoesHeard}/{Settlement.EchoCount}", body);
+            GUI.Label(new Rect(p3.x + 20, p3.y + 8, p3.width - 40, 40), $"声望 {Settlement.Reputation} · 关键抉择", head);
+            var choices = Settlement.ChoiceList();
+            float cw = (p3.width - 20) / Mathf.Max(1, choices.Count);
+            for (int i = 0; i < choices.Count; i++)
+            {
+                var cr = new Rect(p3.x + 10 + i * cw, p3.y + 56, cw - 6, 100);
+                Fill(new Rect(cr.x + 4, cr.y, cr.width - 8, 2), Gold);
+                GUI.Label(new Rect(cr.x, cr.y + 8, cr.width, 36), choices[i].topic, tag);
+                GUI.Label(new Rect(cr.x, cr.y + 46, cr.width, 50), choices[i].choice, body);
+            }
         }
 
         void Box(Rect r, float alpha)

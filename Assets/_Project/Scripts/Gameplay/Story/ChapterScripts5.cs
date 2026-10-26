@@ -10,7 +10,7 @@ namespace ThreeKingdoms.Gameplay.Story
     // ChapterText5 holds the words. The settlement cards are written from the play-through when the script starts.
     public static class ChapterScripts5
     {
-        public const string ToDuchang = "to_duchang", AfterDuchang = "after_duchang", AfterXiapi14 = "after_xiapi14", Sanrang = "sanrang";
+        public const string ToDuchang = "to_duchang", AfterDuchang = "after_duchang", AfterXiapi14 = "after_xiapi14", Sanrang = "sanrang", SettlementPreview = "chapter_settlement";
         // Choice flags: ⑧ Taishi Ci's plea, ⑨ how Liu Bei meets Lü Bu, the battle-12 formation, the seal.
         public const string PleaChoice = "f1_", LuBuChoice = "f13_", SealChoice = "f11_";
         public const string Formation = "f12_";
@@ -24,6 +24,7 @@ namespace ThreeKingdoms.Gameplay.Story
             AfterDuchang => AfterDuchangSteps().ToList(),
             AfterXiapi14 => AfterXiapi14Steps().ToList(),
             Sanrang => SanrangSteps().ToList(),
+            SettlementPreview => SettlementSteps().ToList(),
             _ => null,
         };
 
@@ -197,20 +198,25 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return L("narrator", "f14.3");
             yield return EndChronicle();
             yield return Advance(ChapterStep.Echo, ChapterStep.Done05);
-            // 篇章结算 (SYSTEMS_V05 §5): the trail, the ladder of names, battles, people, choices.
-            yield return Chronicle("year.196", "trail");
-            foreach (var x in Dyn(() => Settlement.Trail())) yield return x;
-            yield return EndChronicle();
+            // 篇章结算 (SYSTEMS_V05 §5, design art/v05-ui-concept/ui_chapter_settlement): one page drawn by ChronicleHud
+            // from the play-through; the narrator's lines under it carry the reading.
+            foreach (var x in SettlementSteps()) yield return x;
             yield return Fade(1f);
-            foreach (var x in Dyn(() => Settlement.Ladder(), card: true)) yield return x;
-            foreach (var x in Dyn(() => Settlement.Battles(), card: true)) yield return x;
-            foreach (var x in Dyn(() => Settlement.People(), card: true)) yield return x;
-            foreach (var x in Dyn(() => Settlement.Choices(), card: true)) yield return x;
             yield return Autosave(Save.SaveData.ChapterDoneLocation);
             yield return Card("end5.title", 4f);
             yield return Card("end5.next", 4f);
             yield return Call(GameRun.Clear);
             yield return Load(GameRun.TitleScene);
+        }
+
+        // The settlement page alone (also the dev entry "-stage chapter_settlement" for screenshots).
+        static IEnumerable<StageStep> SettlementSteps()
+        {
+            yield return Chronicle("year.196", "settlement");
+            yield return L("narrator", "settle.1");
+            foreach (var x in Dyn(() => Settlement.Trail())) yield return x;
+            yield return L("narrator", "settle.2");
+            yield return EndChronicle();
         }
 
         // A line or card whose text is written when it is reached (the settlement): a call that fills the next step.

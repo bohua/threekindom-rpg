@@ -27,34 +27,30 @@ namespace ThreeKingdoms.Gameplay.Story
             ["zhending"] = "真定", ["duchang"] = "都昌", ["xuzhou"] = "下邳",
         };
 
+        // The trail's stations in first-visit order, numbered (the design shows each city once).
+        public static IReadOnlyList<(string node, string name)> Stations() =>
+            TrailNodes().Distinct().Select(n => (n, Names.TryGetValue(n, out var s) ? s : n)).ToList();
+
+        public static readonly string[] LadderSteps = { "徐州牧", "豫州刺史", "平原相", "平原令", "安喜尉", "白身" };
+        public static int OptionalDone => (Ch != null && Ch.Has(ChapterState.Drill) ? 1 : 0) + (Ch != null && Ch.Has(ChapterState.Patrol15) ? 1 : 0);
+        public static int Remembering => Ch?.Memories.Select(m => m.Who).Distinct().Count() ?? 0;
+        public static int EchoesHeard => Ch == null ? 0 : FieldScripts5.EchoesHeard(Ch);
+        public static int EchoCount => FieldScripts5.Echoes.Length;
+        public static int Reputation => Run?.Life.Reputation ?? 0;
+
+        // The key choices as (topic, what Liu Bei did).
+        public static IReadOnlyList<(string topic, string choice)> ChoiceList()
+        {
+            var l = new List<(string, string)>();
+            if (Ch == null) return l;
+            l.Add(("槛车", Ch.Recall("lu_zhi", "luzhi_cart") == "B_escort" ? "护送恩师" : "公道自在"));
+            l.Add(("督邮", Ch.Recall("liu_bei", "liubei_duyou") == "A_self" ? "亲手一杖" : "止住三弟"));
+            l.Add(("众望", Ch.Has(ChapterScripts3.HulaoChoice + "0") ? "护住三弟" : "等候二弟"));
+            l.Add(("刺客", Ch.Recall("liu_ping", "liuping_assassin") == "A_free" ? "放他归去" : "问明缘由"));
+            l.Add(("吕布", Ch.Recall("lu_bu", "lubu_xuzhou") == "B_cautious" ? "屯于城外" : "开城相迎"));
+            return l;
+        }
+
         public static string Trail() => "十年足迹：" + string.Join(" → ", TrailNodes().Select(n => Names.TryGetValue(n, out var s) ? s : n));
-
-        public static string Ladder() =>
-            "【名分】白身 → 安喜尉 → 平原令 → 平原相 → 豫州刺史 → 徐州牧\n织席贩履之人，第一次被一州军民托付。";
-
-        public static string Battles()
-        {
-            int optional = (Ch != null && Ch.Has(ChapterState.Drill) ? 1 : 0) + (Ch != null && Ch.Has(ChapterState.Patrol15) ? 1 : 0);
-            return $"【征战】主线 13 战全部告捷；选做 {optional}/2（校场演武、小沛巡防）。";
-        }
-
-        public static string People()
-        {
-            int n = Ch?.Memories.Select(m => m.Who).Distinct().Count() ?? 0;
-            int echoes = Ch?.Flags.Count(f => f.StartsWith("echo:")) ?? 0;
-            return $"【人心】记住刘备的人：{n} 位；下邳城中听过的回声：{echoes} 条。";
-        }
-
-        public static string Choices()
-        {
-            var parts = new List<string>();
-            if (Ch == null) return "【抉择】";
-            parts.Add("槛车：" + (Ch.Recall("lu_zhi", "luzhi_cart") == "B_escort" ? "护送恩师一程" : "恩师清白，自有公论"));
-            parts.Add("督邮：" + (Ch.Recall("liu_bei", "liubei_duyou") == "A_self" ? "亲手一杖" : "止住三弟"));
-            parts.Add("虎牢关：" + (Ch.Has(ChapterScripts3.HulaoChoice + "0") ? "以众望护三弟" : "信三弟，待二弟"));
-            parts.Add("刺客：" + (Ch.Recall("liu_ping", "liuping_assassin") == "A_free" ? "放他归去" : "问明缘由"));
-            parts.Add($"声望：{Run?.Life.Reputation ?? 0}");
-            return "【抉择】" + string.Join("；", parts) + "。";
-        }
     }
 }
