@@ -34,7 +34,10 @@ namespace ThreeKingdoms.UI.Story
         public Texture2D InkDrop;
         public Painting[] Paintings = new Painting[0];
         [Header("Timing (seconds)")]
-        public float FreezeTime = 0.5f, UnrollTime = 3.0f, SealTime = 0.22f;
+        public float FreezeTime = 0.5f, SealTime = 0.22f;
+        // A new name so the scenes' saved 1-second value from the old quick unroll no longer applies (user 2026-10-26:
+        // the slow right-to-left opening did not show).
+        [Tooltip("Seconds for the scroll to open from right to left")] public float UnrollSeconds = 3.5f;
         [Tooltip("Seconds for the painting to rise from faint to full once the scroll is open (user 2026-10-26)")]
         public float PaintingFadeTime = 3.0f;
         [Tooltip("Characters typed per second")] public float TypeSpeed = 45f;
@@ -275,7 +278,7 @@ namespace ThreeKingdoms.UI.Story
                 {
                     bool rush = advance;   // confirm opens and writes the rest at once
                     advance = false;
-                    float k = Mathf.Clamp01((Time.unscaledTime - started) / Mathf.Max(0.05f, UnrollTime));
+                    float k = Mathf.Clamp01((Time.unscaledTime - started) / Mathf.Max(0.05f, UnrollSeconds));
                     open = rush ? ScrollWidth : Mathf.Max(open, ScrollWidth * Mathf.SmoothStep(0f, 1f, k));
                     OpenFromRight(open);
                     // The title, then each glyph once the opened paper has reached its column, at writing speed.
