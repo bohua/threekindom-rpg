@@ -165,13 +165,34 @@ namespace ThreeKingdoms.EditorTools
 
         public const string TitlePath = "Assets/_Project/Scenes/Title.unity";
 
-        // Title screen (game-ui GDD): new game, load, quit. A plain dark backdrop until key art exists.
+        // Only the title scene (design/ux/title-menu.md), so the other scenes are never re-saved by this branch.
+        public static void BuildTitleFromCommandLine()
+        {
+            try { BuildTitle(); AssetDatabase.SaveAssets(); Debug.Log("TITLE_BUILT"); EditorApplication.Exit(0); }
+            catch (System.Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
+        }
+
+        // Title screen after the Codex design (art/title-menu-concept): continue, new game, load, settings, quit on a
+        // white backdrop with the logo. The art lives in Resources/TitleMenu; it is drawn by UI Toolkit, uncompressed.
         static void BuildTitle()
         {
+            foreach (var name in new[] { "title_plate", "title_cursor" })
+            {
+                var importer = AssetImporter.GetAtPath($"Assets/_Project/Resources/TitleMenu/{name}.png") as TextureImporter;
+                if (!importer) continue;
+                importer.textureType = TextureImporterType.Default;
+                importer.alphaIsTransparency = name == "title_cursor";
+                importer.mipmapEnabled = false;
+                importer.npotScale = TextureImporterNPOTScale.None;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.maxTextureSize = 2048;
+                importer.SaveAndReimport();
+            }
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var cam = new GameObject("Main Camera") { tag = "MainCamera" }.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.04f, 0.05f, 0.08f);
+            cam.backgroundColor = Color.white;
             var go = new GameObject("Title");
             var controller = go.AddComponent<TitleController>();
             controller.Catalog = AssetDatabase.LoadAssetAtPath<BattleCatalog>(BattleDataBuilder.CatalogPath);
