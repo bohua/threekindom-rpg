@@ -18,6 +18,7 @@ Shader "ThreeKingdoms/GroundSplat"
         _PixelsPerMetre ("Pixels per metre", Float) = 30
         _Ragged ("Border raggedness", Range(0, 0.5)) = 0.22
         _Smooth ("High-res painted layers (1 = no pixel snapping, soft noisy blends)", Float) = 0
+        _Tint ("Tint (a region's own grade of the shared ground)", Color) = (1, 1, 1, 1)
     }
     SubShader
     {
@@ -46,6 +47,7 @@ Shader "ThreeKingdoms/GroundSplat"
                 float _PixelsPerMetre;
                 float _Ragged;
                 float _Smooth;
+                half4 _Tint;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
@@ -96,7 +98,7 @@ Shader "ThreeKingdoms/GroundSplat"
                 albedo = lerp(albedo, SAMPLE_TEXTURE2D(_LayerG, sampler_trilinear_repeat, uv + 0.57).rgb, k.g);
                 albedo = lerp(albedo, SAMPLE_TEXTURE2D(_LayerB, sampler_trilinear_repeat, uv * 0.83 + 0.13).rgb, k.b);
                 albedo = lerp(albedo, SAMPLE_TEXTURE2D(_LayerA, sampler_trilinear_repeat, uv + 0.79).rgb, k.a);
-                return albedo;
+                return albedo * _Tint.rgb;
             }
 
             half4 frag(Varyings i) : SV_Target
@@ -126,6 +128,7 @@ Shader "ThreeKingdoms/GroundSplat"
                 if (w.b > t2) albedo = SAMPLE_TEXTURE2D(_LayerB, sampler_point_repeat, uv + 0.13).rgb;
                 if (w.a > t3) albedo = SAMPLE_TEXTURE2D(_LayerA, sampler_point_repeat, uv + 0.79).rgb;
 
+                albedo *= _Tint.rgb;
                 float3 n3 = normalize(i.normalWS);
                 Light main = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 half3 lit = main.color * (main.shadowAttenuation * main.distanceAttenuation) * saturate(dot(n3, main.direction)) + SampleSH(n3);

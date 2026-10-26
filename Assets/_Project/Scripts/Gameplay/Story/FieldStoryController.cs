@@ -81,6 +81,8 @@ namespace ThreeKingdoms.Gameplay.Story
             Stage.Changed += () => Changed?.Invoke();
             var spot = Run.NextArrival == GameRun.Arrival.ReturnFromBattle && ReturnSpot && (Location == Place.Anxi && Run.Chapter2.Step == ChapterStep.AnxiBandits || Location == Place.Gongsun || Location == Place.Suanzao || Location == Place.Pingyuan || Location == Place.Xiapi)
                 ? ReturnSpot : ArrivalSpot;
+            var gate = RegionPortal.TakeArrival(out _);   // back in through a gate from the open region (R2 中山)
+            if (gate) spot = gate;
             Run.NextArrival = GameRun.Arrival.NewGame;
             PlaceAt(Player.transform, spot ? spot.position : Player.transform.position);
             ShowFollowers();

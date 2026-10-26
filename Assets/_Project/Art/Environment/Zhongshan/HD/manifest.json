@@ -1,0 +1,88 @@
+{
+    "files": [
+        {
+            "filename": "bridge_rail.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "dirt_road_hd.png",
+            "tile_axes": "y"
+        },
+        {
+            "filename": "farm_field_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "forest_floor_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "hill_slope_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "hill_top_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "packed_earth_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "pebble_flat_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "plain_grass_dry_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "plain_grass_hd_a.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "plain_grass_hd_b.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "river_water_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "road_edge_hd.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "roof_anxi_eave.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "roof_anxi_ridge.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "roof_anxi_tiles.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "sand_flat_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "shore_pebble_hd.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "terrace_wall_hd.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "wall_anxi_coping.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "wall_anxi_rammed.png",
+            "tile_axes": "x"
+        }
+    ]
+}

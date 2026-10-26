@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Jrpg;
 using ThreeKingdoms.App;
+using ThreeKingdoms.Core.Story;
 using ThreeKingdoms.Data.Battle;
 using ThreeKingdoms.Gameplay;
 using ThreeKingdoms.Gameplay.Story;
@@ -719,6 +720,16 @@ namespace ThreeKingdoms.EditorTools
             c.FlagObjects = new[] { broken, mended, gap, timber };
             c.ArrivalSpot = Spot(f, "Arrival (inside the south gate)", new Vector3(0, 0, -21f));
             c.ReturnSpot = Spot(f, "Return (inside the east gate)", new Vector3(31f, 0, 0));
+            // Out through the south gate into the Zhongshan region (R2) while Liu Bei holds the post; back in arrives
+            // at the arrival spot above.
+            var south = new GameObject("Portal to the Zhongshan region").AddComponent<RegionPortal>();
+            south.transform.SetParent(env, false);
+            south.transform.position = new Vector3(0, 0, -30f);
+            south.Size = new Vector2(8f, 3f);
+            south.TargetScene = ZhongshanBuilder.SceneName;
+            south.ArrivalSpot = ZhongshanBuilder.AnxiSouthArrival;
+            south.Facing = Vector3.back;
+            south.Steps = new[] { (int)ChapterStep.Anxi, (int)ChapterStep.AnxiBandits };
             Huds(c);
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), AnxiPath);
         }
