@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f58774cdd05485f4a9f581414a12d3d3, type: 3}
+  m_Name: Battle12_Duchang
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.EncounterDefinition
+  Id: battle_12
+  DisplayName: "\u7B2C\u5341\u4E8C\u6218 \xB7 \u90FD\u660C\u89E3\u56F4"
+  Enemies:
+  - General: {fileID: 11400000, guid: 5d0cda8dba6bae54c87308d3233f29e9, type: 2}
+    Level: 13
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 7c8f3be2cb770384289a48a2108d1e3f, type: 2}
+    Level: 12
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 7c8f3be2cb770384289a48a2108d1e3f, type: 2}
+    Level: 12
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 7c8f3be2cb770384289a48a2108d1e3f, type: 2}
+    Level: 11
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 7c8f3be2cb770384289a48a2108d1e3f, type: 2}
+    Level: 11
+    FocusEscort: 0
+  Ai: 1
+  SkillEveryRounds: 3
+  ExpReward: 150
+  CopperReward: 180
+  Allies: []
+  Events: []

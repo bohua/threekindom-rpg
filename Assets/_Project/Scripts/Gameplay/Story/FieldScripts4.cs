@@ -22,6 +22,8 @@ namespace ThreeKingdoms.Gameplay.Story
             var ch = c.Run.Chapter2;
             if (ch.Step == ChapterStep.Pingyuan && !ch.Has(ChapterScripts4.PingyuanGreeted)) return Arrival();
             if (ch.Step == ChapterStep.Zhending && !ch.Has(ChapterScripts4.Assassin)) return AssassinScene(c);
+            if (ch.Step == ChapterStep.Beihai)   // 0.5: Taishi Ci (F1); after choice ⑧B he waits at the south gate
+                return ch.Has(ChapterScripts5.TaishiArrived) ? new[] { Autosave(RegionLocation), Show("taishi_ci", -57f, -190f, "back") } : TaishiArrival();
             if (ch.Step == ChapterStep.Pingyuan || ch.Step == ChapterStep.PingyuanSafe || ch.Step == ChapterStep.Zhending)
                 return new[] { Autosave(RegionLocation) };
             return null;
@@ -67,6 +69,30 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return Load(GameRun.StageScene, ChapterScripts4.End04);
         }
 
+        // F1 太史慈突围求救（史实·太史慈传；“孔北海知世间有刘备邪！”原文）; choice ⑧ (both send troops).
+        static IEnumerable<StageStep> TaishiArrival()
+        {
+            yield return Autosave(RegionLocation);
+            yield return Show("liu_bei", -60f, -148f, "front");
+            yield return Show("guan_yu", -63f, -150f, "front");
+            yield return Show("zhang_fei", -57f, -150f, "front");
+            yield return L("narrator", "f1.1");
+            yield return Show("taishi_ci", -60f, -172f, "back");
+            yield return Move("taishi_ci", -60f, -155f, 1.8f);
+            foreach (var s in Lines("taishi_ci", "f1.2", "taishi_ci", "f1.3", "liu_bei", "f1.4", "zhang_fei", "f1.5")) yield return s;
+            yield return Choice("liu_bei", "f1.prompt", ChapterScripts5.PleaChoice, new[] { "f1.a", "f1.b" },
+                new[]
+                {
+                    L("liu_bei", "f1.a.1"), L("taishi_ci", "f1.a.2"), Remember("taishi_ci", "taishici_plea", "A_now", "mem.taishici.A"),
+                    Flag(ChapterScripts5.TaishiArrived), Fade(1f), Load(GameRun.StageScene, ChapterScripts5.ToDuchang),
+                },
+                new[]
+                {
+                    L("liu_bei", "f1.b.1"), L("taishi_ci", "f1.b.2"), Remember("taishi_ci", "taishici_plea", "B_asked", "mem.taishici.B"),
+                    Flag(ChapterScripts5.TaishiArrived), Move("taishi_ci", -57f, -190f, 2.4f), L("system", "f1.b.3"),
+                });
+        }
+
         static StageStep Show(string id, float x, float z, string facing) => Actor(id, null, x, z, facing);
 
         // ---------- prompts, marks, goals ----------
@@ -83,6 +109,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 case "py_ferry": return ch.Step == ChapterStep.PingyuanSafe ? "raw:[确认] 渡河北上（随公孙瓒拒袁绍）" : "talk:" + id;
                 case "canal": return ch.Has(ChapterScripts4.Canal) ? null : "raw:[确认] 看看水渠";
                 case "py_merchant": return "raw:[确认] 与商贩交谈（买卖）";
+                case "taishi_ci": return ch.Step == ChapterStep.Beihai ? "raw:[确认] 与太史慈同赴北海" : "talk:" + id;
                 default: return "talk:" + id;
             }
         }
@@ -98,6 +125,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 "tian_yu" => !ch.Has(TrainFlag(ch)),
                 "py_elder" => !ch.Has(ChapterScripts4.Porridge),
                 "py_farmer_a" => !ch.Has(ChapterScripts4.Canal),
+                "taishi_ci" => ch.Step == ChapterStep.Beihai,
                 _ => false,
             };
         }
@@ -109,6 +137,7 @@ namespace ThreeKingdoms.Gameplay.Story
             {
                 ChapterStep.Pingyuan => "目标：流寇犯境——到南门找驿卒，出城迎击",
                 ChapterStep.PingyuanSafe => "目标：整顿平原，准备好后到南门外平原津渡河北上",
+                ChapterStep.Beihai => "目标：北海告急——整备后到南门找太史慈，同赴都昌",
                 _ => "目标：回县衙",
             };
         }
@@ -173,6 +202,14 @@ namespace ThreeKingdoms.Gameplay.Story
                             new[] { Fade(1f), Load(GameRun.StageScene, ChapterScripts4.ToPanhe) }, new StageStep[0]),
                     };
                 case "py_post_guard": return new[] { L("py_post_guard", "py.postguard") };
+                case "taishi_ci":
+                    if (ch.Step != ChapterStep.Beihai) return null;
+                    return new[]
+                    {
+                        L("taishi_ci", "f1.gate"),
+                        Choice("system", "f1.gate.ask", "pyb_", new[] { "f1.gate.yes", "gs.leave.no" },
+                            new[] { Fade(1f), Load(GameRun.StageScene, ChapterScripts5.ToDuchang) }, new StageStep[0]),
+                    };
                 case "py_merchant": return new[] { L("py_merchant", "py.merchant"), Call(() => c.pendingPanel = TownStoryController.ShopPanel) };
                 case "py_man": case "py_woman": case "py_child":
                     return new[] { L(id, ch.Step >= ChapterStep.PingyuanSafe ? $"py.{id}.after" : $"py.{id}") };

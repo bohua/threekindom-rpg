@@ -48,7 +48,7 @@ namespace ThreeKingdoms.EditorTools
             BuildCamp();
             BuildAnxi();
             BuildChapter3();   // 0.3: Gongsun Zan's garrison, the Suanzao camp (ChapterFieldBuilder3)
-            var paths = new[] { StagePath, CampPath, AnxiPath, GongsunPath, SuanzaoPath };
+            var paths = new[] { StagePath, CampPath, AnxiPath, GongsunPath, SuanzaoPath, XiapiPath };
             var scenes = EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path)).ToList();
             scenes.AddRange(paths.Select(p => new EditorBuildSettingsScene(p, true)));
             EditorBuildSettings.scenes = scenes.ToArray();

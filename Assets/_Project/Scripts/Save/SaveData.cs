@@ -15,6 +15,8 @@ namespace ThreeKingdoms.Save
         public const string CampLocation = "camp", AnxiLocation = "anxi";
         // 0.3: Gongsun Zan's garrison and the Suanzao camp.
         public const string GongsunLocation = "camp_gongsun", SuanzaoLocation = "suanzao";
+        // 0.5: Xiapi; the chapter-complete save (第二篇章 continues from it).
+        public const string XiapiLocation = "xiapi", ChapterDoneLocation = "chapter1_done";
         // A post station in an open region (chapter 1 art probe): "region:R4".
         public const string RegionPrefix = "region:";
 

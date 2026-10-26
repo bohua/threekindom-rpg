@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f58774cdd05485f4a9f581414a12d3d3, type: 3}
+  m_Name: Battle15_Xiaopei
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.EncounterDefinition
+  Id: battle_15
+  DisplayName: "\u9009\u505A \xB7 \u5C0F\u6C9B\u5DE1\u9632"
+  Enemies:
+  - General: {fileID: 11400000, guid: b41bffaf3f6030948b2f3725988bf2bf, type: 2}
+    Level: 14
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: b41bffaf3f6030948b2f3725988bf2bf, type: 2}
+    Level: 13
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 6827ae0822c55034a8e4ddf15ee95b8d, type: 2}
+    Level: 13
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 6827ae0822c55034a8e4ddf15ee95b8d, type: 2}
+    Level: 13
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: b41bffaf3f6030948b2f3725988bf2bf, type: 2}
+    Level: 13
+    FocusEscort: 0
+  Ai: 1
+  SkillEveryRounds: 3
+  ExpReward: 120
+  CopperReward: 150
+  Allies: []
+  Events: []

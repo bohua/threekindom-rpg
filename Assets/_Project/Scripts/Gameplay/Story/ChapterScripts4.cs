@@ -24,7 +24,7 @@ namespace ThreeKingdoms.Gameplay.Story
             AfterPanhe => AfterPanheSteps().ToList(),
             AfterJieqiao => AfterJieqiaoSteps().ToList(),
             End04 => End04Steps().ToList(),
-            _ => null,
+            _ => ChapterScripts5.Stage(id),
         };
 
         // E1 袁绍夺冀州 (the chronicle), E2 平原令 in Gongsun Zan's hall, the march to Pingyuan (191).
@@ -127,18 +127,18 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return Load(GameRun.BohaiScene);
         }
 
-        // After E9 in Pingyuan: the 后事预告 (not written into the story state), scroll ⑧ with the seal, the title.
+        // After E9 in Pingyuan: scroll ⑧ (no seal since 0.5), then straight on into 193 (V05_XUZHOU_PLAN §2): Taishi Ci
+        // reaches Pingyuan (F1, in the field).
         static IEnumerable<StageStep> End04Steps()
         {
             yield return Background("map");
             yield return Fade(1f);
-            for (int i = 1; i <= 4; i++) yield return Card("after4." + i, 3.5f);
             yield return Scroll(ScrollJieqiao);
             yield return Advance(ChapterStep.Zhending, ChapterStep.Done04);
-            yield return Card("end4.title", 4f);
-            yield return Card("end4.thanks", 4f);
-            yield return Call(GameRun.Clear);
-            yield return Load(GameRun.TitleScene);
+            yield return Advance(ChapterStep.Done04, ChapterStep.Beihai);
+            yield return Flag(ChapterState.Year193);
+            yield return Card("card.beihai_news", 3.5f);
+            yield return Load(GameRun.BohaiScene);
         }
 
         // ---------- battles ----------
@@ -148,7 +148,7 @@ namespace ThreeKingdoms.Gameplay.Story
             "battle_9" => new[] { ("pingyuan_folk", "pingyuan_defended", "seen", "mem.pingyuan_defended") },
             "battle_10" => new[] { ("wen_chou", "wenchou_panhe", "seen", "mem.wenchou_panhe") },
             "battle_11" => new[] { ("gongsun_zan", "gongsun_jieqiao", "rearguard", "mem.gongsun_jieqiao") },
-            _ => null,
+            _ => ChapterScripts5.VictoryMemories(encounterId),
         };
 
         public static (string scene, string stage) AfterVictory(string encounterId) => encounterId switch
@@ -156,7 +156,7 @@ namespace ThreeKingdoms.Gameplay.Story
             "battle_9" => (GameRun.BohaiScene, null),
             "battle_10" => (GameRun.StageScene, AfterPanhe),
             "battle_11" => (GameRun.StageScene, AfterJieqiao),
-            _ => (null, null),
+            _ => ChapterScripts5.AfterVictory(encounterId),
         };
     }
 }

@@ -19,6 +19,7 @@ namespace ThreeKingdoms.UI.Story
             ["suanzao"] = new Vector2(0.271f, 0.667f), ["hulao"] = new Vector2(0.204f, 0.690f), ["luoyang"] = new Vector2(0.172f, 0.694f),
             ["ye"] = new Vector2(0.294f, 0.562f), ["xuzhou"] = new Vector2(0.483f, 0.727f),
             ["jieqiao"] = new Vector2(0.334f, 0.463f), ["zhending"] = new Vector2(0.290f, 0.460f),
+            ["duchang"] = new Vector2(0.5625f, 0.511f), ["puyang"] = new Vector2(0.317f, 0.613f), ["xu"] = new Vector2(0.240f, 0.760f),
         };
 
         // Powers: name and banner colour.
@@ -29,6 +30,8 @@ namespace ThreeKingdoms.UI.Story
             ["coalition"] = ("关东诸侯", new Color(0.62f, 0.12f, 0.20f)), ["sun"] = ("孙坚", new Color(0.86f, 0.30f, 0.22f)),
             ["han"] = ("韩馥", new Color(0.36f, 0.56f, 0.45f)), ["tao"] = ("陶谦", new Color(0.52f, 0.70f, 0.70f)),
             ["none"] = ("焦土", new Color(0.35f, 0.35f, 0.35f)),
+            ["cao"] = ("曹操", new Color(0.20f, 0.20f, 0.24f)), ["lubu"] = ("吕布", new Color(0.78f, 0.30f, 0.20f)),
+            ["kong"] = ("孔融", new Color(0.36f, 0.56f, 0.62f)), ["liu"] = ("刘备", new Color(0.93f, 0.52f, 0.18f)),
         };
 
         // Layouts: city → power, and where Liu Bei's piece stands.
@@ -39,6 +42,9 @@ namespace ThreeKingdoms.UI.Story
             ["y190"] = (new Dictionary<string, string> { ["ji"] = "gongsun", ["luoyang"] = "dong", ["hulao"] = "dong", ["suanzao"] = "coalition", ["ye"] = "han", ["xuzhou"] = "tao" }, "suanzao"),
             ["y191b"] = (new Dictionary<string, string> { ["ji"] = "gongsun", ["ye"] = "han", ["xuzhou"] = "tao" }, "ji"),
             ["y192"] = (new Dictionary<string, string> { ["ji"] = "gongsun", ["ye"] = "yuan_shao", ["xuzhou"] = "tao", ["pingyuan"] = "gongsun" }, "pingyuan"),
+            ["y193"] = (new Dictionary<string, string> { ["ji"] = "gongsun", ["ye"] = "yuan_shao", ["puyang"] = "cao", ["xuzhou"] = "tao", ["duchang"] = "kong" }, "pingyuan"),
+            ["y194"] = (new Dictionary<string, string> { ["ji"] = "gongsun", ["ye"] = "yuan_shao", ["puyang"] = "cao", ["xuzhou"] = "tao" }, "xuzhou"),
+            ["y196"] = (new Dictionary<string, string> { ["ye"] = "yuan_shao", ["xu"] = "cao", ["xuzhou"] = "liu", ["puyang"] = "lubu" }, "xuzhou"),
             ["y191"] = (new Dictionary<string, string> { ["ji"] = "gongsun", ["luoyang"] = "none", ["suanzao"] = "none", ["ye"] = "han", ["xuzhou"] = "tao" }, "ji"),
         };
 
@@ -60,6 +66,20 @@ namespace ThreeKingdoms.UI.Story
             var yr = new Rect(w / 2 - 260, 24, 520, 64);
             Box(yr, 0.92f);
             GUI.Label(yr, StoryText.Line(c.Year), banner);
+
+            // The chapter's trail (the settlement): an orange line through every city Liu Bei passed.
+            if (c.Layout == "trail")
+            {
+                Vector2? last = null;
+                foreach (var n in ThreeKingdoms.Gameplay.Story.Settlement.TrailNodes())
+                {
+                    if (!Cities.TryGetValue(n, out var p) && !StageHud.Nodes.TryGetValue(n, out p)) continue;
+                    var at = new Vector2(p.x * w, p.y * h);
+                    if (last is Vector2 a) DrawLine(a, at, 4f, new Color(0.93f, 0.52f, 0.18f, 0.9f));
+                    Fill(new Rect(at.x - 6, at.y - 6, 12, 12), new Color(0.93f, 0.52f, 0.18f));
+                    last = at;
+                }
+            }
 
             // Powers.
             if (Layouts.TryGetValue(c.Layout ?? "", out var layout))
@@ -102,6 +122,15 @@ namespace ThreeKingdoms.UI.Story
             Fill(r, new Color(Ink.r, Ink.g, Ink.b, alpha));
             Fill(new Rect(r.x, r.y, r.width, 1.5f), Silver); Fill(new Rect(r.x, r.yMax - 1.5f, r.width, 1.5f), Silver);
             Fill(new Rect(r.x, r.y, 1.5f, r.height), Silver); Fill(new Rect(r.xMax - 1.5f, r.y, 1.5f, r.height), Silver);
+        }
+
+        static void DrawLine(Vector2 a, Vector2 b, float width, Color c)
+        {
+            var m = GUI.matrix;
+            float angle = Mathf.Atan2(b.y - a.y, b.x - a.x) * Mathf.Rad2Deg;
+            GUIUtility.RotateAroundPivot(angle, a);
+            Fill(new Rect(a.x, a.y - width / 2f, (b - a).magnitude, width), c);
+            GUI.matrix = m;
         }
 
         static void Fill(Rect r, Color c)

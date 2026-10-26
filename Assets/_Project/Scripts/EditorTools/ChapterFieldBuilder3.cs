@@ -26,8 +26,10 @@ namespace ThreeKingdoms.EditorTools
             Copy(Path.Combine(Art, "v03-suanzao-camp-hd"), $"{ArtRoot3}/Suanzao");
             Copy(Path.Combine(Art, "v03-stage-bg"), $"{ArtRoot3}/Stage", f => f.StartsWith("stage_"));
             Copy(Path.Combine(Art, "v04-stage-bg"), $"{ArtRoot3}/Stage", f => f.StartsWith("stage_"));
+            Copy(Path.Combine(Art, "v05-stage-bg"), $"{ArtRoot3}/Stage", f => f.StartsWith("stage_"));
+            Copy(Path.Combine(Art, "v05-xiapi-hd"), $"{ArtRoot3}/Xiapi");   // 0.5
             AssetDatabase.Refresh();
-            foreach (var sub in new[] { "Gongsun", "Suanzao", "Stage" })
+            foreach (var sub in new[] { "Gongsun", "Suanzao", "Stage", "Xiapi" })
             {
                 string d = $"{ArtRoot3}/{sub}";
                 if (!Directory.Exists(d)) continue;
@@ -57,6 +59,7 @@ namespace ThreeKingdoms.EditorTools
         {
             BuildGongsun();
             BuildSuanzao();
+            BuildXiapi();   // 0.5 (ChapterFieldBuilder5)
         }
 
         // ---------- the story stage (0.3) ----------
@@ -74,6 +77,11 @@ namespace ThreeKingdoms.EditorTools
             yield return ("jieqiao_after", T("stage_jieqiao_after"), new Color(0.48f, 0.52f, 0.56f));
             yield return ("zhending_home", T("stage_zhending_home"), new Color(0.70f, 0.64f, 0.52f));
             yield return ("gongsun_hall", T("stage_gongsun_hall"), new Color(0.66f, 0.62f, 0.56f));
+            // 0.5 (Codex art/v05-stage-bg)
+            yield return ("duchang_outside", T("stage_duchang_outside"), new Color(0.78f, 0.70f, 0.54f));
+            yield return ("beihai_hall", T("stage_beihai_hall"), new Color(0.62f, 0.58f, 0.54f));
+            yield return ("refugee_road", T("stage_refugee_road"), new Color(0.70f, 0.66f, 0.56f));
+            yield return ("xiapi_hall", T("stage_xiapi_hall"), new Color(0.56f, 0.40f, 0.32f));
         }
 
         static IEnumerable<(string name, string key)> Stage3Actors()
@@ -91,6 +99,14 @@ namespace ThreeKingdoms.EditorTools
             yield return ("NpcTianKai", Folk("E07"));
             yield return ("NpcZhaoYun", Folk("E01"));
             yield return ("NpcZhaoBrother", Folk("E11"));
+            // 0.5
+            yield return ("NpcTaoQian", Folk("D09"));
+            yield return ("NpcTaishiCi", Folk("F01"));
+            yield return ("NpcMiZhu", Folk("F03"));
+            yield return ("NpcChenDeng", Folk("F04"));
+            yield return ("NpcCaoBao", Folk("F06"));
+            yield return ("NpcLuBu", Folk("F10"));
+            yield return ("NpcRefugee", Folk("F15"));
         }
 
         // ---------- Gongsun Zan's garrison (S4, about 70 × 50 m; south gate z −22, command hall steps z 15.5) ----------

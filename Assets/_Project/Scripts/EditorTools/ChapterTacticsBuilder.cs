@@ -20,12 +20,19 @@ namespace ThreeKingdoms.EditorTools
         const string GroundDir = "Assets/_Project/Art/Chapter2/Tactics";
         const string DefaultGroundSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v02-tactics-ground";
         static readonly string[] CharKeys = { "ZhangBao", "ZhangLiang", "NpcDongZhuo", "NpcBandit", "NpcBanditChief", "NpcYellowGuard", "YellowTurban", "NpcCaoCao", "NpcHanSoldier",
-            "NpcBaimaRider", "NpcZhaoYun", "NpcGongsunZan", "NpcWenChou", "NpcQuYi", "NpcXiandeng", "NpcCrossbow" };   // 0.4   // 0.3: the White Horse riders of the drill (Lü Bu and the Bingzhou riders use the prototype's own sheets)
+            "NpcBaimaRider", "NpcZhaoYun", "NpcGongsunZan", "NpcWenChou", "NpcQuYi", "NpcXiandeng", "NpcCrossbow",
+            "NpcTaishiCi", "NpcGuanHai", "NpcYtRemnant", "NpcCaoBao", "NpcYuJin", "NpcCaoRen", "NpcCaoInfantry", "NpcCaoCavalry", "NpcDanyang" };   // 0.5   // 0.4   // 0.3: the White Horse riders of the drill (Lü Bu and the Bingzhou riders use the prototype's own sheets)
         // 0.3 battles 7–8 (V03_TAODONG_PLAN §4).
         public static readonly string[] Chapter3Paths = { "Assets/_Project/Scenes/Battle_Drill07.unity", "Assets/_Project/Scenes/Battle_Hulao08.unity" };
         // 0.4 battles 9–11 (V04_HEBEI_PLAN §4).
         public static readonly string[] Chapter4Paths =
             { "Assets/_Project/Scenes/Battle_Pingyuan09.unity", "Assets/_Project/Scenes/Battle_Panhe10.unity", "Assets/_Project/Scenes/Battle_Jieqiao11.unity" };
+        // 0.5 battles 12–15 (V05_XUZHOU_PLAN §4).
+        public static readonly string[] Chapter5Paths =
+        {
+            "Assets/_Project/Scenes/Battle_Duchang12.unity", "Assets/_Project/Scenes/Battle_XiapiEast13.unity",
+            "Assets/_Project/Scenes/Battle_XiapiWalls14.unity", "Assets/_Project/Scenes/Battle_Xiaopei15.unity",
+        };
 
         static string GroundSource
         {
@@ -46,8 +53,8 @@ namespace ThreeKingdoms.EditorTools
         {
             var ground = ImportGround();
             EnsurePixelMaterials();
-            var ids = new[] { "battle_4", "battle_5", "battle_6", "battle_7", "battle_8", "battle_9", "battle_10", "battle_11" };
-            var paths = BattleSceneBuilder.ChapterBattlePaths.Concat(Chapter3Paths).Concat(Chapter4Paths).ToArray();
+            var ids = new[] { "battle_4", "battle_5", "battle_6", "battle_7", "battle_8", "battle_9", "battle_10", "battle_11", "battle_12", "battle_13", "battle_14", "battle_15" };
+            var paths = BattleSceneBuilder.ChapterBattlePaths.Concat(Chapter3Paths).Concat(Chapter4Paths).Concat(Chapter5Paths).ToArray();
             for (int i = 0; i < ids.Length; i++)
             {
                 var game = BingshuTacticsBuilder.CreateScene();

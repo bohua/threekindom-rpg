@@ -55,7 +55,8 @@ public sealed class Chapter3RulesTests
     {
         Assert.IsFalse(InkScrollText.Sealed("anxi"));
         Assert.IsFalse(InkScrollText.Sealed(ChapterScripts3.ScrollFenLuoyang), "0.4 moved the seal to 界橋");
-        Assert.IsTrue(InkScrollText.Sealed(ChapterScripts4.ScrollJieqiao));
+        Assert.IsFalse(InkScrollText.Sealed(ChapterScripts4.ScrollJieqiao), "0.5 moved the seal to 三讓徐州");
+        Assert.IsTrue(InkScrollText.Sealed(ChapterScripts5.ScrollSanrang));
         foreach (var id in new[] { ChapterScripts3.ScrollWenjiu, ChapterScripts3.ScrollSanying, ChapterScripts3.ScrollFenLuoyang })
         {
             Assert.IsTrue(InkScrollText.TryGet(id, out var e), id);

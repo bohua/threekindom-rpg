@@ -24,7 +24,7 @@ namespace ThreeKingdoms.EditorTools
             var config = Asset<BattleConfigDefinition>("Battle/BattleConfig", c =>
             {
                 c.AdvantagePercent = 140; c.GuardPercent = 50; c.MinModifierPercent = 20; c.MaxAttribute = 100;
-                c.ExpTable = new[] { 0, 10, 30, 60, 100, 150, 210, 280, 370, 480, 610, 760 };   // 0.2: level cap 5 → 7 (SYSTEMS_V02 §4); 0.3: → 9 (SYSTEMS_V03 §4); 0.4: → 12 (SYSTEMS_V04 §6)
+                c.ExpTable = new[] { 0, 10, 30, 60, 100, 150, 210, 280, 370, 480, 610, 760, 930, 1120, 1330 };   // 0.2: level cap 5 → 7 (SYSTEMS_V02 §4); 0.3: → 9 (SYSTEMS_V03 §4); 0.4: → 12 (SYSTEMS_V04 §6); 0.5: → 15 (SYSTEMS_V05 §6)
             });
             var troops = Asset<TroopTableDefinition>("Battle/TroopTable", t =>
             {
@@ -140,6 +140,23 @@ namespace ThreeKingdoms.EditorTools
                 (wenChou, 12), (yuanCav, 11), (yuanCav, 11), (yuanCav, 10));
             var b11 = Encounter("battle_11", "Battle11_Jieqiao", "第十一战 · 界桥殿后", EnemyAiKind.FacingSlot, 130, 150,
                 (quYi, 12), (xiandeng, 11), (xiandeng, 11), (crossbow, 11), (crossbow, 11));
+            // 0.5 徐州篇 (V05_XUZHOU_PLAN §4): Guan Hai at Duchang; Cao's army east of Xiapi and at its walls; the Xiaopei patrol.
+            var guanHai = General("guan_hai", "GuanHai", "管亥", TroopType.YellowTurban, 86, 66, 30, 0, 0, 0, (1, enemyCharge), (1, enemySweep));
+            var ytRemnant = General("yt_remnant", "YellowRemnant", "黄巾余部", TroopType.YellowTurban, 64, 52, 24, 0, 0, 0);
+            var caoInf = General("cao_infantry", "CaoInfantry", "曹军步卒", TroopType.Infantry, 70, 64, 30, 0, 0, 0);
+            var caoCav = General("cao_cavalry", "CaoCavalry", "曹军骑兵", TroopType.Cavalry, 72, 60, 28, 0, 0, 0);
+            var caoArcher = General("cao_archer", "CaoArcher", "曹军弓手", TroopType.Archer, 66, 56, 34, 0, 0, 0);
+            var yuJin = General("yu_jin", "YuJin", "于禁", TroopType.Infantry, 84, 90, 70, 0, 0, 0, (1, enemyCharge));
+            var caoRen = General("cao_ren", "CaoRen", "曹仁", TroopType.Cavalry, 90, 86, 60, 0, 0, 0, (1, enemyCharge), (1, enemySweep));
+            var deserter = General("deserter", "Deserter", "散兵", TroopType.Infantry, 66, 54, 24, 0, 0, 0);
+            var b12 = Encounter("battle_12", "Battle12_Duchang", "第十二战 · 都昌解围", EnemyAiKind.FacingSlot, 150, 180,
+                (guanHai, 13), (ytRemnant, 12), (ytRemnant, 12), (ytRemnant, 11), (ytRemnant, 11));
+            var b13 = Encounter("battle_13", "Battle13_XiapiEast", "第十三战 · 下邳城东", EnemyAiKind.FacingSlot, 170, 200,
+                (caoInf, 12), (caoInf, 12), (caoArcher, 12));   // initial values; balance-check after the AI run lost at 13
+            var b14 = Encounter("battle_14", "Battle14_XiapiWalls", "第十四战 · 下邳保卫", EnemyAiKind.FacingSlot, 190, 220,
+                (caoRen, 14), (caoCav, 13), (caoCav, 13));
+            var b15 = Encounter("battle_15", "Battle15_Xiaopei", "选做 · 小沛巡防", EnemyAiKind.FacingSlot, 120, 150,
+                (deserter, 14), (deserter, 13), (raider, 13), (raider, 13), (deserter, 13));
             var b8 = Encounter("battle_8", "Battle8_Hulao", "第八战 · 虎牢关·三英战吕布", EnemyAiKind.FacingSlot, 90, 120, (luBu, 9), (bingzhou, 7), (bingzhou, 7));
 
             // Equipment catalogue (equipment-items GDD, adopted 2026-10-19; names provisional, values to be tuned).
@@ -185,7 +202,7 @@ namespace ThreeKingdoms.EditorTools
             {
                 c.Config = config; c.Troops = troops; c.Ration = ration; c.Economy = economy;
                 c.Party = new[] { liu, guan, zhang };
-                c.Encounters = new[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11 };
+                c.Encounters = new[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15 };
             });
             AssetDatabase.SaveAssets();
             catalog.ToRuntime();   // validate

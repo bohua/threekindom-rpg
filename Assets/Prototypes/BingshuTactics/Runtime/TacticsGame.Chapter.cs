@@ -253,9 +253,10 @@ namespace Prototype.BingshuTactics
                         for (int i = 0; i < a.Units.Length; i++)
                         {
                             var u = SpawnUnit(a.Units[i], NearestFree(SpawnSpot(a, a.Units[i])));
-                            u.At = now + 5f * (i + 1);
-                            popups.Add((views[u].position + Vector3.up * (2.2f * HeadK), "援军", new Color(0.6f, 1f, 0.75f), 0f));
-                            flashes.Add((new List<Vector2Int> { u.Pos }, new Color(0.5f, 1f, 0.7f), 0f));
+                            bool foe = u.Team == Team.Enemy;   // 0.5（REVIEW_V05 R12）：敌方波次红色“增援”，登场后延迟到下一轮才行动
+                            u.At = now + (foe ? 100f : 5f) * (i + 1);
+                            popups.Add((views[u].position + Vector3.up * (2.2f * HeadK), foe ? "增援" : "援军", foe ? new Color(1f, 0.5f, 0.45f) : new Color(0.6f, 1f, 0.75f), 0f));
+                            flashes.Add((new List<Vector2Int> { u.Pos }, foe ? new Color(1f, 0.4f, 0.35f) : new Color(0.5f, 1f, 0.7f), 0f));
                         }
                         yield return new WaitForSeconds(0.6f);
                         break;

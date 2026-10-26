@@ -289,7 +289,8 @@ namespace Prototype.BingshuTactics
         public List<SkillDef> Crafts = new List<SkillDef>();
         public Book[] Slots = new Book[7];
         public SkillDef PendingCast; public Unit PendingFollow; public float PendingMul; public Vector2Int PendingTarget; public Vector2Int PendingDir;
-        public bool Alive => Hp > 0;
+        public bool Benched;   // 0.5：在后备（不在地图上）
+        public bool Alive => Hp > 0 && !Benched;
         public CircuitDef Circuit => Circuits.Of(School);
 
         // 增益取最强、减益取最强，两者相乘

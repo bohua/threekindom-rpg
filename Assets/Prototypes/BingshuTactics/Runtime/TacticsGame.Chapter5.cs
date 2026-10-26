@@ -1,6 +1,6 @@
-// 0.5 徐州篇的战棋扩展（design/v0.5-xuzhou/SYSTEMS_V05.md §2）：后备换人。
-// 上阵最多 3 人，其余在后备；轮到我方武将时可用“换人”（耗本次行动）与后备第一人互换，各自兵力与气势保持。
-// 后备武将不在地图上（视同不在场），不计入“全军撤退”；上阵者全部撤退即败，后备不自动顶上。
+// 0.5 徐州篇的战棋扩展（design/v0.5-xuzhou/SYSTEMS_V05.md §2，修订见 REVIEW_V05 R9–R12）：后备换人。
+// 上阵最多 3 人，其余在后备（Benched：不在地图上，兵力与气势保持）。轮到我方武将时，每名后备有一个“换上·某某”武技
+// （耗本次行动）；换下者清除增减益。后备不计入“全军撤退”，上阵者全部撤退即败。电脑代打不换人。
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,48 +10,54 @@ namespace Prototype.BingshuTactics
 {
     public sealed partial class TacticsGame
     {
-        readonly List<(Unit unit, int hp)> bench = new List<(Unit, int)>();
-        public IEnumerable<Unit> BenchUnits => bench.Select(b => b.unit);
+        readonly List<Unit> reserveBench = new List<Unit>();
+        public IEnumerable<Unit> BenchUnits => reserveBench;
 
-        // Called after the stage's units are spawned: the reserves come onto the board and go straight to the bench.
+        // After the stage's units are spawned: the reserves are made and sent straight to the bench.
         void BuildReserves()
         {
-            if (Chapter?.Reserves == null) return;
-            foreach (var d in Chapter.Reserves)
-            {
-                var u = SpawnUnit(d, NearestFree(d.Pos));
-                Bench(u);
-            }
-            foreach (var u in units.Where(x => x.Team == Team.Player && !x.Ai && !bench.Any(b => b.unit == x)))
-                if (bench.Count > 0 && !u.Crafts.Any(c => c.Name == "换人"))
-                    u.Crafts.Add(Craft("换人", "与后备第一名武将互换（耗本次行动）", Effect.Buff, Area.Single, 0, 0, 0f, 0));
+            if (Chapter?.Reserves == null || Chapter.Reserves.Count == 0) return;
+            foreach (var d in Chapter.Reserves) Bench(SpawnUnit(d, NearestFree(d.Pos)));
+            RefreshSwapCrafts();
         }
 
         void Bench(Unit u)
         {
-            bench.Add((u, u.Hp));
-            u.Hp = 0; u.PendingCast = null; u.PendingFollow = null;
-            u.Pos = new Vector2Int(-100 - bench.Count, -100);
+            reserveBench.Add(u);
+            u.Benched = true; u.PendingCast = null; u.PendingFollow = null; u.Statuses.Clear(); u.Guardian = null;
+            u.Pos = new Vector2Int(-100 - reserveBench.Count, -100);
             if (rigs.TryGetValue(u, out var rig)) { rig.DeadT = 9f; rig.R.enabled = false; rig.Shadow.gameObject.SetActive(false); }
         }
 
-        bool BenchReady(Unit u) => bench.Count > 0 && u.Team == Team.Player && !u.Ai;
-
-        IEnumerator SwapOut(Unit u)
+        // Every active player general gets one “换上·<name>” per reserve.
+        void RefreshSwapCrafts()
         {
-            if (bench.Count == 0) yield break;
-            var (inc, hp) = bench[0];
-            bench.RemoveAt(0);
+            foreach (var u in units.Where(x => x.Team == Team.Player && !x.Ai))
+            {
+                u.Crafts.RemoveAll(c => c.Name.StartsWith("换上·"));
+                if (u.Benched) continue;
+                foreach (var b in reserveBench)
+                    u.Crafts.Add(Craft("换上·" + b.Name, $"{b.Name}上阵，{u.Name}退到后备（耗本次行动）", Effect.Buff, Area.Single, 0, 0, 0f, 0));
+            }
+        }
+
+        bool BenchReady(Unit u, string name) => u.Team == Team.Player && !u.Ai && reserveBench.Any(b => b.Name == name);
+
+        IEnumerator SwapOut(Unit u, string name)
+        {
+            var inc = reserveBench.FirstOrDefault(b => b.Name == name);
+            if (inc == null) yield break;
+            reserveBench.Remove(inc);
             var at = u.Pos;
             Log($"{u.Name} 退下，{inc.Name} 上阵");
             popups.Add((views[u].position + Vector3.up * (2.3f * HeadK), "换人", new Color(0.6f, 0.9f, 1f), 0f));
             yield return new WaitForSeconds(0.3f);
             Bench(u);
-            inc.Hp = Mathf.Max(1, hp); inc.Pos = at; inc.At = now + 10f;
-            if (!inc.Crafts.Any(c => c.Name == "换人")) inc.Crafts.Add(Craft("换人", "与后备第一名武将互换（耗本次行动）", Effect.Buff, Area.Single, 0, 0, 0f, 0));
+            inc.Benched = false; inc.Pos = at; inc.At = now + 10f;
             views[inc].position = Tile(at);
             if (rigs.TryGetValue(inc, out var rig)) { rig.DeadT = 0f; rig.R.enabled = true; rig.Shadow.gameObject.SetActive(true); }
             popups.Add((views[inc].position + Vector3.up * (2.3f * HeadK), "上阵", new Color(0.6f, 1f, 0.75f), 0f));
+            RefreshSwapCrafts();
             yield return new WaitForSeconds(0.4f);
         }
     }

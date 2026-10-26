@@ -202,7 +202,7 @@ namespace Prototype.BingshuTactics
                 exited.Add(u);
                 u.Hp = 0; u.PendingCast = null; u.PendingFollow = null;
                 popups.Add((views[u].position + Vector3.up * (2.3f * HeadK), "撤离", new Color(0.6f, 0.9f, 1f), 0f));
-                Log($"{u.Name} 撤到了南岸");
+                Log($"{u.Name} 撤离了战场");
             }
             if (exited.Count > 0 && !units.Any(x => x.Alive && x.Team == Team.Player && !x.Ai))
             {

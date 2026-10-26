@@ -57,7 +57,7 @@ namespace ThreeKingdoms.Save
             public ChronicleState Chronicle;
         }
 
-        static readonly string[] Locations = { SaveData.TownLocation, SaveData.CampLocation, SaveData.AnxiLocation, SaveData.GongsunLocation, SaveData.SuanzaoLocation };
+        static readonly string[] Locations = { SaveData.TownLocation, SaveData.CampLocation, SaveData.AnxiLocation, SaveData.GongsunLocation, SaveData.SuanzaoLocation, SaveData.XiapiLocation, SaveData.ChapterDoneLocation };
 
         // Alpha 0.1 saves (format 1): the chapter step follows from the three battles; memories and commissions start empty,
         // levels and exp are kept. A save made after the third victory continues with Zou Jing's orders (C1).
@@ -75,9 +75,11 @@ namespace ThreeKingdoms.Save
             SaveData.AnxiLocation => step == ChapterStep.Anxi || step == ChapterStep.AnxiBandits,
             SaveData.GongsunLocation => step == ChapterStep.Gongsun,
             SaveData.SuanzaoLocation => step == ChapterStep.Suanzao,
+            SaveData.XiapiLocation => step == ChapterStep.Xiapi || step == ChapterStep.Echo,
+            SaveData.ChapterDoneLocation => step == ChapterStep.Done05,
             // 0.4: the Bohai plain (Pingyuan base) only while the chapter is there (REVIEW_V04 R6).
             _ when location != null && location.StartsWith(SaveData.RegionPrefix) => step < ChapterStep.Done03 || step == ChapterStep.Pingyuan
-                || step == ChapterStep.PingyuanSafe || step == ChapterStep.Zhending,
+                || step == ChapterStep.PingyuanSafe || step == ChapterStep.Zhending || step == ChapterStep.Beihai,
             _ => true,
         };
 
