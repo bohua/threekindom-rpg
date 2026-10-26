@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Jrpg;
@@ -299,6 +299,9 @@ namespace ThreeKingdoms.EditorTools
                 dirs.Add(to);
             }
             AssetDatabase.Refresh();
+            // Blender pilot models (user 2026-10-26) and any textures Codex painted for them.
+            string models = BlenderModels.Import();
+            if (models != null) dirs.Insert(0, models);
             return dirs.ToArray();
         }
 
@@ -883,6 +886,15 @@ namespace ThreeKingdoms.EditorTools
 
         static void SouthGate(Transform walls)
         {
+            // Blender pilot: the modelled gate block and tower; the piers and the lintel block stay solid, the passage open.
+            var model = BlenderModels.Place(walls, "south_gate", "10 South gate", new Vector3(0, 0, -36f));
+            if (model)
+            {
+                foreach (var c in model.GetComponentsInChildren<BoxCollider>()) Object.DestroyImmediate(c.gameObject);
+                foreach (int s in new[] { -1, 1 }) Solid(model, new Vector3(s * 3.25f, WallH / 2f, 0), new Vector3(2.5f, WallH, WallT));
+                Solid(model, new Vector3(0, 4.3f, 0), new Vector3(4f, 1.4f, WallT));
+                return;
+            }
             var g = Group(walls, "10 South gate", new Vector3(0, 0, -36f));
             g.gameObject.AddComponent<Occluder>();
             var front = Metres("south_gate_wall_front");   // 9 × 5, flat timber-lintel opening 4 × 3.6
@@ -1198,7 +1210,10 @@ namespace ThreeKingdoms.EditorTools
         {
             var row = Group(env, "South rows");
             // 04 Four houses in the south-west, tiled like the style reference (one thatched, as on the map).
-            Building(row, "04 House A", new Vector3(-36f, 0, -30f), 0f, "house_front", "house_side", "house_back");
+            // Blender pilot: the modelled house keeps its front wall at z -30 (its origin is the centre of plinth and
+            // door step together, 0.2 m south of the wall centre).
+            if (!BlenderModels.Place(row, "house_a", "04 House A", new Vector3(-36f, 0, -30f + Metres("house_side").x / 2f - 0.2f)))
+                Building(row, "04 House A", new Vector3(-36f, 0, -30f), 0f, "house_front", "house_side", "house_back");
             Building(row, "04 House B", new Vector3(-31f, 0, -19f), 0f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
             Building(row, "04 House C", new Vector3(-21.5f, 0, -20f), 0f, "house_c_front", "house_c_side", "house_c_back");
             Building(row, "04 House D", new Vector3(-16f, 0, -30f), 0f, "house_c_front", "house_c_side", "house_c_back");
