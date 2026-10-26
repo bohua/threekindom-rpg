@@ -90,6 +90,8 @@ namespace ThreeKingdoms.EditorTools
                     axes.TryGetValue(key, out string a);
                     if (a == null) a = key.StartsWith("ground_") || key.StartsWith("water_") ? "xy" : "none";
                     if (key.StartsWith("roof_")) a = key.EndsWith("_tiles") || key.EndsWith("_thatch") ? "xy" : "x";
+                    // Wall strips repeat along the wall (user 2026-10-26: the south wall looked stretched without a manifest).
+                    if (a == "none" && key.StartsWith("wall_")) a = "x";
                     bool pixel = sub == "Props" || sub == "UI";
                     importer.textureType = TextureImporterType.Default;
                     importer.filterMode = pixel ? FilterMode.Point : FilterMode.Bilinear;
