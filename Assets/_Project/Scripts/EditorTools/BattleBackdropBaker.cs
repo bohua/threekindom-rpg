@@ -327,7 +327,7 @@ namespace ThreeKingdoms.EditorTools
 
         // ---------- battle scene ----------
 
-        static void BuildBattleScene(BattleBackdrop backdrop, string scenePath, string materialFolder)
+        internal static void BuildBattleScene(BattleBackdrop backdrop, string scenePath, string materialFolder)
         {
             var lut = AssetDatabase.LoadAssetAtPath<Texture2D>(HD2DLutBuilder.LutPath) ?? HD2DLutBuilder.Build();
             // No depth of field (orthographic, ADR-0005 §8.1); bloom threshold above 1 so painted highlights never glow (§8.2).

@@ -188,7 +188,8 @@ namespace ThreeKingdoms.UI.Story
             ["aspire.7"] = "志在天下！",
         };
 
-        public static string Speaker(string key) => key != null && Speakers.TryGetValue(key, out var s) ? s : "";
+        public static string Speaker(string key) => key != null && Speakers.TryGetValue(key, out var s) ? s
+            : key != null && ChapterText.Speakers.TryGetValue(key, out var c) ? c : "";
         public static string Line(string key)
         {
             if (key != null && key.StartsWith("warn:no_weapon:")) return $"{key.Substring(15)}没有装备武器，仍可出战。可先回城整备，再走近黄巾军便开战。";
@@ -209,6 +210,7 @@ namespace ThreeKingdoms.UI.Story
                 case "archery.score": return $"一共射中{part[1]}个靶子！" + (int.Parse(part[1]) >= 5 ? "好箭法！" : "");
                 case "archery.reward": return $"得到彩头{part[1]}文（现有铜钱{part[2]}）。";
             }
+            if (ChapterText.Lines.TryGetValue(key, out var chapterLine)) return chapterLine;   // 0.2 黄巾篇
             // A resident with nothing new to say repeats the earlier line (.won → .after → base).
             for (string k = key; k != null; k = k.EndsWith(".won") ? k.Substring(0, k.Length - 4) + ".after" : k.EndsWith(".after") ? k.Substring(0, k.Length - 6) : null)
                 if (Lines.TryGetValue(k, out var s)) return s;
@@ -235,8 +237,23 @@ namespace ThreeKingdoms.UI.Story
             if (key == "shop") return "[确认] 与铁匠交谈（武器装备店）";
             if (key == "save") return "[确认] 与酒馆掌柜交谈（存档）";
             if (key == "gate:locked") return "[确认] 南门";
+            if (key == "gate:leave") return "[确认] 出南门，南下广宗";
             return "[确认] 南门";
         }
+
+        // 0.2: after the third victory the goal follows the chapter (Zou Jing, then the south gate).
+        public static string Objective(StoryState s, ChapterState c) => c == null || c.Step < ChapterStep.ZouJingOrders ? Objective(s) : c.Step switch
+        {
+            ChapterStep.ZouJingOrders => "目标：听邹靖传令",
+            ChapterStep.ZhuojunFree => "目标：整备后从南门出城，随邹靖南下广宗",
+            ChapterStep.Camp => c.Has("c2") ? "目标：在营中整备，准备好后到营门出发" : "目标：拜见卢植",
+            ChapterStep.Yingchuan => "目标：随官军截击颍川黄巾",
+            ChapterStep.Guangzong => "目标：回师广宗",
+            ChapterStep.ToAnxi => "目标：赴安喜县到任",
+            ChapterStep.Anxi => "目标：处理县中难事，准备好后从东门出城剿贼",
+            ChapterStep.AnxiBandits => "目标：督邮到了驿馆，去见驿卒",
+            _ => "目标：0.2 黄巾篇完",
+        };
 
         public static string Objective(StoryState s) => s.Phase switch
         {

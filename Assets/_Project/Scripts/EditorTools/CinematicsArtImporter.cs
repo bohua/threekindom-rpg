@@ -22,6 +22,9 @@ namespace ThreeKingdoms.EditorTools
         {
             ("scroll_taoyuan", new[] { @"art\story-cinematics\painting_taoyuan.png", @"art\story-cinematics-concept\_sources\03_ink_raw.png" }),
             ("scroll_huangjin", new[] { @"art\story-cinematics\painting_huangjin.png" }),
+            // 0.2 (Codex art/v02-ink-scrolls-b1; the approved thumbnails stand in until the full paintings land).
+            ("scroll_zhuanzhan", new[] { @"art\v02-ink-scrolls-b1\painting_zhuanzhan.png", @"art\v02-ink-scrolls-concept\scroll2_huangjin_zhuanzhan_thumb.png" }),
+            ("scroll_anxi", new[] { @"art\v02-ink-scrolls-b1\painting_anxi.png", @"art\v02-ink-scrolls-concept\scroll3_anxi_guayin_thumb.png" }),
             ("seal_done", new[] { @"art\story-cinematics\seal_done.png", @"art\story-cinematics-concept\_checks\seal_clean_alpha.png" }),
             ("scroll_roller", new[] { @"art\story-cinematics\scroll_roller.png" }),
             ("ink_drop", new[] { @"art\story-cinematics\ink_drop.png" }),
@@ -91,6 +94,8 @@ namespace ThreeKingdoms.EditorTools
             {
                 new StoryCinematicsView.Painting { Id = "taoyuan", Texture = Load("scroll_taoyuan") },
                 new StoryCinematicsView.Painting { Id = "huangjin", Texture = Load("scroll_huangjin") },
+                new StoryCinematicsView.Painting { Id = "zhuanzhan", Texture = Load("scroll_zhuanzhan") },
+                new StoryCinematicsView.Painting { Id = "anxi", Texture = Load("scroll_anxi") },
             };
             return view;
         }

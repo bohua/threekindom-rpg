@@ -7,8 +7,12 @@ namespace ThreeKingdoms.Save
     [Serializable]
     public sealed class SaveData
     {
-        public const int CurrentFormat = 1;
+        // 2 (0.2): chapter step, flags and memories. Format 1 saves (Alpha 0.1) are read and migrated, never rewritten.
+        public const int CurrentFormat = 2;
+        public const int OldestReadable = 1;
         public const string TownLocation = "town";
+        // 0.2 safe stages: Lu Zhi's camp and Anxi county (arrival autosave, manual save at the gate guard / the clerk).
+        public const string CampLocation = "camp", AnxiLocation = "anxi";
 
         public int formatVersion = CurrentFormat;
         public string gameVersion = "";
@@ -39,7 +43,14 @@ namespace ThreeKingdoms.Save
 
         // Slot summary only (answer 4: chapter, place, Liu Bei's level, copper, time); not read back into the game.
         public int leaderLevel;
+
+        // 0.2 chapter (SYSTEMS_V02 §3, §5); a format 1 save reads them as empty.
+        public int chapterStep;
+        public string[] chapterFlags = Array.Empty<string>();
+        public MemoryEntry[] memories = Array.Empty<MemoryEntry>();
     }
+
+    [Serializable] public struct MemoryEntry { public string who; public string key; public string value; public int node; public string text; }
 
     [Serializable] public struct ExpEntry { public string general; public int exp; }
     [Serializable] public struct BagEntry { public string item; public int count; }

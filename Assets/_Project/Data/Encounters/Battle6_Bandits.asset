@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f58774cdd05485f4a9f581414a12d3d3, type: 3}
+  m_Name: Battle6_Bandits
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.EncounterDefinition
+  Id: battle_6
+  DisplayName: "\u7B2C\u516D\u6218 \xB7 \u5B89\u559C\u527F\u532A"
+  Enemies:
+  - General: {fileID: 11400000, guid: a287bc3940ed4534cbd335ddfa4356e8, type: 2}
+    Level: 6
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 15b646034c6d8e1429e38e8ca0083a09, type: 2}
+    Level: 4
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 15b646034c6d8e1429e38e8ca0083a09, type: 2}
+    Level: 4
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 15b646034c6d8e1429e38e8ca0083a09, type: 2}
+    Level: 4
+    FocusEscort: 0
+  Ai: 1
+  SkillEveryRounds: 3
+  ExpReward: 60
+  CopperReward: 80
+  Allies: []
+  Events:
+  - Id: opening
+    When: 0
+    Round: 1
+    Unit: 
+    Percent: 0
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 7
+      Text: "\u527F\u706D\u5C71\u8D3C"
+      Target: 
+      Value: 0
+      Result: 0

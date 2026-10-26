@@ -15,7 +15,8 @@ namespace ThreeKingdoms.UI.Save
     public sealed class SaveHud : MonoBehaviour
     {
         [Tooltip("Pixel skin (BATTLE_UI_SKIN.md); empty keeps the flat style")] public ThreeKingdoms.UI.Battle.BattleUiSkin Skin;
-        public TownStoryController Controller;
+        [Tooltip("TownStoryController or FieldStoryController (0.2): any IFieldHost")] public MonoBehaviour Host;
+        ThreeKingdoms.Gameplay.Story.IFieldHost Controller => Host as ThreeKingdoms.Gameplay.Story.IFieldHost;
 
         public enum Mode { Closed, Slots, Confirm }
 
@@ -53,13 +54,13 @@ namespace ThreeKingdoms.UI.Save
             MenuKit.Text(footer, SaveText.Back, 20, MenuKit.Muted);
 
             root.RegisterCallback<NavigationCancelEvent>(e => { e.StopPropagation(); Back(); }, TrickleDown.TrickleDown);
-            if (Controller) { Controller.PanelOpened += OnOpened; Controller.PanelClosed += OnClosed; }
+            if (Controller != null) { Controller.PanelOpened += OnOpened; Controller.PanelClosed += OnClosed; }
             Hide();
         }
 
         void OnDisable()
         {
-            if (Controller) { Controller.PanelOpened -= OnOpened; Controller.PanelClosed -= OnClosed; }
+            if (Controller != null) { Controller.PanelOpened -= OnOpened; Controller.PanelClosed -= OnClosed; }
         }
 
         void OnOpened(string p) { if (p == TownStoryController.SavePanel) Open(); }
@@ -125,7 +126,7 @@ namespace ThreeKingdoms.UI.Save
         {
             try
             {
-                Controller.Run.SaveTo(SaveSlots.Manual(index), SaveData.TownLocation);
+                Controller.Run.SaveTo(SaveSlots.Manual(index), Controller.SaveLocation);
                 message.text = SaveText.Saved(index);
             }
             catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException)

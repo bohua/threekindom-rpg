@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05ba117cf8163a741bf8478f2b3de1d3, type: 3}
+  m_Name: B2
+  m_EditorClassIdentifier: ThreeKingdoms.Gameplay::ThreeKingdoms.Gameplay.BattleBackdrop
+  DisplayName: B2
+  Layers:
+  - {fileID: 2800000, guid: 3113cc4d089715c48bcb53861285652d, type: 3}
+  - {fileID: 2800000, guid: 57734d841ca044945b8a8529ec22c18d, type: 3}
+  - {fileID: 2800000, guid: 4fe9c1fe512f1b74aa7af9ca6630eca2, type: 3}
+  - {fileID: 2800000, guid: 6c3913248e94e1d4faaec8e6feaaf67b, type: 3}
+  - {fileID: 2800000, guid: b4a92b0382d72234ba20e1a54e0d3164, type: 3}
+  LightPitchYaw: {x: 45, y: 30}
+  LightColor: {r: 1, g: 0.98, b: 0.94, a: 1}
+  LightIntensity: 2.4

@@ -26,3 +26,4 @@ MonoBehaviour:
   Speed: 0
   BuyPrice: 0
   GiftSellPrice: 10
+  ShopTier: 1

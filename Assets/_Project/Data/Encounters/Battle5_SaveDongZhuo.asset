@@ -1,0 +1,132 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f58774cdd05485f4a9f581414a12d3d3, type: 3}
+  m_Name: Battle5_SaveDongZhuo
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.EncounterDefinition
+  Id: battle_5
+  DisplayName: "\u7B2C\u4E94\u6218 \xB7 \u5E7F\u5B97\u6551\u8463\u5353"
+  Enemies:
+  - General: {fileID: 11400000, guid: 5bbc1075f4180654fa827e5b34482421, type: 2}
+    Level: 6
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 0510f81e575a63d469177f104197afda, type: 2}
+    Level: 4
+    FocusEscort: 1
+  - General: {fileID: 11400000, guid: 0510f81e575a63d469177f104197afda, type: 2}
+    Level: 4
+    FocusEscort: 1
+  - General: {fileID: 11400000, guid: 0510f81e575a63d469177f104197afda, type: 2}
+    Level: 4
+    FocusEscort: 1
+  Ai: 1
+  SkillEveryRounds: 3
+  ExpReward: 50
+  CopperReward: 70
+  Allies:
+  - General: {fileID: 11400000, guid: f9bac2ca0688a3c4eac2ef20c8b0af5b, type: 2}
+    Level: 7
+    Escort: 1
+  Events:
+  - Id: hold
+    When: 0
+    Round: 1
+    Unit: 
+    Percent: 0
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 7
+      Text: "\u4FDD\u62A4\u8463\u5353\u672C\u9635\uFF08\u5269 4 \u56DE\u5408\uFF09"
+      Target: 
+      Value: 0
+      Result: 0
+  - Id: hold_2
+    When: 0
+    Round: 2
+    Unit: 
+    Percent: 0
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 7
+      Text: "\u4FDD\u62A4\u8463\u5353\u672C\u9635\uFF08\u5269 3 \u56DE\u5408\uFF09"
+      Target: 
+      Value: 0
+      Result: 0
+  - Id: hold_3
+    When: 0
+    Round: 3
+    Unit: 
+    Percent: 0
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 7
+      Text: "\u4FDD\u62A4\u8463\u5353\u672C\u9635\uFF08\u5269 2 \u56DE\u5408\uFF09"
+      Target: 
+      Value: 0
+      Result: 0
+  - Id: hold_4
+    When: 0
+    Round: 4
+    Unit: 
+    Percent: 0
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 7
+      Text: "\u4FDD\u62A4\u8463\u5353\u672C\u9635\uFF08\u5269 1 \u56DE\u5408\uFF09"
+      Target: 
+      Value: 0
+      Result: 0
+  - Id: hold_end
+    When: 0
+    Round: 5
+    Unit: 
+    Percent: 0
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 0
+      Text: "\u5F20\u89D2\u5175\u8D25\u9000\u8D70"
+      Target: 
+      Value: 0
+      Result: 0
+    - Kind: 5
+      Text: 
+      Target: enemy_all
+      Value: 0
+      Result: 0
+  - Id: early_win
+    When: 1
+    Round: 0
+    Unit: zhang_jiao
+    Percent: 30
+    FilterReason: 0
+    Reason: 0
+    Repeat: 0
+    Actions:
+    - Kind: 1
+      Text: b5_zhangjiao_flee
+      Target: 
+      Value: 0
+      Result: 0
+    - Kind: 5
+      Text: 
+      Target: enemy_all
+      Value: 0
+      Result: 0

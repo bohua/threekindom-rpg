@@ -5,50 +5,40 @@ using ThreeKingdoms.Core.Battle;
 using ThreeKingdoms.Core.Economy;
 using ThreeKingdoms.Gameplay.Battle;
 using ThreeKingdoms.Gameplay.Story;
-using ThreeKingdoms.UI.Battle;
-using ThreeKingdoms.UI.Common;
-using ThreeKingdoms.UI.Shop;
 using ThreeKingdoms.UI.Story;
 using UnityEngine;
-using UnityEngine.UIElements;
+using UnityEngine.InputSystem;
 
 namespace ThreeKingdoms.UI.Menu
 {
-    // The pause menu on the menu key (user 2026-10-22, after the reference image 1): tabs along the top (物品, 装备,
-    // 技能, 武将, 系统); at the left the chosen general's card (bust, level, troop type, troops and tech, attributes)
-    // with ◀ ▶ to change general; the tab's list in the middle; its detail at the right; a description bar along the
-    // bottom. 武将 opens the general's page (reference image 2): name banner, large portrait, a radar of five
-    // values, the value table, and tabs for 状态, 技能, 装备 and 列传.
-    [RequireComponent(typeof(UIDocument))]
-    public sealed class MainMenuHud : MonoBehaviour
+    // The pause menu 行旅 (user 2026-10-24: "1:1还原这些菜单设计到游戏菜单", GAME_MENU_UI_REDESIGN.md): one screen per
+    // tab after the five mock-ups (物品, 装备, 技能, 武将, 系统), plus 兵书 with the military-book screen's four
+    // panels. Shared chrome: 行旅 title with the place, copper and reputation, 返回, the objective line, the tab row,
+    // and the hint bar. The party column (bust cards) is on every general page. Drawn with IMGUI in the mock-up's
+    // pixel space (MenuPaint); 技能 is the generals' own level-up skills only, unrelated to gear and books.
+    public sealed partial class MainMenuHud : MonoBehaviour
     {
-        [Tooltip("Pixel skin (BATTLE_UI_SKIN.md); empty keeps the flat style")] public BattleUiSkin Skin;
-        public TownStoryController Controller;
-        [Tooltip("Full illustrations for the general's page")] public DialoguePortraitSet Portraits;
-        [Tooltip("Bust crops for the card: liu_bei, guan_yu, zhang_fei")] public Texture2D[] Busts = Array.Empty<Texture2D>();
+        [Tooltip("TownStoryController or FieldStoryController (0.2): any IFieldHost")] public MonoBehaviour Host;
+        ThreeKingdoms.Gameplay.Story.IFieldHost Controller => Host as ThreeKingdoms.Gameplay.Story.IFieldHost;
+        [Tooltip("Full illustrations (武将 page)")] public DialoguePortraitSet Portraits;
+        [Tooltip("Bust crops for the party cards: liu_bei, guan_yu, zhang_fei")] public Texture2D[] Busts = Array.Empty<Texture2D>();
+        [Tooltip("The menu's own slices (art/travel-menu-ui-slices)")] public Texture2D[] Art = Array.Empty<Texture2D>();
+        [Tooltip("The military-book screen's slices (shared frames, gems, scrolls, busts)")] public Texture2D[] BingshuArt = Array.Empty<Texture2D>();
+        [Tooltip("Nine-slice borders of the menu's own slices (name,left,right,top,bottom), from their manifest")] public string[] Borders = Array.Empty<string>();
 
-        public enum Mode { Closed, Root, Info }
-        public enum Tab { Items, Equip, Skills, Generals, System }
-        public enum InfoTab { Status, Skills, Gear, Biography }
-
-        VisualElement root, panel, tabRow, card, list, side, info, infoBody, radar;
-        Label message, description, money;
-        readonly Dictionary<Tab, Button> tabButtons = new Dictionary<Tab, Button>();
-        int openedFrame, generalIndex;
-        EquipSlot? pickingSlot;
-        InfoTab infoTab;
-        GeneralSpec infoGeneral;
+        public enum Mode { Closed, Root }
+        public enum Tab { Items, Equip, Skills, Bingshu, Generals, System }
 
         public Mode Current { get; private set; } = Mode.Closed;
         public Tab CurrentTab { get; private set; }
-        public InfoTab CurrentInfoTab => infoTab;
-        public IReadOnlyList<Button> Entries => list.Query<Button>().ToList();
-        public IReadOnlyList<Button> SideEntries => side.Query<Button>().ToList();
-        // All text on screen now, for tests.
-        public string Detail => string.Join("\n", (Current == Mode.Info ? info : panel).Query<Label>().ToList().Select(l => l.text)
-            .Concat((Current == Mode.Info ? info : panel).Query<Button>().ToList().Select(b => b.text)));
-        public string Description => description.text;
+        public string Message { get; private set; } = "";
         public GeneralSpec General => Joined.ElementAtOrDefault(generalIndex);
+
+        MenuPaint paint;
+        int openedFrame, generalIndex;
+        // Which column has the cursor: 0 the party, 1 the page's main list, 2 its right-hand list.
+        int column = 1;
+        bool padMode;
 
         DevPartyProgress Progress => Controller.Run.Progress;
         Inventory Inv => Progress.Inventory;
@@ -56,58 +46,12 @@ namespace ThreeKingdoms.UI.Menu
 
         void OnEnable()
         {
-            root = GetComponent<UIDocument>().rootVisualElement;
-            MenuKit.Skin = Skin;
-            root.Clear();
-            root.pickingMode = PickingMode.Ignore;
-            BattleFont.ApplyTo(root);
-            root.style.flexGrow = 1;
-
-            panel = new VisualElement();
-            panel.style.position = Position.Absolute;
-            panel.style.left = 80; panel.style.right = 80; panel.style.top = 60; panel.style.bottom = 60;
-            MenuKit.Frame(panel);
-            root.Add(panel);
-
-            // Tabs, money and reputation, and 返回.
-            var top = Row(panel);
-            top.style.justifyContent = Justify.SpaceBetween; top.style.alignItems = Align.Center;
-            tabRow = Row(top);
-            foreach (Tab t in Enum.GetValues(typeof(Tab)))
-            {
-                var tab = t;
-                var b = MenuKit.Button(tabRow, MenuText.TabName(t), () => { if (Time.frameCount > openedFrame) Show(tab); }, size: 26);
-                b.style.width = 150; b.style.marginRight = 8; b.style.marginTop = 0;
-                b.style.unityTextAlign = TextAnchor.MiddleCenter; b.style.paddingLeft = 0;
-                tabButtons[t] = b;
-            }
-            var right = Row(top); right.style.alignItems = Align.Center;
-            money = MenuKit.Text(right, "", 24, MenuKit.Gold); money.style.marginRight = 24;
-            var back = MenuKit.Button(right, MenuText.Back2, Back, size: 24);
-            back.style.width = 120; back.style.marginTop = 0;
-
-            var body = Row(panel);
-            body.style.flexGrow = 1; body.style.marginTop = 16;
-            card = new VisualElement(); card.style.width = 400; card.style.marginRight = 20; MenuKit.Frame(card); body.Add(card);
-            list = new VisualElement(); list.style.width = 480; list.style.marginRight = 20; body.Add(list);
-            side = new VisualElement(); side.style.flexGrow = 1; MenuKit.Frame(side); body.Add(side);
-
-            var bottom = new VisualElement(); bottom.style.marginTop = 14; MenuKit.Frame(bottom); panel.Add(bottom);
-            description = MenuKit.Text(bottom, "", 24, Color.white);
-            var foot = Row(panel); foot.style.justifyContent = Justify.SpaceBetween; foot.style.marginTop = 8;
-            message = MenuKit.Text(foot, "", 22, MenuKit.Gold);
-            MenuKit.Text(foot, MenuText.Back, 20, MenuKit.Muted);
-
-            BuildInfo();
-
-            root.RegisterCallback<NavigationCancelEvent>(e => { e.StopPropagation(); Back(); }, TrickleDown.TrickleDown);
-            if (Controller) { Controller.PanelOpened += OnOpened; Controller.PanelClosed += OnClosed; }
-            Hide();
+            if (Controller != null) { Controller.PanelOpened += OnOpened; Controller.PanelClosed += OnClosed; }
         }
 
         void OnDisable()
         {
-            if (Controller) { Controller.PanelOpened -= OnOpened; Controller.PanelClosed -= OnClosed; }
+            if (Controller != null) { Controller.PanelOpened -= OnOpened; Controller.PanelClosed -= OnClosed; }
         }
 
         void OnOpened(string p)
@@ -115,88 +59,26 @@ namespace ThreeKingdoms.UI.Menu
             if (p != TownStoryController.MenuPanel) return;
             openedFrame = Time.frameCount;
             generalIndex = 0;
-            message.text = "";
+            Message = "";
             Current = Mode.Root;
-            panel.style.display = DisplayStyle.Flex;
-            info.style.display = DisplayStyle.None;
-            Show(Tab.Generals);
+            Show(Tab.Items);
         }
 
-        void OnClosed(string p) { if (p == TownStoryController.MenuPanel) Hide(); }
-
-        void Hide()
-        {
-            Current = Mode.Closed;
-            panel.style.display = DisplayStyle.None;
-            info.style.display = DisplayStyle.None;
-            list.Clear();
-        }
-
-        public void Back()
-        {
-            if (Current == Mode.Info) { CloseInfo(); return; }
-            if (Current != Mode.Root) return;
-            if (pickingSlot != null) { pickingSlot = null; Show(CurrentTab); return; }
-            Controller.ClosePanel();
-        }
-
-        // ---------- the menu ----------
+        void OnClosed(string p) { if (p == TownStoryController.MenuPanel) Current = Mode.Closed; }
 
         public void Show(Tab tab)
         {
             CurrentTab = tab;
-            pickingSlot = null;
-            foreach (var pair in tabButtons)
-                pair.Value.style.color = pair.Key == tab ? MenuKit.Gold : Color.white;
-            money.text = $"{ShopText.Copper(Inv.Copper)}　{MenuText.Reputation(Controller.Run.Life.Reputation)}";
-            ShowCard();
-            list.Clear(); side.Clear();
-            description.text = "";
-            switch (tab)
-            {
-                case Tab.Items:
-                    Entry($"{ShopText.Ration} {ShopText.Count(Inv.Rations)}", () => { }, () => Describe(ShopText.RationInfo));
-                    foreach (var (item, count) in Inv.Bag.ToList())
-                    {
-                        var it = item;
-                        Entry($"{it.DisplayName} {ShopText.Count(count)}", () => { }, () => Describe($"{ShopText.Kind(it)}　{ShopText.Bonus(it.Bonus)}"));
-                    }
-                    if (!Inv.Bag.Any()) SideText(MenuText.BagEmpty);
-                    break;
-                case Tab.Equip:
-                    foreach (EquipSlot s in Enum.GetValues(typeof(EquipSlot)))
-                    {
-                        var slot = s;
-                        var worn = Inv.Worn(General.Id, slot);
-                        Entry($"{ShopText.Slot(slot)}　{(worn != null ? worn.DisplayName : ShopText.Empty)}", () => PickFor(slot),
-                            () => { Describe(worn != null ? $"{ShopText.Kind(worn)}　{ShopText.Bonus(worn.Bonus)}" : MenuText.EmptySlot); ShowOptions(slot, false); });
-                    }
-                    break;
-                case Tab.Skills:
-                    int level = Progress.Level(General);
-                    foreach (var unlock in General.Skills)
-                    {
-                        var u = unlock;
-                        bool learned = u.Level <= level;
-                        var b = Entry(learned ? $"{u.Skill.DisplayName}（技力 {u.Skill.TechCost}）" : $"{u.Skill.DisplayName}（{u.Level} 级习得）", () => { },
-                            () => Describe(u.Skill.Description));
-                        if (!learned) b.style.color = MenuKit.Muted;
-                    }
-                    break;
-                case Tab.Generals:
-                    foreach (var g in Joined)
-                    {
-                        var gen = g;
-                        Entry($"{g.DisplayName}　{BattleText.Troop(g.Troop)}　{BattleText.Level(Progress.Level(g))}", () => ShowInfo(gen),
-                            () => { generalIndex = Joined.IndexOf(gen); ShowCard(); Describe(MenuText.GeneralsHint); });
-                    }
-                    break;
-                case Tab.System:
-                    Entry(MenuText.ToTitle, Controller.ReturnToTitle, () => Describe(MenuText.ToTitleHint));
-                    Entry(MenuText.Quit, Application.Quit, () => Describe(MenuText.QuitHint));
-                    break;
-            }
-            MenuKit.FocusFirst(list);
+            column = tab == Tab.Generals ? 0 : 1;
+            picking = false; confirmLoad = false;
+            itemIndex = slotIndex = candidateIndex = skillIndex = 0;
+            if (tab == Tab.Bingshu) { plateSlot = 0; bingshuFocus = 0; }
+        }
+
+        public void NextTab(int delta)
+        {
+            int n = Enum.GetValues(typeof(Tab)).Length;
+            Show((Tab)(((int)CurrentTab + delta + n) % n));
         }
 
         public void SelectGeneral(int delta)
@@ -204,48 +86,251 @@ namespace ThreeKingdoms.UI.Menu
             var joined = Joined;
             if (joined.Count == 0) return;
             generalIndex = (generalIndex + delta + joined.Count) % joined.Count;
-            Show(CurrentTab);
+            picking = false; candidateIndex = 0;
+            if (CurrentTab == Tab.Skills) skillIndex = 0;
+            if (CurrentTab == Tab.Bingshu) { plateSlot = 0; libScroll = 0; }
         }
 
-        void ShowCard()
+        // B / Backspace: one level back; at the top the menu closes.
+        public void Back()
         {
-            card.Clear();
-            var g = General;
-            if (g == null) return;
-            var head = Row(card); head.style.alignItems = Align.Center; head.style.justifyContent = Justify.Center;
-            var prev = MenuKit.Button(head, "◀", () => SelectGeneral(-1), size: 24);
-            prev.style.width = 56; prev.style.paddingLeft = 0; prev.style.unityTextAlign = TextAnchor.MiddleCenter;
-            var bust = new VisualElement { pickingMode = PickingMode.Ignore };
-            bust.style.width = bust.style.height = 168; bust.style.marginLeft = 12; bust.style.marginRight = 12;
-            var tex = Bust(g.Id);
-            if (Skin) Skin.Portrait(bust, true);
-            if (tex)
-            {
-                var img = new Image { image = tex, scaleMode = ScaleMode.ScaleToFit, pickingMode = PickingMode.Ignore };
-                img.style.flexGrow = 1; img.style.marginLeft = img.style.marginRight = img.style.marginTop = img.style.marginBottom = 8;
-                bust.Add(img);
-            }
-            head.Add(bust);
-            var next = MenuKit.Button(head, "▶", () => SelectGeneral(1), size: 24);
-            next.style.width = 56; next.style.paddingLeft = 0; next.style.unityTextAlign = TextAnchor.MiddleCenter;
-
-            int level = Progress.Level(g);
-            var stats = Progress.Stats(g, Inv.Bonus(g.Id));
-            MenuKit.Text(card, $"{g.DisplayName}　{BattleText.Level(level)}", 30, MenuKit.Gold).style.marginTop = 10;
-            MenuKit.Text(card, BattleText.Troop(g.Troop), 22, MenuKit.Muted);
-            Bar(card, "兵力", stats.MaxTroops, stats.MaxTroops, new Color(0.35f, 0.75f, 0.4f));
-            Bar(card, "技力", stats.MaxTech, stats.MaxTech, new Color(0.35f, 0.55f, 0.95f));
-            var grid = new VisualElement(); grid.style.marginTop = 10; card.Add(grid);
-            foreach (var (name, value) in new[] { ("武力", stats.Force), ("统率", stats.Command), ("智力", stats.Intellect),
-                         ("物攻", stats.PhysicalAttack), ("物防", stats.PhysicalDefense), ("计攻", stats.StrategyAttack),
-                         ("计防", stats.StrategyDefense), ("速度", stats.Speed) })
-            {
-                var r = Row(grid); r.style.justifyContent = Justify.SpaceBetween; r.style.marginTop = 2;
-                MenuKit.Text(r, name, 22, new Color(0.85f, 0.8f, 0.7f));
-                MenuKit.Text(r, value.ToString(), 22, Color.white);
-            }
-            MenuKit.Text(card, MenuText.Exp(Progress.Exp(g), Progress.ExpForNextLevel(g)), 20, MenuKit.Muted).style.marginTop = 8;
+            if (Current != Mode.Root) return;
+            if (confirmLoad) { confirmLoad = false; return; }
+            if (picking) { picking = false; return; }
+            if (CurrentTab == Tab.Bingshu && bingshuFocus != 0) { bingshuFocus = 0; return; }
+            if (column == 0 && CurrentTab != Tab.Generals) { column = 1; return; }
+            Controller.ClosePanel();
         }
+
+        // A / Enter on whatever has the cursor.
+        public void Confirm()
+        {
+            if (Current != Mode.Root) return;
+            if (column == 0 && CurrentTab != Tab.Generals && CurrentTab != Tab.System && CurrentTab != Tab.Bingshu) { column = 1; return; }
+            switch (CurrentTab)
+            {
+                case Tab.Items: ConfirmItem(); break;
+                case Tab.Equip: ConfirmEquip(); break;
+                case Tab.Skills: Message = SkillUseBlocked(SkillRows().ElementAtOrDefault(skillIndex)) ?? ""; break;
+                case Tab.Bingshu: ConfirmBingshu(); break;
+                case Tab.Generals: Show(Tab.Equip); break;
+                case Tab.System: ConfirmSystem(); break;
+            }
+        }
+
+        // Arrow keys / stick: up and down move in the column, left and right change column (or adjust a setting).
+        public void Move(int dx, int dy)
+        {
+            if (Current != Mode.Root || (dx == 0 && dy == 0)) return;
+            switch (CurrentTab)
+            {
+                case Tab.System: MoveSystem(dx, dy); return;
+                case Tab.Bingshu: MoveBingshu(dx, dy); return;
+            }
+            if (dx != 0)
+            {
+                if (CurrentTab == Tab.Generals) return;
+                if (dx < 0 && column == 1 && !picking) { column = 0; return; }
+                if (dx > 0 && column == 0) { column = 1; return; }
+                return;
+            }
+            if (column == 0 || CurrentTab == Tab.Generals) { SelectGeneral(dy); return; }
+            switch (CurrentTab)
+            {
+                case Tab.Items: itemIndex = Wrap(itemIndex + dy, ItemRows().Count); break;
+                case Tab.Equip:
+                    if (picking) candidateIndex = Wrap(candidateIndex + dy, Candidates().Count);
+                    else slotIndex = Wrap(slotIndex + dy, 3);
+                    break;
+                case Tab.Skills: skillIndex = Wrap(skillIndex + dy, SkillRows().Count); break;
+            }
+        }
+
+        static int Wrap(int i, int n) => n <= 0 ? 0 : (i % n + n) % n;
+
+        // ---------- input ----------
+
+        float repeatAt; Vector2Int held;
+
+        void Update()
+        {
+            if (Current != Mode.Root || Time.frameCount <= openedFrame) return;
+            var kb = Keyboard.current; var pad = Gamepad.current;
+            if (pad != null && (pad.leftStick.ReadValue().sqrMagnitude > 0.25f || pad.dpad.ReadValue() != Vector2.zero
+                                || pad.buttonSouth.wasPressedThisFrame || pad.buttonEast.wasPressedThisFrame || pad.leftShoulder.wasPressedThisFrame || pad.rightShoulder.wasPressedThisFrame)) padMode = true;
+            if (kb != null && kb.anyKey.wasPressedThisFrame) padMode = false;
+
+            bool P(params UnityEngine.InputSystem.Controls.ButtonControl[] keys) => keys.Any(k => k != null && k.wasPressedThisFrame);
+            if (P(kb?.qKey, kb?.pageUpKey, pad?.leftShoulder)) { NextTab(-1); return; }
+            if (P(kb?.eKey, kb?.pageDownKey, pad?.rightShoulder)) { NextTab(1); return; }
+            if (P(kb?.enterKey, kb?.numpadEnterKey, kb?.spaceKey, pad?.buttonSouth)) { Confirm(); return; }
+            if (P(kb?.xKey, kb?.backspaceKey, pad?.buttonEast)) { Back(); return; }
+            if (P(kb?.tabKey, pad?.buttonNorth)) { Alternate(); return; }
+            if (P(kb?.cKey, kb?.deleteKey, pad?.buttonWest)) { Remove(); return; }
+
+            var dir = Vector2Int.zero;
+            if (kb != null)
+            {
+                if (kb.upArrowKey.isPressed || kb.wKey.isPressed) dir.y = -1; else if (kb.downArrowKey.isPressed || kb.sKey.isPressed) dir.y = 1;
+                if (kb.leftArrowKey.isPressed || kb.aKey.isPressed) dir.x = -1; else if (kb.rightArrowKey.isPressed || kb.dKey.isPressed) dir.x = 1;
+            }
+            if (pad != null && dir == Vector2Int.zero)
+            {
+                var v = pad.dpad.ReadValue() + pad.leftStick.ReadValue();
+                if (Mathf.Abs(v.y) > 0.5f) dir.y = v.y > 0 ? -1 : 1;
+                else if (Mathf.Abs(v.x) > 0.5f) dir.x = v.x > 0 ? 1 : -1;
+            }
+            if (dir != held) { held = dir; repeatAt = Time.unscaledTime + 0.35f; Move(dir.x, dir.y); }
+            else if (dir != Vector2Int.zero && Time.unscaledTime >= repeatAt) { repeatAt = Time.unscaledTime + 0.09f; Move(dir.x, dir.y); }
+        }
+
+        // Y / Tab: 武将 → 技能; 兵书 cycles 命盘 / 藏书阁 / 策略一览; 系统 switches settings / saves.
+        public void Alternate()
+        {
+            if (CurrentTab == Tab.Generals) Show(Tab.Skills);
+            else if (CurrentTab == Tab.Bingshu) bingshuFocus = (bingshuFocus + 1) % 3;
+            else if (CurrentTab == Tab.System) column = column == 2 ? 1 : 2;
+        }
+
+        // X / C: take a book out of the circuit, or the gear off the chosen slot.
+        void Remove()
+        {
+            if (CurrentTab == Tab.Bingshu) RemoveBook();
+            else if (CurrentTab == Tab.Equip && !picking) Unequip((EquipSlot)slotIndex);
+        }
+
+        // ---------- drawing ----------
+
+        void OnGUI()
+        {
+            if (Current != Mode.Root || Controller == null || Controller.Run == null) return;
+            if (paint == null)
+            {
+                paint = new MenuPaint(Art, BingshuArt);
+                foreach (var line in Borders)
+                {
+                    var p = line.Split(',');
+                    if (p.Length == 5) paint.SetBorder(p[0], new Vector4(float.Parse(p[1]), float.Parse(p[2]), float.Parse(p[3]), float.Parse(p[4])));
+                }
+            }
+            GUI.depth = -10;
+            paint.Begin();
+            // The town stays visible behind, dimmed and cooled like the mock-ups' night street.
+            paint.Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.02f, 0.05f, 0.10f, 0.62f));
+            DrawChrome();
+            switch (CurrentTab)
+            {
+                case Tab.Items: DrawParty(); DrawItems(); break;
+                case Tab.Equip: DrawParty(); DrawEquip(); break;
+                case Tab.Skills: DrawParty(); DrawSkills(); break;
+                case Tab.Bingshu: DrawBingshu(); break;
+                case Tab.Generals: DrawParty(); DrawGeneral(); break;
+                case Tab.System: DrawSystem(); break;
+            }
+            DrawHints();
+        }
+
+        static readonly string[] TabNames = { "物品", "装备", "技能", "兵书", "武将", "系统" };
+        public static string TabName(Tab t) => TabNames[(int)t];
+
+        Color SilverA(float a) => new Color(MenuPaint.Silver.r, MenuPaint.Silver.g, MenuPaint.Silver.b, a);
+
+        void DrawChrome()
+        {
+            var p = paint;
+            var bar = new Color(0.03f, 0.06f, 0.12f, 0.97f);   // opaque: hides the town objective plaque underneath
+            p.Fill(new Rect(0, 0, Screen.width, p.R(0, 0, 1, 76).height), bar);
+            p.Fill(new Rect(0, p.R(0, 74, 1, 1).y, Screen.width, Mathf.Max(1.5f, 1.5f * p.K)), SilverA(0.55f));
+            p.Text(78, 4, 140, 68, "行旅", 50, MenuPaint.Ivory, TextAnchor.MiddleLeft, true);
+            p.Text(198, 24, 300, 44, "/  " + MenuText.Place(Controller), 22, MenuPaint.Mist);
+            if (!p.Icon(1236, 28, 32, 32, "icon_coin")) { p.Disc(p.P(1252, 44), 14 * p.K, MenuPaint.Gold); p.Disc(p.P(1252, 44), 5 * p.K, MenuPaint.Base); }
+            p.Text(1284, 22, 90, 44, Inv.Copper.ToString(), 26, MenuPaint.Ivory);
+            if (!p.Icon(1376, 28, 32, 32, "icon_reputation")) p.Text(1376, 22, 32, 44, "✦", 26, MenuPaint.Gold, TextAnchor.MiddleCenter);
+            p.Text(1420, 22, 60, 44, Controller.Run.Life.Reputation.ToString(), 26, MenuPaint.Ivory);
+            Button(1494, 20, 152, 48, "‹  返回", ButtonKind.Back, () => Controller.ClosePanel(), size: 24);
+
+            // Objective line.
+            if (!p.Icon(48, 87, 28, 28, "icon_quest")) p.Text(48, 84, 30, 32, "◇", 26, MenuPaint.Gold, TextAnchor.MiddleCenter, true);
+            p.Text(92, 82, 380, 36, MenuText.Quest(Controller.Run.Story, Controller.Run.Chapter2), 21, MenuPaint.Ivory);
+            p.HLine(40, 120, 410, SilverA(0.45f));
+
+            // Tabs.
+            for (int i = 0; i < TabNames.Length; i++)
+            {
+                bool sel = (int)CurrentTab == i;
+                var r = p.R(470 + i * 171, 88, 170, 52);
+                p.Frame(r, sel ? "tab_selected" : "tab", sel ? MenuPaint.Cyan : (Color?)null, sel ? new Color(MenuPaint.SelectBg.r, MenuPaint.SelectBg.g, MenuPaint.SelectBg.b, 0.92f) : (Color?)null);
+                GUI.Label(r, TabNames[i], p.St(28, sel ? Color.white : MenuPaint.Ivory, TextAnchor.MiddleCenter, true));
+                int idx = i;
+                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) Show((Tab)idx);
+            }
+        }
+
+        void DrawHints()
+        {
+            var p = paint;
+            float top = p.R(0, 872, 1, 1).y;
+            p.Fill(new Rect(0, top, Screen.width, Screen.height - top), new Color(0.02f, 0.04f, 0.08f, 0.78f));
+            p.Fill(new Rect(0, top, Screen.width, Mathf.Max(1f, p.K)), SilverA(0.45f));
+            float x = 48;
+            void Key(string k, float w = 46) { p.Keycap(x, 887, w, k); x += w + 6; }
+            void Label(string t) { x += 8; p.Text(x, 884, 200, 42, t, 21, MenuPaint.Ivory); x += t.Length * 21 + 30; p.Fill(x - 15, 891, 1, 28, SilverA(0.45f)); }
+            if (padMode) { Key("LB"); Key("RB"); } else { Key("Q", 38); Key("E", 38); }
+            Label("切换分页");
+            Key("↑", 34); Key("↓", 34); Label("选择");
+            foreach (var (pad, key, label) in HintsFor())
+            {
+                Key(padMode ? pad : key, padMode ? 34 : Mathf.Max(38, key.Length * 13 + 18));
+                Label(label);
+            }
+            if (!string.IsNullOrEmpty(Message)) p.Text(980, 884, 660, 42, Message, 21, MenuPaint.Gold, TextAnchor.MiddleRight);
+        }
+
+        IEnumerable<(string pad, string key, string label)> HintsFor()
+        {
+            switch (CurrentTab)
+            {
+                case Tab.Equip: yield return ("A", "Enter", picking && Candidates().ElementAtOrDefault(candidateIndex).worn ? "卸下" : "装备"); break;
+                case Tab.Skills: yield return ("A", "Enter", "使用"); break;
+                case Tab.Generals: yield return ("A", "Enter", "查看装备"); yield return ("Y", "Tab", "查看技能"); break;
+                case Tab.Bingshu: yield return ("A", "Enter", "镶嵌兵书"); yield return ("X", "C", "卸下"); yield return ("Y", "Tab", "切换列表"); break;
+                default: yield return ("A", "Enter", "确认"); break;
+            }
+            yield return ("B", "X", "返回");
+        }
+
+        enum ButtonKind { Normal, Primary, Disabled, Back }
+
+        // A framed button in mock pixels; true when clicked (never when disabled).
+        bool Button(float x, float y, float w, float h, string text, ButtonKind kind, Action onClick = null, string icon = null, float size = 28, bool focused = false)
+        {
+            var p = paint;
+            var r = p.R(x, y, w, h);
+            string slice = kind switch { ButtonKind.Primary => "button_primary", ButtonKind.Disabled => "button_disabled", ButtonKind.Back => "button_back", _ => "button" };
+            if (focused && kind == ButtonKind.Normal) slice = "button_primary";
+            var edge = kind == ButtonKind.Primary || focused ? MenuPaint.Cyan : kind == ButtonKind.Disabled ? new Color(0.4f, 0.45f, 0.5f) : MenuPaint.Silver;
+            var fill = kind == ButtonKind.Disabled ? new Color(0.20f, 0.24f, 0.28f, 0.92f) : kind == ButtonKind.Primary || focused ? new Color(0.06f, 0.20f, 0.28f, 0.95f) : new Color(0.04f, 0.08f, 0.15f, 0.92f);
+            p.Frame(r, slice, edge, fill);
+            if (focused) p.Outline(r, MenuPaint.Cyan, Mathf.Max(1.5f, 2 * p.K));
+            var color = kind == ButtonKind.Disabled ? new Color(0.62f, 0.66f, 0.70f) : MenuPaint.Ivory;
+            if (icon != null)
+            {
+                if (!p.Icon(x + 26, y + h / 2 - 17, 34, 34, icon, tint: kind == ButtonKind.Disabled ? new Color(1, 1, 1, 0.5f) : (Color?)null))
+                    p.Text(x + 26, y + h / 2 - 17, 34, 34, IconGlyph(icon), 24, color, TextAnchor.MiddleCenter);
+                p.Fill(x + 76, y + 10, 1, h - 20, SilverA(0.4f));
+                GUI.Label(p.R(x + 78, y, w - 88, h), text, p.St(size, color, TextAnchor.MiddleCenter, true));
+            }
+            else GUI.Label(r, text, p.St(size, color, TextAnchor.MiddleCenter, true));
+            if (kind != ButtonKind.Disabled && GUI.Button(r, GUIContent.none, GUIStyle.none)) { onClick?.Invoke(); return true; }
+            return false;
+        }
+
+        static string IconGlyph(string icon) => icon switch
+        {
+            "icon_home" => "⌂", "icon_exit" => "⇥", "icon_lock" => "🔒", "icon_info" => "i", "icon_check" => "✓", _ => "·",
+        };
+
+        // ---------- the party column ----------
 
         Texture2D Bust(string id)
         {
@@ -253,252 +338,76 @@ namespace ThreeKingdoms.UI.Menu
             return i >= 0 && i < Busts.Length ? Busts[i] : null;
         }
 
-        static void Bar(VisualElement parent, string name, int value, int max, Color color)
+        static string TroopIcon(TroopType t) => t switch { TroopType.Archer => "troop_archer", TroopType.Cavalry => "troop_cavalry", _ => "troop_infantry" };
+
+        void TroopMark(float x, float y, float s, TroopType t)
         {
-            var r = Row(parent); r.style.alignItems = Align.Center; r.style.marginTop = 6;
-            var l = MenuKit.Text(r, name, 22, Color.white); l.style.width = 56;
-            var track = new VisualElement { pickingMode = PickingMode.Ignore };
-            track.style.flexGrow = 1; track.style.height = 14; track.style.backgroundColor = new Color(0, 0, 0, 0.5f);
-            r.Add(track);
-            var fill = new VisualElement { pickingMode = PickingMode.Ignore };
-            fill.style.height = 14; fill.style.width = new Length(max > 0 ? 100f * value / max : 0, LengthUnit.Percent);
-            fill.style.backgroundColor = color;
-            track.Add(fill);
-            MenuKit.Text(r, $" {value}/{max}", 20, Color.white).style.width = 110;
+            if (paint.Icon(x, y, s, s, TroopIcon(t))) return;
+            paint.Text(x, y, s, s, t == TroopType.Archer ? "⊗" : t == TroopType.Cavalry ? "♞" : "⛉", s * 0.85f, MenuPaint.Mist, TextAnchor.MiddleCenter);
         }
 
-        // ---------- equipment ----------
-
-        public void PickFor(EquipSlot slot)
+        void DrawParty()
         {
-            pickingSlot = slot;
-            ShowOptions(slot, true);
-            MenuKit.FocusFirst(side);
-        }
-
-        // The right column: the general's options for the slot, with what each would change.
-        void ShowOptions(EquipSlot slot, bool pickable)
-        {
-            side.Clear();
-            var g = General;
-            MenuKit.Text(side, $"{ShopText.Slot(slot)}　{MenuText.Candidates}", 24, MenuKit.Gold);
-            var now = Progress.Stats(g, Inv.Bonus(g.Id));
-            var worn = Inv.Worn(g.Id, slot);
-            if (worn != null && pickable)
-                MenuKit.Button(side, ShopText.Unequip, () => { Inv.Unequip(g.Id, slot); message.text = ShopText.Unequipped(g.DisplayName, worn.DisplayName); Show(Tab.Equip); },
-                    () => Describe($"{ShopText.Unequip}{worn.DisplayName}：{ShopText.Bonus(worn.Bonus)}"), size: 22);
-            var options = Inv.Bag.Select(b => b.item).Where(i => i.Slot == slot).ToList();
-            if (options.Count == 0) { SideText(ShopText.NothingToEquip); return; }
-            foreach (var item in options)
+            var p = paint;
+            p.PanelBox(30, 158, 422, 690, "队伍");
+            var joined = Joined;
+            for (int i = 0; i < joined.Count && i < 3; i++)
             {
-                var it = item;
-                bool ok = Inv.CanEquip(g, it) == TradeResult.Ok;
-                var then = Progress.Stats(g, Inv.BonusWith(g.Id, it));
-                if (!pickable) { SideText($"{it.DisplayName}　{(ok ? ShopText.Bonus(it.Bonus) : ShopText.CannotEquip(it))}"); continue; }
-                MenuKit.Button(side, $"{it.DisplayName} {ShopText.Count(Inv.Count(it))}", () =>
-                {
-                    if (Inv.Equip(g, it) == TradeResult.Ok) message.text = ShopText.Equipped(g.DisplayName, it.DisplayName);
-                    Show(Tab.Equip);
-                }, () => Describe(ok ? ShopText.Diff(now, then) : ShopText.CannotEquip(it)), enabled: ok, size: 22);
+                var g = joined[i];
+                float y = 224 + i * 210;
+                PartyCard(40, y, 402, 196, g, i == generalIndex, column == 0 || CurrentTab == Tab.Generals || CurrentTab == Tab.Items);
+                int idx = i;
+                if (GUI.Button(p.R(40, y, 402, 196), GUIContent.none, GUIStyle.none)) { generalIndex = idx; picking = false; if (CurrentTab != Tab.Generals) column = 0; }
             }
         }
 
-        void SideText(string text) => MenuKit.Text(side, text, 22, MenuKit.Muted).style.marginTop = 8;
-        void Describe(string text) => description.text = text ?? "";
-
-        Button Entry(string text, Action onClick, Action onFocus) =>
-            MenuKit.Button(list, text, () => { if (Time.frameCount > openedFrame) onClick(); }, onFocus);
-
-        // ---------- the general's page (reference image 2) ----------
-
-        Label nameBanner;
-        VisualElement portraitFrame, valuesBox, infoTabsRow, infoLeft;
-
-        void BuildInfo()
+        void PartyCard(float x, float y, float w, float h, GeneralSpec g, bool sel, bool pointer)
         {
-            info = new VisualElement();
-            info.style.position = Position.Absolute;
-            info.style.left = 80; info.style.right = 80; info.style.top = 60; info.style.bottom = 60;
-            MenuKit.Frame(info);
-            root.Add(info);
-
-            nameBanner = MenuKit.Text(info, "", 34, Color.white);
-            if (Skin) { Skin.Plaque(nameBanner); nameBanner.style.paddingLeft = nameBanner.style.paddingRight = 28; nameBanner.style.paddingTop = nameBanner.style.paddingBottom = 10; }
-            nameBanner.style.alignSelf = Align.FlexStart;
-
-            var upper = Row(info); upper.style.marginTop = 12; upper.style.height = 420;
-            portraitFrame = new VisualElement { pickingMode = PickingMode.Ignore };
-            portraitFrame.style.width = 420; portraitFrame.style.height = 420;
-            portraitFrame.style.backgroundColor = new Color(0.1f, 0.12f, 0.14f);
-            portraitFrame.style.borderTopWidth = portraitFrame.style.borderBottomWidth = portraitFrame.style.borderLeftWidth = portraitFrame.style.borderRightWidth = 3;
-            portraitFrame.style.borderTopColor = portraitFrame.style.borderBottomColor = portraitFrame.style.borderLeftColor = portraitFrame.style.borderRightColor = MenuKit.Edge;
-            portraitFrame.style.overflow = Overflow.Hidden;
-            upper.Add(portraitFrame);
-            radar = new VisualElement { pickingMode = PickingMode.Ignore };
-            radar.style.flexGrow = 1; radar.style.marginLeft = 20; radar.style.marginRight = 20;
-            radar.generateVisualContent += DrawRadar;
-            upper.Add(radar);
-            valuesBox = new VisualElement(); valuesBox.style.width = 340; MenuKit.Frame(valuesBox); upper.Add(valuesBox);
-
-            infoTabsRow = Row(info); infoTabsRow.style.marginTop = 14;
-            foreach (InfoTab t in Enum.GetValues(typeof(InfoTab)))
-            {
-                var tab = t;
-                var b = MenuKit.Button(infoTabsRow, MenuText.InfoTabName(t), () => ShowInfoTab(tab), size: 24);
-                b.style.width = 150; b.style.marginRight = 8; b.style.paddingLeft = 0; b.style.unityTextAlign = TextAnchor.MiddleCenter;
-            }
-            var lower = Row(info); lower.style.flexGrow = 1; lower.style.marginTop = 10;
-            infoLeft = new VisualElement(); infoLeft.style.width = 420; MenuKit.Frame(infoLeft); lower.Add(infoLeft);
-            infoBody = new VisualElement(); infoBody.style.flexGrow = 1; infoBody.style.marginLeft = 20; MenuKit.Frame(infoBody); lower.Add(infoBody);
-            info.style.display = DisplayStyle.None;
+            var p = paint;
+            p.Frame(x, y, w, h, sel ? "party_card_selected" : "party_card", sel ? MenuPaint.Cyan : (Color?)null);
+            var bust = Bust(g.Id);
+            if (bust) GUI.DrawTexture(p.R(x + 6, y + 6, 190, h - 12), bust, ScaleMode.ScaleAndCrop);
+            if (sel && !p.Has("party_card_selected")) p.Outline(p.R(x + 2, y + 2, w - 4, h - 4), MenuPaint.Cyan, Mathf.Max(1.5f, 2 * p.K));
+            if (sel && pointer) Pointer(x - 12, y + h / 2 - 26);
+            var s = Progress.Stats(g, Inv.Bonus(g.Id));
+            p.Text(x + 195, y + 16, 140, 52, g.DisplayName, 34, MenuPaint.Ivory, TextAnchor.MiddleLeft, true);
+            p.Text(x + 280, y + 20, 112, 44, $"Lv.{Progress.Level(g)}", 26, MenuPaint.Gold, TextAnchor.MiddleRight);
+            p.HLine(x + 195, y + 70, 200, SilverA(0.35f));
+            TroopMark(x + 196, y + 78, 30, g.Troop);
+            p.Text(x + 240, y + 74, 120, 38, BattleTroop(g.Troop), 20, MenuPaint.Ivory);
+            BarRow(x + 152, y + 124, "兵力", s.MaxTroops, s.MaxTroops, MenuPaint.Jade, 100);
+            BarRow(x + 152, y + 152, "技力", s.MaxTech, s.MaxTech, MenuPaint.Sky, 100);
         }
 
-        public void ShowInfo(GeneralSpec g)
+        void BarRow(float x, float y, string label, int value, int max, Color c, float barW, float size = 19, string sep = "/")
         {
-            if (g == null) return;
-            infoGeneral = g;
-            Current = Mode.Info;
-            panel.style.display = DisplayStyle.None;
-            info.style.display = DisplayStyle.Flex;
-            nameBanner.text = $"{g.DisplayName}（{MenuText.CourtesyName(g.Id)}）";
-
-            portraitFrame.Clear();
-            if (Portraits && Portraits.TryGet(g.Id, out var p))
-            {
-                // Head and shoulders of the full illustration, square, facing as in dialogue.
-                float h = 0.4f, w = h * p.Texture.height / p.Texture.width;
-                float axis = Mathf.Clamp(p.Axis, w / 2f, 1f - w / 2f);
-                var img = new Image { image = p.Texture, scaleMode = ScaleMode.StretchToFill, pickingMode = PickingMode.Ignore };
-                img.uv = new Rect(axis - w / 2f, 1f - h, w, h);
-                img.style.flexGrow = 1;
-                if (p.Flip) img.style.scale = new Scale(new Vector3(-1, 1, 1));
-                portraitFrame.Add(img);
-            }
-
-            var stats = Progress.Stats(g, Inv.Bonus(g.Id));
-            valuesBox.Clear();
-            foreach (var (name, value) in new[] { ("武力", stats.Force), ("统率", stats.Command), ("智力", stats.Intellect), ("兵力", stats.MaxTroops),
-                         ("速度", stats.Speed), ("物攻", stats.PhysicalAttack), ("物防", stats.PhysicalDefense), ("计攻", stats.StrategyAttack), ("计防", stats.StrategyDefense) })
-            {
-                var r = Row(valuesBox); r.style.justifyContent = Justify.SpaceBetween; r.style.marginTop = 4;
-                MenuKit.Text(r, name, 24, MenuKit.Gold);
-                MenuKit.Text(r, value.ToString(), 24, Color.white);
-            }
-
-            infoLeft.Clear();
-            int level = Progress.Level(g);
-            var next = Progress.ExpForNextLevel(g);
-            foreach (var (k, v) in new[] { ("等级", level.ToString()), ("经验", next is int n ? $"{Progress.Exp(g)}／{n}" : $"{Progress.Exp(g)}（上限）"),
-                         ("兵种", BattleText.Troop(g.Troop)), ("声望", Controller.Run.Life.Reputation.ToString()) })
-            {
-                var r = Row(infoLeft); r.style.justifyContent = Justify.SpaceBetween; r.style.marginTop = 4;
-                MenuKit.Text(r, k, 24, MenuKit.Gold);
-                MenuKit.Text(r, v, 24, Color.white);
-            }
-            radar.Clear();
-            radar.MarkDirtyRepaint();
-            ShowInfoTab(InfoTab.Status);
+            var p = paint;
+            p.Text(x, y, 50, 26, label, size, MenuPaint.Ivory);
+            p.Bar(x + 50, y + 7, barW, 12, max > 0 ? value / (float)max : 0, c);
+            p.Text(x + 62 + barW, y, 120, 26, $"{value}{sep}{max}", size, MenuPaint.Ivory);
         }
 
-        public void ShowInfoTab(InfoTab tab)
+        // The ▷ pointer left of the focused row.
+        void Pointer(float x, float y)
         {
-            infoTab = tab;
-            var g = infoGeneral;
-            infoBody.Clear();
-            switch (tab)
-            {
-                case InfoTab.Status:
-                    MenuKit.Text(infoBody, $"所率兵种：{BattleText.Troop(g.Troop)}", 24, Color.white);
-                    MenuKit.Text(infoBody, MenuText.Counter(g.Troop), 22, new Color(0.85f, 0.85f, 0.85f)).style.marginTop = 8;
-                    break;
-                case InfoTab.Skills:
-                    int level = Progress.Level(g);
-                    foreach (var u in g.Skills)
-                        MenuKit.Text(infoBody, MenuText.Skill(u.Skill.DisplayName, u.Skill.TechCost, u.Skill.Description, u.Level <= level, u.Level), 22,
-                            u.Level <= level ? Color.white : MenuKit.Muted).style.marginTop = 6;
-                    break;
-                case InfoTab.Gear:
-                    foreach (EquipSlot s in Enum.GetValues(typeof(EquipSlot)))
-                    {
-                        var w = Inv.Worn(g.Id, s);
-                        MenuKit.Text(infoBody, $"{ShopText.Slot(s)}：{(w != null ? $"{w.DisplayName}（{ShopText.Bonus(w.Bonus)}）" : ShopText.Empty)}", 22, Color.white).style.marginTop = 6;
-                    }
-                    break;
-                case InfoTab.Biography:
-                    MenuKit.Text(infoBody, MenuText.Biography(g.Id), 22, Color.white);
-                    break;
-            }
-            var buttons = infoTabsRow.Query<Button>().ToList();
-            for (int i = 0; i < buttons.Count; i++) buttons[i].style.color = i == (int)tab ? MenuKit.Gold : Color.white;
-            buttons[(int)tab].Focus();
+            if (paint.Icon(x, y, 22, 52, "select_arrow")) return;
+            paint.Text(x, y, 22, 52, "▶", 22, MenuPaint.Cyan, TextAnchor.MiddleCenter);
         }
 
-        void CloseInfo()
+        static string BattleTroop(TroopType t) => ThreeKingdoms.UI.Battle.BattleText.Troop(t);
+
+        void Row(float x, float y, float w, float h, bool sel)
         {
-            Current = Mode.Root;
-            info.style.display = DisplayStyle.None;
-            panel.style.display = DisplayStyle.Flex;
-            Show(Tab.Generals);
+            paint.Frame(x, y, w, h, sel ? "slot_row_selected" : "slot_row", sel ? MenuPaint.Cyan : (Color?)null,
+                sel ? new Color(MenuPaint.SelectBg.r, MenuPaint.SelectBg.g, MenuPaint.SelectBg.b, 0.85f) : (Color?)null);
+            if (sel && !paint.Has("slot_row_selected")) paint.Outline(paint.R(x, y, w, h), MenuPaint.Cyan, Mathf.Max(1.5f, 2 * paint.K));
         }
 
-        // Five values on a pentagon: 武力, 统率, 智力 out of 100, 兵力 out of 300, 速度 out of 15.
-        void DrawRadar(MeshGenerationContext mgc)
+        // A small info line with the (i) mark, as under 使用 in the mock-ups.
+        void Info(float x, float y, string text, float size = 20)
         {
-            if (infoGeneral == null) return;
-            var s = Progress.Stats(infoGeneral, Inv.Bonus(infoGeneral.Id));
-            float[] v = { s.Force / 100f, s.Command / 100f, s.Intellect / 100f, s.MaxTroops / 300f, s.Speed / 15f };
-            var rect = radar.contentRect;
-            var c = rect.center + new Vector2(0, 10);
-            float r = Mathf.Min(rect.width, rect.height) * 0.36f;
-            Vector2 Corner(int i, float k)
-            {
-                float a = (-90f + i * 72f) * Mathf.Deg2Rad;
-                return c + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r * k;
-            }
-            var p = mgc.painter2D;
-            p.strokeColor = new Color(0.62f, 0.50f, 0.28f, 0.8f); p.lineWidth = 2;
-            for (int ring = 1; ring <= 4; ring++)
-            {
-                p.BeginPath();
-                for (int i = 0; i < 5; i++) { if (i == 0) p.MoveTo(Corner(i, ring / 4f)); else p.LineTo(Corner(i, ring / 4f)); }
-                p.ClosePath(); p.Stroke();
-            }
-            for (int i = 0; i < 5; i++) { p.BeginPath(); p.MoveTo(c); p.LineTo(Corner(i, 1f)); p.Stroke(); }
-            p.fillColor = new Color(0.95f, 0.65f, 0.25f, 0.55f);
-            p.strokeColor = new Color(1f, 0.85f, 0.45f); p.lineWidth = 3;
-            p.BeginPath();
-            for (int i = 0; i < 5; i++) { var q = Corner(i, Mathf.Clamp01(v[i])); if (i == 0) p.MoveTo(q); else p.LineTo(q); }
-            p.ClosePath(); p.Fill(); p.Stroke();
-        }
-
-        void Update()
-        {
-            if (Current == Mode.Root) MenuKit.KeepFocus(root, pickingSlot != null ? side : list);
-            // Corner labels for the radar once its size is known.
-            if (Current == Mode.Info && radar.childCount == 0 && radar.contentRect.width > 0) LabelRadar();
-        }
-
-        void LabelRadar()
-        {
-            string[] names = { "武力", "统率", "智力", "兵力", "速度" };
-            var rect = radar.contentRect;
-            var c = rect.center + new Vector2(0, 10);
-            float r = Mathf.Min(rect.width, rect.height) * 0.36f + 30f;
-            for (int i = 0; i < 5; i++)
-            {
-                float a = (-90f + i * 72f) * Mathf.Deg2Rad;
-                var l = MenuKit.Text(radar, names[i], 24, MenuKit.Gold);
-                l.style.position = Position.Absolute;
-                l.style.left = c.x + Mathf.Cos(a) * r - 24; l.style.top = c.y + Mathf.Sin(a) * r - 16;
-            }
-        }
-
-        static VisualElement Row(VisualElement parent)
-        {
-            var r = new VisualElement();
-            r.style.flexDirection = FlexDirection.Row;
-            parent.Add(r);
-            return r;
+            if (!paint.Icon(x, y + 4, 30, 30, "icon_info")) { paint.Disc(paint.P(x + 15, y + 19), 13 * paint.K, MenuPaint.Mist); paint.Text(x, y + 4, 30, 30, "i", 18, MenuPaint.Base, TextAnchor.MiddleCenter, true); }
+            paint.Text(x + 42, y, 500, 38, text, size, MenuPaint.Ivory);
         }
     }
 }

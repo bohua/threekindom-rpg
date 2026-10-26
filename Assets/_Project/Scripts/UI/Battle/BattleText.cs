@@ -98,6 +98,12 @@ namespace ThreeKingdoms.UI.Battle
         public static string SkillCost(int tech) => $"{tech} 技力";
         public static string Remaining(StatModifier m) => $"{Stat(m.Stat)}{(m.Percent > 0 ? "+" : "")}{m.Percent}%（剩{m.RemainingTurns}回合）";
         public static string Order(string names) => $"行动顺序：{names}";
+        // 0.2 statuses and battle events (SYSTEMS_V02 §1.3, §2.2).
+        public static string StatusName(string id) => StatusSpec.Find(id)?.DisplayName ?? id;
+        public static string StatusRemaining(string id, int turns) => $"{StatusName(id)}（剩{turns}回合）";
+        public const string EscortMark = "护";
+        public const string AllyCaption = "友军";
+        public const string EscortLost = "护卫目标撤退，战斗失败。可还原战前状态重新挑战。";
         public static string ExpGain(int exp) => $"全员获得经验 {exp}";
         public static string CopperGain(int copper) => $"获得铜钱 {copper}";
         public static string LevelUp(string name, int to) => $"{name} 升到 {to} 级";
@@ -134,11 +140,19 @@ namespace ThreeKingdoms.UI.Battle
                 case BattleEventKind.ModifierApplied: return $"{target} {Stat(e.Modifier.Stat)}{(e.ModifierPercent > 0 ? "+" : "")}{e.ModifierPercent}%（{e.ModifierTurns}回合，含本回合）";
                 case BattleEventKind.ModifierExpired: return $"{target} 的{Stat(e.Modifier.Stat)}变化结束";
                 case BattleEventKind.Retargeted: return $"{actor} 原目标已撤退，转攻 {target}";
-                case BattleEventKind.Retreated: return $"{target} 部队溃退，撤出战场";
+                case BattleEventKind.Retreated: return e.RetreatReason == RetreatReason.Routed ? $"{target} 溃走" : $"{target} 部队溃退，撤出战场";
+                case BattleEventKind.Banner: return e.Text;
+                case BattleEventKind.ObjectiveChanged: return e.Text;
+                case BattleEventKind.Fx: return "";
+                case BattleEventKind.Dialogue: return "";
+                case BattleEventKind.RoundStarted: return $"—— 第{e.Amount}回合 ——";
+                case BattleEventKind.StatusApplied: return $"{target} 陷入{StatusName(e.Text)}（{e.Amount}回合，含本回合）";
+                case BattleEventKind.StatusExpired: return $"{target} 的{StatusName(e.Text)}解除";
+                case BattleEventKind.EventDamage: return $"{target} 损失兵力 {e.Amount}";
                 case BattleEventKind.Cancelled: return $"{actor} 的{(e.Skill != null ? action : "行动")}取消：{Reason(e.Reason)}（不消耗）";
                 case BattleEventKind.RoundEnded: return $"—— 第{e.Amount}回合结束 ——";
                 case BattleEventKind.Victory: return "敌军全部撤退，我军胜利！";
-                case BattleEventKind.Defeat: return "我军出战部队全部撤退……";
+                case BattleEventKind.Defeat: return e.Target == null ? "战斗失败……" : "我军出战部队全部撤退……";
                 default: return e.Kind.ToString();
             }
         }

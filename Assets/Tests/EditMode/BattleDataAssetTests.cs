@@ -24,14 +24,14 @@ namespace ThreeKingdoms.Tests.EditMode
         {
             var data = AssetDatabase.LoadAssetAtPath<BattleCatalog>(CatalogPath).ToRuntime();
             Assert.That(data.Party.Select(g => g.Id), Is.EqualTo(new[] { "liu_bei", "guan_yu", "zhang_fei" }));
-            Assert.That(data.Encounters.Select(e => e.Id), Is.EqualTo(new[] { "battle_1", "battle_2", "battle_3" }));
+            Assert.That(data.Encounters.Select(e => e.Id), Is.EqualTo(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6" }));   // 0.2 adds 4–6
             var b1 = data.Encounter("battle_1");
             Assert.That(b1.Enemies.Select(e => (e.General.Id, e.Level)), Is.EqualTo(new[] { ("cheng_yuanzhi", 2), ("yt_headman", 1), ("yt_headman", 1) }));
             Assert.AreEqual(EnemyAiKind.HighestTroops, b1.Ai);
             Assert.AreEqual(4, data.Encounter("battle_2").Enemies.Count);
             Assert.AreEqual(TroopType.Strategist, data.Encounter("battle_3").Enemies[0].General.Troop);
-            Assert.That(data.Encounters.Select(e => e.ExpReward), Is.EqualTo(new[] { 10, 20, 30 }));
-            Assert.That(data.Encounters.Select(e => e.CopperReward), Is.EqualTo(new[] { 30, 50, 60 }));
+            Assert.That(data.Encounters.Select(e => e.ExpReward), Is.EqualTo(new[] { 10, 20, 30, 40, 50, 60 }));
+            Assert.That(data.Encounters.Select(e => e.CopperReward), Is.EqualTo(new[] { 30, 50, 60, 60, 70, 80 }));
             Assert.AreEqual(30, data.Ration.HealPercent);
             Assert.IsFalse(data.Troops.Get(TroopType.YellowTurban).PlayerUsable);
         }

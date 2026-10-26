@@ -17,6 +17,11 @@ namespace ThreeKingdoms.Core.Battle
         public int Copper { get; }
         public int RationsUsed { get; }
 
+        // A victory won outside the round-based core (0.2 battles 4–6 are fought on the tactics map, ADR-0010):
+        // the encounter's exp and copper, applied by the same owners as any other result.
+        public static BattleResult Victory(EncounterSpec encounter, int rounds, int rationsUsed = 0) =>
+            new BattleResult(encounter.Id, BattleOutcome.Victory, rounds, encounter.ExpReward, encounter.CopperReward, rationsUsed);
+
         internal BattleResult(string encounterId, BattleOutcome outcome, int rounds, int exp, int copper, int rationsUsed)
         {
             EncounterId = encounterId; Outcome = outcome; Rounds = rounds; Exp = exp; Copper = copper; RationsUsed = rationsUsed;
@@ -47,8 +52,30 @@ namespace ThreeKingdoms.Core.Battle
             this.ai = ai ?? EnemyAi.For(encounter);
             var players = lineup.Select((c, slot) => new BattleUnit(Side.Player, slot, c.General, c.Level, c.Skills, troops, config, c.Equipment));
             // Enemies: fixed attributes, only the level differs between battles; no equipment.
-            var enemies = encounter.Enemies.Select((e, slot) => new BattleUnit(Side.Enemy, slot, e.General, e.Level, e.General.SkillsAt(e.Level), troops, config));
-            State = new BattleState(players, enemies, rationItem, rations, config, troops);
+            var enemies = encounter.Enemies.Select((e, slot) => new BattleUnit(Side.Enemy, slot, e.General, e.Level, e.General.SkillsAt(e.Level), troops, config)
+                { FocusEscort = e.FocusEscort }).ToList();
+            // Allies stand after our line-up (slot 3 on, SYSTEMS_V02 §2.2); like enemies they have no equipment.
+            var allies = encounter.Allies.Select((a, i) => new BattleUnit(Side.Ally, BattleState.MaxLineup + i, a.General, a.Level, a.General.SkillsAt(a.Level), troops, config)).ToList();
+            State = new BattleState(players, enemies, rationItem, rations, config, troops, allies, encounter.Script);
+            for (int i = 0; i < allies.Count; i++) if (encounter.Allies[i].Escort) State.MarkEscort(allies[i]);
+        }
+
+        // turn_start events of the current round (SYSTEMS_V02 §1.2): call before our orders; PlayRound calls it too if
+        // it was skipped. When an event ends the battle, Result is set and no orders are needed.
+        public IReadOnlyList<BattleEvent> StartRound()
+        {
+            if (Result != null) return System.Array.Empty<BattleEvent>();
+            var log = State.StartRound();
+            Finalise();
+            return log;
+        }
+
+        void Finalise()
+        {
+            if (State.Outcome == BattleOutcome.Ongoing || Result != null) return;
+            bool won = State.Outcome == BattleOutcome.Victory;
+            Result = new BattleResult(Encounter.Id, State.Outcome, State.Round,
+                won ? Encounter.ExpReward : 0, won ? Encounter.CopperReward : 0, won ? State.RationsUsed : 0);
         }
 
         public IReadOnlyList<BattleEvent> PlayRound(IEnumerable<BattleCommand> playerCommands)
@@ -56,15 +83,15 @@ namespace ThreeKingdoms.Core.Battle
             if (Result != null) throw new InvalidOperationException("战斗已结束。");
             var mine = playerCommands.ToList();
             if (mine.Any(c => c.Actor.Side != Side.Player)) throw new ArgumentException("只能为我方单位下令。");
-            // Enemy commands are fixed from the round-start view and never see ours.
-            var theirs = ai.Decide(new BattleView(State));
-            var log = State.ResolveRound(mine.Concat(theirs));
-            if (State.Outcome != BattleOutcome.Ongoing)
-            {
-                bool won = State.Outcome == BattleOutcome.Victory;
-                Result = new BattleResult(Encounter.Id, State.Outcome, State.Round,
-                    won ? Encounter.ExpReward : 0, won ? Encounter.CopperReward : 0, won ? State.RationsUsed : 0);
-            }
+            var log = new List<BattleEvent>(State.StartRound());
+            Finalise();
+            if (Result != null) return log;
+            // Enemy and ally commands are fixed from the round-start view and never see ours.
+            var view = new BattleView(State);
+            var theirs = ai.Decide(view);
+            var allied = AllyAi.Decide(view);
+            log.AddRange(State.ResolveRound(mine.Concat(theirs).Concat(allied)));
+            Finalise();
             return log;
         }
     }

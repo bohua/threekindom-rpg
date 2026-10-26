@@ -12,4 +12,20 @@ namespace ThreeKingdoms.Gameplay.Story
         event Action<string> PanelOpened;
         event Action<string> PanelClosed;
     }
+
+    // A walkable scene with the main menu, the save panel and the shop (Zhuojun; 0.2 Lu Zhi's camp and Anxi).
+    public interface IFieldHost : IPanelHost
+    {
+        ThreeKingdoms.Data.Battle.BattleCatalog Catalog { get; }
+        // Where a manual save made here puts the player back (SaveData location).
+        string SaveLocation { get; }
+        void SwitchPanel(string panel);
+        void ReturnToTitle();
+    }
+
+    // A host whose shop carries more than the first tier of equipment (0.2: the Anxi market).
+    public interface IShopTier
+    {
+        int ShopTier { get; }
+    }
 }

@@ -24,7 +24,7 @@ namespace ThreeKingdoms.EditorTools
             var config = Asset<BattleConfigDefinition>("Battle/BattleConfig", c =>
             {
                 c.AdvantagePercent = 140; c.GuardPercent = 50; c.MinModifierPercent = 20; c.MaxAttribute = 100;
-                c.ExpTable = new[] { 0, 10, 30, 60, 100 };
+                c.ExpTable = new[] { 0, 10, 30, 60, 100, 150, 210 };   // 0.2: level cap 5 → 7 (SYSTEMS_V02 §4)
             });
             var troops = Asset<TroopTableDefinition>("Battle/TroopTable", t =>
             {
@@ -78,6 +78,46 @@ namespace ThreeKingdoms.EditorTools
             var b2 = Encounter("battle_2", "Battle2_ZhangLiang", "第二战 · 张梁", EnemyAiKind.FacingSlot, 20, 50, (zhangLiang, 3), (officer, 1), (officer, 1), (officer, 1));
             var b3 = Encounter("battle_3", "Battle3_ZhangBrothers", "第三战 · 张角三兄弟", EnemyAiKind.FacingSlot, 30, 60, (zhangJiao, 4), (zhangBao, 4), (zhangLiang, 4));
 
+            // 0.2 黄巾篇 battles 4–6 (V02_HUANGJIN_PLAN §4; SYSTEMS_V02 §1.4, §2.3). Values are untested initial values.
+            var guard = General("yt_guard", "ZhangJiaoGuard", "张角亲卫", TroopType.YellowTurban, 60, 50, 30, 0, 0, 0);
+            var dongZhuo = General("dong_zhuo", "DongZhuo", "董卓本阵", TroopType.Infantry, 70, 40, 50, 0, 0, 0);
+            var bandit = General("bandit", "Bandit", "山贼喽啰", TroopType.Infantry, 45, 40, 20, 0, 0, 0);
+            var banditChief = General("bandit_chief", "BanditChief", "山贼头目", TroopType.Infantry, 72, 55, 30, 0, 0, 0, (1, enemyCharge));
+            var b4 = Encounter("battle_4", "Battle4_Yingchuan", "第四战 · 颍川夜战", EnemyAiKind.FacingSlot, 40, 60,
+                (zhangBao, 5), (zhangLiang, 5), (officer, 3), (officer, 3));
+            b4.Events = new[]
+            {
+                Event("fire_preview", 2, Objective("坚守！火攻将于下回合发动")),
+                Event("fire", 3, Fx("fire_wall"), Banner("火起！"), Dialogue("b4_fire"),
+                    new BattleActionEntry { Kind = ScriptActionKind.ApplyStatus, Target = BattleScript.EnemyAll, Text = "chaos", Value = 2 },
+                    new BattleActionEntry { Kind = ScriptActionKind.DamageRatio, Target = BattleScript.EnemyAll, Value = 10 },
+                    Objective("援军将至：坚持到第 5 回合")),
+                Event("cavalry_preview", 4, Objective("红旗骑兵将于下回合杀到")),
+                Event("cavalry", 5, Fx("red_cavalry_sweep"), Banner("援军杀到！"), Dialogue("b4_cavalry"),
+                    new BattleActionEntry { Kind = ScriptActionKind.Retreat, Target = BattleScript.EnemyAll }),
+                Event("opening", 1, Objective("扛住黄巾的攻势")),
+            };
+            var b5 = Encounter("battle_5", "Battle5_SaveDongZhuo", "第五战 · 广宗救董卓", EnemyAiKind.FacingSlot, 50, 70,
+                (zhangJiao, 6), (guard, 4), (guard, 4), (guard, 4));
+            b5.Enemies[1].FocusEscort = b5.Enemies[2].FocusEscort = b5.Enemies[3].FocusEscort = true;
+            b5.Allies = new[] { new AllyEntry { General = dongZhuo, Level = 7, Escort = true } };
+            b5.Events = new[]
+            {
+                Event("hold", 1, Objective("保护董卓本阵（剩 4 回合）")),
+                Event("hold_2", 2, Objective("保护董卓本阵（剩 3 回合）")),
+                Event("hold_3", 3, Objective("保护董卓本阵（剩 2 回合）")),
+                Event("hold_4", 4, Objective("保护董卓本阵（剩 1 回合）")),
+                Event("hold_end", 5, Banner("张角兵败退走"), new BattleActionEntry { Kind = ScriptActionKind.Retreat, Target = BattleScript.EnemyAll }),
+                new BattleEventEntry
+                {
+                    Id = "early_win", When = TriggerKind.UnitHpBelow, Unit = "zhang_jiao", Percent = 30,
+                    Actions = new[] { Dialogue("b5_zhangjiao_flee"), new BattleActionEntry { Kind = ScriptActionKind.Retreat, Target = BattleScript.EnemyAll } },
+                },
+            };
+            var b6 = Encounter("battle_6", "Battle6_Bandits", "第六战 · 安喜剿匪", EnemyAiKind.FacingSlot, 60, 80,
+                (banditChief, 6), (bandit, 4), (bandit, 4), (bandit, 4));
+            b6.Events = new[] { Event("opening", 1, Objective("剿灭山贼")) };
+
             // Equipment catalogue (equipment-items GDD, adopted 2026-10-19; names provisional, values to be tuned).
             var saber = Equip("ring_pommel_saber", "环首刀", EquipSlot.Weapon, TroopType.Infantry, gift: 15, atk: 4);
             var lance = Equip("cavalry_lance", "骑枪", EquipSlot.Weapon, TroopType.Cavalry, gift: 15, atk: 4);
@@ -91,10 +131,19 @@ namespace ThreeKingdoms.EditorTools
             var banner = Equip("war_banner", "军旗", EquipSlot.Accessory, null, buy: 60, troops: 20);
             var manual = Equip("war_manual_fragment", "兵书残卷", EquipSlot.Accessory, null, buy: 80, tech: 2);
             var whip = Equip("swift_whip", "快马鞭", EquipSlot.Accessory, null, gift: 30, speed: 1);   // side-quest reward: not obtainable in Alpha 0.1
+            // 0.2: the Anxi market's tier (V02_HUANGJIN_PLAN §4, may be cut) and two story gifts.
+            var forgedSaber = Equip("forged_saber", "百炼环首刀", EquipSlot.Weapon, TroopType.Infantry, buy: 130, atk: 13, tier: 2);
+            var steelShuo = Equip("steel_shuo", "精钢马槊", EquipSlot.Weapon, TroopType.Cavalry, buy: 130, atk: 13, tier: 2);
+            var zheBow = Equip("zhe_longbow", "柘木长弓", EquipSlot.Weapon, TroopType.Archer, buy: 130, atk: 12, speed: 1, tier: 2);
+            var lamellar = Equip("iron_lamellar", "铁札甲", EquipSlot.Armor, null, buy: 110, def: 9, troops: 20, tier: 2);
+            var mirror = Equip("heart_mirror", "护心镜", EquipSlot.Accessory, null, buy: 90, def: 4, troops: 10, tier: 2);
+            var luQuiver = Equip("lu_quiver", "“卢”字箭囊", EquipSlot.Accessory, null, gift: 20, tech: 1, speed: 1);   // corner reward in Lu Zhi's camp
+            var woodCharm = Equip("anxi_charm", "护身木牌", EquipSlot.Accessory, null, gift: 10, def: 3);   // thanks of the Anxi townsfolk
             var economy = Asset<EconomyCatalog>("Economy/EconomyCatalog", c =>
             {
                 c.StartCopper = 120; c.StartRations = 2; c.RationPrice = 10; c.SellPercent = 50;
-                c.Equipment = new[] { saber, lance, huntingBow, cloth, spear, shuo, hornBow, leather, bracers, banner, manual, whip };
+                c.Equipment = new[] { saber, lance, huntingBow, cloth, spear, shuo, hornBow, leather, bracers, banner, manual, whip,
+                    forgedSaber, steelShuo, zheBow, lamellar, mirror, luQuiver, woodCharm };
                 c.StartingGear = new[]
                 {
                     new StartingGearEntry { General = liu, Items = new[] { huntingBow, cloth } },
@@ -107,7 +156,7 @@ namespace ThreeKingdoms.EditorTools
             {
                 c.Config = config; c.Troops = troops; c.Ration = ration; c.Economy = economy;
                 c.Party = new[] { liu, guan, zhang };
-                c.Encounters = new[] { b1, b2, b3 };
+                c.Encounters = new[] { b1, b2, b3, b4, b5, b6 };
             });
             AssetDatabase.SaveAssets();
             catalog.ToRuntime();   // validate
@@ -142,12 +191,12 @@ namespace ThreeKingdoms.EditorTools
             });
 
         static EquipmentDefinition Equip(string id, string name, EquipSlot slot, TroopType? troop, int buy = 0, int gift = 0,
-            int atk = 0, int def = 0, int troops = 0, int tech = 0, int speed = 0) =>
+            int atk = 0, int def = 0, int troops = 0, int tech = 0, int speed = 0, int tier = 1) =>
             Asset<EquipmentDefinition>($"Equipment/{id}", e =>
             {
                 e.Id = id; e.DisplayName = name; e.Slot = slot; e.LimitTroop = troop != null; e.Troop = troop ?? TroopType.Infantry;
                 e.PhysicalAttack = atk; e.PhysicalDefense = def; e.Troops = troops; e.Tech = tech; e.Speed = speed;
-                e.BuyPrice = buy; e.GiftSellPrice = gift;
+                e.BuyPrice = buy; e.GiftSellPrice = gift; e.ShopTier = tier;
             });
 
         static GeneralDefinition General(string id, string file, string name, TroopType troop, int force, int command, int intellect,
@@ -166,6 +215,16 @@ namespace ThreeKingdoms.EditorTools
             {
                 e.Id = id; e.DisplayName = name; e.Ai = ai; e.SkillEveryRounds = 3; e.ExpReward = exp; e.CopperReward = copper;
                 e.Enemies = System.Array.ConvertAll(enemies, x => new EnemyEntry { General = x.general, Level = x.level });
+                e.Allies = System.Array.Empty<AllyEntry>();
+                e.Events = System.Array.Empty<BattleEventEntry>();
             });
+
+        static BattleEventEntry Event(string id, int round, params BattleActionEntry[] actions) =>
+            new BattleEventEntry { Id = id, When = TriggerKind.TurnStart, Round = round, Actions = actions };
+
+        static BattleActionEntry Objective(string text) => new BattleActionEntry { Kind = ScriptActionKind.SetObjective, Text = text };
+        static BattleActionEntry Banner(string text) => new BattleActionEntry { Kind = ScriptActionKind.Banner, Text = text };
+        static BattleActionEntry Dialogue(string id) => new BattleActionEntry { Kind = ScriptActionKind.Dialogue, Text = id };
+        static BattleActionEntry Fx(string id) => new BattleActionEntry { Kind = ScriptActionKind.Fx, Text = id };
     }
 }

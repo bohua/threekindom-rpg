@@ -158,7 +158,7 @@ namespace ThreeKingdoms.UI.Shop
                     Entry(ShopText.Leave, null, Controller.ClosePanel, () => ShowDetail(ShopText.Leave, ShopText.LeaveHint));
                     break;
                 case Mode.Buy:
-                    foreach (var item in Inv.Data.ShopStock)
+                    foreach (var item in Inv.Data.StockAt(Host is ThreeKingdoms.Gameplay.Story.IShopTier t ? t.ShopTier : 1))
                         Entry(item.DisplayName, ShopText.Price(item.BuyPrice), () => BuyItem(item), () => ShowItem(item, ShopText.BuyPrice(item.BuyPrice)),
                             dim: Inv.CanBuy(item) != TradeResult.Ok);
                     Entry(ShopText.Ration, ShopText.Price(Inv.Data.Config.RationPrice), BuyRation,

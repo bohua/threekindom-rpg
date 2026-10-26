@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Globalization;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -18,6 +19,16 @@ namespace ThreeKingdoms.App
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
         {
+            // 0.2: -stage <id> picks the story-stage script; -stageAuto <seconds> moves lines on and takes the first choice.
+            if (System.Enum.TryParse(LaunchArgs.Get("-chapterStep") ?? "", out ThreeKingdoms.Core.Story.ChapterStep chapterStep))
+                ThreeKingdoms.Gameplay.Story.FieldStoryController.DevStep = chapterStep;
+            ThreeKingdoms.Gameplay.Story.FieldStoryController.DevTalk = LaunchArgs.Get("-fieldTalk");
+            // Screenshot runs keep playing when the window is not in front.
+            if (LaunchArgs.Has("-sceneShots") || LaunchArgs.Has("-chapterShots") || LaunchArgs.Has("-comicShots")) Application.runInBackground = true;
+            string stageId = LaunchArgs.Get("-stage");
+            if (stageId != null) ThreeKingdoms.Gameplay.Story.StageController.DevOverride = stageId;
+            if (float.TryParse(LaunchArgs.Get("-stageAuto"), NumberStyles.Float, CultureInfo.InvariantCulture, out float stageAuto))
+                ThreeKingdoms.Gameplay.Story.StagePlayer.AutoSeconds = stageAuto;
             string scene = LaunchArgs.Get("-scene");
             if (scene != null && SceneManager.GetActiveScene().name != scene) SceneManager.LoadScene(scene);
 
@@ -147,16 +158,40 @@ namespace ThreeKingdoms.App
             yield return LaunchArgs.WaitForRequestedScene();
             yield return new WaitForSecondsRealtime(0.5f);
             var town = Object.FindFirstObjectByType<ThreeKingdoms.Gameplay.Story.TownStoryController>();
-            // menu-equip / menu-info: the pause menu on a tab, or a general's page (screenshots).
+            // menu-items / -equip / -skills / -bingshu / -generals / -system: the travel menu on that tab, in the
+            // mock-ups' situation (after the first battle: Lv.2, 175 copper, reputation 4, a spare bow; saves go to a
+            // temporary folder so the player's own are never touched).
             if (town && Panel.StartsWith("menu-"))
             {
-                town.Run.Story.Join(ThreeKingdoms.Core.Story.StoryState.ZhangFei);
-                town.Run.Story.Join(ThreeKingdoms.Core.Story.StoryState.GuanYu);
+                var run = town.Run;
+                run.Story.Join(ThreeKingdoms.Core.Story.StoryState.ZhangFei);
+                run.Story.Join(ThreeKingdoms.Core.Story.StoryState.GuanYu);
+                if (run.Story.BeginOath()) run.Story.CompleteOath();
+                run.Story.RecordVictory("battle_1");
+                run.Progress.RestoreExp(run.Progress.Party.Select(g => (g.Id, 10)));
+                var inv = run.Progress.Inventory;
+                inv.AddCopper(175 - inv.Copper);
+                run.Life.AddReputation(4 - run.Life.Reputation);
+                inv.AddCopper(inv.Data.Find("horn_bow").BuyPrice); inv.Buy(inv.Data.Find("horn_bow"));
+                ThreeKingdoms.Gameplay.Story.GameRun.SaveDirectoryOverride = System.IO.Path.Combine(Application.temporaryCachePath, "menu-shot-saves");
+                System.IO.Directory.CreateDirectory(ThreeKingdoms.Gameplay.Story.GameRun.SaveDirectoryOverride);
+                run.SaveTo(ThreeKingdoms.Save.SaveSlots.Manual(1), ThreeKingdoms.Save.SaveData.TownLocation);
+                run.SaveTo(ThreeKingdoms.Save.SaveSlots.Auto, "battle_2");
                 town.OpenPanel(ThreeKingdoms.Gameplay.Story.TownStoryController.MenuPanel);
                 yield return null;
                 var menu = Object.FindFirstObjectByType<ThreeKingdoms.UI.Menu.MainMenuHud>();
-                if (Panel == "menu-info") menu.ShowInfo(menu.General);
-                else if (Panel == "menu-equip") { menu.Show(ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Equip); menu.PickFor(ThreeKingdoms.Core.Economy.EquipSlot.Weapon); }
+                // "-2" / "-3" after the tab: show the second / third general.
+                string tabKey = Panel.Substring(5); int pick = 0;
+                if (tabKey.Length > 2 && tabKey[tabKey.Length - 2] == '-' && char.IsDigit(tabKey[tabKey.Length - 1])) { pick = tabKey[tabKey.Length - 1] - '1'; tabKey = tabKey.Substring(0, tabKey.Length - 2); }
+                var tab = tabKey switch
+                {
+                    "equip" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Equip, "skills" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Skills,
+                    "bingshu" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Bingshu, "generals" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Generals,
+                    "system" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.System, _ => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Items,
+                };
+                menu.Show(tab);
+                if (pick > 0) menu.SelectGeneral(pick);
+                if (tab == ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Equip) menu.PickFor(ThreeKingdoms.Core.Economy.EquipSlot.Weapon);
                 yield break;
             }
             if (town && Panel == ThreeKingdoms.Gameplay.Story.TownStoryController.ArcheryPanel) town.OpenArchery();

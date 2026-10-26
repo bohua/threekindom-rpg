@@ -163,6 +163,14 @@ namespace ThreeKingdoms.Core.Economy
 
         public void AddCopper(int amount) => Copper += Math.Max(0, amount);
 
+        // Story gifts (0.2): rations from the Han officer before battle 4, a keepsake into the bag.
+        public void AddRations(int count) => Rations += Math.Max(0, count);
+        public void AddItem(EquipmentSpec item)
+        {
+            if (item == null) return;
+            bag[item.Id] = Count(item) + 1;
+        }
+
         // Copper paid out in town (alms, a bet); false and nothing taken when there is not enough.
         public bool SpendCopper(int amount)
         {

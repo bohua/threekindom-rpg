@@ -28,7 +28,18 @@ namespace ThreeKingdoms.EditorTools
             ("zhang_liang", Scenario, "ZHANG_LIANG_PORTRAIT", true, true, 0.6f, 0.5f),
             ("zhang_bao", Scenario, "ZHANG_BAO_PORTRAIT", true, false, 0.6f, 0.5f),
             ("zhang_jiao", Scenario, "ZHANG_JIAO_PORTRAIT", true, false, 0.6f, 0.5f),
+            // 0.2 黄巾篇 (Codex art/v02-portraits); missing ones talk without a portrait until delivered. Zou Jing and the
+            // county people the brothers meet stand at the right.
+            ("lu_zhi", V02, "LU_ZHI_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("cao_cao", V02, "CAO_CAO_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("dong_zhuo", V02, "DONG_ZHUO_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("zou_jing", V02, "ZOU_JING_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("sun_jian", V02, "SUN_JIAN_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("du_you", V02, "DU_YOU_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("bandit_chief", V02, "BANDIT_CHIEF_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("clerk", Scenario, "CASTLE_STEWARD_PORTRAIT", true, false, 0.62f, 0.45f),
         };
+        const string V02 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v02-portraits";
 
         public static DialoguePortraitSet Import()
         {

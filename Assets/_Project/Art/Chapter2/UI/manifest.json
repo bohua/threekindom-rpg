@@ -1,0 +1,214 @@
+{
+  "style": "苍蓝银辉",
+  "alpha": "binary 0/255",
+  "scale": 2,
+  "filter": "point / nearest",
+  "mipmaps": false,
+  "compression": "none / lossless",
+  "palette_policy": "UI uses approved UI_STYLE_TOKENS; marching sprite uses unchanged shared 48-color world palette; routes use shared ochre/orange accents.",
+  "generation_count": 3,
+  "generation_limit": 8,
+  "schema": "three-kingdoms-ui-slices-v1",
+  "assets": [
+    {
+      "filename": "ui_event_banner.png",
+      "width": 480,
+      "height": 72,
+      "purpose": "战场事件横幅底板",
+      "tile_axes": "none",
+      "slice": {
+        "left": 16,
+        "right": 16,
+        "top": 16,
+        "bottom": 16
+      },
+      "slice_origin": "top-left; margins in native pixels; Unity Sprite.border order is left,bottom,right,top",
+      "sha256": "c6f83ba02f298475a72b94b23b8361f1568f624fbf54a1dffb468ed2e0f24a11"
+    },
+    {
+      "filename": "ui_objective_bar.png",
+      "width": 360,
+      "height": 56,
+      "purpose": "回合目标栏底板",
+      "tile_axes": "none",
+      "slice": {
+        "left": 16,
+        "right": 16,
+        "top": 16,
+        "bottom": 16
+      },
+      "slice_origin": "top-left; margins in native pixels; Unity Sprite.border order is left,bottom,right,top",
+      "sha256": "34c1f72410224a2c68602d07686e077246c963be45871b38f71c358189c1f059"
+    },
+    {
+      "filename": "ui_ally_card_frame.png",
+      "width": 292,
+      "height": 72,
+      "purpose": "友军卡片青蓝细框；中空覆盖层",
+      "tile_axes": "none",
+      "sha256": "0e1ee2e85dbb1441cf1fe1b70d25c40bedb26625f179e6add8de0e8bb5da2e67"
+    },
+    {
+      "filename": "ui_escort_mark.png",
+      "width": 24,
+      "height": 24,
+      "purpose": "护送目标标记；烘焙护字",
+      "tile_axes": "none",
+      "sha256": "019dcf890f12a29c972d3e70808ebe1a780c18fa215ac782949ca4990eb35e98"
+    },
+    {
+      "filename": "ui_chaos_icon_16.png",
+      "width": 16,
+      "height": 16,
+      "purpose": "混乱状态图标，小号",
+      "tile_axes": "none",
+      "sha256": "bc1717a91b26284cebd80a3ae407a4da2cfc0b4f30daa5f83e0c75394d346565"
+    },
+    {
+      "filename": "ui_chaos_icon_24.png",
+      "width": 24,
+      "height": 24,
+      "purpose": "混乱状态图标，中号",
+      "tile_axes": "none",
+      "sha256": "7174c6d209c42ab6f3259c6d457166e4e6dd21c47d8b7e910d045208b4c05a04"
+    },
+    {
+      "filename": "ui_chaos_icon_32.png",
+      "width": 32,
+      "height": 32,
+      "purpose": "混乱状态图标，大号",
+      "tile_axes": "none",
+      "sha256": "c393c871c45af0c48560db190611ce3cdf59c69e27b3aff0369588af19c5c098"
+    },
+    {
+      "filename": "ui_memory_toast.png",
+      "width": 320,
+      "height": 48,
+      "purpose": "记忆获得提示底板",
+      "tile_axes": "none",
+      "slice": {
+        "left": 12,
+        "right": 12,
+        "top": 12,
+        "bottom": 12
+      },
+      "slice_origin": "top-left; margins in native pixels; Unity Sprite.border order is left,bottom,right,top",
+      "sha256": "122dd38eaa5877e883bf93a4330c541100be5c74882cdcdb0a618ded353e814f"
+    },
+    {
+      "filename": "ui_memory_entry.png",
+      "width": 360,
+      "height": 64,
+      "purpose": "武将记忆条目底板",
+      "tile_axes": "none",
+      "slice": {
+        "left": 16,
+        "right": 16,
+        "top": 16,
+        "bottom": 16
+      },
+      "slice_origin": "top-left; margins in native pixels; Unity Sprite.border order is left,bottom,right,top",
+      "sha256": "9207677951956e04a6bf3bca617aadec9808f8c4b1e2fb4c0b6c34ffab0c886f"
+    },
+    {
+      "filename": "ui_march_piece_strip.png",
+      "width": 128,
+      "height": 32,
+      "purpose": "刘备旗号行军棋子；4帧32×32",
+      "tile_axes": "none",
+      "frames": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "x": 32,
+          "y": 0,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "x": 64,
+          "y": 0,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "x": 96,
+          "y": 0,
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "frame_order": [
+        "left_step",
+        "passing_up",
+        "right_step",
+        "passing_down"
+      ],
+      "fps": 6,
+      "loop": true,
+      "pivot": [
+        0.5,
+        0.0
+      ],
+      "sha256": "c515a563368f7fb3a4f98c424757ec7e1eb90e8f9be119ee3efc63afbb51b529"
+    },
+    {
+      "filename": "ui_route_dash.png",
+      "width": 16,
+      "height": 8,
+      "purpose": "橙色行军路线虚线段；水平无缝重复",
+      "tile_axes": "x",
+      "sha256": "a9aeafe6b47d1d23c7ad1f132ed58f66b144145bd7a4062683606fc38045d70f"
+    },
+    {
+      "filename": "ui_route_node.png",
+      "width": 24,
+      "height": 24,
+      "purpose": "行军路线端点；橙色圆环",
+      "tile_axes": "none",
+      "sha256": "c0a246f96e78dda989d877bab8bc93cc6d7eb2f14892fc5351ec5d580d2aab66"
+    },
+    {
+      "filename": "ui_route_node_via.png",
+      "width": 24,
+      "height": 24,
+      "purpose": "行军途经点；宛城城门剪影",
+      "tile_axes": "none",
+      "sha256": "8929317f46b350924a80588d4f575813c73108ce789291dec2013af18d580f1b"
+    },
+    {
+      "filename": "ui_confirm_panel.png",
+      "width": 480,
+      "height": 240,
+      "purpose": "离开确认框空白底板",
+      "tile_axes": "none",
+      "slice": {
+        "left": 16,
+        "right": 16,
+        "top": 16,
+        "bottom": 16
+      },
+      "slice_origin": "top-left; margins in native pixels; Unity Sprite.border order is left,bottom,right,top",
+      "sha256": "d0e046734cf7ca936b11d842373a402be751e5e45e363b020d0c4a3413effbde"
+    },
+    {
+      "filename": "preview.png",
+      "width": 1120,
+      "height": 1410,
+      "purpose": "2倍最近邻资源总览；仅供审阅，不作为游戏切片导入",
+      "tile_axes": "none",
+      "sha256": "45e2012195b2f593641e2bb987292e011ddc6b9539b2db3bac08ad68ab9a768c"
+    }
+  ],
+  "documentation": [
+    "PROMPTS.md",
+    "_checks/README.md"
+  ],
+  "supplementary_metadata": "_checks/slice_metadata.json",
+  "verification_report": "_checks/validation.json",
+  "acceptance_scope": "Static art validation only; no engine import or runtime acceptance."
+}

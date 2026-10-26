@@ -133,7 +133,10 @@ namespace ThreeKingdoms.Core.Battle
     {
         public readonly GeneralSpec General;
         public readonly int Level;
-        public EnemySlot(GeneralSpec general, int level) { General = general ?? throw new ArgumentNullException(nameof(general)); Level = level; }
+        // Goes for the escort target first (SYSTEMS_V02 §2.2 focus_escort).
+        public readonly bool FocusEscort;
+        public EnemySlot(GeneralSpec general, int level, bool focusEscort = false)
+        { General = general ?? throw new ArgumentNullException(nameof(general)); Level = level; FocusEscort = focusEscort; }
     }
 
     public sealed class EncounterSpec
@@ -145,13 +148,21 @@ namespace ThreeKingdoms.Core.Battle
         public int SkillEveryRounds { get; }     // FacingSlot: skills on rounds that are multiples of this
         public int ExpReward { get; }
         public int CopperReward { get; }
+        // 0.2 (SYSTEMS_V02): friendly units that take no orders, and the battle's scripted events.
+        public IReadOnlyList<AllySlot> Allies { get; }
+        public BattleScript Script { get; }
 
-        public EncounterSpec(string id, string displayName, IEnumerable<EnemySlot> enemies, EnemyAiKind ai, int skillEveryRounds, int expReward, int copperReward)
+        public EncounterSpec(string id, string displayName, IEnumerable<EnemySlot> enemies, EnemyAiKind ai, int skillEveryRounds, int expReward, int copperReward,
+            IEnumerable<AllySlot> allies = null, BattleScript script = null)
         {
             if (string.IsNullOrEmpty(id)) throw new ArgumentException("遭遇缺少 Id。");
             Id = id; DisplayName = displayName; Enemies = enemies.ToArray(); Ai = ai;
             SkillEveryRounds = Math.Max(1, skillEveryRounds); ExpReward = expReward; CopperReward = copperReward;
+            Allies = (allies ?? Enumerable.Empty<AllySlot>()).ToArray();
+            Script = script ?? BattleScript.Empty;
             if (Enemies.Count == 0) throw new ArgumentException($"遭遇 {id} 没有敌人。");
+            if (Script.Events.Count > 0)
+                Script.Validate(Enemies.Select(e => e.General.Id).Concat(Allies.Select(a => a.General.Id)), id);
         }
     }
 

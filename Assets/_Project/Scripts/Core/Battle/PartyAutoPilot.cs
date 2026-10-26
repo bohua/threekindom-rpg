@@ -11,7 +11,7 @@ namespace ThreeKingdoms.Core.Battle
         public static BattleCommand Choose(BattleState state, BattleUnit actor)
         {
             var target = state.Enemies.Where(e => e.Active).OrderBy(e => e.Troops).ThenBy(e => e.Slot).FirstOrDefault();
-            var hurt = state.Players.Where(u => u.Active && u.Troops * 2 < u.Stats.MaxTroops).OrderBy(u => u.Troops).FirstOrDefault();
+            var hurt = state.Allies(actor).Where(u => u.Active && u.Troops * 2 < u.Stats.MaxTroops).OrderBy(u => u.Troops).FirstOrDefault();
             var heal = actor.Skills.FirstOrDefault(k => k.HealPercent > 0 && state.CanUseSkill(actor, k));
             if (hurt != null && heal != null) return BattleCommand.UseSkill(actor, heal, hurt);
             if (target == null) return BattleCommand.Defend(actor);

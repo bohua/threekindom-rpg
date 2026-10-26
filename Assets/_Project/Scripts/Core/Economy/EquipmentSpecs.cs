@@ -19,11 +19,14 @@ namespace ThreeKingdoms.Core.Economy
         // 0 = not sold in the shop (starting gear, side-quest rewards); then GiftSellPrice is what the smith pays.
         public int BuyPrice { get; }
         public int GiftSellPrice { get; }
+        // Which shops carry it (0.2): 1 = Zhuojun smith and Lu Zhi's quartermaster, 2 = also the Anxi market.
+        public int ShopTier { get; }
 
         public bool InShop => BuyPrice > 0;
 
-        public EquipmentSpec(string id, string displayName, EquipSlot slot, TroopType? troop, StatBonus bonus, int buyPrice, int giftSellPrice)
+        public EquipmentSpec(string id, string displayName, EquipSlot slot, TroopType? troop, StatBonus bonus, int buyPrice, int giftSellPrice, int shopTier = 1)
         {
+            ShopTier = Math.Max(1, shopTier);
             if (string.IsNullOrEmpty(id)) throw new ArgumentException("装备缺少 Id。");
             if (slot != EquipSlot.Weapon && troop != null) throw new ArgumentException($"{id}: 只有武器受兵种限制。");
             Id = id; DisplayName = displayName; Slot = slot; Troop = troop; Bonus = bonus;
@@ -68,6 +71,8 @@ namespace ThreeKingdoms.Core.Economy
         }
 
         public IEnumerable<EquipmentSpec> ShopStock => Equipment.Where(e => e.InShop);
+        // What a shop of the given tier sells (0.2: the Anxi market adds a tier).
+        public IEnumerable<EquipmentSpec> StockAt(int tier) => ShopStock.Where(e => e.ShopTier <= tier);
 
         public EquipmentSpec Find(string id) =>
             Equipment.FirstOrDefault(e => e.Id == id) ?? throw new KeyNotFoundException($"没有装备 {id}。");

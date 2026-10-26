@@ -17,11 +17,16 @@ MonoBehaviour:
   Enemies:
   - General: {fileID: 11400000, guid: 5bbc1075f4180654fa827e5b34482421, type: 2}
     Level: 4
+    FocusEscort: 0
   - General: {fileID: 11400000, guid: c5441612f1106e24cbf89f25e6853570, type: 2}
     Level: 4
+    FocusEscort: 0
   - General: {fileID: 11400000, guid: bd7ab0114dbbbca4c9c400d137153115, type: 2}
     Level: 4
+    FocusEscort: 0
   Ai: 1
   SkillEveryRounds: 3
   ExpReward: 30
   CopperReward: 60
+  Allies: []
+  Events: []

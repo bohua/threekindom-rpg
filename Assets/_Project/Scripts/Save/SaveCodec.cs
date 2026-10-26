@@ -12,7 +12,7 @@ namespace ThreeKingdoms.Save
     public static class SaveCodec
     {
         public static SaveData Capture(StoryState story, Inventory inventory, IReadOnlyDictionary<string, int> exp,
-            string location, int leaderLevel, string chapter, string gameVersion, DateTime now, TownLife life = null)
+            string location, int leaderLevel, string chapter, string gameVersion, DateTime now, TownLife life = null, ChapterState chapter2 = null)
         {
             story.ToSafeState();   // never save the middle of a sequence (rule 5)
             return new SaveData
@@ -35,6 +35,10 @@ namespace ThreeKingdoms.Save
                 reputation = life?.Reputation ?? 0,
                 quizTakenAt = life?.QuizTakenAt ?? -1,
                 archeryRewardedAt = life?.ArcheryRewardedAt ?? -1,
+                chapterStep = (int)(chapter2?.Step ?? ChapterStep.Zhuojun),
+                chapterFlags = chapter2?.Flags.ToArray() ?? Array.Empty<string>(),
+                memories = chapter2?.Memories.Select(m => new MemoryEntry { who = m.Who, key = m.Key, value = m.Value, node = (int)m.Node, text = m.Text }).ToArray()
+                    ?? Array.Empty<MemoryEntry>(),
             };
         }
 
@@ -45,7 +49,27 @@ namespace ThreeKingdoms.Save
             public IReadOnlyList<(string general, int exp)> Exp;
             public string Location;
             public TownLife Life;
+            public ChapterState Chapter;
         }
+
+        static readonly string[] Locations = { SaveData.TownLocation, SaveData.CampLocation, SaveData.AnxiLocation };
+
+        // Alpha 0.1 saves (format 1): the chapter step follows from the three battles; memories and commissions start empty,
+        // levels and exp are kept. A save made after the third victory continues with Zou Jing's orders (C1).
+        public static ChapterState Migrate(StoryState story)
+        {
+            var c = new ChapterState();
+            c.OpenAfterZhuojun(story.BattlesDone >= StoryState.BattleCount);
+            return c;
+        }
+
+        public static bool PlaceOpen(string location, ChapterStep step) => location switch
+        {
+            SaveData.TownLocation => step <= ChapterStep.ZhuojunFree,
+            SaveData.CampLocation => step == ChapterStep.Camp,
+            SaveData.AnxiLocation => step == ChapterStep.Anxi || step == ChapterStep.AnxiBandits,
+            _ => true,
+        };
 
         // False (with a reason) for anything the current game cannot use; the file itself is never touched.
         public static bool TryRestore(SaveData data, EconomyData economy, out Restored restored, out string error)
@@ -53,12 +77,20 @@ namespace ThreeKingdoms.Save
             restored = null; error = null;
             try
             {
-                if (data.location != SaveData.TownLocation && !data.location.StartsWith("battle_"))
+                if (Array.IndexOf(Locations, data.location) < 0 && !data.location.StartsWith("battle_"))
                     throw new ArgumentException($"未知落点 {data.location}");
                 var story = StoryState.Restore(data.guanYuJoined, data.zhangFeiJoined, (SequenceState)data.oath, data.battlesDone, (SequenceState)data.ending);
+                var chapter = data.formatVersion < 2
+                    ? Migrate(story)
+                    : ChapterState.Restore((ChapterStep)data.chapterStep, data.chapterFlags,
+                        (data.memories ?? Array.Empty<MemoryEntry>()).Select(m => new Memory(m.who, m.key, m.value, (ChronicleNode)m.node, m.text)));
                 // A pre-battle save must be for the battle the story expects next (no Xuzhou or skipped battles, rule 8).
-                if (data.location != SaveData.TownLocation && data.location != story.NextBattleId)
+                string next = story.NextBattleId ?? chapter.NextBattleId;
+                if (data.location.StartsWith("battle_") && data.location != next)
                     throw new ArgumentException($"战前落点 {data.location} 与进度不符");
+                // A place left behind is never a load target (SYSTEMS_V02 §5).
+                if (!PlaceOpen(data.location, chapter.Step))
+                    throw new ArgumentException($"落点 {data.location} 已关闭");
                 var inventory = Inventory.Restore(economy, data.copper, data.rations,
                     (data.bag ?? Array.Empty<BagEntry>()).Select(b => (b.item, b.count)),
                     (data.worn ?? Array.Empty<WornEntry>()).Select(w => (w.general, w.item)));
@@ -69,6 +101,7 @@ namespace ThreeKingdoms.Save
                     Exp = (data.exp ?? Array.Empty<ExpEntry>()).Select(e => (e.general, e.exp)).ToList(),
                     Location = data.location,
                     Life = new TownLife(data.reputation, data.quizTakenAt, data.archeryRewardedAt),
+                    Chapter = chapter,
                 };
                 return true;
             }
