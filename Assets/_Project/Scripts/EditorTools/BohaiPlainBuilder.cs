@@ -54,6 +54,10 @@ namespace ThreeKingdoms.EditorTools
             T.HdAliases.Clear();
             foreach (var (pixel, hd) in HdGround) T.HdAliases[pixel] = hd;
             T.BeginSession(MaterialDir, MeshPath, HdDir, PingyuanDir, WildDir, ArtDir);
+            // Codex + Blender rebuild (user 2026-10-27; production/levels/bohai-plain/blender-rebuild.md): delivered model
+            // sets replace the quad-built pieces wherever they exist; -noBlender keeps the old ones for comparison.
+            pingyuanModels = BlenderModels.Import(PingyuanSet);
+            cornersPlaced.Clear();
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
@@ -558,6 +562,10 @@ namespace ThreeKingdoms.EditorTools
         // A building standing on a 1 m rammed-earth plinth with a fieldstone toe, steps up to its door.
         static void OnPlinth(Transform parent, string name, Vector3 front, string frontKey, string sideKey, string backKey, string roofKey, string roofTex, float steps = 2.4f)
         {
+            // Blender models stand on their own plinth and steps; their origin is the front wall's foot, the same point.
+            string model = frontKey.StartsWith("pingyuan_hall") ? "pingyuan_hall" : frontKey.StartsWith("warehouse") ? "pingyuan_warehouse"
+                : frontKey.StartsWith("house_loess") ? "pingyuan_house" : null;
+            if (model != null && BlenderModels.Place(PingyuanSet, parent, model, name, front)) return;
             var f = T.Metres(frontKey); var sd = T.Metres(sideKey);
             var g = T.Group(parent, name, front);
             float w = f.x + 1.6f, d = sd.x + 1.6f, zc = sd.x / 2f;
@@ -578,6 +586,7 @@ namespace ThreeKingdoms.EditorTools
         {
             bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
             float len = (alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z)) + WallTk;
+            if (BlenderWall(parent, name, a, b, alongX, len)) return;
             var run = T.Group(parent, name, (a + b) / 2f, alongX ? 0f : 90f);
             run.gameObject.AddComponent<Occluder>();
             string face = K("town_wall_loess", "wall_rammed_earth");
@@ -592,9 +601,41 @@ namespace ThreeKingdoms.EditorTools
             T.Solid(run, new Vector3(0, TownWallH / 2f, 0), new Vector3(len, TownWallH, WallTk));
         }
 
+        const string PingyuanSet = "bohai-blender-pingyuan";
+        static bool pingyuanModels;
+        static readonly HashSet<Vector3> cornersPlaced = new HashSet<Vector3>();
+
+        // A wall run from the Blender kit: 8 m pieces, one 4 m piece if it fits, the lot stretched to the exact length
+        // (at most a few per cent); a corner block where the run starts or ends on a city corner.
+        static bool BlenderWall(Transform parent, string name, Vector3 a, Vector3 b, bool alongX, float len)
+        {
+            if (!pingyuanModels || !BlenderModels.Enabled) return false;
+            var pieces = new List<(string model, float length)>();
+            float sum = 0f;
+            while (sum + 8f <= len) { pieces.Add(("pingyuan_wall_8m", 8f)); sum += 8f; }
+            if (sum + 4f <= len + 2f) { pieces.Add(("pingyuan_wall_4m", 4f)); sum += 4f; }
+            if (pieces.Count == 0) { pieces.Add(("pingyuan_wall_4m", 4f)); sum = 4f; }
+            float stretch = len / sum;
+            var run = T.Group(parent, name, (a + b) / 2f, alongX ? 0f : 90f);
+            float at = -len / 2f;
+            foreach (var (model, length) in pieces)
+            {
+                float l = length * stretch;
+                var piece = BlenderModels.Place(PingyuanSet, run, model, model, new Vector3(at + l / 2f, 0, 0));
+                if (piece) piece.localScale = new Vector3(stretch, 1f, 1f);
+                at += l;
+            }
+            foreach (var end in new[] { a, b })
+                if ((Mathf.Approximately(end.x, CityX0) || Mathf.Approximately(end.x, CityX1)) && (Mathf.Approximately(end.z, CityZ0) || Mathf.Approximately(end.z, CityZ1))
+                    && cornersPlaced.Add(end))
+                    BlenderModels.Place(PingyuanSet, parent, "pingyuan_wall_corner", name + " corner", end);
+            return true;
+        }
+
         // Pingyuan's timber-and-thatch gate in an 8 m gap of the loess wall, facing outward along yaw.
         static void TownGate(Transform parent, string name, Vector3 at, float yaw)
         {
+            if (BlenderModels.Place(PingyuanSet, parent, "pingyuan_gate", name, at, yaw)) return;
             var g = T.Group(parent, name, at, yaw);
             g.gameObject.AddComponent<Occluder>();
             if (!T.Tex("town_gate_front", optional: true)) { Gate(parent, name + " (stand-in)", at, yaw); return; }
