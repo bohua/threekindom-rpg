@@ -67,6 +67,46 @@ namespace ThreeKingdoms.EditorTools
             AssetDatabase.Refresh();
         }
 
+        // The prologue 天下大势 (design/gdd/prologue.md): Codex art/prologue-art into Resources/Prologue, where the
+        // player reads it by name. Scrolls are 3840 wide; the map layers keep their alpha. Missing files are skipped.
+        public const string PrologueDir = "Assets/_Project/Resources/Prologue";
+        const string PrologueSource = @"art\prologue-art";
+
+        [MenuItem("JRPG/Import prologue art")]
+        public static void ImportPrologue()
+        {
+            string from = Path.Combine(Root, PrologueSource);
+            if (!Directory.Exists(from)) { Debug.LogWarning("No prologue art at " + from); return; }
+            Directory.CreateDirectory(PrologueDir);
+            foreach (var file in Directory.GetFiles(from))
+            {
+                string name = Path.GetFileName(file);
+                bool picture = name.EndsWith(".png") && name != "preview.png";
+                if (!picture && name != "map_anchors.json") continue;
+                string to = $"{PrologueDir}/{name}";
+                File.Copy(file, to, true);
+                AssetDatabase.ImportAsset(to, ImportAssetOptions.ForceUpdate);
+                if (!picture) continue;
+                var importer = (TextureImporter)AssetImporter.GetAtPath(to);
+                importer.textureType = TextureImporterType.Default;
+                importer.mipmapEnabled = false;
+                importer.alphaIsTransparency = true;
+                importer.filterMode = FilterMode.Bilinear;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.maxTextureSize = 4096;
+                importer.npotScale = TextureImporterNPOTScale.None;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.SaveAndReimport();
+            }
+            AssetDatabase.Refresh();
+        }
+
+        public static void ImportPrologueFromCommandLine()
+        {
+            ImportPrologue();
+            EditorApplication.Exit(0);
+        }
+
         static string First(string[] sources)
         {
             foreach (var s in sources)

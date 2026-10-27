@@ -17,6 +17,9 @@ namespace ThreeKingdoms.Gameplay.Story
             IEnumerator PlayScroll(string id);
             // The opening film (opening-assembled-20261021-v1); skippable; ends at once when the file is missing.
             IEnumerator PlayOpening();
+            // The prologue 天下大势 (design/gdd/prologue.md): nine shots over scrolls, the world map and the hero cards;
+            // the player may skip it at any time.
+            IEnumerator PlayPrologue();
             // Confirm from the story side (tests, the auto pilot): types the rest, or closes the waiting scroll.
             void Advance();
         }
@@ -27,6 +30,9 @@ namespace ThreeKingdoms.Gameplay.Story
         // The last scroll asked for, so tests can see it was reached without the view.
         public static string LastScroll { get; private set; }
         public static bool OpeningRequested { get; private set; }
+        public static int PrologueCount { get; private set; }
+        // Tests and the auto pilot: end the prologue at once, as if the player chose to skip it.
+        public static bool SkipPrologue { get; set; }
 
         public static IEnumerator Scroll(string id)
         {
@@ -40,8 +46,14 @@ namespace ThreeKingdoms.Gameplay.Story
             if (View != null) yield return View.PlayOpening();
         }
 
+        public static IEnumerator Prologue()
+        {
+            PrologueCount++;
+            if (View != null && !SkipPrologue) yield return View.PlayPrologue();
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { View = null; LastScroll = null; OpeningRequested = false; }
+        static void ResetStatics() { View = null; LastScroll = null; OpeningRequested = false; PrologueCount = 0; SkipPrologue = false; }
     }
 
     // Music and sound cues (user 2026-10-24: the oath and the scroll get music later, made with Suno). A cue is an
@@ -50,7 +62,7 @@ namespace ThreeKingdoms.Gameplay.Story
     // design/cinematics/story-cinematics.md.
     public static class StoryMusic
     {
-        public const string OathCue = "taoyuan_oath", ScrollCue = "scroll_finale", AspirationCue = "victory_aspiration";
+        public const string OathCue = "taoyuan_oath", ScrollCue = "scroll_finale", AspirationCue = "victory_aspiration", PrologueCue = "prologue_tianxia";
         public const string UnrollSfx = "scroll_unroll", SealSfx = "seal_stamp", InkSfx = "ink_drop";
 
         static AudioSource music, sfx;

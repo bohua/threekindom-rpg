@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 namespace ThreeKingdoms.Gameplay.Story
 {
-    // Title screen actions (game-ui GDD): a new game starts outside the south gate; loading reads a slot and rebuilds
+    // Title screen actions (game-ui GDD): a new game plays the prologue and lands at the notice board; loading reads a slot and rebuilds
     // the play-through, landing at the tavern or the saved battle's pre-battle state (save-system rule 5).
     public sealed class TitleController : MonoBehaviour
     {
@@ -16,6 +16,7 @@ namespace ThreeKingdoms.Gameplay.Story
         public void NewGame()
         {
             GameRun.Clear();
+            GameRun.PrologueDue = true;
             SceneManager.LoadScene(GameRun.TownScene);
         }
 

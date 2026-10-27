@@ -195,7 +195,8 @@ namespace ThreeKingdoms.Gameplay.Story
             // An oath interrupted by a reload replays from the start (GDD rule 11).
             story.ToSafeState();
             ShowZouJing();
-            if (story.Phase == StoryPhase.Oath) StartCoroutine(PlayOath());
+            if (TakePrologue()) StartCoroutine(PlayPrologue(true));
+            else if (story.Phase == StoryPhase.Oath) StartCoroutine(PlayOath());
             else if (Run.Chapter2.Step == ChapterStep.ZouJingOrders) StartCoroutine(PlayZouJingOrders());   // 0.2 C1
             Changed?.Invoke();
         }

@@ -18,7 +18,7 @@ namespace ThreeKingdoms.UI.Story
     // Layout and timing follow the approved design sheets in art/story-cinematics-concept. Time runs unscaled: the
     // scroll sets timeScale to 0 while it is up.
     [RequireComponent(typeof(UIDocument))]
-    public sealed class StoryCinematicsView : MonoBehaviour, StoryCinematics.IView
+    public sealed partial class StoryCinematicsView : MonoBehaviour, StoryCinematics.IView
     {
         [Serializable]
         public struct Painting

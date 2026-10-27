@@ -21,6 +21,8 @@ namespace ThreeKingdoms.Gameplay.Story
         string SaveLocation { get; }
         void SwitchPanel(string panel);
         void ReturnToTitle();
+        // 史事簿 (travel menu 史事): close the menu and replay a chronicle entry here, then hand control back.
+        void PlayChronicle(string id);
     }
 
     // A host whose shop carries more than the first tier of equipment (0.2: the Anxi market).

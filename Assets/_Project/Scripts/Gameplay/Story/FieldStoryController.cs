@@ -49,7 +49,7 @@ namespace ThreeKingdoms.Gameplay.Story
         public string Comic => Stage.Comic;
         public bool Letterbox => Stage.Letterbox;
         public float Fade => Stage.Fade;
-        public bool Cinematic => Stage.Cinematic;
+        public bool Cinematic => Stage.Cinematic || chronicle;
         public StagePlayer.MarchShot March => Stage.March;
         public string Objective => Run == null ? null : ObjectiveText();
         BattleCatalog IFieldHost.Catalog => Catalog;
@@ -217,6 +217,31 @@ namespace ThreeKingdoms.Gameplay.Story
         public void SwitchPanel(string panel) { ClosePanel(); closedFrame = -1; OpenPanel(panel); }
 
         public void ReturnToTitle() { GameRun.Clear(); SceneManager.LoadScene(GameRun.TitleScene); }
+
+        // 史事簿: replays the prologue here (design/gdd/prologue.md); movement stops meanwhile.
+        bool chronicle;
+
+        public void PlayChronicle(string id)
+        {
+            if (id != TownStoryController.PrologueEntry) return;
+            ClosePanel();
+            StartCoroutine(ReplayPrologue());
+        }
+
+        IEnumerator ReplayPrologue()
+        {
+            Busy = chronicle = true;
+            Prompt = null;
+            SetControl(false);
+            Changed?.Invoke();
+            try { yield return StoryCinematics.Prologue(); }
+            finally
+            {
+                Busy = chronicle = false;
+                SetControl(true);
+                Changed?.Invoke();
+            }
+        }
 
         // ---------- IStageActors: in a walkable scene x and y are world X and Z ----------
 

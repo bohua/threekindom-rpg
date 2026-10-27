@@ -78,9 +78,13 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static void Clear() => Current = null;
 
+        // Set by the title's 新游戏: the town plays the prologue before the player gets control (design/gdd/prologue.md).
+        // Loading a save, returning from battle and opening a scene directly never play it.
+        public static bool PrologueDue { get; set; }
+
         // Static state survives "enter play mode" without a domain reload; start every run clean.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { Current = null; SaveDirectoryOverride = null; }
+        static void ResetStatics() { Current = null; SaveDirectoryOverride = null; PrologueDue = false; }
 
         public static int BattleIndex(string encounterId) => Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6" }, encounterId);
 
