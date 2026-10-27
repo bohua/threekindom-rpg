@@ -1,0 +1,32 @@
+{
+  "zhuojun_ground_splat": {
+    "texture": "",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "zj_rock": {
+    "texture": "textures/zj_rock.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "zj_mountain_forest": {
+    "texture": "textures/zj_mountain_forest.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "zj_mountain_rock": {
+    "texture": "textures/zj_mountain_rock.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "zj_mountain_far": {
+    "texture": "textures/zj_mountain_far.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  }
+}

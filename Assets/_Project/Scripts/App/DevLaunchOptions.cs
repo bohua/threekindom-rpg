@@ -29,6 +29,9 @@ namespace ThreeKingdoms.App
             if (stageId != null) ThreeKingdoms.Gameplay.Story.StageController.DevOverride = stageId;
             if (float.TryParse(LaunchArgs.Get("-stageAuto"), NumberStyles.Float, CultureInfo.InvariantCulture, out float stageAuto))
                 ThreeKingdoms.Gameplay.Story.StagePlayer.AutoSeconds = stageAuto;
+            // Launches that place the player or the camera themselves skip the first-arrival tour of Zhuojun.
+            if (LaunchArgs.Has("-teleport") || LaunchArgs.Has("-camera") || LaunchArgs.Has("-storyAuto") || LaunchArgs.Has("-noIntro"))
+                ThreeKingdoms.Gameplay.Story.TownStoryController.PlayArrivalIntro = false;
             string scene = LaunchArgs.Get("-scene");
             if (scene != null && SceneManager.GetActiveScene().name != scene) SceneManager.LoadScene(scene);
 

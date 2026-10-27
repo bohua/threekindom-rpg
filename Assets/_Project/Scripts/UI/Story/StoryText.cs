@@ -56,6 +56,18 @@ namespace ThreeKingdoms.UI.Story
             ["tavern.11"] = "若蒙不弃，关某愿随兄长同行！",
             ["tavern.12"] = "好！俺庄后有一桃园，花开正盛。明日便在园中祭告天地，结为兄弟！",
             // The peach-garden oath, about 30 s on its own (user 2026-10-24); the oath words follow 演义 第1回.
+            // The first arrival in Zhuojun (user 2026-10-26): through the south gate to the square, then the landmarks.
+            ["arrival.1"] = "幽州涿郡。中平元年春，黄巾将起，城里依旧熙熙攘攘。",
+            ["arrival.2"] = "北望燕山。这里是刘备的故乡。",
+            ["arrival.office"] = "郡署：涿郡太守的治所，募兵的榜文从这里发出。",
+            ["arrival.tavern"] = "酒肆：南来北往的客人在此歇脚，消息也最灵通。",
+            ["arrival.smithy"] = "铁匠铺：打造兵器甲胄，可以买卖、更换装备。",
+            ["arrival.casino"] = "赌坊：骰子声日夜不停。",
+            ["arrival.clinic"] = "医舍：坐堂的医者，也卖草药。",
+            ["arrival.post"] = "驿站与马厩：公文和驿马由此往来。",
+            ["arrival.barracks"] = "军营：官军正在操练，营门前有人排队应募。",
+            ["arrival.granary"] = "粮仓：郡中存粮的地方。",
+            ["arrival.grove"] = "出西门不远，是一片正在盛开的桃林。",
             ["oath.1"] = "城西桃园，桃花正盛。香案已备，三牲俱全。",
             ["oath.2"] = "二位贤弟，今日焚香告天，结为兄弟。",
             ["oath.3"] = "痛快！俺盼这一天好久了！",

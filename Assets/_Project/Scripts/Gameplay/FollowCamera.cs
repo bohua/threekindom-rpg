@@ -25,10 +25,11 @@ namespace Jrpg
         public float StageDistance { get; set; }
         // A short shake (a blow in a story scene), in seconds left.
         public float ShakeSeconds { get; set; }
+        float zoneBlend;
 
         void LateUpdate()
         {
-            if (!Target) return;
+            if (!Target || Paused) return;
             if (!UseRig) { transform.position = Target.position + Offset; return; }
 
             ActiveZone = null;
@@ -41,7 +42,10 @@ namespace Jrpg
             else
             {
                 // Exponential ease: framerate independent, about 95 % of the way after BlendSeconds.
-                float k = 1f - Mathf.Exp(-3f * Time.deltaTime / Mathf.Max(0.05f, BlendSeconds));
+                // A zone may set its own pace (the Zhuojun square lowers slowly, user 2026-10-26); leaving it eases back at the same pace.
+                if (ActiveZone) zoneBlend = ActiveZone.BlendSeconds;
+                float blend = zoneBlend > 0f ? zoneBlend : BlendSeconds;
+                float k = 1f - Mathf.Exp(-3f * Time.deltaTime / Mathf.Max(0.05f, blend));
                 pitch = Mathf.Lerp(pitch, tp, k); distance = Mathf.Lerp(distance, td, k); yaw = Mathf.Lerp(yaw, ty, k);
                 fov = Mathf.Lerp(fov, tf, k); look = Vector3.Lerp(look, tl, k); sway = Mathf.Lerp(sway, ts, k);
             }
@@ -57,6 +61,10 @@ namespace Jrpg
 
         // Jump straight to the current target's shot (after a teleport or scene load) instead of easing in.
         public void Snap() => started = false;
+
+        // A scripted shot (the first arrival in Zhuojun, user 2026-10-26) moves the camera itself while this is set.
+        public bool Paused;
+        public void FocusAt(float metres) { if (FocusVolume) Focus(FocusVolume, metres); }
 
         // Keeps the tilt-shift focus on the target as the distance changes. The URP depth-of-field override lives in
         // another assembly, so it is handled by type name. A small overlay volume carries a copy of the scene profile's
