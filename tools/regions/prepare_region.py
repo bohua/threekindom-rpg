@@ -56,7 +56,7 @@ def size(o):
 
 
 def facing(o):
-    for k in ('facing_degrees', 'facing_deg_clockwise_from_north', 'facing_degrees_from_north', 'facing_deg'):
+    for k in ('facing_degrees', 'facing_deg_clockwise_from_north', 'orientation_degrees_clockwise_from_north', 'facing_degrees_from_north', 'facing_deg'):
         if o.get(k) is not None:
             return float(o[k])
     return 180.0
@@ -76,7 +76,7 @@ def kind(t):
 
 # ---- places, each plot flattened to its stated ground height (blended over 8 m) ----
 places = []
-for o in L.get('locations', []):
+for o in L.get('locations', []) + L.get('sites', []):
     x, z = centre(o)
     w, d = size(o)
     k = kind(o.get('type'))
@@ -114,16 +114,21 @@ for o in L.get('rivers', []):
     cl = o.get('centerline') or []
     wid = o.get('width_m') or (sum(q.get('width_m', 12) for q in cl) / len(cl) if cl and isinstance(cl[0], dict) else 12)
     lvl = o.get('water_surface_y_m', o.get('water_surface_m', 0))
+    levels = [float(q['water_surface_m']) for q in cl if isinstance(q, dict) and 'water_surface_m' in q]
+    if levels and len(levels) == len(ps):
+        lvl = sum(levels) / len(levels)
+    else:
+        levels = []
     if len(ps) >= 2:
-        waters.append(dict(id=o['id'], level=float(lvl), width=float(wid), line=[v for p in ps for v in p]))
+        waters.append(dict(id=o['id'], level=float(lvl), width=float(wid), line=[v for p in ps for v in p], levels=levels))
 for i, o in enumerate(L.get('wetland_pools', []) + L.get('lakes', []) + L.get('ponds', [])):
     ps = pts(o, 'outline_xz', 'outline', 'polygon_xz')
     if len(ps) >= 3:
         waters.append(dict(id=o.get('id', f'pool_{i}'), level=float(o.get('water_surface_m', o.get('level_m', -0.8))),
                            width=0, poly=[v for p in ps for v in p]))
 
-ents = L.get('entrances') or L.get('region_entries') or []
-open_ents = [e for e in ents if 'x' in e and str(e.get('status', 'open')) == 'open'] or [e for e in ents if 'x' in e]
+ents = L.get('entrances') or L.get('region_entries') or L.get('region_entrances') or []
+open_ents = [e for e in ents if 'x' in e and (str(e.get('status', 'open')) == 'open' and e.get('open', True))] or [e for e in ents if 'x' in e]
 sx, sz = hubs.get('_spawn') or (xz(open_ents[0]) if open_ents else (W / 2, D / 2))
 sx = min(max(sx, 8), W - 8)
 sz = min(max(sz, 8), D - 8)

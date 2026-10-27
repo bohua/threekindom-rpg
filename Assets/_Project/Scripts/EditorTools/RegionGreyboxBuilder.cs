@@ -52,7 +52,7 @@ namespace ThreeKingdoms.EditorTools
         }
 
         [System.Serializable] public sealed class RegionRoad { public string id; public float width = 5f; public float[] pts = new float[0]; }   // x, z pairs
-        [System.Serializable] public sealed class RegionWater { public string id; public float level; public float width; public float[] line = new float[0]; public float[] poly = new float[0]; }
+        [System.Serializable] public sealed class RegionWater { public string id; public float level; public float width; public float[] line = new float[0]; public float[] poly = new float[0]; public float[] levels = new float[0]; }   // levels: per line point, for rivers that fall
 
         // The regions built so far; their concept folder under art/.
         static readonly (string id, string concept)[] Regions =
@@ -290,7 +290,15 @@ namespace ThreeKingdoms.EditorTools
             foreach (var w in data.waters)
             {
                 if (w.poly.Length >= 6) PolyMesh(g, w.id, Pts(w.poly), w.level, mat);
-                else if (w.line.Length >= 4) Ribbon(g, w.id, Pts(w.line), w.width, mat, _ => w.level, 0f, false);
+                else if (w.line.Length >= 4)
+                {
+                    var line = Pts(w.line);
+                    // A falling river takes the level of its nearest drawn point.
+                    System.Func<Vector3, float> level = w.levels.Length == line.Count
+                        ? q => w.levels[Enumerable.Range(0, line.Count).OrderBy(i => (line[i] - new Vector3(q.x, 0, q.z)).sqrMagnitude).First()]
+                        : _ => w.level;
+                    Ribbon(g, w.id, line, w.width, mat, level, 0f, false);
+                }
             }
         }
 
