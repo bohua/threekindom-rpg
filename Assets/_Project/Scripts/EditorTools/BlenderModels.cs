@@ -159,6 +159,12 @@ namespace ThreeKingdoms.EditorTools
             return root;
         }
 
+        // Darkens or tints one material of a set (painted textures that read too bright under the midday sun).
+        internal static void Tint(string set, string key, Color c)
+        {
+            if (made.TryGetValue(set + "/" + key, out var m) && m) { m.SetColor("_BaseColor", c); EditorUtility.SetDirty(m); }
+        }
+
         static Material Swap(string set, Material imported)
         {
             if (!imported) return null;
