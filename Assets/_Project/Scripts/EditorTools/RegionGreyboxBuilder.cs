@@ -44,7 +44,10 @@ namespace ThreeKingdoms.EditorTools
             public float x, z, y, w, d, yaw;
             public int year;
             public string model, set;       // a Blender model for it, when its hub set exists
-            public string wallModel;        // walled places: <wallModel>_wall_8m/_4m/_corner of the same set, the model as the gate
+            public string wallModel;        // walled places: <wallModel>_wall_8m/_4m of the same set, the model as the gate
+            public string layout;           // a hub set's own layout (Codex _checks/layout_*.json): every piece where Codex placed it
+            public bool skip;               // a sub-place drawn by its hub's layout: label only
+            public float layoutX, layoutZ;  // where the layout's origin sits relative to the place centre (e.g. its gate)
             public string portalScene, portalArrival;
         }
 
@@ -424,9 +427,10 @@ namespace ThreeKingdoms.EditorTools
             g.position = new Vector3(p.x, y, p.z);
             g.rotation = Quaternion.Euler(0, p.yaw, 0);
             float w = Mathf.Max(p.w, 4f), d = Mathf.Max(p.d, 4f);
-            bool modelled = !string.IsNullOrEmpty(p.wallModel)
-                ? ModelWalls(g, p, w, d)
-                : !string.IsNullOrEmpty(p.model) && BlenderModels.Place(p.set, g, p.model, p.name, Vector3.zero) != null;
+            bool modelled = p.skip
+                || (!string.IsNullOrEmpty(p.layout) && ModelLayout(g, p))
+                || (!string.IsNullOrEmpty(p.wallModel) && ModelWalls(g, p, w, d))
+                || (string.IsNullOrEmpty(p.wallModel) && !string.IsNullOrEmpty(p.model) && BlenderModels.Place(p.set, g, p.model, p.name, Vector3.zero) != null);
             if (!modelled)
                 switch (p.kind)
                 {
@@ -487,6 +491,35 @@ namespace ThreeKingdoms.EditorTools
                 portal.Size = new Vector2(6f, 2.5f); portal.TargetScene = p.portalScene; portal.ArrivalSpot = p.portalArrival;
                 portal.Facing = Vector3.forward;
             }
+        }
+
+        [System.Serializable] sealed class LayoutFile { public LayoutPiece[] placements = new LayoutPiece[0]; }
+        [System.Serializable] sealed class LayoutPiece { public string asset, child; public float[] position_m, position; public float rotation_z_deg, rotation_z; }
+
+        // A hub laid out piece by piece as Codex assembled it in Blender (+Y north = +z, rotations anticlockwise).
+        // A piece with a child keeps only that object of a prop group, moved to the piece's origin.
+        static bool ModelLayout(Transform g, RegionPlace p)
+        {
+            string path = Path.Combine(CodexArt, p.set, p.layout.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(path)) return false;
+            var file = JsonUtility.FromJson<LayoutFile>(File.ReadAllText(path));
+            int n = 0;
+            foreach (var piece in file.placements)
+            {
+                // Codex names the fields differently per set (position_m / rotation_z_deg, position / rotation_z).
+                var pos = piece.position_m != null && piece.position_m.Length >= 2 ? piece.position_m : piece.position;
+                var at = new Vector3(pos[0] + p.layoutX, pos.Length > 2 ? pos[2] : 0f, pos[1] + p.layoutZ);
+                var t = BlenderModels.Place(p.set, g, piece.asset, string.IsNullOrEmpty(piece.child) ? piece.asset : piece.child, at, -(piece.rotation_z_deg + piece.rotation_z));
+                if (!t) continue;
+                n++;
+                if (string.IsNullOrEmpty(piece.child)) continue;
+                var keep = t.GetComponentsInChildren<Transform>(true).FirstOrDefault(c => c.name == piece.child);
+                if (!keep) { Object.DestroyImmediate(t.gameObject); continue; }
+                foreach (var r in t.GetComponentsInChildren<MeshRenderer>(true).Where(r => !r.transform.IsChildOf(keep)).ToArray())
+                    Object.DestroyImmediate(r.gameObject);
+                keep.localPosition = new Vector3(0, keep.localPosition.y, 0);
+            }
+            return n > 0;
         }
 
         // A walled place from its set's modules: 8 m and 4 m runs (stretched a little to fit), corners, the gate model in

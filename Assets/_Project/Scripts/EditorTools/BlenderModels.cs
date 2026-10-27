@@ -133,7 +133,7 @@ namespace ThreeKingdoms.EditorTools
         // version. COL_ children become box colliders; the whole piece is one occluder.
         internal static Transform Place(string set, Transform parent, string model, string name, Vector3 at, float yaw = 0f)
         {
-            if (!Enabled || !sets.ContainsKey(set)) return null;
+            if (!Enabled || string.IsNullOrEmpty(set) || !sets.ContainsKey(set)) return null;
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir(set)}/{model}.fbx");
             if (!prefab) return null;
             var go = Object.Instantiate(prefab, parent, false);
