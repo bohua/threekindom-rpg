@@ -9,49 +9,79 @@ using UnityEngine.Rendering;
 
 namespace ThreeKingdoms.EditorTools
 {
-    // Blender pilot (user 2026-10-26): Codex draws a design image, then models the building in Blender and exports an
-    // FBX (1 unit = 1 m, origin at the bottom centre, front toward -Z, one material per texture key). The town builder
-    // places the model instead of assembling the building from quads, with the same HD textures and materials.
-    // Pipeline notes: BLENDER_PIPELINE.md in the shared docs; Codex delivery art/zhuojun-blender-pilot.
-    // -noBlender (or Enabled = false) falls back to the quad-built buildings, for side-by-side screenshots.
+    // Blender models (user 2026-10-26 pilot; 2026-10-27 "补齐涿郡的3D建模"): Codex draws a design image, models the piece
+    // in Blender and exports an FBX (1 unit = 1 m, front toward Blender -Y, one material per texture key, materials.json
+    // beside it). The town builder places the models instead of assembling buildings and props from quads, with the same
+    // HD textures and materials. Pipeline notes: BLENDER_PIPELINE.md in the shared docs; plan:
+    // production/levels/zhuojun/blender-rebuild.md. -noBlender (or Enabled = false) falls back to the quad-built town.
     internal static class BlenderModels
     {
-        const string Source = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\zhuojun-blender-pilot";
-        public const string Dir = ZhuojunTownBuilder.HdRoot + "/zhuojun-blender-pilot";
+        const string ArtRoot = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art";
+        // Delivered sets, later ones winning where a model name repeats.
+        static readonly string[] Sets = { "zhuojun-blender-pilot", "zhuojun-blender-b1", "zhuojun-blender-b2", "zhuojun-blender-b3", "zhuojun-blender-b4" };
         public static bool Enabled = !System.Environment.GetCommandLineArgs().Contains("-noBlender");
+        // The material Codex leaves on terrain for Unity to replace with the town's blended ground.
+        public const string GroundKey = "zhuojun_ground_splat";
+        public static Material Ground;
 
-        sealed class Entry { public bool Clip, TwoSided; }
+        sealed class Entry { public bool Clip, TwoSided; public string Emission; }
         static readonly Dictionary<string, Entry> entries = new Dictionary<string, Entry>();
+        static readonly Dictionary<string, string> models = new Dictionary<string, string>();   // model -> asset path
 
-        // Copies the delivered FBX files, materials.json and any new textures into the project; returns the folder to
-        // search for textures (new ones live there), or null when nothing has been delivered.
-        internal static string Import()
+        static string Dir(string set) => $"{ZhuojunTownBuilder.HdRoot}/{set}";
+
+        // Copies every delivered set (FBX files, materials.json, new textures) into the project; returns the folders to
+        // search for textures, empty when nothing has been delivered.
+        internal static string[] Import()
         {
             entries.Clear();
-            if (!Directory.Exists(Source)) return null;
-            Directory.CreateDirectory(Dir);
-            foreach (string f in Directory.GetFiles(Source, "*.fbx")) File.Copy(f, Path.Combine(Dir, Path.GetFileName(f)), true);
-            string json = Path.Combine(Source, "materials.json");
-            if (File.Exists(json)) File.Copy(json, Path.Combine(Dir, "materials.json"), true);
-            if (Directory.Exists(Path.Combine(Source, "textures")))
-                foreach (string f in Directory.GetFiles(Path.Combine(Source, "textures"), "*.png")) File.Copy(f, Path.Combine(Dir, Path.GetFileName(f)), true);
+            models.Clear();
+            var dirs = new List<string>();
+            foreach (string set in Sets)
+            {
+                string from = Path.Combine(ArtRoot, set), to = Dir(set);
+                if (!Directory.Exists(from) || !Directory.GetFiles(from, "*.fbx").Any()) continue;
+                Directory.CreateDirectory(to);
+                foreach (string f in Directory.GetFiles(from, "*.fbx")) File.Copy(f, Path.Combine(to, Path.GetFileName(f)), true);
+                string json = Path.Combine(from, "materials.json");
+                if (File.Exists(json)) File.Copy(json, Path.Combine(to, "materials.json"), true);
+                if (Directory.Exists(Path.Combine(from, "textures")))
+                    foreach (string f in Directory.GetFiles(Path.Combine(from, "textures"), "*.png")) File.Copy(f, Path.Combine(to, Path.GetFileName(f)), true);
+                dirs.Insert(0, to);
+            }
             AssetDatabase.Refresh();
-            ReadMaterials();
-            foreach (string path in Directory.GetFiles(Dir, "*.fbx")) Configure(path.Replace('\\', '/'));
-            return Dir;
+            foreach (string set in Sets)
+            {
+                string to = Dir(set);
+                if (!Directory.Exists(to)) continue;
+                ReadMaterials(Path.Combine(to, "materials.json"));
+                foreach (string path in Directory.GetFiles(to, "*.fbx"))
+                {
+                    string p = path.Replace('\\', '/');
+                    Configure(p);
+                    models[Path.GetFileNameWithoutExtension(p)] = p;
+                }
+            }
+            return dirs.ToArray();
         }
 
-        // materials.json: {"house_front": {"texture": "...", "alpha_clip": true, "tiling": false, "two_sided": false}, ...}
-        static void ReadMaterials()
+        public static bool Has(string model) => Enabled && models.ContainsKey(model);
+
+        // materials.json: {"house_front": {"texture": "...", "alpha_clip": true, "tiling": false, "two_sided": false, "emission_mask": "..."}, ...}
+        static void ReadMaterials(string path)
         {
-            string path = Path.Combine(Dir, "materials.json");
             if (!File.Exists(path)) return;
             foreach (Match m in Regex.Matches(File.ReadAllText(path), "\"([^\"]+)\"\\s*:\\s*\\{([^}]*)\\}"))
+            {
+                string body = m.Groups[2].Value;
+                var em = Regex.Match(body, "\"emission_mask\"\\s*:\\s*\"([^\"]+)\"");
                 entries[m.Groups[1].Value] = new Entry
                 {
-                    Clip = Regex.IsMatch(m.Groups[2].Value, "\"alpha_clip\"\\s*:\\s*true"),
-                    TwoSided = Regex.IsMatch(m.Groups[2].Value, "\"two_sided\"\\s*:\\s*true"),
+                    Clip = Regex.IsMatch(body, "\"alpha_clip\"\\s*:\\s*true"),
+                    TwoSided = Regex.IsMatch(body, "\"two_sided\"\\s*:\\s*true"),
+                    Emission = em.Success ? Path.GetFileNameWithoutExtension(em.Groups[1].Value) : null,
                 };
+            }
         }
 
         static void Configure(string path)
@@ -67,23 +97,24 @@ namespace ThreeKingdoms.EditorTools
             mi.importNormals = ModelImporterNormals.Import;
             mi.meshCompression = ModelImporterMeshCompression.Off;
             mi.addCollider = false;
-            mi.isReadable = false;
+            mi.isReadable = true;   // terrain needs it for its mesh collider
             mi.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
             if (EditorUtility.IsDirty(mi)) mi.SaveAndReimport();
         }
 
-        // Places a delivered model with the town's materials; null when it is missing or the pilot is switched off,
-        // so the caller builds the quad version instead. COL_ children become box colliders; without them the "Walls"
-        // (or "GateBlock") bounds do.
-        internal static Transform Place(Transform parent, string model, string name, Vector3 at, float yaw = 0f)
+        // Places a delivered model with the town's materials; null when it is missing or switched off, so the caller
+        // builds the quad version instead. COL_ children become box colliders; without them the "Walls" (or
+        // "GateBlock") bounds do. terrain: mesh colliders on everything, no occluder (the camera never cuts the ground).
+        internal static Transform Place(Transform parent, string model, string name, Vector3 at, float yaw = 0f, bool terrain = false)
         {
-            if (!Enabled) return null;
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir}/{model}.fbx");
+            if (!Has(model)) return null;
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(models[model]);
             if (!prefab) return null;
             var go = Object.Instantiate(prefab, parent, false);
             go.name = name;
             go.transform.localPosition = at;
             // Blender's front (-Y), exported -Z forward, arrives facing +Z (north) in Unity: turn it back to the camera.
+            // After the turn Blender X is Unity x and Blender Y is Unity z, so world-placed sets (terrain) line up.
             go.transform.localRotation = Quaternion.Euler(0, yaw + 180f, 0) * go.transform.localRotation;
             var root = go.transform;
             bool colliders = false;
@@ -100,7 +131,13 @@ namespace ThreeKingdoms.EditorTools
                 }
                 r.sharedMaterials = r.sharedMaterials.Select(Swap).ToArray();
                 r.shadowCastingMode = ShadowCastingMode.On;
+                if (terrain)
+                {
+                    r.gameObject.AddComponent<MeshCollider>().sharedMesh = r.GetComponent<MeshFilter>().sharedMesh;
+                    r.shadowCastingMode = ShadowCastingMode.Off;
+                }
             }
+            if (terrain) return root;
             if (!colliders)
             {
                 var body = root.GetComponentsInChildren<MeshFilter>().FirstOrDefault(f => f.name == "Walls" || f.name == "GateBlock");
@@ -114,8 +151,11 @@ namespace ThreeKingdoms.EditorTools
         {
             if (!imported) return null;
             string key = Regex.Replace(imported.name, "\\.\\d+$", "");
+            if (key == GroundKey && Ground) return Ground;
             entries.TryGetValue(key, out var e);
-            return ZhuojunTownBuilder.Mat(key, clip: e?.Clip ?? false, twoSided: e?.TwoSided ?? false);
+            if (!ZhuojunTownBuilder.Tex(key, optional: true)) return imported;
+            return ZhuojunTownBuilder.Mat(key, clip: e?.Clip ?? false, twoSided: e?.TwoSided ?? false,
+                emissionMask: e?.Emission != null && ZhuojunTownBuilder.Tex(e.Emission, optional: true) ? e.Emission : null);
         }
 
         static Bounds LocalBounds(Transform root, MeshFilter f)

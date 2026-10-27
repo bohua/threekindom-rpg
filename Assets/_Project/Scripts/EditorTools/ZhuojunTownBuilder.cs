@@ -58,6 +58,7 @@ namespace ThreeKingdoms.EditorTools
         public static void Build()
         {
             BeginSession(TownMaterialDir, MeshPath, ImportHd());
+            townSession = true;
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             // Bright spring noon (user 2026-10-25: 白天色调明媚，不要昏黄), the same light as Anxi and the camp.
@@ -102,7 +103,7 @@ namespace ThreeKingdoms.EditorTools
             var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camGo.AddComponent<Camera>();
             cam.fieldOfView = HD2DSampleBuilder.CameraFov;
-            cam.nearClipPlane = 1f; cam.farClipPlane = 300f;
+            cam.nearClipPlane = 1f; cam.farClipPlane = BlenderModels.Has("yan_mountains") ? 700f : 300f;   // the modelled Yan hills reach 320 m out
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.72f, 0.84f, 0.96f);
             var camData = camGo.AddComponent<UniversalAdditionalCameraData>();
@@ -300,13 +301,35 @@ namespace ThreeKingdoms.EditorTools
             }
             AssetDatabase.Refresh();
             // Blender pilot models (user 2026-10-26) and any textures Codex painted for them.
-            string models = BlenderModels.Import();
-            if (models != null) dirs.Insert(0, models);
+            dirs.InsertRange(0, BlenderModels.Import());
             return dirs.ToArray();
         }
 
+        // True while the town itself is built: only then do Building() and Prop() swap in the Blender models (other
+        // builders borrow these helpers with their own textures).
+        static bool townSession;
+        static readonly HashSet<Transform> modelled = new HashSet<Transform>();
+
+        // Front texture -> Blender model (art/zhuojun-blender-b1); the model's origin is the foot of its front wall.
+        static readonly Dictionary<string, string> BuildingModels = new Dictionary<string, string>
+        {
+            ["tavern_front"] = "tavern", ["smithy_front"] = "smithy", ["casino_front"] = "casino", ["clinic_front"] = "clinic",
+            ["stable_front"] = "stable", ["post_station_front"] = "post_station", ["house_b_front"] = "house_b",
+            ["house_c_front"] = "house_c", ["granary_front"] = "granary",
+        };
+        // Prop texture -> Blender model (art/zhuojun-blender-b3); origin at the bottom centre.
+        static readonly Dictionary<string, string> PropModels = new Dictionary<string, string>
+        {
+            ["prop_stall"] = "stall_produce", ["prop_stall_cloth"] = "stall_cloth", ["prop_stall_bamboo"] = "stall_bamboo", ["prop_stall_grain"] = "stall_grain",
+            ["prop_notice_board"] = "notice_board", ["prop_army_tent"] = "army_tent", ["prop_weapon_rack"] = "weapon_rack", ["prop_bow_rack"] = "bow_rack",
+            ["prop_archery_target"] = "archery_target", ["prop_training_dummy"] = "training_dummy", ["prop_war_drum"] = "war_drum",
+            ["prop_recruit_desk"] = "recruit_desk", ["prop_well"] = "well", ["prop_handcart"] = "handcart", ["prop_ox_cart"] = "ox_cart", ["prop_dice_table"] = "dice_table",
+        };
+
         internal static void EndSession()
         {
+            townSession = false;
+            modelled.Clear();
             EndMeshes();
             extraDirs = System.Array.Empty<string>();
             HdAliases.Clear();
@@ -766,7 +789,13 @@ namespace ThreeKingdoms.EditorTools
             string mp = $"{materialDir}/zhuojun_ground_splat.mat";
             if (AssetDatabase.LoadAssetAtPath<Material>(mp)) AssetDatabase.DeleteAsset(mp);
             AssetDatabase.CreateAsset(m, mp);
-            Quad(g, "Blended ground", new Vector3((GXMin + GXMax) / 2f, 0f, (GZMin + GZMax) / 2f), new Vector3(90f, 0, 0), new Vector2(GXMax - GXMin, GZMax - GZMin), m, castShadows: false);
+            BlenderModels.Ground = m;
+            // With the modelled country outside (art/zhuojun-blender-b4) the flat quad covers only the town inside the
+            // walls; the terrain mesh, cut out there, carries the same world-space material outside.
+            if (BlenderModels.Has("terrain_near"))
+                Quad(g, "Blended ground (town)", new Vector3(0f, 0f, 0f), new Vector3(90f, 0, 0), new Vector2(100f, 76f), m, castShadows: false);
+            else
+                Quad(g, "Blended ground", new Vector3((GXMin + GXMax) / 2f, 0f, (GZMin + GZMax) / 2f), new Vector3(90f, 0, 0), new Vector2(GXMax - GXMin, GZMax - GZMin), m, castShadows: false);
             return true;
         }
 
@@ -830,6 +859,24 @@ namespace ThreeKingdoms.EditorTools
             float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
             var run = Group(parent, name, (a + b) / 2f, alongX ? 0f : 90f);
             run.gameObject.AddComponent<Occluder>();
+            // Blender modules (art/zhuojun-blender-b2): 8 m pieces end to end, stretched a little to fill the run.
+            if (townSession && BlenderModels.Has("wall_8"))
+            {
+                string piece = len < 6f ? "wall_4" : "wall_8";
+                float unit = piece == "wall_4" ? 4f : 8f;
+                int k = Mathf.Max(1, Mathf.RoundToInt(len / unit));
+                float stretch = len / (k * unit);
+                for (int i = 0; i < k; i++)
+                {
+                    var m = BlenderModels.Place(run, piece, $"Wall piece {i + 1}", new Vector3(-len / 2f + (i + 0.5f) * unit * stretch, 0, 0));
+                    if (!m) break;
+                    m.localScale = new Vector3(m.localScale.x * stretch, m.localScale.y, m.localScale.z);
+                    Object.DestroyImmediate(m.GetComponent<Occluder>());
+                    foreach (var c in m.GetComponentsInChildren<BoxCollider>()) Object.DestroyImmediate(c.gameObject);
+                }
+                Solid(run, new Vector3(0, WallH / 2f, 0), new Vector3(len, WallH, WallT));
+                return;
+            }
             var face = new Vector2(len, WallH);
             Quad(run, "Face south", new Vector3(0, WallH / 2f, -WallT / 2f), Vector3.zero, face, Mat("citywall_face"), Repeat("citywall_face", face));
             Quad(run, "Face north", new Vector3(0, WallH / 2f, WallT / 2f), new Vector3(0, 180, 0), face, Mat("citywall_face"), Repeat("citywall_face", face));
@@ -866,6 +913,7 @@ namespace ThreeKingdoms.EditorTools
         internal static void ArrowTower(Transform walls, string name, Vector3 at)
         {
             const float side = 6f, baseH = WallH + 0.4f;
+            if (townSession && BlenderModels.Place(walls, "corner_tower", name, at)) return;   // art/zhuojun-blender-b2
             var t = Group(walls, name, at);
             t.gameObject.AddComponent<Occluder>();
             var face = new Vector2(side, baseH);
@@ -922,6 +970,16 @@ namespace ThreeKingdoms.EditorTools
 
         static void WestGate(Transform walls)
         {
+            // Blender (art/zhuojun-blender-b2), modelled facing south and turned to face west; the passage stays open.
+            var model = BlenderModels.Place(walls, "west_gate", "12 West gate", new Vector3(-48f, 0, 0f), 90f);
+            if (model)
+            {
+                foreach (var c in model.GetComponentsInChildren<BoxCollider>()) Object.DestroyImmediate(c.gameObject);
+                var piers = Group(model.parent, "West gate piers", new Vector3(-48f, 0, 0f), 90f);
+                foreach (int s in new[] { -1, 1 }) Solid(piers, new Vector3(s * 2.1f, WallH / 2f, 0), new Vector3(1.8f, WallH, WallT));
+                Solid(piers, new Vector3(0, 4f, 0), new Vector3(2.5f, 2f, WallT));
+                return;
+            }
             // The west gate faces west; its front texture is seen side-on from the town camera, so it is mirrored on both faces.
             var g = Group(walls, "12 West gate", new Vector3(-48f, 0, 0f), 90f);
             g.gameObject.AddComponent<Occluder>();
@@ -945,6 +1003,11 @@ namespace ThreeKingdoms.EditorTools
             string roofKey = "tile", string glowMask = null, bool collide = true, string interior = null, string floor = null, float interiorFrom = 0f,
             string roofTexture = null, string eaveTexture = null)
         {
+            if (townSession && BuildingModels.TryGetValue(front, out string model))
+            {
+                var placed = BlenderModels.Place(parent, model, name, frontCenter, yaw);
+                if (placed) { modelled.Add(placed); return placed; }
+            }
             var f = Metres(front); var sd = Metres(side);
             float width = f.x, wall = f.y, depth = sd.x, gable = Mathf.Max(0.4f, sd.y - wall);
             var b = Group(parent, name, frontCenter, yaw);
@@ -1026,8 +1089,11 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A shop sign hung on the front edge of the eave, where the eave strip cannot hide it.
-        internal static void EaveSign(Transform building, string key, string front, string side) =>
+        internal static void EaveSign(Transform building, string key, string front, string side)
+        {
+            if (modelled.Contains(building)) return;   // the Blender model carries its own plaque
             Plaque(building, key, new Vector3(0, EaveY(front, side) - 0.25f, -0.72f), 0f);
+        }
 
         // A flat run of a tileable fence-like strip (courtyard wall, palisade, wattle) along X or Z.
         internal static void Strip(Transform parent, string name, string key, Vector3 a, Vector3 b, float height, bool solid = true, string capKey = null)
@@ -1069,6 +1135,14 @@ namespace ThreeKingdoms.EditorTools
             // 01 Commandery office: a 2.1 m stone platform (x -12..12, z 17.5..33.5) reached by six steps in line
             // with the main axis, walled on three sides, the hall at the back.
             var office = Group(row, "01 Commandery office");
+            // Blender (art/zhuojun-blender-b2): platform, steps, parapets, courtyard walls and hall in one model whose
+            // origin is the front edge of the lowest step (z 14.5); the banners, lanterns and trees stay.
+            if (BlenderModels.Place(office, "commandery", "Commandery model", new Vector3(0, 0, 14.5f)))
+            {
+                CommanderyProps(office);
+                Barracks(row);
+                return;
+            }
             Solid(office, new Vector3(0, Terrace / 2f, 25.5f), new Vector3(24f, Terrace, 16f));
             var topSize = new Vector2(24f, 16f);
             Quad(office, "Platform top", new Vector3(0, Terrace + 0.004f, 25.5f), new Vector3(90f, 0, 0), topSize, Mat("ground_square_brick"), Repeat("ground_square_brick", topSize), castShadows: false);
@@ -1115,18 +1189,27 @@ namespace ThreeKingdoms.EditorTools
                 Column(office, "Parapet end post " + n, new Vector3(x, Terrace, 17.8f), 0.5f, 1.2f, post, "courtyard_wall_cap");
             var hall = Building(office, "Office hall", new Vector3(0, Terrace, 24f), 0f, "yamen_hall_front", "yamen_hall_side", null);
             EaveSign(hall, "plaque_yamen", "yamen_hall_front", "yamen_hall_side");
+            // Door sill 1.05 m above the platform: three 0.35 m risers, under the controller's 0.4 m step offset.
+            Stairs(office, "Hall steps", new Vector3(0, Terrace, 24f), 3.2f, 3, 0.35f, 0.4f, 0.7f);
+            CommanderyProps(office);
+            Barracks(row);
+        }
+
+        static void CommanderyProps(Transform office)
+        {
             var op = Group(office, "Office props");
             Prop(op, "prop_banner_han", -3.8f, 23.2f, y: Terrace);
             Prop(op, "prop_banner_han", 3.8f, 23.2f, y: Terrace);
             Prop(op, "prop_banner_han", -4.2f, 14.0f);
             Prop(op, "prop_banner_han", 4.2f, 14.0f);
-            // Door sill 1.05 m above the platform: three 0.35 m risers, under the controller's 0.4 m step offset.
-            Stairs(op, "Hall steps", new Vector3(0, Terrace, 24f), 3.2f, 3, 0.35f, 0.4f, 0.7f);
             Prop(op, "prop_lantern_red", -2.6f, 23.6f, y: Terrace + 2.6f);
             Prop(op, "prop_lantern_red", 2.6f, 23.6f, y: Terrace + 2.6f);
             Prop(op, "prop_potted_tree", -9f, 20.5f, y: Terrace, key: "prop_tree_elm", scale: 0.7f);
             Prop(op, "prop_potted_tree", 9f, 20.5f, y: Terrace, key: "prop_tree_elm", scale: 0.7f);
+        }
 
+        static void Barracks(Transform row)
+        {
             // 07 Barracks: palisade compound with a drill yard, gate x 26..32 on the north road.
             var camp = Group(row, "07 Barracks");
             float stakeH = Metres("palisade_stakes").y;
@@ -1339,19 +1422,28 @@ namespace ThreeKingdoms.EditorTools
         static void Outside(Transform env)
         {
             var o = Group(env, "Outside");
+            // The modelled country (user 2026-10-27: 野外部分的地势和山川都做出来): rolling ground flat where the player
+            // walks, rocks, the peach knoll and the Yan hills; trees then stand on its height.
+            var land = Group(o, "Terrain");
+            terrainPlaced = BlenderModels.Place(land, "terrain_near", "Terrain near", Vector3.zero, terrain: true);
+            BlenderModels.Place(land, "peach_knoll", "Peach knoll", Vector3.zero, terrain: true);
+            BlenderModels.Place(land, "rocks", "Rocks", Vector3.zero, terrain: true);
+            bool mountains = BlenderModels.Place(land, "yan_mountains", "Yan mountains", Vector3.zero, terrain: true);
+            Physics.SyncTransforms();
             // The road south of the gate and the peach grove outside the west gate (design §3 #12).
-            Prop(o, "prop_tree_locust", -12f, -48f, scale: 0.9f, solid: true);
-            Prop(o, "prop_tree_locust", 14f, -52f, scale: 0.8f, solid: true);
+            Prop(o, "prop_tree_locust", -12f, -48f, y: GroundY(-12f, -48f), scale: 0.9f, solid: true);
+            Prop(o, "prop_tree_locust", 14f, -52f, y: GroundY(14f, -52f), scale: 0.8f, solid: true);
             Prop(o, "prop_bush", -6.5f, -42f, scale: 1.4f);
             Prop(o, "prop_bush", 7f, -44f, scale: 1.6f);
             Prop(o, "prop_flowers", 5.2f, -40.5f);
+            if (terrainPlaced) HillTrees(o);
             var rng = new System.Random(7);
             // A full grove in bloom, as in the approved concept (art/zhuojun-hd-concept/zhuojun_concept_peach.png).
             for (int i = 0; i < 46; i++)
             {
                 float x = -77f + (float)rng.NextDouble() * 21f, z = -14f + (float)rng.NextDouble() * 28f;
                 if (Mathf.Abs(z) < 3.2f) continue;   // keep the lane clear
-                Prop(o, i % 3 == 0 ? "prop_tree_peach_small" : "prop_tree_peach", x, z, solid: true);
+                Prop(o, i % 3 == 0 ? "prop_tree_peach_small" : "prop_tree_peach", x, z, y: GroundY(x, z), solid: true);
             }
             // The peach-garden oath (user 2026-10-24): the altar with incense, offerings and wine in front of the
             // three, and petals drifting down; both shown only while the oath plays (TownStoryController.Oath).
@@ -1363,10 +1455,43 @@ namespace ThreeKingdoms.EditorTools
             petals.transform.position = new Vector3(-66f, 0f, -0.6f);
             petals.Material = Tex("oath_petal", optional: true) ? Mat("oath_petal", clip: true, twoSided: true) : PetalMaterial();
             petals.gameObject.SetActive(false);
+            if (mountains) return;   // the modelled Yan hills replace the painted backdrop
             // Distant hills beyond the north wall.
             // Far enough back and large enough to rise over the commandery roof from the square (user 2026-10-26).
             Prop(o, "bg_hills_far", 0f, 120f, scale: 12f);
             Prop(o, "bg_town_rooftops_far", -70f, 60f, scale: 3f);
+        }
+
+        static bool terrainPlaced;
+
+        // Height of the modelled terrain under (x, z); 0 without it.
+        static float GroundY(float x, float z)
+        {
+            if (!terrainPlaced) return 0f;
+            foreach (var hit in Physics.RaycastAll(new Vector3(x, 300f, z), Vector3.down, 600f, ~0, QueryTriggerInteraction.Ignore).OrderBy(h => h.distance))
+                if (hit.collider is MeshCollider) return hit.point.y;
+            return 0f;
+        }
+
+        // Elms, locusts, willows and cypresses over the hills outside the walls, clear of the road, the grove and the
+        // walls, each standing on the slope.
+        static void HillTrees(Transform o)
+        {
+            var g = Group(o, "Hill trees");
+            var rng = new System.Random(57);
+            string[] kinds = { "prop_tree_elm", "prop_tree_locust", "prop_tree_elm", "prop_tree_cypress", "prop_tree_willow", "prop_bush", "prop_bush_b" };
+            int placed = 0;
+            for (int i = 0; i < 600 && placed < 150; i++)
+            {
+                float x = -155f + (float)rng.NextDouble() * 290f, z = -125f + (float)rng.NextDouble() * 230f;
+                if (Mathf.Abs(x) < 56f && Mathf.Abs(z) < 44f) continue;               // the walls and their foot
+                if (Mathf.Abs(x) < 24f && z < -36f) continue;                           // the south road
+                if (x < -46f && x > -84f && Mathf.Abs(z) < 20f) continue;               // the peach grove and west lane
+                string key = kinds[rng.Next(kinds.Length)];
+                if (!Tex(key, optional: true)) continue;
+                Prop(g, key, x, z, y: GroundY(x, z) - 0.1f, scale: 0.8f + (float)rng.NextDouble() * 0.5f);
+                placed++;
+            }
         }
 
         // ---------- props, people, lights ----------
@@ -1374,6 +1499,7 @@ namespace ThreeKingdoms.EditorTools
         internal static void Prop(Transform parent, string name, float x, float z, float y = 0f, float scale = 1f, bool solid = false, string key = null, string glowMask = null)
         {
             key ??= name;
+            if (townSession && PropModels.TryGetValue(key, out string model) && BlenderModels.Place(parent, model, name, new Vector3(x, y, z))) return;
             var t = Tex(key);
             var size = new Vector2(t.width / PpmOf(t), t.height / PpmOf(t)) * scale;
             var root = new GameObject(name).transform;
