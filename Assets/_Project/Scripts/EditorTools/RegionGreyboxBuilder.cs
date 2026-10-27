@@ -44,6 +44,7 @@ namespace ThreeKingdoms.EditorTools
             public float x, z, y, w, d, yaw;
             public int year;
             public string model, set;       // a Blender model for it, when its hub set exists
+            public string wallModel;        // walled places: <wallModel>_wall_8m/_4m/_corner of the same set, the model as the gate
             public string portalScene, portalArrival;
         }
 
@@ -271,7 +272,7 @@ namespace ThreeKingdoms.EditorTools
             Object.DestroyImmediate(skirt.GetComponent<Collider>());
             skirt.name = "Outer ground";
             skirt.transform.SetParent(g, false);
-            skirt.transform.position = new Vector3(data.width / 2f, -0.6f, data.height / 2f);
+            skirt.transform.position = new Vector3(data.width / 2f, -6f, data.height / 2f);   // below every river bed
             skirt.transform.localScale = new Vector3(data.width / 10f * 4f, 1, data.height / 10f * 4f);
             skirt.GetComponent<MeshRenderer>().sharedMaterial = Mat("outer ground", new Color(0.56f, 0.62f, 0.44f));
         }
@@ -423,14 +424,16 @@ namespace ThreeKingdoms.EditorTools
             g.position = new Vector3(p.x, y, p.z);
             g.rotation = Quaternion.Euler(0, p.yaw, 0);
             float w = Mathf.Max(p.w, 4f), d = Mathf.Max(p.d, 4f);
-            bool modelled = !string.IsNullOrEmpty(p.model) && BlenderModels.Place(p.set, g, p.model, p.name, Vector3.zero) != null;
+            bool modelled = !string.IsNullOrEmpty(p.wallModel)
+                ? ModelWalls(g, p, w, d)
+                : !string.IsNullOrEmpty(p.model) && BlenderModels.Place(p.set, g, p.model, p.name, Vector3.zero) != null;
             if (!modelled)
                 switch (p.kind)
                 {
                     case "town":
                     case "gate_town":
                         Walls(g, w, d, p.kind == "town" ? 6f : 5f, gateOpen: p.year <= 0 || !string.IsNullOrEmpty(p.portalScene));
-                        if (p.kind == "town") Box(g, "Inner blocks", new Vector3(0, 0, d * 0.15f), new Vector3(w * 0.45f, 5f, d * 0.35f), 0.58f);
+                        if (p.kind == "town") { Box(g, "Hall", new Vector3(0, 0, d * 0.25f), new Vector3(14f, 5f, 9f), 0.6f); for (int i = -1; i <= 1; i += 2) Box(g, "Block", new Vector3(i * w * 0.25f, 0, 0), new Vector3(10f, 4f, 8f), 0.64f); }
                         break;
                     case "camp":
                         Walls(g, w, d, 3f, gateOpen: true, shade: 0.45f);
@@ -465,7 +468,9 @@ namespace ThreeKingdoms.EditorTools
                     case "battlefield":
                     case "explore":
                     default:
-                        Box(g, "Marker", Vector3.zero, new Vector3(Mathf.Min(w, 8f), 2.2f, Mathf.Min(d, 8f)), 0.5f);
+                        // A low pad the size of the place and a marker post, so the spot reads without blocking it.
+                        Box(g, "Pad", new Vector3(0, -0.1f, 0), new Vector3(Mathf.Min(w, 16f), 0.3f, Mathf.Min(d, 16f)), 0.62f, 0f, solid: false);
+                        Box(g, "Post", Vector3.zero, new Vector3(0.4f, 3f, 0.4f), 0.4f);
                         break;
                 }
             Label(labels, p.name, g.position + new Vector3(0, Mathf.Max(8f, d * 0.12f), 0));
@@ -482,6 +487,39 @@ namespace ThreeKingdoms.EditorTools
                 portal.Size = new Vector2(6f, 2.5f); portal.TargetScene = p.portalScene; portal.ArrivalSpot = p.portalArrival;
                 portal.Facing = Vector3.forward;
             }
+        }
+
+        // A walled place from its set's modules: 8 m and 4 m runs (stretched a little to fit), corners, the gate model in
+        // the middle of the front (south in the place's own frame). False when the set is missing.
+        static bool ModelWalls(Transform g, RegionPlace p, float w, float d)
+        {
+            var gate = BlenderModels.Place(p.set, g, p.model, "Gate", new Vector3(0, 0, -d / 2f));
+            if (!gate) return false;
+            void Run(Vector3 a, Vector3 b)
+            {
+                float len = Vector3.Distance(a, b);
+                if (len < 1f) return;
+                float yaw = Mathf.Atan2(b.x - a.x, b.z - a.z) * Mathf.Rad2Deg - 90f;
+                int n8 = Mathf.FloorToInt(len / 8f);
+                var pieces = Enumerable.Repeat(8f, n8).ToList();
+                float rem = len - n8 * 8f;
+                if (rem > 2f) pieces.Add(rem); else if (n8 > 0) for (int i = 0; i < n8; i++) pieces[i] = len / n8; else pieces.Add(len);
+                float at = 0f;
+                foreach (float piece in pieces)
+                {
+                    bool small = piece < 6f;
+                    var t = BlenderModels.Place(p.set, g, $"{p.wallModel}_wall_{(small ? 4 : 8)}m", "Wall", Vector3.Lerp(a, b, (at + piece / 2f) / len), yaw);
+                    if (t) t.localScale = new Vector3(piece / (small ? 4f : 8f), 1f, 1f);
+                    at += piece;
+                }
+            }
+            float hw = w / 2f, hd = d / 2f, gap = 6.5f;
+            Run(new Vector3(-hw, 0, -hd), new Vector3(-gap, 0, -hd));
+            Run(new Vector3(gap, 0, -hd), new Vector3(hw, 0, -hd));
+            Run(new Vector3(hw, 0, -hd), new Vector3(hw, 0, hd));
+            Run(new Vector3(hw, 0, hd), new Vector3(-hw, 0, hd));
+            Run(new Vector3(-hw, 0, hd), new Vector3(-hw, 0, -hd));
+            return true;
         }
 
         // A rectangle of wall round a place with a 7 m gap in the middle of its south side.
