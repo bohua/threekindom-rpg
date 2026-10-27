@@ -4,7 +4,7 @@
 
 ## 1. 范围
 
-- 替换原深色纯文字标题，改为《最终幻想》式明亮白底：上部居中的「三国志 Fantasy」正式 logo，正中一列菜单，白色手套光标。
+- 替换原深色纯文字标题，改为《最终幻想》式明亮白底：上部居中的《三国·江山如画》正式 logo（2026-10-27 用户改名，替换曾用名「三国志 Fantasy」），正中一列菜单，白色手套光标。
 - 只改标题场景（`Title.unity`、`TitleHud`、`TitleWhiteFade`、`TitleController`）。不改存档格式与读档规则（ADR-0004）、行旅菜单、城镇或战斗场景。
 - 统一 UI 风格（UI_STYLE_GUIDE，苍蓝银辉）仍是游戏内界面基线；标题按用户要求用白底，面板细框、青蓝选中借用统一风格的色彩语言。
 
@@ -28,6 +28,8 @@
 - 音效：`Resources/Audio/Sfx/title_start.wav`，程序合成的原创上行琶音＋水晶钟声约 2 秒，不引用任何现有游戏旋律。标题音乐 `Resources/Audio/Music/title_theme` 预留（文件不存在时静音），进入游戏时淡出。
 
 ## 4. 美术
+
+- 2026-10-27 改名后 logo：Codex 设计 D:\BuildArtifacts\Codex\hd2d-jrpgrt\jiangshan-logo-concept（LOGO_A 单行版接入；LOGO_B 两层版备选），插画按旧 logo 重绘、补全人物下半身，字为 Noto Serif SC 900 排版。
 
 - 设计图：D:\BuildArtifacts\Codex\hd2d-jrpg\art\title-menu-concept（v1）、title-menu-concept-v2（v2，现行）。
 - `Resources/TitleMenu/title_plate.png`：背景与 logo 按设计脚本（compose.py 的 background()+place_logo(1120, 5)）预合成，避免运行时混合冲淡 logo 蓝色。

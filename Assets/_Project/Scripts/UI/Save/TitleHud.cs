@@ -12,7 +12,7 @@ using UnityEngine.UIElements;
 namespace ThreeKingdoms.UI.Save
 {
     // Title screen after the Codex design v2 (design/ux/title-menu.md, art/title-menu-concept-v2): Final Fantasy style
-    // white backdrop with the 三国志 Fantasy logo above a centred menu and a glove pointer. Load and settings slide the
+    // white backdrop with the 三国·江山如画 logo above a centred menu and a glove pointer. Load and settings slide the
     // menu to the left and bring their panel into the middle; continue and new game flash three times and go through
     // white into the game with the start chime. Positions are the design's own 1920×1080 pixels (the panel settings
     // scale to that resolution). An unreadable save shows why and stays on screen; the file is never changed.
