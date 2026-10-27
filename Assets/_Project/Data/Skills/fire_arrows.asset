@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: fire_arrows
   m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.BattleSkillDefinition
   Id: fire_arrows
-  DisplayName: "\u706B\u77E2"
-  Description: "\u90E8\u961F\u706B\u7BAD\u6218\u672F\uFF1A\u5BF9\u5355\u4F53\u654C\u519B\u9020\u6210
+  DisplayName: "\u6D41\u77E2"
+  Description: "\u90E8\u961F\u7BAD\u96E8\u6218\u672F\uFF1A\u5BF9\u5355\u4F53\u654C\u519B\u9020\u6210
     1.3 \u500D\u8BA1\u7B56\u4F24\u5BB3\u3002"
   TechCost: 4
   Target: 0

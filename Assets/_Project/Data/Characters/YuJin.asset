@@ -15,9 +15,10 @@ MonoBehaviour:
   Id: yu_jin
   DisplayName: "\u4E8E\u7981"
   Troop: 0
-  Force: 84
-  Command: 90
-  Intellect: 70
+  Force: 76
+  Command: 86
+  Intellect: 68
+  Element: 5
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

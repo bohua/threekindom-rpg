@@ -18,6 +18,7 @@ MonoBehaviour:
   Force: 64
   Command: 52
   Intellect: 24
+  Element: 2
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

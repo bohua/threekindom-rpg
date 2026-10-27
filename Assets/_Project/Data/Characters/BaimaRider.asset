@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
   Id: baima_rider
   DisplayName: "\u767D\u9A6C\u4E49\u4ECE"
-  Troop: 1
+  Troop: 7
   Force: 72
   Command: 62
   Intellect: 40
+  Element: 4
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

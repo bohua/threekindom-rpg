@@ -40,7 +40,7 @@ namespace ThreeKingdoms.UI.Battle
             def.Reputation = Run.Life.Reputation;
             // 兵书：战场用玩家在行旅菜单兵书页里的同一份书库与镶嵌（用户 2026-10-26），布阵时改动也会带回菜单
             var shelf = ThreeKingdoms.UI.Menu.BingshuShelf.For(Run);
-            def.Library = shelf.Library;
+            def.Library = shelf.OwnedBooks;   // the same Book objects, only those in hand (BALANCE_MODEL_v1 §3.12)
             foreach (var u in def.Units.Concat(def.Reserves))
             {
                 if (u.Team != Team.Player || u.Ai) continue;
@@ -315,8 +315,9 @@ namespace ThreeKingdoms.UI.Battle
             // Yingchuan: Cao Cao (骑都尉) and two Han cavalry troops ride in from the east edge (story-only generals, not in the catalog).
             static TacticsUnitDef[] Reinforcements(string[] rows, GameRun run, BattleData data)
             {
-                var cao = new GeneralSpec("cao_cao", "曹操", TroopType.Cavalry, 72, 90, 91);
-                var rider = new GeneralSpec("han_cavalry", "官军骑兵", TroopType.Cavalry, 58, 52, 30);
+                // GENERALS_ROSTER v0.3: Cao Cao 78/96/94 (user 18:41: give him his full ability).
+                var cao = new GeneralSpec("cao_cao", "曹操", TroopType.Cavalry, 78, 96, 94, element: UnitElement.Fire);
+                var rider = new GeneralSpec("han_cavalry", "官军骑兵", TroopType.Cavalry, 58, 52, 30, element: UnitElement.Fire);
                 var list = new List<TacticsUnitDef>();
                 var c = Unit(cao, 6, BattleRules.Compute(cao, 6, default, data.Troops, data.Config), Team.Player, At(rows, 15, 7));
                 c.Ai = true; c.Leader = true; c.Key = "CaoCao"; c.Crafts = new[] { "突击" };
@@ -332,22 +333,24 @@ namespace ThreeKingdoms.UI.Battle
 
             internal static TacticsUnitDef Unit(GeneralSpec g, int level, UnitStats s, Team team, Vector2Int pos)
             {
-                var troop = g.Troop switch
-                {
-                    TroopType.Infantry => Troop.Infantry, TroopType.Cavalry => Troop.Cavalry, TroopType.Archer => Troop.Archer,
-                    TroopType.YellowTurban => Troop.Rebel, _ => Troop.Strategist,
-                };
+                // The tactics prototype's Troop enum mirrors TroopType value for value (BALANCE_MODEL_v1 §3.14).
+                var troop = (Troop)(int)g.Troop;
+                int rank = TroopTraits.Rank(level);
                 var u = new TacticsUnitDef
                 {
                     Name = g.DisplayName, Key = KeyOf(g.Id), Team = team, Troop = troop, Level = level,
                     Hp = s.MaxTroops, Atk = s.PhysicalAttack, Def = s.PhysicalDefense, Mat = s.StrategyAttack, Mdef = s.StrategyDefense,
-                    Speed = s.Speed, Move = troop == Troop.Cavalry ? 5 : troop == Troop.Strategist ? 2 : 3,
-                    Range = troop == Troop.Archer ? 3 : troop == Troop.Strategist ? 2 : 1,
-                    Ep = s.MaxTech * 4, Int = s.Intellect, Wu = s.Force, Pos = pos,
+                    Speed = s.Speed, Move = TroopTraits.Move(troop), Range = TroopTraits.Range(troop, rank),
+                    Ep = TroopTraits.MaxEp(s.Intellect, troop, rank), Int = s.Intellect, Wu = s.Force, Pos = pos,   // §3.4: 20 + ⌊智÷2⌋
                     Crafts = g.SkillsAt(level).Select(k => k.DisplayName).ToArray(),
                 };
-                u.School = g.Id switch { "liu_bei" => School.Ru, "zhang_fei" => School.Fa, "zhang_jiao" => School.Dao, _ => troop == Troop.Rebel ? School.Fa : School.Bing };
-                if (troop == Troop.Rebel || g.Id == "zhang_jiao") u.Element = Element.Earth;
+                // Schools from GENERALS_ROSTER; the unit's element is the roster's 单位五行 when set, else the school's leaning.
+                u.School = g.Id switch
+                {
+                    "liu_bei" => School.Ru, "zhang_fei" => School.Fa, "zhang_jiao" or "zhang_bao" => School.Dao, "yu_jin" => School.Fa,
+                    _ => troop == Troop.Rebel ? School.Fa : School.Bing,
+                };
+                if (g.Element != UnitElement.None) u.Element = (Element)(int)g.Element;
                 return u;
             }
 

@@ -12,20 +12,14 @@ namespace ThreeKingdoms.Data.Battle
         public int DefenseBonus;
         public int BaseSpeed;
         public bool PlayerUsable;
+        [Tooltip("移动力；0 = 兵种默认")] public int Move;
+        [Tooltip("射程；0 = 兵种默认")] public int Range;
     }
 
-    [Serializable]
-    public struct AdvantagePair
-    {
-        public TroopType Attacker;
-        public TroopType Defender;
-    }
-
-    // Troop-type numbers and the advantage pairs (combat GDD; enemy-only types user-confirmed 2026-10-18).
+    // Troop-type numbers (BALANCE_MODEL_v1 §3.14). The matchups are rules in TroopRules (压制 + 特长), no longer pairs here.
     [CreateAssetMenu(menuName = "ThreeKingdoms/Battle/Troop Table")]
     public sealed class TroopTableDefinition : ScriptableObject
     {
         public TroopTypeEntry[] Types = Array.Empty<TroopTypeEntry>();
-        public AdvantagePair[] Advantages = Array.Empty<AdvantagePair>();
     }
 }

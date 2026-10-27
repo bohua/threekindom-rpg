@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
   Id: qiangnu
   DisplayName: "\u5F3A\u5F29\u624B"
-  Troop: 2
+  Troop: 6
   Force: 70
   Command: 50
   Intellect: 30
+  Element: 1
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

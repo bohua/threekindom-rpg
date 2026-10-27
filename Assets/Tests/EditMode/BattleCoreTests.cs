@@ -17,10 +17,6 @@ namespace ThreeKingdoms.Tests.EditMode
             new TroopTypeSpec(TroopType.Archer, 0, 0, 8, true),
             new TroopTypeSpec(TroopType.YellowTurban, 20, 0, 6, false),
             new TroopTypeSpec(TroopType.Strategist, 0, 0, 7, false),
-        }, new[]
-        {
-            (TroopType.Cavalry, TroopType.Infantry), (TroopType.Infantry, TroopType.Archer),
-            (TroopType.Archer, TroopType.Cavalry), (TroopType.Cavalry, TroopType.YellowTurban),
         });
 
         public static readonly ItemSpec Ration = new ItemSpec("ration", "军粮", 30);
@@ -108,8 +104,8 @@ namespace ThreeKingdoms.Tests.EditMode
         public void ChargeOnYellowTurbanIs102AndGuarded51()
         {
             var config = GddData.Config();
-            Assert.AreEqual(102, BattleRules.Damage(55, 100, 18, 100, 150, advantage: true, guarded: false, config));
-            Assert.AreEqual(51, BattleRules.Damage(55, 100, 18, 100, 150, advantage: true, guarded: true, config));
+            Assert.AreEqual(102, BattleRules.Damage(55, 100, 18, 100, 150, 140, 100, config));
+            Assert.AreEqual(51, BattleRules.Damage(55, 100, 18, 100, 150, 140, 50, config));
         }
 
         [Test]
@@ -127,7 +123,7 @@ namespace ThreeKingdoms.Tests.EditMode
         public void FireArrowsUsesStrategyStatsWithoutAdvantage()
         {
             var config = GddData.Config();
-            Assert.AreEqual(54, BattleRules.Damage(53, 100, 28, 100, 130, false, false, config));
+            Assert.AreEqual(54, BattleRules.Damage(53, 100, 28, 100, 130, 100, 100, config));
             var s = GddData.Session(GddData.Single(GddData.ZhangLiang, 4), new[] { GddData.At(GddData.LiuBei, 3) }, ai: new PassiveAi());
             Assert.AreEqual(53, P(s, 0).Stats.StrategyAttack);
         }
@@ -136,8 +132,8 @@ namespace ThreeKingdoms.Tests.EditMode
         public void IntimidateLowersAttackTo40Point8()
         {
             var config = GddData.Config();
-            Assert.AreEqual(21, BattleRules.Damage(51, 80, 38, 100, 100, false, false, config));
-            Assert.AreEqual(32, BattleRules.Damage(51, 100, 38, 100, 100, false, false, config));
+            Assert.AreEqual(21, BattleRules.Damage(51, 80, 38, 100, 100, 100, 100, config));
+            Assert.AreEqual(32, BattleRules.Damage(51, 100, 38, 100, 100, 100, 100, config));
         }
 
         [Test]
@@ -164,7 +160,7 @@ namespace ThreeKingdoms.Tests.EditMode
         [Test]
         public void DamageIsAtLeastOne()
         {
-            Assert.AreEqual(1, BattleRules.Damage(10, 100, 200, 100, 65, false, true, GddData.Config()));
+            Assert.AreEqual(1, BattleRules.Damage(10, 100, 200, 100, 65, 100, 50, GddData.Config()));
         }
 
         [Test]
@@ -175,17 +171,19 @@ namespace ThreeKingdoms.Tests.EditMode
             Assert.IsFalse(t.HasAdvantage(TroopType.Cavalry, TroopType.Archer));
             Assert.IsTrue(t.HasAdvantage(TroopType.Cavalry, TroopType.YellowTurban));
             Assert.IsFalse(t.HasAdvantage(TroopType.YellowTurban, TroopType.Infantry));
-            foreach (var other in new[] { TroopType.Infantry, TroopType.Cavalry, TroopType.Archer })
-            {
+            foreach (var other in new[] { TroopType.Cavalry, TroopType.Archer })
                 Assert.IsFalse(t.HasAdvantage(other, TroopType.Strategist));
+            foreach (var other in new[] { TroopType.Infantry, TroopType.Cavalry, TroopType.Archer })
                 Assert.IsFalse(t.HasAdvantage(TroopType.Strategist, other));
-            }
+            // BALANCE_MODEL_v1 §3.14: foot troops close in on a strategist (+20), horse → foot is +30
+            Assert.AreEqual(120, t.AdvantagePercent(TroopType.Infantry, TroopType.Strategist));
+            Assert.AreEqual(130, t.AdvantagePercent(TroopType.Cavalry, TroopType.YellowTurban));
         }
 
         [Test]
         public void AdvantageMultiplierComesFromData()
         {
-            Assert.AreEqual(147, BattleRules.Damage(55, 100, 18, 100, 150, true, false, GddData.Config(advantage: 200)));   // 73.5 × 2.0
+            Assert.AreEqual(147, BattleRules.Damage(55, 100, 18, 100, 150, 140, 100, GddData.Config(advantage: 200)));   // 73.5 × 2.0
         }
 
         // ---------- order ----------
@@ -323,8 +321,8 @@ namespace ThreeKingdoms.Tests.EditMode
             var hits = log.Where(e => e.Kind == BattleEventKind.Damage).ToList();
             int guanAtk = P(s, 0).Stats.PhysicalAttack, zhangAtk = P(s, 1).Stats.PhysicalAttack;
             var config = GddData.Config();
-            Assert.AreEqual(BattleRules.Damage(guanAtk, 100, def, 100, 110, true, true, config), hits[0].Amount);
-            Assert.AreEqual(BattleRules.Damage(zhangAtk, 100, def, 80, 100, false, true, config), hits[1].Amount);
+            Assert.AreEqual(BattleRules.Damage(guanAtk, 100, def, 100, 110, 140, 50, config), hits[0].Amount);
+            Assert.AreEqual(BattleRules.Damage(zhangAtk, 100, def, 80, 100, 100, 50, config), hits[1].Amount);
             Assert.AreEqual(1, target.Modifiers.Single().RemainingTurns);
             s.PlayRound(new[] { BattleCommand.UseSkill(P(s, 0), GddData.BreakFormation, target), BattleCommand.Defend(P(s, 1)) });
             var m = target.Modifiers.Single();

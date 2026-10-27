@@ -18,32 +18,96 @@ MonoBehaviour:
     DefenseBonus: 5
     BaseSpeed: 6
     PlayerUsable: 1
+    Move: 0
+    Range: 0
   - Type: 1
     TroopBonus: 10
     DefenseBonus: 0
     BaseSpeed: 10
     PlayerUsable: 1
+    Move: 0
+    Range: 0
   - Type: 2
     TroopBonus: 0
     DefenseBonus: 0
     BaseSpeed: 8
     PlayerUsable: 1
+    Move: 0
+    Range: 0
   - Type: 3
     TroopBonus: 20
     DefenseBonus: 0
     BaseSpeed: 6
-    PlayerUsable: 0
+    PlayerUsable: 1
+    Move: 0
+    Range: 0
   - Type: 4
     TroopBonus: 0
     DefenseBonus: 0
     BaseSpeed: 7
-    PlayerUsable: 0
-  Advantages:
-  - Attacker: 1
-    Defender: 0
-  - Attacker: 0
-    Defender: 2
-  - Attacker: 2
-    Defender: 1
-  - Attacker: 1
-    Defender: 3
+    PlayerUsable: 1
+    Move: 0
+    Range: 0
+  - Type: 5
+    TroopBonus: 20
+    DefenseBonus: 3
+    BaseSpeed: 6
+    PlayerUsable: 1
+    Move: 0
+    Range: 0
+  - Type: 6
+    TroopBonus: 10
+    DefenseBonus: 2
+    BaseSpeed: 7
+    PlayerUsable: 1
+    Move: 0
+    Range: 0
+  - Type: 7
+    TroopBonus: 0
+    DefenseBonus: 0
+    BaseSpeed: 10
+    PlayerUsable: 1
+    Move: 0
+    Range: 0
+  - Type: 8
+    TroopBonus: 10
+    DefenseBonus: 0
+    BaseSpeed: 8
+    PlayerUsable: 1
+    Move: 0
+    Range: 0
+  - Type: 9
+    TroopBonus: 0
+    DefenseBonus: 0
+    BaseSpeed: 7
+    PlayerUsable: 1
+    Move: 0
+    Range: 0
+  - Type: 10
+    TroopBonus: 0
+    DefenseBonus: 0
+    BaseSpeed: 7
+    PlayerUsable: 1
+    Move: 0
+    Range: 0
+  - Type: 11
+    TroopBonus: 20
+    DefenseBonus: 2
+    BaseSpeed: 7
+    PlayerUsable: 1
+    Move: 0
+    Range: 0
+  - Type: 12
+    TroopBonus: 35
+    DefenseBonus: 3
+    BaseSpeed: 6
+    PlayerUsable: 1
+    Move: 0
+    Range: 0
+  - Type: 13
+    TroopBonus: 40
+    DefenseBonus: 5
+    BaseSpeed: 6
+    PlayerUsable: 1
+    Move: 0
+    Range: 0

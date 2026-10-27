@@ -104,6 +104,14 @@ namespace ThreeKingdoms.UI.Menu
 
         public bool SocketBook(GeneralSpec g, Book b)
         {
+            // A shop book on sale: the first press buys it (BALANCE_MODEL_v1 §3.12 书肆)
+            if (!Shelf.Owned(b))
+            {
+                int price = Shelf.PriceOf(b);
+                bool paid = Shelf.Buy(b);
+                Message = paid ? $"在{Shelf.ShopOf(b)}购得{BookTitle(b)}（{price} 铜钱）" : $"铜钱不足：{BookTitle(b)}要 {price} 铜钱";
+                return paid;
+            }
             bool ok = Shelf.Toggle(g.Id, b, ref plateSlot);
             Message = ok ? "" : $"{BookTitle(b)}放不进{g.DisplayName}的命盘：没有合适的空槽";
             return ok;
@@ -202,7 +210,7 @@ namespace ThreeKingdoms.UI.Menu
             var p = paint;
             var slots = Shelf.Slots(g.Id);
             int intel = Intellect(g);
-            p.PanelBox(336, 92, 532, 760, "命盘", $"{c.Name}　智力 {intel}");
+            p.PanelBox(336, 92, 532, 760, "命盘", $"{c.Name}　智力 {intel}·{CircuitMath.IntellectTier(intel)}");   // 主稿 D7：档位
             var hub = p.P(603, 438); float half = 272 * p.K, R = 150 * p.K;
             if (!p.Icon(new Rect(hub.x - half, hub.y - half, half * 2, half * 2), "destiny_plate"))
             {
@@ -381,7 +389,8 @@ namespace ThreeKingdoms.UI.Menu
                 else p.Fill(new Rect(sr.x + sr.width * 0.2f, sr.y, sr.width * 0.6f, sr.height), Wuxing.Tint(b.Element) * 0.8f);
                 var title = BookTitle(b);
                 p.Text(x + 64, y + 6, 132, 32, title, title.Length > 5 ? 18 : 20, MenuPaint.Ivory, TextAnchor.MiddleLeft, true);
-                p.Text(x + 64, y + 36, 92, 24, b.IsTechnique ? "功法·单本成招" : "策略", 13, MenuPaint.Mist);
+                int price = Shelf.PriceOf(b);
+                p.Text(x + 64, y + 36, 92, 24, price > 0 ? $"书肆·{price}钱" : b.IsTechnique ? "功法·单本成招" : "策略", 13, price > 0 ? MenuPaint.Gold : MenuPaint.Mist);
                 Gem(p.R(x + 66, y + 64, 20, 20), b.Element);
                 p.Text(x + 90, y + 58, 60, 30, $"×{b.Grade}", 17, MenuPaint.Ivory);
                 var pr = p.R(x + 156, y + 40, 38, 38);

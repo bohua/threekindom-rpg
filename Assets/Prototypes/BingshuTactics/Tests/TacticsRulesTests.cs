@@ -78,7 +78,9 @@ public class TacticsRulesTests
         Assert.AreEqual(1f, l1.PowerMul, 1e-4);
         slots[2] = B(Element.Fire, 3); slots[4] = B(Element.Fire, 3); slots[1] = B(Element.Fire, 3);   // 火 2+4+4+4=14
         var l2 = CircuitMath.Lit(bing, slots, 100).First(x => x.Def.Name == "引火");
-        Assert.AreEqual(1f + CircuitMath.OverflowStep * CircuitMath.OverflowCap, l2.PowerMul, 1e-4);
+        // 主稿 v1.3 §3.7：一阶溢出封顶 2 点，盈余每点咏唱 −5（最多 3 点）
+        Assert.AreEqual(1f + CircuitMath.OverflowStep * CircuitMath.TierOneCap, l2.PowerMul, 1e-4);
+        Assert.AreEqual(15, l2.CastCut);
     }
 
     [Test]
@@ -86,8 +88,8 @@ public class TacticsRulesTests
     {
         var cav = new Unit { Troop = Troop.Cavalry, Atk = 60, Mat = 60 };
         var rebel = new Unit { Troop = Troop.Rebel, Element = Element.Earth, Def = 20, Mdef = 20 };
-        Assert.AreEqual(50, Combat.Damage(cav, rebel, 1f, true, Element.None) / 1.4f, 1f);
-        Assert.AreEqual(1.6f, Combat.AdvMul(cav, rebel, Element.Wood), 1e-4);   // 骑克黄巾＋木克土
+        Assert.AreEqual(50, Combat.Damage(cav, rebel, 1f, true, Element.None) / 1.3f, 1f);
+        Assert.AreEqual(1.5f, Combat.AdvMul(cav, rebel, Element.Wood), 1e-4);   // 骑压步（贼众）+0.3 ＋木克土 +0.2
         Assert.AreEqual(1.0f, Combat.AdvMul(new Unit { Troop = Troop.Infantry }, rebel, Element.Fire), 1e-4);
     }
 
@@ -325,15 +327,18 @@ public class TacticsRulesTests
     }
 
     [Test]
-    public void AdjacentTechniqueBooks_MergeIntoBigTechnique_WhenMainElementReachesFour()
+    public void AdjacentTechniqueBooks_MergeIntoBigTechnique_WhenSameElementReachesThree()
     {
         var ru = Circuits.Of(School.Ru);                 // 外圈一段 离4–巽5–震6
         var slots = new Book[7];
-        slots[4] = K(Element.Metal, 2); slots[5] = K(Element.Metal, 2);
+        slots[4] = K(Element.Metal, 2); slots[5] = K(Element.Metal, 1);
         var t = CircuitMath.Techniques(ru, slots, 81);
-        Assert.AreEqual("突阵", t.Single().Def.Name, "相邻两本金系合计 4 → 大武技");
-        slots[5] = K(Element.Metal, 1);
-        CollectionAssert.AreEquivalent(new[] { "刺击" }, CircuitMath.Techniques(ru, slots, 81).Select(x => x.Def.Name), "合计 3 不足：各出小武技（同名只留一招）");
+        Assert.AreEqual("突阵", t.Single().Def.Name, "相邻两本金系合计 3 → 大武技（主稿 §3.8 门槛 3）");
+        slots[4] = K(Element.Metal, 1); slots[5] = K(Element.Metal, 1);
+        CollectionAssert.AreEquivalent(new[] { "刺击" }, CircuitMath.Techniques(ru, slots, 81).Select(x => x.Def.Name), "合计 2 不足：各出小武技（同名只留一招）");
+        slots[4] = K(Element.Earth, 2); slots[5] = K(Element.Fire, 2);
+        CollectionAssert.AreEquivalent(new[] { "格挡", "猛击" }, CircuitMath.Techniques(ru, slots, 81).Select(x => x.Def.Name), "异五行相邻不并组（C10）");
+        slots[4] = K(Element.Metal, 2);
         slots[5] = B(Element.Metal, 3);
         Assert.AreEqual(1, CircuitMath.Techniques(ru, slots, 81).Count, "中间隔着策略书就不相连");
     }

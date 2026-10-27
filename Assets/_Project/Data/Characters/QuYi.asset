@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
   Id: qu_yi
   DisplayName: "\u9EB4\u4E49"
-  Troop: 0
-  Force: 82
-  Command: 90
-  Intellect: 62
+  Troop: 6
+  Force: 78
+  Command: 86
+  Intellect: 60
+  Element: 2
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

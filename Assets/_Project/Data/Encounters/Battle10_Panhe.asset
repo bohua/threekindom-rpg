@@ -16,16 +16,19 @@ MonoBehaviour:
   DisplayName: "\u7B2C\u5341\u6218 \xB7 \u78D0\u6CB3\u6551\u516C\u5B59\u74D2"
   Enemies:
   - General: {fileID: 11400000, guid: af34b1917accd154eaebcc53b463b077, type: 2}
-    Level: 12
-    FocusEscort: 0
-  - General: {fileID: 11400000, guid: 66188c58825370247b1662f978d5dc03, type: 2}
     Level: 11
     FocusEscort: 0
   - General: {fileID: 11400000, guid: 66188c58825370247b1662f978d5dc03, type: 2}
-    Level: 11
+    Level: 9
     FocusEscort: 0
   - General: {fileID: 11400000, guid: 66188c58825370247b1662f978d5dc03, type: 2}
-    Level: 10
+    Level: 9
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 66188c58825370247b1662f978d5dc03, type: 2}
+    Level: 8
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 66188c58825370247b1662f978d5dc03, type: 2}
+    Level: 8
     FocusEscort: 0
   Ai: 1
   SkillEveryRounds: 3

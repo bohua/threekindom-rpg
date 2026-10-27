@@ -11,7 +11,10 @@ namespace Prototype.BingshuTactics
     public enum Element { None, Metal, Wood, Water, Fire, Earth }
     public enum School { Ru, Bing, Dao, Mo, Fa }
     public enum Team { Player, Enemy }
-    public enum Troop { Infantry, Cavalry, Archer, Rebel, Strategist }
+    // 兵种（数值主稿 v1.3 §3.14，用户 2026-10-27：主流 8 种＋特殊 6 种，不可转职、同线升阶）。顺序与正式代码 TroopType 一致。
+    // Rebel＝贼众（黄巾／山贼／流寇），Strategist＝军师。
+    public enum Troop { Infantry, Cavalry, Archer, Rebel, Strategist, Spearman, Crossbow, HorseArcher, Swordswoman, Dancer, Shaman, Pirate, Barbarian, Elephant }
+    public enum TroopClass { Foot, Horse, Bow, Mind }
     public enum Area { Single, Circle, Line, SelfCircle }
     public enum Effect { Damage, Heal, Guard, Buff, Debuff }
     // 地形（用户 2026-10-23）：草地、沙地、河流、浅滩、桥、道路、营寨、关墙、关门、拒马、山石
@@ -174,13 +177,13 @@ namespace Prototype.BingshuTactics
         // 策略：靠回路中“单条线”的五行合计点亮。阶位门槛 2 / 4+1 / 7+2。
         public static readonly SkillDef[] All =
         {
-            Set(D("引火", Element.Fire, 2, Element.None, 0, "单体纵火"), Effect.Damage, Area.Single, 5, 0, 1.25f, 6, 40),
+            Set(D("引火", Element.Fire, 2, Element.None, 0, "单体纵火"), Effect.Damage, Area.Single, 5, 0, 1.1f, 6, 40),   // 主稿 v1.3 C14：1.25→1.1
             Set(D("火烧营寨", Element.Fire, 4, Element.Wood, 1, "半径1纵火"), Effect.Damage, Area.Circle, 5, 1, 1.0f, 12, 70),
             Set(D("火海", Element.Fire, 7, Element.Wood, 2, "半径2大火"), Effect.Damage, Area.Circle, 6, 2, 1.1f, 22, 110),
             Set(D("截流", Element.Water, 2, Element.None, 0, "单体，推迟其行动"), Effect.Damage, Area.Single, 5, 0, 1.0f, 6, 40, atDelay: 30),
             Set(D("水攻", Element.Water, 4, Element.Metal, 1, "直线5格，推迟行动"), Effect.Damage, Area.Line, 1, 0, 0.9f, 12, 70, len: 5, atDelay: 25),
             Set(D("决堤", Element.Water, 7, Element.Metal, 2, "宽3长7洪水，大幅推迟"), Effect.Damage, Area.Line, 1, 0, 1.05f, 22, 110, len: 7, width: 3, atDelay: 45),
-            Set(D("抚军", Element.Wood, 2, Element.None, 0, "单体回复30%"), Effect.Heal, Area.Single, 4, 0, 0.30f, 6, 30),
+            Set(D("抚军", Element.Wood, 2, Element.None, 0, "单体回复30%"), Effect.Heal, Area.Single, 4, 0, 0.30f, 8, 30),   // 主稿 E3：策力 6→8
             Set(D("鼓舞", Element.Wood, 4, Element.Water, 1, "半径1回复20%并物攻+20%"), Effect.Heal, Area.Circle, 4, 1, 0.20f, 12, 60, turns: 2, amount: 0.2f),
             Set(D("收拢溃卒", Element.Wood, 7, Element.Water, 2, "全军回复40%"), Effect.Heal, Area.Circle, 0, 99, 0.40f, 22, 100),
             Set(D("坚壁", Element.Earth, 2, Element.None, 0, "单体受伤-25%，2回合"), Effect.Guard, Area.Single, 4, 0, 0f, 6, 30, turns: 2, amount: 0.25f),
@@ -196,14 +199,21 @@ namespace Prototype.BingshuTactics
             s.Length = len; s.Width = width; s.AtDelay = atDelay; s.Turns = turns; s.Amount = amount; s.UsesMight = might;
             return s;
         }
+
+        // 阶位按主五行门槛：2–3 一阶（箭雨主 3 仍算一阶），4–5 二阶，6–7 三阶
+        public static int Tier(SkillDef s) => s.Req.Count == 0 ? 1 : s.Req[s.Main] >= 6 ? 3 : s.Req[s.Main] >= 4 ? 2 : 1;
     }
 
     public readonly struct LitStrategy
     {
         public readonly SkillDef Def; public readonly int Line; public readonly int Overflow; public readonly float PowerMul;
+        public readonly int CastCut;   // 溢出封顶以上的盈余点数换来的咏唱缩短（AT）
         public LitStrategy(SkillDef def, int line, int overflow)
         {
-            Def = def; Line = line; Overflow = overflow; PowerMul = CircuitMath.PowerMul(overflow);
+            Def = def; Line = line; Overflow = overflow;
+            int cap = CircuitMath.OverflowCapOf(def);
+            PowerMul = CircuitMath.PowerMul(overflow, cap);
+            CastCut = CircuitMath.CastCut(overflow, cap);
         }
     }
 
@@ -238,7 +248,7 @@ namespace Prototype.BingshuTactics
             [Element.Fire] = T("疾风骤雨", Element.Fire, "连击合计1.8倍", Effect.Damage, Area.Single, -1, 0, 1.8f, 35),
             [Element.Water] = T("迂回", Element.Water, "单体1.4倍并迟滞", Effect.Damage, Area.Single, -1, 0, 1.4f, 30),
             [Element.Wood] = T("死战", Element.Wood, "自回20%物攻+30%", Effect.Heal, Area.SelfCircle, 0, 0, 0.20f, 35, turns: 2, amount: 0.3f),
-            [Element.Earth] = T("中流砥柱", Element.Earth, "周边友军受伤-35%", Effect.Guard, Area.SelfCircle, 0, 1, 0f, 35, turns: 2, amount: 0.35f),
+            [Element.Earth] = T("中流砥柱", Element.Earth, "2回合内相邻友军所受伤害的一半由自己承受", Effect.Guard, Area.SelfCircle, 0, 0, 0f, 35, turns: 2, amount: 0.5f),   // 主稿 D4：代友承伤
         };
 
         static TechniqueTable() { big[Element.Water].AtDelay = 25; }
@@ -250,7 +260,9 @@ namespace Prototype.BingshuTactics
 
     public static class CircuitMath
     {
-        public const float OverflowStep = 0.08f; public const int OverflowCap = 5;
+        // 溢出（主稿 v1.3 §3.7）：每点 +8%，一阶最多 2 点、二三阶最多 5 点；封顶以上的盈余每点咏唱 −5 AT，最多 3 点
+        public const float OverflowStep = 0.08f; public const int OverflowCap = 5, TierOneCap = 2, SurplusCastStep = 5, SurplusMax = 3;
+        public const int BigTechniqueThreshold = 3;
 
         public static bool Fits(CircuitDef c, int slot, Book b) =>
             b != null && slot >= 0 && slot < c.Slots.Length && (c.Slots[slot].Locked == Element.None || c.Slots[slot].Locked == b.Element);
@@ -261,6 +273,8 @@ namespace Prototype.BingshuTactics
         // 智力决定一段连线最多串几个槽（用户 2026-10-23）：智力低只能连成几段短线，智力极高可全盘贯通（如诸葛亮）
         public static readonly (int MinInt, int Cap)[] CapTable = { (0, 2), (40, 3), (60, 4), (75, 5), (90, 6), (98, 99) };
         public static int SegmentCap(int intel) => CapTable.Last(t => intel >= t.MinInt).Cap;
+        // 档案页的智力档位（主稿 D7）：寻常／中人／明达／通博／奇才／无双
+        public static string IntellectTier(int intel) => new[] { "寻常", "中人", "明达", "通博", "奇才", "无双" }[CapTable.Count(t => intel >= t.MinInt) - 1];
 
         public readonly struct Edge { public readonly int A, B, Line; public Edge(int a, int b, int line) { A = a; B = b; Line = line; } }
 
@@ -301,7 +315,9 @@ namespace Prototype.BingshuTactics
             return t;
         }
 
-        public static float PowerMul(int overflow) => 1f + OverflowStep * Mathf.Min(overflow, OverflowCap);
+        public static float PowerMul(int overflow, int cap = OverflowCap) => 1f + OverflowStep * Mathf.Clamp(overflow, 0, cap);
+        public static int OverflowCapOf(SkillDef s) => s.IsStrategy && Strategies.Tier(s) == 1 ? TierOneCap : OverflowCap;
+        public static int CastCut(int overflow, int cap) => SurplusCastStep * Mathf.Clamp(overflow - cap, 0, SurplusMax);
 
         // 每个策略取能点亮它、且主五行溢出最多的那条线；溢出（超出门槛的点数）提高威力。
         public static List<LitStrategy> Lit(CircuitDef c, Book[] slots, int intel)
@@ -322,8 +338,8 @@ namespace Prototype.BingshuTactics
             return result;
         }
 
-        // 功法书点出的武技（设计稿 15.9）：沿每段绳路找相邻的功法书（空槽或策略书把它们隔开）；
-        // 单本自成一招小武技；相邻 2–3 本、主五行合计 ≥4 时连成该五行的大武技（≥7 再按溢出加威力），不足则各自出小武技。
+        // 功法书点出的武技（设计稿 15.9，主稿 v1.3 §3.8）：沿每段绳路找相邻的功法书（空槽或策略书把它们隔开）；
+        // 相邻且同五行的 2–3 本成一组，组内点数 ≥3 连成该五行的大武技（溢出按 0.08 加成，上限 5）；其余各出小武技。异五行相邻不并组。
         public static List<LitTechnique> Techniques(CircuitDef c, Book[] slots, int intel)
         {
             var result = new List<LitTechnique>();
@@ -336,9 +352,9 @@ namespace Prototype.BingshuTactics
                     for (int k = 0; k < run.Count; k += 3)
                     {
                         var part = run.Skip(k).Take(3).ToList();
-                        var totals = part.GroupBy(b => b.Element).ToDictionary(g => g.Key, g => g.Sum(b => Value(c, b)));
-                        var main = totals.OrderByDescending(kv => kv.Value).First();
-                        if (part.Count >= 2 && main.Value >= 4) result.Add(new LitTechnique(TechniqueTable.Big(main.Key), l, main.Value - 4, part.ToArray()));
+                        int total = part.Sum(b => Value(c, b));
+                        if (part.Count >= 2 && total >= BigTechniqueThreshold)
+                            result.Add(new LitTechnique(TechniqueTable.Big(part[0].Element), l, total - BigTechniqueThreshold, part.ToArray()));
                         else foreach (var b in part) result.Add(new LitTechnique(TechniqueTable.Small(b.Element), l, 0, new[] { b }));
                     }
                     run.Clear();
@@ -346,6 +362,7 @@ namespace Prototype.BingshuTactics
                 foreach (int i in segs[l])
                 {
                     var b = i < slots.Length ? slots[i] : null;
+                    if (b != null && b.IsTechnique && run.Count > 0 && run[0].Element != b.Element) Flush();
                     if (b != null && b.IsTechnique) run.Add(b); else Flush();
                 }
                 Flush();
@@ -362,7 +379,8 @@ namespace Prototype.BingshuTactics
         public string Name, Key; public Team Team; public Troop Troop; public Element Element; public School School;
         public int MaxHp, Hp, Atk, Def, Mat, Mdef, Speed, Move, AtkRange, MaxEp, Ep, Cp, Int, Wu;
         public Vector2Int Pos; public float At; public bool Defending;
-        public int Level; public bool Ai, Escort, Leader; public string Focus;
+        public int Level, Rank = 1; public bool Ai, Escort, Leader; public string Focus;
+        public bool Charged;   // 本回合先移动再出手（骑兵冲锋、象兵冲撞）
         public float Floor; public Unit Guardian;   // 0.3：兵力下限比例（不可击败的首领）；“众望”护卫者
         public bool Chaos; public int ChaosForced, ChaosTurns;   // 混乱：剧情强制的剩余次数、普通混乱已持续次数   // 0.2：友军由电脑操作、护送对象、头目标名、优先目标
         public List<Status> Statuses = new List<Status>();
@@ -395,28 +413,103 @@ namespace Prototype.BingshuTactics
         }
     }
 
-    public static class Combat
+    // 兵种特长与克制（主稿 v1.3 §3.5、§3.14）：大兵种压制 +0.3 ＋ 兵种特长，加五行 +0.2，合计夹在 0.7–1.6。
+    // 与正式代码 ThreeKingdoms.Core.Battle.TroopRules 同一张表（EditMode 测试逐对核对）。
+    public static class TroopTraits
     {
-        public const float TroopAdv = 0.4f, ElementAdv = 0.2f, AdvCap = 0.6f, MinTaken = 0.3f;
-
-        public static bool TroopBeats(Troop a, Troop b) =>
-            (a == Troop.Cavalry && (b == Troop.Infantry || b == Troop.Rebel)) ||
-            (a == Troop.Infantry && b == Troop.Archer) || (a == Troop.Archer && b == Troop.Cavalry);
-
-        public static float AdvMul(Unit a, Unit t, Element skillElement)
+        public static TroopClass ClassOf(Troop t) => t switch
         {
-            float adv = 0f;
-            if (TroopBeats(a.Troop, t.Troop)) adv += TroopAdv;
-            if (skillElement != Element.None && Wuxing.Overcomes(skillElement) == t.Element) adv += ElementAdv;
-            return 1f + Mathf.Min(adv, AdvCap);
+            Troop.Cavalry or Troop.HorseArcher or Troop.Elephant => TroopClass.Horse,
+            Troop.Archer or Troop.Crossbow => TroopClass.Bow,
+            Troop.Strategist or Troop.Dancer or Troop.Shaman => TroopClass.Mind,
+            _ => TroopClass.Foot,
+        };
+
+        // 升阶：1／10／20 级（第一篇章只会出现一、二阶）
+        public static int Rank(int level) => level >= 20 ? 3 : level >= 10 ? 2 : 1;
+
+        public static string Name(Troop t, int rank = 1)
+        {
+            string[] line = t switch
+            {
+                Troop.Infantry => new[] { "步兵", "重步兵", "近卫兵" }, Troop.Spearman => new[] { "枪兵", "长枪兵", "虎卫" },
+                Troop.Cavalry => new[] { "骑兵", "突骑", "铁骑" }, Troop.Archer => new[] { "弓兵", "强弓兵", "神射手" },
+                Troop.Strategist => new[] { "军师", "谋士", "军师祭酒" }, Troop.Rebel => new[] { "贼众", "渠帅", "义军" },
+                Troop.Crossbow => new[] { "弩兵" }, Troop.HorseArcher => new[] { "弓骑" }, Troop.Swordswoman => new[] { "剑姬" },
+                Troop.Dancer => new[] { "舞姬" }, Troop.Shaman => new[] { "巫祝" }, Troop.Pirate => new[] { "水贼" },
+                Troop.Barbarian => new[] { "蛮兵" }, _ => new[] { "象兵" },
+            };
+            int i = Mathf.Clamp(rank, 1, 3) - 1;
+            return i < line.Length ? line[i] : line[0] + (i == 1 ? "·二阶" : "·三阶");   // 主稿只给六条主线命名了升阶
         }
 
-        public const float CampGuard = 0.15f, HeightStep = 0.1f; public const int HeightCap = 2;
+        public static int Move(Troop t) => t switch
+        {
+            Troop.Cavalry or Troop.HorseArcher => 5, Troop.Swordswoman or Troop.Elephant => 4, _ => 3,
+        };
 
-        // 减伤只取最强一项：防御、阵法、营寨
+        public static int Range(Troop t, int rank = 1) => t switch
+        {
+            Troop.Archer => 3 + (rank >= 3 ? 1 : 0),
+            Troop.Crossbow or Troop.HorseArcher or Troop.Strategist or Troop.Dancer or Troop.Shaman => 2,
+            _ => 1,
+        };
+
+        // 策力上限＝20＋⌊智÷2⌋，军师线 +10／+15／+20（随阶），巫祝 +15；每次轮到自己回 ⌊智÷20⌋
+        public static int MaxEp(int intel, Troop t, int rank = 1) =>
+            20 + intel / 2 + (t == Troop.Strategist ? (rank == 1 ? 10 : rank == 2 ? 15 : 20) : t == Troop.Shaman ? 15 : 0);
+        public static int EpRegen(int intel) => intel / 20;
+        public static int CastCut(Troop t) => t == Troop.Strategist ? 10 : 0;                     // 军师咏唱 −10 AT
+        public static int CpBonus(Troop t) => t == Troop.Rebel || t == Troop.Barbarian ? 2 : 0;   // 悍勇：气势获得 +2
+
+        // 普攻、武技、绝学的兵种项（百分点）：大兵种压制＋双方特长。melee＝贴身近战；charged＝先移动再出手。
+        public static int Points(Troop a, Troop d, bool melee, bool charged, int rank = 1)
+        {
+            var ca = ClassOf(a); var cd = ClassOf(d);
+            int p = 0;
+            if ((ca == TroopClass.Horse && cd == TroopClass.Foot) || (ca == TroopClass.Foot && cd == TroopClass.Bow) || (ca == TroopClass.Bow && cd == TroopClass.Horse)) p += 30;
+            if (a == Troop.Spearman && cd == TroopClass.Horse) p += 30;                        // 拒马
+            if (a == Troop.Archer && cd == TroopClass.Horse) p += 10;                          // 弓→骑净 1.4
+            if (a == Troop.Crossbow && cd == TroopClass.Horse) p += 30;                        // 强弩破骑，净 1.6
+            if (a == Troop.Cavalry && charged) p += rank == 1 ? 10 : rank == 2 ? 15 : 20;      // 冲锋
+            if (a == Troop.Elephant && charged) p += 20;                                       // 冲撞
+            if (d == Troop.Spearman && ca == TroopClass.Horse) p -= 40;                        // 拒马：骑→枪净 0.9
+            if (melee && ca == TroopClass.Foot && (d == Troop.Archer || d == Troop.Crossbow || d == Troop.HorseArcher || d == Troop.Strategist)) p += 20;   // 近身
+            if (melee && (d == Troop.Dancer || d == Troop.Shaman)) p += 20;
+            return p;
+        }
+
+        // 策略不吃兵种压制，只吃五行；蛮兵不识计、象兵怕火
+        public static int StrategyPoints(Troop d, Element e) => (d == Troop.Barbarian ? 20 : 0) + (d == Troop.Elephant && e == Element.Fire ? 30 : 0);
+
+        // 枪兵被骑系近战命中后反击一次普攻：0.5／0.75／1.0 倍
+        public static float CounterPower(Troop d, Troop attacker, bool melee, int rank) =>
+            d == Troop.Spearman && melee && ClassOf(attacker) == TroopClass.Horse ? (rank == 1 ? 0.5f : rank == 2 ? 0.75f : 1f) : 0f;
+
+        public static float DefendReduce(Troop t) => t == Troop.Infantry ? 0.6f : 0.5f;     // 步兵防御 0.6
+        public static float CampReduce(Troop t) => t == Troop.Infantry ? 0.3f : 0.15f;      // 步兵守营寨翻倍
+    }
+
+    public static class Combat
+    {
+        public const float ElementAdv = 0.2f, MinAdv = 0.7f, MaxAdv = 1.6f, MinTaken = 0.3f;
+
+        public static bool TroopBeats(Troop a, Troop b) => TroopTraits.Points(a, b, true, false) > 0;
+
+        public static float AdvMul(Unit a, Unit t, Element skillElement, bool strategy = false, bool melee = true)
+        {
+            float adv = strategy ? TroopTraits.StrategyPoints(t.Troop, skillElement) / 100f
+                                 : TroopTraits.Points(a.Troop, t.Troop, melee, a.Charged, a.Rank) / 100f;
+            if (skillElement != Element.None && Wuxing.Overcomes(skillElement) == t.Element) adv += ElementAdv;
+            return Mathf.Clamp(1f + adv, MinAdv, MaxAdv);
+        }
+
+        public const float HeightStep = 0.1f; public const int HeightCap = 2;
+
+        // 减伤只取最强一项：防御、阵法、营寨（步兵防御 0.6、守营寨 0.3）
         public static float TakenMul(Unit t, bool inCamp = false)
         {
-            float reduce = Mathf.Max(t.Defending ? 0.5f : 0f, Mathf.Max(t.Guard, inCamp ? CampGuard : 0f));
+            float reduce = Mathf.Max(t.Defending ? TroopTraits.DefendReduce(t.Troop) : 0f, Mathf.Max(t.Guard, inCamp ? TroopTraits.CampReduce(t.Troop) : 0f));
             return Mathf.Max(MinTaken, 1f - reduce);
         }
 
@@ -424,12 +517,13 @@ namespace Prototype.BingshuTactics
         public static float HeightMul(int attackerHeight, int targetHeight) =>
             1f + HeightStep * Mathf.Clamp(attackerHeight - targetHeight, -HeightCap, HeightCap);
 
-        public static int Damage(Unit a, Unit t, float coef, bool might, Element skillElement, float heightMul = 1f, bool targetInCamp = false)
+        public static int Damage(Unit a, Unit t, float coef, bool might, Element skillElement, float heightMul = 1f, bool targetInCamp = false, bool strategy = false)
         {
             float atk = (might ? a.Atk : a.Mat) * a.AtkMul;
             float def = (might ? t.Def : t.Mdef) * t.DefMul;
             float baseDmg = atk * coef - def * 0.5f;
-            return Mathf.Max(1, Mathf.FloorToInt(baseDmg * AdvMul(a, t, skillElement) * heightMul * TakenMul(t, targetInCamp)));
+            bool melee = !strategy && Grid.Dist(a.Pos, t.Pos) <= 1;
+            return Mathf.Max(1, Mathf.FloorToInt(baseDmg * AdvMul(a, t, skillElement, strategy, melee) * heightMul * TakenMul(t, targetInCamp)));
         }
 
         public static int Heal(Unit t, float rate) => Mathf.Min(t.MaxHp - t.Hp, Mathf.FloorToInt(t.MaxHp * rate));
@@ -598,7 +692,8 @@ namespace Prototype.BingshuTactics
     // AT 行动条：数值小者先动；动作越重，推后越多；速度越快，推后越少。
     public static class AtClock
     {
-        public static float Delay(int cost, int speed) => cost * 8f / Mathf.Max(1, speed);
+        // 主稿 v1.3 §3.3：推后＝动作量×16÷(速度＋10)；步兵（速度 6）每 100 AT 一动，骑兵行动次数为其 1.25 倍
+        public static float Delay(int cost, int speed) => cost * 16f / Mathf.Max(1, speed + 10);
 
         public static Unit Next(IEnumerable<Unit> units) =>
             units.Where(u => u.Alive).OrderBy(u => u.At).ThenBy(u => u.Team == Team.Player ? 0 : 1).FirstOrDefault();

@@ -15,14 +15,17 @@ MonoBehaviour:
   Id: guan_yu
   DisplayName: "\u5173\u7FBD"
   Troop: 1
-  Force: 90
-  Command: 80
-  Intellect: 60
-  ForceGrowth: 2
-  CommandGrowth: 2
-  IntellectGrowth: 1
+  Force: 96
+  Command: 88
+  Intellect: 70
+  Element: 4
+  ForceGrowth: 0
+  CommandGrowth: 0
+  IntellectGrowth: 0
   Skills:
   - Level: 1
     Skill: {fileID: 11400000, guid: 204be75e4041f1b47896194864654ff4, type: 2}
   - Level: 3
     Skill: {fileID: 11400000, guid: 987c8392709995943b5676b1d3c588dc, type: 2}
+  - Level: 10
+    Skill: {fileID: 11400000, guid: 651167d6703f1704aaf27b626c69455e, type: 2}

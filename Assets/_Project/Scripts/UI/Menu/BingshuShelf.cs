@@ -48,8 +48,8 @@ namespace ThreeKingdoms.UI.Menu
             if (slots.TryGetValue(id, out var s)) return s;
             s = new Book[7];
             schools[id] = Bookcase.SchoolOf(NameOf(id));
-            // Opening sockets, but never a book another general already holds.
-            var free = Library.Where(b => Owner(b) == null).ToList();
+            // Opening sockets, but never a book another general already holds (or one not in hand yet).
+            var free = Library.Where(b => Owner(b) == null && Owned(b)).ToList();
             Bookcase.Default(NameOf(id), s, Library);
             for (int i = 0; i < s.Length; i++) if (s[i] != null && !free.Contains(s[i])) s[i] = null;
             slots[id] = s;
@@ -58,12 +58,56 @@ namespace ThreeKingdoms.UI.Menu
 
         public string Owner(Book b) => slots.FirstOrDefault(kv => kv.Value.Contains(b)).Key;
 
+        // ---------- supply (BALANCE_MODEL_v1 §3.12): gifts and loot arrive with the story, shop books are bought ----------
+
+        readonly HashSet<int> bought = new HashSet<int>();
+
+        static ThreeKingdoms.Core.Story.ChapterStep ReachedAt(Bookcase.Source s) => s switch
+        {
+            Bookcase.Source.AnxiShop => ThreeKingdoms.Core.Story.ChapterStep.Anxi,
+            Bookcase.Source.GongsunGift => ThreeKingdoms.Core.Story.ChapterStep.Gongsun,
+            Bookcase.Source.PingyuanShop => ThreeKingdoms.Core.Story.ChapterStep.Pingyuan,
+            Bookcase.Source.PanheLoot => ThreeKingdoms.Core.Story.ChapterStep.Zhending,   // Wen Chou's 《吴子》, after Panhe and Jieqiao
+            _ => ThreeKingdoms.Core.Story.ChapterStep.Xiapi,
+        };
+
+        bool Reached(Bookcase.Source s) => run == null || run.Chapter2.Step >= ReachedAt(s);
+
+        // In the play-through's hands: opening books, gifts and loot once the story got there, shop books once bought.
+        // A free-standing shelf (tests, the prototype) owns everything.
+        public bool Owned(Book b)
+        {
+            if (run == null) return true;
+            var s = Bookcase.SupplyOf(Library, b);
+            if (s == null) return true;
+            return s.Value.ForSale ? bought.Contains(Library.IndexOf(b)) : Reached(s.Value.From);
+        }
+
+        // On sale now: a shop book whose shop the story has reached and that is not bought yet.
+        public int PriceOf(Book b)
+        {
+            var s = Bookcase.SupplyOf(Library, b);
+            return s != null && s.Value.ForSale && Reached(s.Value.From) && !Owned(b) ? s.Value.Price : 0;
+        }
+
+        public string ShopOf(Book b) => Bookcase.SupplyOf(Library, b) is Bookcase.Supply s ? Bookcase.SourceName(s.From) : "";
+
+        public bool Buy(Book b)
+        {
+            int price = PriceOf(b);
+            if (price <= 0 || run == null || !run.Progress.Inventory.SpendCopper(price)) return false;
+            bought.Add(Library.IndexOf(b));
+            return true;
+        }
+
+        public List<Book> OwnedBooks => Library.Where(Owned).ToList();
+
         // 藏书阁: this general's books first (with a pearl), then the free ones by kind, element and grade; books another
         // general has socketed are not shown (UI_STYLE_GUIDE 命盘 rule 3).
         public List<Book> ShelfFor(string id)
         {
             Slots(id);
-            return Library.Where(b => { var o = Owner(b); return o == null || o == id; })
+            return Library.Where(b => { var o = Owner(b); return (o == null || o == id) && (Owned(b) || PriceOf(b) > 0); })
                 .OrderBy(b => Owner(b) == id ? 0 : 1).ThenBy(b => b.Kind).ThenBy(b => b.Element).ThenByDescending(b => b.Grade).ToList();
         }
 
@@ -85,14 +129,22 @@ namespace ThreeKingdoms.UI.Menu
         }
 
         // "liu_bei=Ru:0.8,1.4;guan_yu=Bing:…" — slot.libraryIndex pairs; library order is fixed by Bookcase.
+        // Bought shop books follow as "#bought=12,30" (an older save has none).
         public string Serialize() => string.Join(";", slots.Select(kv =>
-            $"{kv.Key}={SchoolOf(kv.Key)}:" + string.Join(",", kv.Value.Select((b, i) => (b, i)).Where(x => x.b != null).Select(x => $"{x.i}.{Library.IndexOf(x.b)}"))));
+            $"{kv.Key}={SchoolOf(kv.Key)}:" + string.Join(",", kv.Value.Select((b, i) => (b, i)).Where(x => x.b != null).Select(x => $"{x.i}.{Library.IndexOf(x.b)}")))
+            .Concat(bought.Count > 0 ? new[] { "#bought=" + string.Join(",", bought.OrderBy(i => i)) } : new string[0]));
 
         public void Restore(string text)
         {
             if (string.IsNullOrEmpty(text)) return;
             foreach (var entry in text.Split(';'))
             {
+                if (entry.StartsWith("#bought="))
+                {
+                    foreach (var n in entry.Substring(8).Split(',', System.StringSplitOptions.RemoveEmptyEntries))
+                        if (int.TryParse(n, out int i) && i >= 0 && i < Library.Count) bought.Add(i);
+                    continue;
+                }
                 int eq = entry.IndexOf('='), colon = entry.IndexOf(':');
                 if (eq <= 0 || colon < eq) continue;
                 string id = entry.Substring(0, eq);

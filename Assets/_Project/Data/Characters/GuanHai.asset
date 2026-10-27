@@ -15,9 +15,10 @@ MonoBehaviour:
   Id: guan_hai
   DisplayName: "\u7BA1\u4EA5"
   Troop: 3
-  Force: 86
-  Command: 66
-  Intellect: 30
+  Force: 82
+  Command: 62
+  Intellect: 22
+  Element: 5
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

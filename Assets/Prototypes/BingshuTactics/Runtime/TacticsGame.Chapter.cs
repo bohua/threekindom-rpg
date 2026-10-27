@@ -122,19 +122,38 @@ namespace Prototype.BingshuTactics
             {
                 ["整队"] = Craft("整队", "单体友军回复30%兵力", Effect.Heal, Area.Single, 3, 0, 0.30f, 20),
                 ["火矢"] = Craft("火矢", "单体计策1.3倍（射程4）", Effect.Damage, Area.Single, 4, 0, 1.3f, 25),
+                ["流矢"] = Craft("流矢", "单体计策1.3倍（射程4）", Effect.Damage, Area.Single, 4, 0, 1.3f, 25),   // 主稿 K12：刘备的火矢改名
                 ["突击"] = Craft("突击", "近战单体物理1.5倍", Effect.Damage, Area.Single, -1, 0, 1.5f, 25, might: true),
                 ["破阵"] = Craft("破阵", "近战单体1.1倍，物防-20% 2回合", Effect.Debuff, Area.Single, -1, 0, 1.1f, 30, might: true, turns: 2, amount: 0.2f),
-                ["横扫"] = Craft("横扫", "自身周围2格内敌军物理0.65倍", Effect.Damage, Area.SelfCircle, 0, 2, 0.65f, 30, might: true),
+                ["横扫"] = Craft("横扫", "自身周围2格内敌军物理0.8倍", Effect.Damage, Area.SelfCircle, 0, 2, 0.8f, 30, might: true),   // 主稿 C15：0.65→0.8
                 ["威慑"] = Craft("威慑", "自身周围3格内敌军物攻-20% 2回合", Effect.Debuff, Area.SelfCircle, 0, 3, 0f, 25, turns: 2, amount: 0.2f),
+                // 主稿 §3.9：关羽、张飞 10 级第三绝学
+                ["拖刀"] = TuoDao(), ["断桥"] = DuanQiao(),
             };
             var u = NewUnit(d.Name, d.Key, d.Team, d.Troop, d.School, d.Hp, d.Atk, d.Def, d.Mat, d.Mdef, d.Speed, d.Move, d.Range, d.Ep, pos);
             u.Int = d.Int; u.Wu = d.Wu; u.Level = d.Level; u.Ai = d.Ai; u.Escort = d.Escort; u.Leader = d.Leader; u.Focus = d.Focus;
+            u.Rank = TroopTraits.Rank(d.Level);
             u.Floor = d.Floor;
             AddChapter3Crafts(u, d, crafts);
             if (d.Element != Element.None) u.Element = d.Element;
             foreach (var c in d.Crafts) if (crafts.TryGetValue(c, out var s)) u.Crafts.Add(s);
             if (d.Books != null) { u.Slots = d.Books; RefreshTechniques(u); } else DefaultBooks(u);
             return u;
+        }
+
+        // 拖刀：近战单体 1.6，出手后自身行动条少推后约 20 AT（追击感）；断桥：近战单体 1.7，目标推迟 30 AT
+        static SkillDef TuoDao()
+        {
+            var s = Craft("拖刀", "近战单体物理1.6倍，出手后更快再动", Effect.Damage, Area.Single, -1, 0, 1.6f, 35, might: true);
+            s.Recover = 85;
+            return s;
+        }
+
+        static SkillDef DuanQiao()
+        {
+            var s = Craft("断桥", "近战单体物理1.7倍，目标推迟30", Effect.Damage, Area.Single, -1, 0, 1.7f, 35, might: true);
+            s.AtDelay = 30;
+            return s;
         }
 
         // 离 want 最近、能站人的空格
