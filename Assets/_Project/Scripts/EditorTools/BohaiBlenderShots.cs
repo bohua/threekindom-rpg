@@ -23,6 +23,24 @@ namespace ThreeKingdoms.EditorTools
             ("pingyuan_corner", new Vector3(-110f, 2f, -195f), 35f, 22f, 32f, 22f),
             ("pingyuan_overview", new Vector3(-60f, 0f, -155f), 0f, 45f, 150f, 30f),
         };
+        static readonly (string name, Vector3 target, float yaw, float pitch, float distance, float fov)[] Terrain =
+        {
+            ("terrain_wanghe", new Vector3(248f, 8f, 208f), 0f, 25f, 80f, 24f),
+            ("terrain_wanghe_close", new Vector3(245f, 6f, 200f), 30f, 22f, 55f, 24f),
+            ("terrain_levee", new Vector3(-60f, 3f, -232f), 0f, 25f, 50f, 24f),
+            ("terrain_levee_side", new Vector3(-50f, 3f, -232f), 40f, 20f, 55f, 24f),
+        };
+        static readonly (string name, Vector3 target, float yaw, float pitch, float distance, float fov)[] Wild =
+        {
+            ("wild_gaotang_gate", new Vector3(330f, 4f, -152f), 0f, 18f, 40f, 24f),
+            ("wild_gaotang_square", new Vector3(330f, 2f, -128f), 20f, 30f, 50f, 24f),
+            ("wild_post_station", new Vector3(455f, 2f, 9f), -15f, 25f, 34f, 22f),
+            ("wild_checkpoint", new Vector3(543f, 3f, 20f), -40f, 22f, 40f, 24f),
+            ("wild_village", new Vector3(-405f, 2f, 85f), 0f, 30f, 55f, 24f),
+            ("wild_beacon", new Vector3(-330f, 3f, -170f), 20f, 22f, 32f, 22f),
+            ("wild_tomb", new Vector3(-220f, 3f, 250f), 0f, 25f, 55f, 24f),
+            ("wild_pavilion", new Vector3(-80f, 6f, -228f), 25f, 22f, 26f, 22f),
+        };
 
         public static void CaptureFromCommandLine()
         {
@@ -48,11 +66,20 @@ namespace ThreeKingdoms.EditorTools
                     var t = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).FirstOrDefault(x => x.name == n && !x.parent);
                     if (t) t.gameObject.SetActive(false);
                 }
-                foreach (var s in Pingyuan) Shoot(Path.Combine(dir, $"{s.name}_{(blender ? "blender" : "code")}.png"), s);
+                string set = Arg("-shotSet") ?? "all";
+                var shots = set == "terrain" ? Terrain : set == "pingyuan" ? Pingyuan : set == "wild" ? Wild : Pingyuan.Concat(Terrain).Concat(Wild).ToArray();
+                foreach (var s in shots) Shoot(Path.Combine(dir, $"{s.name}_{(blender ? "blender" : "code")}.png"), s);
                 foreach (var c in blur) c.active = true;
             }
             AssetDatabase.SaveAssets();
             Debug.Log("BOHAI_BLENDER_SHOTS " + dir);
+        }
+
+        static string Arg(string name)
+        {
+            var args = System.Environment.GetCommandLineArgs();
+            int i = System.Array.IndexOf(args, name);
+            return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
         }
 
         static void Shoot(string file, (string name, Vector3 target, float yaw, float pitch, float distance, float fov) s)

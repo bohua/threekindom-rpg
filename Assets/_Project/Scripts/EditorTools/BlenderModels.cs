@@ -34,7 +34,8 @@ namespace ThreeKingdoms.EditorTools
             // -blenderFrom <folder>: a revision still in review (bridge staging) instead of the approved art/<set>.
             var args = System.Environment.GetCommandLineArgs();
             int i = System.Array.IndexOf(args, "-blenderFrom");
-            string from = i >= 0 && i + 1 < args.Length ? args[i + 1] : Path.Combine(ArtRoot, set), to = Dir(set);
+            // Only for the set the staging folder belongs to (its path carries the task name).
+            string from = i >= 0 && i + 1 < args.Length && args[i + 1].Contains(set) ? args[i + 1] : Path.Combine(ArtRoot, set), to = Dir(set);
             if (!Directory.Exists(from) || !File.Exists(Path.Combine(from, "materials.json"))) return false;
             Directory.CreateDirectory(to + "/Textures");
             Directory.CreateDirectory(to + "/Materials");
@@ -56,18 +57,20 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // materials.json: {"zs_limestone_rock": {"texture": "...", "alpha_clip": false, "tiling": true, "two_sided": false}, ...}
+        // The entry body may hold nested arrays (size_m); alpha_clip is true or a cutoff number.
         static Dictionary<string, Entry> Read(string json)
         {
             var d = new Dictionary<string, Entry>();
-            foreach (Match m in Regex.Matches(json, "\"([^\"]+)\"\\s*:\\s*\\{([^}]*)\\}"))
+            foreach (Match m in Regex.Matches(json, @"""([^""]+)""\s*:\s*\{([^{}]*)\}"))
             {
                 string body = m.Groups[2].Value;
+                if (!body.Contains("\"texture\"")) continue;
                 d[m.Groups[1].Value] = new Entry
                 {
-                    Texture = Regex.Match(body, "\"texture\"\\s*:\\s*\"([^\"]+)\"").Groups[1].Value.Replace("\\\\", "\\"),
-                    Clip = Regex.IsMatch(body, "\"alpha_clip\"\\s*:\\s*true"),
-                    TwoSided = Regex.IsMatch(body, "\"two_sided\"\\s*:\\s*true"),
-                    Tiling = Regex.IsMatch(body, "\"tiling\"\\s*:\\s*true"),
+                    Texture = Regex.Match(body, @"""texture""\s*:\s*""([^""]+)""").Groups[1].Value.Replace(@"\\", @"\"),
+                    Clip = Regex.IsMatch(body, @"""alpha_clip""\s*:\s*(true|0\.\d*[1-9]|1(\.0*)?)"),
+                    TwoSided = Regex.IsMatch(body, @"""two_sided""\s*:\s*true"),
+                    Tiling = Regex.IsMatch(body, @"""tiling""\s*:\s*true"),
                 };
             }
             return d;
@@ -131,7 +134,8 @@ namespace ThreeKingdoms.EditorTools
 
         // Places a model of an imported set; null when it is missing or switched off, so the caller keeps its quad
         // version. COL_ children become box colliders; the whole piece is one occluder.
-        internal static Transform Place(string set, Transform parent, string model, string name, Vector3 at, float yaw = 0f)
+        // meshColliders: COL_ children keep their shape as mesh colliders (terrain) instead of becoming boxes.
+        internal static Transform Place(string set, Transform parent, string model, string name, Vector3 at, float yaw = 0f, bool meshColliders = false)
         {
             if (!Enabled || !sets.ContainsKey(set)) return null;
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir(set)}/{model}.fbx");
@@ -144,6 +148,13 @@ namespace ThreeKingdoms.EditorTools
             var root = go.transform;
             foreach (var r in go.GetComponentsInChildren<MeshRenderer>(true))
             {
+                if (r.name.StartsWith("COL_") && meshColliders)
+                {
+                    r.gameObject.AddComponent<MeshCollider>().sharedMesh = r.GetComponent<MeshFilter>().sharedMesh;
+                    Object.DestroyImmediate(r.GetComponent<MeshFilter>());
+                    Object.DestroyImmediate(r);
+                    continue;
+                }
                 if (r.name.StartsWith("COL_"))
                 {
                     var b = LocalBounds(root, r.GetComponent<MeshFilter>());

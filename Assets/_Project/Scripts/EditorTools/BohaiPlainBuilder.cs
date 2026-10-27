@@ -57,6 +57,8 @@ namespace ThreeKingdoms.EditorTools
             // Codex + Blender rebuild (user 2026-10-27; production/levels/bohai-plain/blender-rebuild.md): delivered model
             // sets replace the quad-built pieces wherever they exist; -noBlender keeps the old ones for comparison.
             pingyuanModels = BlenderModels.Import(PingyuanSet);
+            terrainModels = BlenderModels.Enabled && BlenderModels.Import(TerrainSet);
+            wildModels = BlenderModels.Enabled && BlenderModels.Import(WildSet);
             cornersPlaced.Clear();
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -88,6 +90,7 @@ namespace ThreeKingdoms.EditorTools
             Explore(env, labels);
             Exits(env, labels);
             Terrain(env, labels);
+            BlenderTerrain(env);
             SplatGround(env);
             GroundVariety(env);
             EdgeDecals(env);
@@ -312,7 +315,15 @@ namespace ThreeKingdoms.EditorTools
         static void Levee(Transform env)
         {
             var g = T.Group(env, "Levee (landmark)");
-            float len = XMax - XMin + 200f;
+            // The Blender levee replaces the stretch at the ferry (x -120..0) when it is in.
+            if (terrainModels) { LeveeRun(g, XMin - 100f, -120f, false); LeveeRun(g, 0f, XMax + 100f, false); }
+            else LeveeRun(g, XMin - 100f, XMax + 100f, true);
+        }
+
+        static void LeveeRun(Transform env, float x0, float x1, bool ramps)
+        {
+            var g = T.Group(env, $"Levee {x0:0}..{x1:0}", new Vector3((x0 + x1) / 2f, 0, 0));
+            float len = x1 - x0;
             float nRun = LeveeNorth - LeveeCrestN, sRun = LeveeCrestS - LeveeSouth;
             float nLen = Mathf.Sqrt(nRun * nRun + LeveeH * LeveeH), sLen = Mathf.Sqrt(sRun * sRun + LeveeH * LeveeH);
             float nDeg = Mathf.Atan2(LeveeH, nRun) * Mathf.Rad2Deg, sDeg = Mathf.Atan2(LeveeH, sRun) * Mathf.Rad2Deg;
@@ -340,6 +351,8 @@ namespace ThreeKingdoms.EditorTools
                     T.Mat("shore_embankment_band", clip: true), new Vector2(len / T.Metres("shore_embankment_band").x, 1f), castShadows: false);
             }
             // Ferry ramps: the ferry road laid over both slopes in line with the gate.
+            if (!ramps) return;
+            g = env;
             var ramp = new Vector2(7f, nLen);
             T.Quad(g, "Ferry ramp N", new Vector3(CityCx, LeveeH / 2f + 0.02f, (LeveeNorth + LeveeCrestN) / 2f), new Vector3(90f + nDeg, 0, 0), ramp, T.Mat("ground_packed_earth"), T.Repeat("ground_packed_earth", ramp), castShadows: false);
             var rampS = new Vector2(7f, sLen);
@@ -349,6 +362,7 @@ namespace ThreeKingdoms.EditorTools
         // Near the ferry the levee foot gets its fieldstone toe and the crest its timber rail (concept art), gaps at the ramp.
         static void LeveeDressing(Transform env)
         {
+            if (terrainModels) return;   // the Blender levee brings its own toe, rails and ramps
             var g = T.Group(env, "Levee dressing at the ferry");
             float x0 = CityCx - 70f, x1 = CityCx + 70f, gap = 4.5f;
             foreach (var (a, b) in new[] { (x0, CityCx - gap), (CityCx + gap, x1) })
@@ -603,6 +617,50 @@ namespace ThreeKingdoms.EditorTools
 
         const string PingyuanSet = "bohai-blender-pingyuan";
         static bool pingyuanModels;
+
+        // 3D terrain from Blender (terrain test, art/bohai-blender-terrain): the Wanghe mound and the levee at the ferry,
+        // modelled in world coordinates. Where they stand, the generated hill mesh, its props and mask walls and the
+        // levee quads step aside.
+        const string TerrainSet = "bohai-blender-terrain";
+        static bool terrainModels;
+        static readonly Rect[] TerrainCover = { new Rect(188f, 170f, 106f, 84f), new Rect(-120f, -252f, 120f, 46f) };
+        static bool Covered(float x, float z) => terrainModels && TerrainCover.Any(r => r.Contains(new Vector2(x, z)));
+
+        // Batch 2 (art/bohai-blender-wild): Gaotang, post station and stable, checkpoint, village houses, beacon ruin,
+        // tomb mound and que pillars, ferry pavilion. Their COL_ proxies keep their shapes (ramps, slopes, collapse).
+        const string WildSet = "bohai-blender-wild";
+        static bool wildModels;
+        static Transform Wild(Transform parent, string model, string name, Vector3 at, float yaw = 0f) =>
+            wildModels ? BlenderModels.Place(WildSet, parent, model, name, at, yaw, meshColliders: true) : null;
+
+        // A straight wall run from 8 m and 4 m pieces stretched to the exact length (as BlenderWall, any set).
+        static void WallPieces(Transform parent, string name, string set, string prefix, Vector3 a, Vector3 b)
+        {
+            bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
+            float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
+            var pieces = new List<(string model, float length)>();
+            float sum = 0f;
+            while (sum + 8f <= len) { pieces.Add((prefix + "_8m", 8f)); sum += 8f; }
+            if (sum + 4f <= len + 2f) { pieces.Add((prefix + "_4m", 4f)); sum += 4f; }
+            if (pieces.Count == 0) { pieces.Add((prefix + "_4m", 4f)); sum = 4f; }
+            float stretch = len / sum, at = -len / 2f;
+            var run = T.Group(parent, name, (a + b) / 2f, alongX ? 0f : 90f);
+            foreach (var (model, length) in pieces)
+            {
+                float l = length * stretch;
+                var piece = BlenderModels.Place(set, run, model, model, new Vector3(at + l / 2f, 0, 0), 0f, meshColliders: true);
+                if (piece) piece.localScale = new Vector3(stretch, 1f, 1f);
+                at += l;
+            }
+        }
+
+        static void BlenderTerrain(Transform env)
+        {
+            if (!terrainModels) return;
+            var g = T.Group(env, "Blender terrain");
+            BlenderModels.Place(TerrainSet, g, "terrain_wanghe_hill", "Wanghe mound (望河岗)", Vector3.zero, 0f, meshColliders: true);
+            BlenderModels.Place(TerrainSet, g, "terrain_levee_ferry", "Levee at the ferry", Vector3.zero, 0f, meshColliders: true);
+        }
         static readonly HashSet<Vector3> cornersPlaced = new HashSet<Vector3>();
 
         // A wall run from the Blender kit: 8 m pieces, one 4 m piece if it fits, the lot stretched to the exact length
@@ -760,7 +818,8 @@ namespace ThreeKingdoms.EditorTools
             }
             if (T.Tex("prop_reed_blind_stall", optional: true)) T.Prop(f, "Toll stall", CityCx + 9f, LeveeCrestS + 1.6f, y: LeveeH, key: "prop_reed_blind_stall", solid: true);
             // Landmark on the crest: the river-view pavilion among willows.
-            if (T.Tex("prop_river_pavilion", optional: true)) T.Prop(f, "prop_river_pavilion", CityCx - 20f, (LeveeCrestN + LeveeCrestS) / 2f, y: LeveeH, solid: true);
+            if (Wild(f, "ferry_pavilion", "River pavilion", new Vector3(CityCx - 20f, LeveeH, (LeveeCrestN + LeveeCrestS) / 2f))) { }
+            else if (T.Tex("prop_river_pavilion", optional: true)) T.Prop(f, "prop_river_pavilion", CityCx - 20f, (LeveeCrestN + LeveeCrestS) / 2f, y: LeveeH, solid: true);
             else GreyHouse(f, "River pavilion (stand-in)", new Vector3(CityCx - 20f, LeveeH, LeveeCrestN - 1f), 4f, 4f, 3f, shade: 0.6f);
             foreach (float x in new[] { -32f, -14f, 8f, 26f, 44f })
                 T.Prop(f, "prop_tree_willow", CityCx + x + 0.5f, LeveeCrestN - 0.6f, y: LeveeH, scale: 1.1f, solid: true);
@@ -801,8 +860,10 @@ namespace ThreeKingdoms.EditorTools
         {
             var p = T.Group(env, "Post station (驿站)");
             EarthPatch(p, PostFront + new Vector3(-4f, 0, -3f), 22f, 11f, 61);   // the station and stable stand in their yard
-            T.Building(p, "Post station", PostFront, 0f, "post_station_front", "post_station_side", null);
-            T.Building(p, "Stable", PostFront + new Vector3(-11f, 0, 0), 0f, "stable_front", "stable_side", null, roofKey: "thatch", interior: "wall_rammed_earth");
+            if (!Wild(p, "post_station", "Post station", PostFront))
+                T.Building(p, "Post station", PostFront, 0f, "post_station_front", "post_station_side", null);
+            if (!Wild(p, "post_stable", "Stable", PostFront + new Vector3(-11f, 0, 0)))
+                T.Building(p, "Stable", PostFront + new Vector3(-11f, 0, 0), 0f, "stable_front", "stable_side", null, roofKey: "thatch", interior: "wall_rammed_earth");
             T.Prop(p, "prop_banner_post", PostFront.x + 4.6f, PostFront.z - 1f, y: 0.9f);
             T.Prop(p, "prop_hitching_post", PostFront.x + 7f, PostFront.z - 3f, solid: true);
             T.Prop(p, "prop_trough", PostFront.x - 9f, PostFront.z - 2.5f);
@@ -815,16 +876,19 @@ namespace ThreeKingdoms.EditorTools
             float bx = 545f;
             if (HdGroundIn) EarthPatch(env, new Vector3(bx - 8f, 0, 22f), 12f, 14f, 47);
             float stake = T.Metres("palisade_stakes").y;
-            T.Strip(b, "Palisade N", "palisade_stakes", new Vector3(bx, 0, 26f), new Vector3(bx, 0, 90f), stake);
-            T.Strip(b, "Palisade S", "palisade_stakes", new Vector3(bx, 0, -50f), new Vector3(bx, 0, 14f), stake);
-            if (T.Tex("checkpoint_gate", optional: true))
+            // The Blender checkpoint (gate, 4 m of stakes either side, tower, cheval) faces east along the road.
+            bool model = Wild(b, "checkpoint_gate", "Checkpoint (Blender)", new Vector3(bx, 0, 20f), -90f);
+            T.Strip(b, "Palisade N", "palisade_stakes", new Vector3(bx, 0, model ? 30f : 26f), new Vector3(bx, 0, 90f), stake);
+            T.Strip(b, "Palisade S", "palisade_stakes", new Vector3(bx, 0, -50f), new Vector3(bx, 0, model ? 10f : 14f), stake);
+            if (model) { }
+            else if (T.Tex("checkpoint_gate", optional: true))
             {
                 var cg = T.Metres("checkpoint_gate");
                 T.Quad(b, "Closed gate", new Vector3(bx, cg.y / 2f, 20f), new Vector3(0, 90f, 0), cg, T.Mat("checkpoint_gate", clip: true, twoSided: true));
                 Solid(b, new Vector3(bx, 1.5f, 20f), new Vector3(0.6f, 3f, 12f));
             }
             else Box(b, "Closed gate", new Vector3(bx, 0, 20f), new Vector3(0.6f, 3f, 12f), 0.32f);
-            if (T.Tex("watchtower_front", optional: true))
+            if (!model && T.Tex("watchtower_front", optional: true))
                 T.Building(b, "Watchtower", new Vector3(bx - 6f, 0, 31f), 0f, "watchtower_front", "watchtower_side", "watchtower_front", interior: "wall_rammed_earth");
             if (T.Tex("pond_water_hd", optional: true))
             {
@@ -861,8 +925,10 @@ namespace ThreeKingdoms.EditorTools
             };
             // Bohai villages build like the plain around them (loess walls, golden thatch), not like Zhuojun.
             bool loess = T.Tex("house_loess_front", optional: true);
+            int n = 0;
             foreach (var (front, side, back, thatch, at) in houses)
-                if (loess) T.Building(v, "House", at, 0f, thatch ? "house_loess_front" : K("warehouse_front", "house_loess_front"), thatch ? "house_loess_side" : K("warehouse_side", "house_loess_side"), null,
+                if (Wild(v, n++ % 2 == 0 ? "village_house_a" : "village_house_b", "House", at)) { }
+                else if (loess) T.Building(v, "House", at, 0f, thatch ? "house_loess_front" : K("warehouse_front", "house_loess_front"), thatch ? "house_loess_side" : K("warehouse_side", "house_loess_side"), null,
                     roofKey: "thatch", roofTexture: Thatch, eaveTexture: "roof_thatch_eave");
                 else T.Building(v, "House", at, 0f, front, side, back, roofKey: thatch ? "thatch" : "tile");
             T.Prop(v, "prop_well", 0f, 0f, solid: true);
@@ -1513,7 +1579,7 @@ namespace ThreeKingdoms.EditorTools
                 if (c == Cell.Mountain || c == Cell.Foothill) return Inside(x, z, 3, k => k == Cell.Mountain || k == Cell.Foothill);
                 return Blocked(c);
             }
-            foreach (var r in Rects(Wall))
+            foreach (var r in Rects((x, z) => Wall(x, z) && !Covered(XMin + x + 0.5f, ZMin + z + 0.5f)))
                 Solid(walls, new Vector3(XMin + r.x + r.width / 2f, 3f, ZMin + r.y + r.height / 2f), new Vector3(r.width, 6f, r.height));
 
             // Ponds and marsh from the mask (the rivers are drawn from the plan's centre lines below).
@@ -1885,7 +1951,7 @@ namespace ThreeKingdoms.EditorTools
                         int cx = Mathf.Clamp(x + dx, 0, w - 1), cz = Mathf.Clamp(z + dz, 0, h - 1);
                         near = sd[cx, cz] > -0.6f;
                     }
-                    if (!near) continue;
+                    if (!near || Covered(XMin + x, ZMin + z)) continue;
                     index[gx, gz] = verts.Count;
                     verts.Add(new Vector3(XMin + x, Height(x, z) - 0.05f, ZMin + z));
                     uvs.Add(new Vector2(x / hillTile, z / hillTile));
@@ -1921,7 +1987,7 @@ namespace ThreeKingdoms.EditorTools
             for (int z = 1; z < h - 1; z += 3)
                 for (int x = 1; x < w - 1; x += 3)
                 {
-                    if (dist[x, z] <= 0f || dist[x, z] > 2.5f) continue;
+                    if (dist[x, z] <= 0f || dist[x, z] > 2.5f || Covered(XMin + x, ZMin + z)) continue;
                     if (footRng.Next(3) == 0) continue;
                     float fx = x + (float)footRng.NextDouble() * 2f - 1f, fz = z - 1.5f;
                     if (Near(XMin + fx, ZMin + fz) && At(XMin + fx, ZMin + fz) != Cell.Mountain && At(XMin + fx, ZMin + fz) != Cell.Foothill) continue;
@@ -1936,7 +2002,7 @@ namespace ThreeKingdoms.EditorTools
                     float fx = x + (float)rng.NextDouble() * 5f, fz = z + (float)rng.NextDouble() * 5f;
                     int ix = Mathf.Clamp((int)fx, 0, w - 1), iz = Mathf.Clamp((int)fz, 0, h - 1);
                     float d = dist[ix, iz];
-                    if (d <= 0f) continue;
+                    if (d <= 0f || Covered(XMin + fx, ZMin + fz)) continue;
                     float y = Height(ix, iz);
                     if (d < 6f) { if (rng.Next(2) == 0) T.Prop(mg, rng.Next(3) == 0 ? rock : pebble, XMin + fx, ZMin + fz, y: Mathf.Max(0f, y)); }
                     else if (rng.Next(3) != 0) T.Prop(mg, pine, XMin + fx, ZMin + fz, y: y, scale: 0.9f + (float)rng.NextDouble() * 0.4f);
@@ -2256,6 +2322,7 @@ namespace ThreeKingdoms.EditorTools
             switch (kind)
             {
                 case "beacon":
+                    if (Wild(root, "beacon_ruin", "Beacon tower (ruin)", Vector3.zero)) return true;
                     if (!HasAll("beacon_ruin_front", "beacon_ruin_side")) return false;
                     TexturedBlock(root, "Beacon tower (ruin)", Vector3.zero, "beacon_ruin_front", "beacon_ruin_side", K("hill_top", null));
                     string rubble = K("prop_rubble_heap", "prop_rock_small");
@@ -2265,6 +2332,11 @@ namespace ThreeKingdoms.EditorTools
                     for (int i = 0; i < 6 && scree.Length > 0; i++) Decal(root, scree[rng.Next(scree.Length)], root.position.x - 6f + (float)rng.NextDouble() * 12f, root.position.z - 6f + (float)rng.NextDouble() * 10f, rng);
                     return true;
                 case "tomb":
+                    if (Wild(root, "tomb_mound", "Tomb mound", Vector3.zero))
+                    {
+                        Wild(root, "tomb_que", "Que pillars", new Vector3(0, 0, -18f));
+                        return true;
+                    }
                     if (!HasAll("tomb_mound_slope", "que_pillar_front", "que_pillar_side")) return false;
                     Mound(root, "Tomb mound", root.position, 13f, 11f, 7f, "tomb_mound_slope");
                     TexturedBlock(root, "Que W", new Vector3(-4.5f, 0, -18f), "que_pillar_front", "que_pillar_side", null);
@@ -2284,6 +2356,7 @@ namespace ThreeKingdoms.EditorTools
             if (!HasAll("gaotang_wall_face", "gaotang_gate_front", "gaotang_hall_front", "gaotang_hall_side")) return false;
             void Wall(string name, Vector3 a, Vector3 b)
             {
+                if (wildModels) { WallPieces(g, name, WildSet, "gaotang_wall", a, b); return; }
                 bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
                 float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
                 var run = T.Group(g, name, (a + b) / 2f, alongX ? 0f : 90f);
@@ -2301,6 +2374,13 @@ namespace ThreeKingdoms.EditorTools
             Wall("Wall side W", new Vector3(cx - 38f, 0, wz + 2f), new Vector3(cx - 38f, 0, wz + 50f));
             Wall("Wall side E", new Vector3(cx + 38f, 0, wz + 2f), new Vector3(cx + 38f, 0, wz + 50f));
             Wall("Wall back", new Vector3(cx - 40f, 0, wz + 52f), new Vector3(cx + 40f, 0, wz + 52f));
+            if (!Wild(g, "gaotang_gate", "Gaotang gate", new Vector3(cx, 0, wz))) GaotangQuadGate(g, cx, wz);
+            GaotangSquare(g, cx, wz);
+            return true;
+        }
+
+        static void GaotangQuadGate(Transform g, float cx, float wz)
+        {
             var gate = T.Group(g, "Gaotang gate", new Vector3(cx, 0, wz));
             gate.gameObject.AddComponent<Occluder>();
             var gf = T.Metres("gaotang_gate_front");
@@ -2314,6 +2394,10 @@ namespace ThreeKingdoms.EditorTools
             }
             T.Quad(gate, "Passage ceiling", new Vector3(0, 4.5f, 0), new Vector3(-90f, 0, 0), new Vector2(4f, 4f), T.Mat("timber_beam"), T.Repeat("timber_beam", new Vector2(4f, 4f)), castShadows: false);
             T.Solid(gate, new Vector3(0, (4.5f + gf.y) / 2f, 0), new Vector3(4f, gf.y - 4.5f, 4f));
+        }
+
+        static void GaotangSquare(Transform g, float cx, float wz)
+        {
             string square = K("gaotang_square", "ground_street_stone");
             if (T.IsHd(T.Tex(square)))
             {
@@ -2325,9 +2409,13 @@ namespace ThreeKingdoms.EditorTools
             else T.Patch(g, "Gaotang square", square, cx - 16f, cx + 16f, wz + 2f, wz + 30f, 0.006f);
             EarthPatch(g, new Vector3(cx, 0, wz - 12f), 12f, 10f, 67);
             string roof = T.Tex("gaotang_roof", optional: true) ? "gaotang_roof" : null;
-            var hall = T.Building(g, "County hall (县府)", new Vector3(cx, 0, wz + 31f), 0f, "gaotang_hall_front", "gaotang_hall_side", null, roofKey: "tile", roofTexture: roof);
-            T.Stairs(g, "Hall steps", new Vector3(cx, 0, wz + 31f), 4f, 3, 0.3f, 0.4f, 0.6f);
-            if (HasAll("gaotang_shop_front", "gaotang_shop_side"))
+            if (!Wild(g, "gaotang_hall", "County hall (县府)", new Vector3(cx, 0, wz + 31f)))
+            {
+                T.Building(g, "County hall (县府)", new Vector3(cx, 0, wz + 31f), 0f, "gaotang_hall_front", "gaotang_hall_side", null, roofKey: "tile", roofTexture: roof);
+                T.Stairs(g, "Hall steps", new Vector3(cx, 0, wz + 31f), 4f, 3, 0.3f, 0.4f, 0.6f);
+            }
+            if (Wild(g, "gaotang_shop", "Shop (enterable)", new Vector3(cx - 26f, 0, wz + 18f), 90f)) { }
+            else if (HasAll("gaotang_shop_front", "gaotang_shop_side"))
                 T.Building(g, "Shop (enterable)", new Vector3(cx - 26f, 0, wz + 18f), 90f, "gaotang_shop_front", "gaotang_shop_side", null, roofKey: "tile", roofTexture: roof,
                     interior: "interior_shop_back_wall", floor: "floor_wood_planks");
             var props = T.Group(g, "Square props");
@@ -2338,7 +2426,6 @@ namespace ThreeKingdoms.EditorTools
             foreach (float x in new[] { -6.5f, 6.5f }) T.Prop(props, banner, cx + x, wz - 3f);
             T.Prop(props, "prop_army_tent", cx + 26f, wz + 40f, solid: true);
             T.Prop(props, "prop_army_tent", cx - 26f, wz + 40f, solid: true);
-            return true;
         }
 
         // ---------- road ribbons (user 2026-10-25: no square corners or square road ends) ----------
