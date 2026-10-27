@@ -69,7 +69,8 @@ namespace ThreeKingdoms.EditorTools
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Exponential;
             // Lighter haze than Anxi: the town camera is close and the painted colours washed out under 0.005.
-            RenderSettings.fogDensity = 0.0025f;
+            // Thinner still once the modelled Yan hills stand 260–620 m out, or they fade into the haze.
+            RenderSettings.fogDensity = BlenderModels.Has("yan_mountains") ? 0.0011f : 0.0025f;
             RenderSettings.fogColor = new Color(0.82f, 0.88f, 0.93f);
 
             var env = new GameObject("Environment").transform;
@@ -1481,9 +1482,9 @@ namespace ThreeKingdoms.EditorTools
             var rng = new System.Random(57);
             string[] kinds = { "prop_tree_elm", "prop_tree_locust", "prop_tree_elm", "prop_tree_cypress", "prop_tree_willow", "prop_bush", "prop_bush_b" };
             int placed = 0;
-            for (int i = 0; i < 600 && placed < 150; i++)
+            for (int i = 0; i < 1200 && placed < 260; i++)
             {
-                float x = -155f + (float)rng.NextDouble() * 290f, z = -125f + (float)rng.NextDouble() * 230f;
+                float x = -200f + (float)rng.NextDouble() * 380f, z = -125f + (float)rng.NextDouble() * 360f;
                 if (Mathf.Abs(x) < 56f && Mathf.Abs(z) < 44f) continue;               // the walls and their foot
                 if (Mathf.Abs(x) < 24f && z < -36f) continue;                           // the south road
                 if (x < -46f && x > -84f && Mathf.Abs(z) < 20f) continue;               // the peach grove and west lane
