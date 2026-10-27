@@ -307,8 +307,25 @@ namespace ThreeKingdoms.EditorTools
             var g = new GameObject("Roads").transform;
             g.SetParent(env, false);
             var mat = Mat("road", new Color(0.80f, 0.70f, 0.52f));
+            // Inside a modelled hub the hub's own ground and streets take over: a road stops at its walls.
+            var hubs = data.places.Where(p => !string.IsNullOrEmpty(p.layout) || !string.IsNullOrEmpty(p.wallModel)).ToArray();
+            bool InHub(Vector3 q) => hubs.Any(p =>
+            {
+                var l = Quaternion.Euler(0, -p.yaw, 0) * (q - new Vector3(p.x, 0, p.z));
+                return Mathf.Abs(l.x) < p.w / 2f - 1f && Mathf.Abs(l.z) < p.d / 2f - 1f;
+            });
             foreach (var r in data.roads)
-                if (r.pts.Length >= 4) Ribbon(g, r.id, Smooth(Pts(r.pts), 2f), r.width, mat, p => H(p.x, p.z), 0.06f, true);
+            {
+                if (r.pts.Length < 4) continue;
+                var run = new List<Vector3>();
+                int part = 0;
+                foreach (var q in Smooth(Pts(r.pts), 2f).Append(new Vector3(float.NaN, 0, 0)))
+                {
+                    if (!float.IsNaN(q.x) && !InHub(q)) { run.Add(q); continue; }
+                    if (run.Count >= 2) Ribbon(g, $"{r.id} {part++}", run, r.width, mat, p => H(p.x, p.z), 0.06f, true);
+                    run = new List<Vector3>();
+                }
+            }
         }
 
         static List<Vector3> Pts(float[] xz)
