@@ -41,6 +41,17 @@ namespace ThreeKingdoms.EditorTools
             ("wild_tomb", new Vector3(-220f, 3f, 250f), 0f, 25f, 55f, 24f),
             ("wild_pavilion", new Vector3(-80f, 6f, -228f), 25f, 22f, 26f, 22f),
         };
+        static readonly (string name, Vector3 target, float yaw, float pitch, float distance, float fov)[] Region =
+        {
+            ("region_north_ridge", new Vector3(-100f, 8f, 290f), 0f, 25f, 120f, 26f),
+            ("region_north_east", new Vector3(250f, 8f, 290f), -10f, 25f, 130f, 26f),
+            ("region_west_pass", new Vector3(-530f, 3f, 30f), 30f, 25f, 90f, 26f),
+            ("region_forest_mixed", new Vector3(-178f, 3f, -10f), 0f, 28f, 90f, 26f),
+            ("region_forest_willow", new Vector3(414f, 3f, 70f), 0f, 28f, 90f, 26f),
+            ("region_levee_east", new Vector3(200f, 3f, -228f), 30f, 22f, 80f, 26f),
+            ("region_plain", new Vector3(-250f, 2f, -80f), 0f, 30f, 120f, 26f),
+            ("region_overview", new Vector3(0f, 0f, 0f), 0f, 55f, 900f, 40f),
+        };
 
         public static void CaptureFromCommandLine()
         {
@@ -67,12 +78,29 @@ namespace ThreeKingdoms.EditorTools
                     if (t) t.gameObject.SetActive(false);
                 }
                 string set = Arg("-shotSet") ?? "all";
-                var shots = set == "terrain" ? Terrain : set == "pingyuan" ? Pingyuan : set == "wild" ? Wild : Pingyuan.Concat(Terrain).Concat(Wild).ToArray();
+                var shots = set == "terrain" ? Terrain : set == "pingyuan" ? Pingyuan : set == "wild" ? Wild : set == "region" ? Region : Pingyuan.Concat(Terrain).Concat(Wild).ToArray();
                 foreach (var s in shots) Shoot(Path.Combine(dir, $"{s.name}_{(blender ? "blender" : "code")}.png"), s);
                 foreach (var c in blur) c.active = true;
             }
             AssetDatabase.SaveAssets();
             Debug.Log("BOHAI_BLENDER_SHOTS " + dir);
+        }
+
+        // Rebuilds the Bohai scene with the Blender sets and makes a Windows player of the build-settings scenes.
+        //   -executeMethod ThreeKingdoms.EditorTools.BohaiBlenderShots.BuildPlayerFromCommandLine [-buildOut <exe>]
+        public static void BuildPlayerFromCommandLine()
+        {
+            try
+            {
+                BohaiPlainBuilder.Build();
+                string exe = Arg("-buildOut") ?? @"D:\BuildArtifacts\Codex\hd2d-jrpg\builds\bohai-blender\MoonlitGlade.exe";
+                Directory.CreateDirectory(Path.GetDirectoryName(exe));
+                var scenes = EditorBuildSettings.scenes.Where(x => x.enabled).Select(x => x.path).ToArray();
+                var report = BuildPipeline.BuildPlayer(scenes, exe, BuildTarget.StandaloneWindows64, BuildOptions.None);
+                Debug.Log("BOHAI_BLENDER_BUILD " + report.summary.result);
+                EditorApplication.Exit(report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded ? 0 : 1);
+            }
+            catch (System.Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
         }
 
         static string Arg(string name)

@@ -59,6 +59,10 @@ namespace ThreeKingdoms.EditorTools
             pingyuanModels = BlenderModels.Import(PingyuanSet);
             terrainModels = BlenderModels.Enabled && BlenderModels.Import(TerrainSet);
             wildModels = BlenderModels.Enabled && BlenderModels.Import(WildSet);
+            // The revised hills (bohai-blender-terrain3) win over the first delivery when they are in.
+            HillSet = BlenderModels.Enabled && BlenderModels.Import("bohai-blender-terrain3") ? "bohai-blender-terrain3" : "bohai-blender-terrain2";
+            hillModels = BlenderModels.Enabled && (HillSet == "bohai-blender-terrain3" || BlenderModels.Import(HillSet));
+            treeModels = BlenderModels.Enabled && BlenderModels.Import(TreeSet);
             cornersPlaced.Clear();
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -316,7 +320,8 @@ namespace ThreeKingdoms.EditorTools
         {
             var g = T.Group(env, "Levee (landmark)");
             // The Blender levee replaces the stretch at the ferry (x -120..0) when it is in.
-            if (terrainModels) { LeveeRun(g, XMin - 100f, -120f, false); LeveeRun(g, 0f, XMax + 100f, false); }
+            if (hillModels && terrainModels) { }
+            else if (terrainModels) { LeveeRun(g, XMin - 100f, -120f, false); LeveeRun(g, 0f, XMax + 100f, false); }
             else LeveeRun(g, XMin - 100f, XMax + 100f, true);
         }
 
@@ -498,20 +503,20 @@ namespace ThreeKingdoms.EditorTools
             var hallSide = K("pingyuan_hall_side", "yamen_hall_side");
             OnPlinth(c, "County office (县衙)", new Vector3(CityCx, 0, -140f), hallKey, hallSide, null, "tile", null, steps: 3.6f);
             var op = T.Group(c, "Office square props");
-            T.Prop(op, "prop_banner_han", CityCx - 9.8f, -141.2f);
-            T.Prop(op, "prop_banner_han", CityCx + 9.8f, -141.2f);
-            T.Prop(op, "prop_lantern_red", CityCx - 3.4f, -140.6f, y: PlinthH + 2.6f);
-            T.Prop(op, "prop_lantern_red", CityCx + 3.4f, -140.6f, y: PlinthH + 2.6f);
+            Plant(op, "prop_banner_han", CityCx - 9.8f, -141.2f);
+            Plant(op, "prop_banner_han", CityCx + 9.8f, -141.2f);
+            Plant(op, "prop_lantern_red", CityCx - 3.4f, -140.6f, y: PlinthH + 2.6f);
+            Plant(op, "prop_lantern_red", CityCx + 3.4f, -140.6f, y: PlinthH + 2.6f);
             // The congee shed and communal tables (“同簋而食”) on the square's west edge, the notice board on the east.
-            if (T.Tex("prop_congee_shed", optional: true)) T.Prop(op, "prop_congee_shed", CityCx - 10.5f, -146f, solid: true);
-            else T.Prop(op, "Congee shed (stand-in)", CityCx - 10.5f, -146f, key: "prop_cooking_stove", solid: true);
+            if (T.Tex("prop_congee_shed", optional: true)) Plant(op, "prop_congee_shed", CityCx - 10.5f, -146f, solid: true);
+            else Plant(op, "Congee shed (stand-in)", CityCx - 10.5f, -146f, key: "prop_cooking_stove", solid: true);
             string table = K("prop_long_table", "prop_low_table");
-            T.Prop(op, table, CityCx - 10f, -150.5f, solid: true);
-            T.Prop(op, table, CityCx - 10f, -154.5f, solid: true);
-            T.Prop(op, "prop_notice_board", CityCx + 10.5f, -146.5f, solid: true);
-            T.Prop(op, "prop_wine_jars", CityCx - 13f, -143.5f);
+            Plant(op, table, CityCx - 10f, -150.5f, solid: true);
+            Plant(op, table, CityCx - 10f, -154.5f, solid: true);
+            Plant(op, "prop_notice_board", CityCx + 10.5f, -146.5f, solid: true);
+            Plant(op, "prop_wine_jars", CityCx - 13f, -143.5f);
             foreach (float x in new[] { CityCx - 17.5f, CityCx + 17.5f })
-                for (float z = -160f; z < -143f; z += 6f) T.Prop(op, "prop_tree_willow", x, z, scale: 0.75f, solid: true);
+                for (float z = -160f; z < -143f; z += 6f) Plant(op, "prop_tree_willow", x, z, scale: 0.75f, solid: true);
 
             // Warehouses and inns on plinths along the street (fronts face south, clear of the street and the square),
             // houses behind; barracks in the north-east with open drill ground before its gate.
@@ -539,19 +544,19 @@ namespace ThreeKingdoms.EditorTools
                 else T.Patch(green, "Green", "ground_grass", gx0, gx1, gz0, gz1, 0.0035f);
             (string key, float x, float z)[] trees = { ("prop_tree_elm", -104f, -123f), ("prop_tree_willow", -16f, -190f), ("prop_tree_elm", -104f, -191f),
                 ("prop_tree_locust", -44f, -155f), ("prop_tree_willow", -80f, -140f), ("prop_tree_elm", -40f, -133f), ("prop_tree_locust", -89f, -176f) };
-            foreach (var (key, x, z) in trees) T.Prop(green, key, x, z, scale: 0.85f, solid: true);
+            foreach (var (key, x, z) in trees) Plant(green, key, x, z, scale: 0.85f, solid: true);
             var st = T.Group(c, "Street goods");
             string cargo = K("prop_cargo_pile", "prop_sacks_pile"), stall = K("prop_reed_blind_stall", "prop_stall");
-            T.Prop(st, cargo, CityCx - 7.6f, -189f, solid: true);
-            T.Prop(st, cargo, CityCx + 7.8f, -180.5f, solid: true);
-            T.Prop(st, "prop_handcart", CityCx - 7.4f, -181f, solid: true);
-            T.Prop(st, stall, CityCx + 7.6f, -170.5f, solid: true);
-            T.Prop(st, "prop_wine_jars", CityCx - 7.8f, -171f);
+            Plant(st, cargo, CityCx - 7.6f, -189f, solid: true);
+            Plant(st, cargo, CityCx + 7.8f, -180.5f, solid: true);
+            Plant(st, "prop_handcart", CityCx - 7.4f, -181f, solid: true);
+            Plant(st, stall, CityCx + 7.6f, -170.5f, solid: true);
+            Plant(st, "prop_wine_jars", CityCx - 7.8f, -171f);
             // Market west of the square: reed-blind stalls.
             var mk = T.Group(c, "Market (市集)");
-            for (int i = 0; i < 4; i++) T.Prop(mk, stall, -100f + (i % 2) * 9f, -149f - (i / 2) * 8f, solid: true);
-            T.Prop(mk, "prop_grain_sacks", -95.5f, -146f);
-            T.Prop(mk, "prop_basket_stack", -86f, -161f);
+            for (int i = 0; i < 4; i++) Plant(mk, stall, -100f + (i % 2) * 9f, -149f - (i / 2) * 8f, solid: true);
+            Plant(mk, "prop_grain_sacks", -95.5f, -146f);
+            Plant(mk, "prop_basket_stack", -86f, -161f);
             Label(labels, "市集", new Vector3(-95f, 0, -153f), 6f);
             var bk = T.Group(c, "Barracks (兵营)");
             float stake = T.Metres("palisade_stakes").y;
@@ -559,12 +564,12 @@ namespace ThreeKingdoms.EditorTools
             T.Strip(bk, "Palisade E", "palisade_stakes", new Vector3(-14f, 0, -143f), new Vector3(-14f, 0, -119f), stake);
             T.Strip(bk, "Palisade S W", "palisade_stakes", new Vector3(-38f, 0, -143f), new Vector3(-29f, 0, -143f), stake);
             T.Strip(bk, "Palisade S E", "palisade_stakes", new Vector3(-23f, 0, -143f), new Vector3(-14f, 0, -143f), stake);
-            T.Prop(bk, "prop_army_tent", -32f, -126f, solid: true);
-            T.Prop(bk, "prop_army_tent", -20f, -126f, solid: true);
-            T.Prop(bk, "prop_weapon_rack", -26f, -131f, solid: true);
-            T.Prop(bk, "prop_training_dummy", -33f, -136f);
-            T.Prop(bk, "prop_banner_han", -30.4f, -143.8f);
-            T.Prop(bk, "prop_banner_han", -21.6f, -143.8f);
+            Plant(bk, "prop_army_tent", -32f, -126f, solid: true);
+            Plant(bk, "prop_army_tent", -20f, -126f, solid: true);
+            Plant(bk, "prop_weapon_rack", -26f, -131f, solid: true);
+            Plant(bk, "prop_training_dummy", -33f, -136f);
+            Plant(bk, "prop_banner_han", -30.4f, -143.8f);
+            Plant(bk, "prop_banner_han", -21.6f, -143.8f);
             Label(labels, "兵营", new Vector3(-26f, 0, -134f), 7f);
             Spot("Square", PlayerStart);
             Spot("Main street", new Vector3(CityCx, 0, -180f));
@@ -624,7 +629,10 @@ namespace ThreeKingdoms.EditorTools
         const string TerrainSet = "bohai-blender-terrain";
         static bool terrainModels;
         static readonly Rect[] TerrainCover = { new Rect(188f, 170f, 106f, 84f), new Rect(-120f, -252f, 120f, 46f) };
-        static bool Covered(float x, float z) => terrainModels && TerrainCover.Any(r => r.Contains(new Vector2(x, z)));
+        // The hills stay out of bounds behind their mask walls (they are scenery); only Wanghe, with its path to the top,
+        // and the levee at the ferry are walked on.
+        static bool WalkableHill(float x, float z) => terrainModels && TerrainCover.Any(r => r.Contains(new Vector2(x, z)));
+        static bool Covered(float x, float z) => hillModels || terrainModels && TerrainCover.Any(r => r.Contains(new Vector2(x, z)));
 
         // Batch 2 (art/bohai-blender-wild): Gaotang, post station and stable, checkpoint, village houses, beacon ruin,
         // tomb mound and que pillars, ferry pavilion. Their COL_ proxies keep their shapes (ramps, slopes, collapse).
@@ -654,8 +662,54 @@ namespace ThreeKingdoms.EditorTools
             }
         }
 
+        // Terrain batch 2 (art/bohai-blender-terrain2): the five other hill ranges and the rest of the levee, so the
+        // generated hill mesh and the levee quads are left out entirely. Trees (art/bohai-blender-trees): every tree and
+        // bush billboard becomes a low-poly painted tree of the matching kind.
+        const string TreeSet = "bohai-blender-trees";
+        static string HillSet = "bohai-blender-terrain2";
+        static bool hillModels, treeModels;
+
+        static readonly Dictionary<string, string[]> TreeKinds = new Dictionary<string, string[]>
+        {
+            { "prop_tree_jujube", new[] { "tree_jujube_a", "tree_jujube_b" } },
+            { "prop_tree_willow", new[] { "tree_willow_a", "tree_willow_b" } },
+            { "prop_tree_elm", new[] { "tree_elm" } },
+            { "prop_tree_locust", new[] { "tree_locust" } },
+            { "prop_tree_poplar", new[] { "tree_poplar" } },
+            { "prop_tree_oak", new[] { "tree_oak" } },
+            { "prop_tree_pine", new[] { "tree_jujube_a", "tree_elm" } },
+            { "prop_tree_cypress", new[] { "tree_jujube_b" } },
+            { "prop_tree_dense_cluster", new[] { "tree_oak", "tree_locust", "tree_elm" } },
+            { "prop_bush", new[] { "bush_scrub_a" } },
+            { "prop_bush_b", new[] { "bush_scrub_b" } },
+            { "prop_undergrowth", new[] { "bush_scrub_a", "bush_scrub_b" } },
+        };
+
+        // A tree or bush: the 3D model when delivered (variant and turn from the position, scale kept within ±15%),
+        // otherwise the painted billboard.
+        static void Plant(Transform parent, string name, float x, float z, float y = 0f, float scale = 1f, bool solid = false, string key = null, string glowMask = null)
+        {
+            if (treeModels && TreeKinds.TryGetValue(key ?? name, out var kinds))
+            {
+                int h = Mathf.Abs((int)(x * 73.1f + z * 37.7f + parent.position.x * 3f));
+                var t = BlenderModels.Place(TreeSet, parent, kinds[h % kinds.Length], name, new Vector3(x, y, z), h % 360, meshColliders: false);
+                if (t)
+                {
+                    t.localScale *= Mathf.Clamp(scale, 0.85f, 1.15f);
+                    return;
+                }
+            }
+            T.Prop(parent, name, x, z, y, scale, solid, key, glowMask);
+        }
+
         static void BlenderTerrain(Transform env)
         {
+            if (hillModels)
+            {
+                var hills = T.Group(env, "Blender hills");
+                foreach (string m in new[] { "terrain_hills_nw", "terrain_hills_north_west", "terrain_hills_north_east", "terrain_hills_west_pass", "terrain_levee_west", "terrain_levee_east" })
+                    BlenderModels.Place(HillSet, hills, m, m, Vector3.zero, 0f, meshColliders: true);
+            }
             if (!terrainModels) return;
             var g = T.Group(env, "Blender terrain");
             BlenderModels.Place(TerrainSet, g, "terrain_wanghe_hill", "Wanghe mound (望河岗)", Vector3.zero, 0f, meshColliders: true);
@@ -792,8 +846,8 @@ namespace ThreeKingdoms.EditorTools
             // Boats, the ferry flag, mooring posts, cargo waiting at the dock head, reeds along the bank.
             if (T.Tex("ferry_boat", optional: true))
             {
-                T.Prop(f, "ferry_boat", x1 + 5.4f, -259f, y: WaterY + 0.1f);
-                T.Prop(f, "Ferry boat 2", x0 - 6f, -262f, y: WaterY + 0.1f, key: "ferry_boat", scale: 0.9f);
+                Plant(f, "ferry_boat", x1 + 5.4f, -259f, y: WaterY + 0.1f);
+                Plant(f, "Ferry boat 2", x0 - 6f, -262f, y: WaterY + 0.1f, key: "ferry_boat", scale: 0.9f);
             }
             else
             {
@@ -801,28 +855,28 @@ namespace ThreeKingdoms.EditorTools
                 Box(boat, "Hull", Vector3.zero, new Vector3(4.2f, 1.2f, 11f), 0.38f, solid: false);
                 Box(boat, "Cabin", new Vector3(0, 1.2f, 1f), new Vector3(3f, 1.6f, 3.5f), 0.55f, solid: false);
             }
-            if (T.Tex("prop_ferry_flag", optional: true)) T.Prop(f, "prop_ferry_flag", x0 + 0.6f, -247f, y: deckY);
-            else T.Prop(f, "Ferry flag (stand-in)", x0 + 0.6f, -247f, y: deckY, key: "prop_banner_post");
+            if (T.Tex("prop_ferry_flag", optional: true)) Plant(f, "prop_ferry_flag", x0 + 0.6f, -247f, y: deckY);
+            else Plant(f, "Ferry flag (stand-in)", x0 + 0.6f, -247f, y: deckY, key: "prop_banner_post");
             string post = K("prop_mooring_post", "prop_hitching_post");
-            foreach (float z in new[] { -254f, -260f, -265f }) { T.Prop(f, post, x1 - 0.4f, z, y: deckY); T.Prop(f, post, x0 + 0.4f, z, y: deckY); }
+            foreach (float z in new[] { -254f, -260f, -265f }) { Plant(f, post, x1 - 0.4f, z, y: deckY); Plant(f, post, x0 + 0.4f, z, y: deckY); }
             string cargo = K("prop_cargo_pile", "prop_sacks_pile");
-            T.Prop(f, cargo, x1 - 1.8f, -249f, y: deckY);
-            T.Prop(f, "prop_barrel", x0 + 1.6f, -251f, y: deckY);
+            Plant(f, cargo, x1 - 1.8f, -249f, y: deckY);
+            Plant(f, "prop_barrel", x0 + 1.6f, -251f, y: deckY);
             string reeds = K("prop_reeds", "prop_grass_tuft");
             var rr = new System.Random(13);
             for (int i = 0; i < 40; i++)
             {
                 float x = CityCx - 60f + (float)rr.NextDouble() * 120f;
                 if (Mathf.Abs(x - CityCx) < 9f) continue;
-                T.Prop(f, reeds, x, LeveeSouth - 3f - (float)rr.NextDouble() * 6f, y: -0.2f, scale: reeds == "prop_reeds" ? 1f : 1.8f);
+                Plant(f, reeds, x, LeveeSouth - 3f - (float)rr.NextDouble() * 6f, y: -0.2f, scale: reeds == "prop_reeds" ? 1f : 1.8f);
             }
-            if (T.Tex("prop_reed_blind_stall", optional: true)) T.Prop(f, "Toll stall", CityCx + 9f, LeveeCrestS + 1.6f, y: LeveeH, key: "prop_reed_blind_stall", solid: true);
+            if (T.Tex("prop_reed_blind_stall", optional: true)) Plant(f, "Toll stall", CityCx + 9f, LeveeCrestS + 1.6f, y: LeveeH, key: "prop_reed_blind_stall", solid: true);
             // Landmark on the crest: the river-view pavilion among willows.
             if (Wild(f, "ferry_pavilion", "River pavilion", new Vector3(CityCx - 20f, LeveeH, (LeveeCrestN + LeveeCrestS) / 2f))) { }
-            else if (T.Tex("prop_river_pavilion", optional: true)) T.Prop(f, "prop_river_pavilion", CityCx - 20f, (LeveeCrestN + LeveeCrestS) / 2f, y: LeveeH, solid: true);
+            else if (T.Tex("prop_river_pavilion", optional: true)) Plant(f, "prop_river_pavilion", CityCx - 20f, (LeveeCrestN + LeveeCrestS) / 2f, y: LeveeH, solid: true);
             else GreyHouse(f, "River pavilion (stand-in)", new Vector3(CityCx - 20f, LeveeH, LeveeCrestN - 1f), 4f, 4f, 3f, shade: 0.6f);
             foreach (float x in new[] { -32f, -14f, 8f, 26f, 44f })
-                T.Prop(f, "prop_tree_willow", CityCx + x + 0.5f, LeveeCrestN - 0.6f, y: LeveeH, scale: 1.1f, solid: true);
+                Plant(f, "prop_tree_willow", CityCx + x + 0.5f, LeveeCrestN - 0.6f, y: LeveeH, scale: 1.1f, solid: true);
             Label(labels, "平原津（渡口·阶段门）", new Vector3(CityCx, 0, -258f), 5f);
             Label(labels, "黄河大堤·望河亭（地标）", new Vector3(CityCx - 20f, LeveeH, LeveeCrestS), 8f);
             Spot("Ferry", new Vector3(CityCx, deckY, -252f));
@@ -864,9 +918,9 @@ namespace ThreeKingdoms.EditorTools
                 T.Building(p, "Post station", PostFront, 0f, "post_station_front", "post_station_side", null);
             if (!Wild(p, "post_stable", "Stable", PostFront + new Vector3(-11f, 0, 0)))
                 T.Building(p, "Stable", PostFront + new Vector3(-11f, 0, 0), 0f, "stable_front", "stable_side", null, roofKey: "thatch", interior: "wall_rammed_earth");
-            T.Prop(p, "prop_banner_post", PostFront.x + 4.6f, PostFront.z - 1f, y: 0.9f);
-            T.Prop(p, "prop_hitching_post", PostFront.x + 7f, PostFront.z - 3f, solid: true);
-            T.Prop(p, "prop_trough", PostFront.x - 9f, PostFront.z - 2.5f);
+            Plant(p, "prop_banner_post", PostFront.x + 4.6f, PostFront.z - 1f, y: 0.9f);
+            Plant(p, "prop_hitching_post", PostFront.x + 7f, PostFront.z - 3f, solid: true);
+            Plant(p, "prop_trough", PostFront.x - 9f, PostFront.z - 2.5f);
             Label(labels, "驿站（存档·传闻·驿马）", PostFront, 8f);
             Spot("Post station", PostFront + new Vector3(0, 0, -9f));
 
@@ -900,8 +954,8 @@ namespace ThreeKingdoms.EditorTools
                 T.Patch(b, "Marsh N", "wb_water_muddy", bx - 6f, bx + 15f, 34f, 110f, 0.002f);
                 T.Patch(b, "Marsh S", "wb_water_muddy", bx - 6f, bx + 15f, -80f, 8f, 0.002f);
             }
-            T.Prop(b, "prop_banner_han", bx - 1.5f, 13.5f);
-            T.Prop(b, "prop_banner_han", bx - 1.5f, 26.5f);
+            Plant(b, "prop_banner_han", bx - 1.5f, 13.5f);
+            Plant(b, "prop_banner_han", bx - 1.5f, 26.5f);
             Label(labels, "济南方向哨卡（屏障：193年开放）", new Vector3(bx, 0, 20f), 7f);
             Spot("Barrier", new Vector3(bx - 12f, 0, 20f));
         }
@@ -931,10 +985,10 @@ namespace ThreeKingdoms.EditorTools
                 else if (loess) T.Building(v, "House", at, 0f, thatch ? "house_loess_front" : K("warehouse_front", "house_loess_front"), thatch ? "house_loess_side" : K("warehouse_side", "house_loess_side"), null,
                     roofKey: "thatch", roofTexture: Thatch, eaveTexture: "roof_thatch_eave");
                 else T.Building(v, "House", at, 0f, front, side, back, roofKey: thatch ? "thatch" : "tile");
-            T.Prop(v, "prop_well", 0f, 0f, solid: true);
-            T.Prop(v, "prop_hay_pile", -8f, -6f);
-            T.Prop(v, "prop_firewood", 9f, 8f);
-            T.Prop(v, "prop_straw_mats", 6f, -5f);
+            Plant(v, "prop_well", 0f, 0f, solid: true);
+            Plant(v, "prop_hay_pile", -8f, -6f);
+            Plant(v, "prop_firewood", 9f, 8f);
+            Plant(v, "prop_straw_mats", 6f, -5f);
             var rng = new System.Random(seed);
             for (int i = 0; i < 4; i++)
             {
@@ -948,7 +1002,7 @@ namespace ThreeKingdoms.EditorTools
             for (int i = 0; i < 9; i++)
             {
                 float a = (float)rng.NextDouble() * Mathf.PI * 2f, r = 28f + (float)rng.NextDouble() * 12f;
-                T.Prop(v, i % 3 == 0 ? "prop_tree_elm" : "prop_tree_locust", Mathf.Cos(a) * r, 8f + Mathf.Abs(Mathf.Sin(a)) * r * 0.6f, scale: 0.9f, solid: true);
+                Plant(v, i % 3 == 0 ? "prop_tree_elm" : "prop_tree_locust", Mathf.Cos(a) * r, 8f + Mathf.Abs(Mathf.Sin(a)) * r * 0.6f, scale: 0.9f, solid: true);
             }
             Label(labels, name + "（村落）", centre, 9f);
             Spot(name == "西村" ? "West village" : "North village", centre + new Vector3(0, 0, -8f));
@@ -967,7 +1021,7 @@ namespace ThreeKingdoms.EditorTools
             Box(b, "Tower crown (broken)", new Vector3(1f, 7f, 0.5f), new Vector3(3.5f, 1.8f, 3f), 0.5f);
             for (int i = 0; i < 5; i++) Box(b, "Rubble", new Vector3(-5f + i * 2.4f, 0, -5f + (i % 2) * 1.5f), new Vector3(1.4f, 0.6f, 1.2f), 0.45f, yaw: i * 23f);
             }
-            T.Prop(b, "prop_tree_locust", 7f, 3f, scale: 0.8f, solid: true);
+            Plant(b, "prop_tree_locust", 7f, 3f, scale: 0.8f, solid: true);
             Label(labels, "废烽燧（探索点）", b.position, 10f);
             Spot("Beacon", b.position + new Vector3(0, 0, -9f));
 
@@ -981,10 +1035,10 @@ namespace ThreeKingdoms.EditorTools
             for (int i = 0; i < 46; i++)
             {
                 float x = -26f + (float)rr.NextDouble() * 54f, z = -12f + (float)rr.NextDouble() * 38f;
-                if (T.Tex("prop_reed_clump_large", optional: true)) T.Prop(r, rr.Next(3) == 0 ? "prop_reed_clump_large" : K("prop_reeds", "prop_grass_tuft"), x, z, scale: 0.9f + (float)rr.NextDouble() * 0.4f);
-                else T.Prop(r, rr.Next(3) == 0 ? "prop_bush_b" : "prop_grass_tuft", x, z, scale: 1.6f);
+                if (T.Tex("prop_reed_clump_large", optional: true)) Plant(r, rr.Next(3) == 0 ? "prop_reed_clump_large" : K("prop_reeds", "prop_grass_tuft"), x, z, scale: 0.9f + (float)rr.NextDouble() * 0.4f);
+                else Plant(r, rr.Next(3) == 0 ? "prop_bush_b" : "prop_grass_tuft", x, z, scale: 1.6f);
             }
-            if (T.Tex("prop_punt_boat", optional: true)) T.Prop(r, "prop_punt_boat", -4f, -9f);
+            if (T.Tex("prop_punt_boat", optional: true)) Plant(r, "prop_punt_boat", -4f, -9f);
             else Box(r, "Punt", new Vector3(-4f, 0, -9f), new Vector3(1.4f, 0.5f, 5f), 0.35f, yaw: 20f, solid: false);
             Label(labels, "芦苇荡（探索点）", r.position, 6f);
             Spot("Reeds", r.position + new Vector3(0, 0, -16f));
@@ -1018,9 +1072,9 @@ namespace ThreeKingdoms.EditorTools
         static void Exits(Transform env, Transform labels)
         {
             var e = T.Group(env, "Region exits");
-            T.Prop(e, "prop_notice_board", XMin + 8f, 46f, solid: true);
+            Plant(e, "prop_notice_board", XMin + 8f, 46f, solid: true);
             Label(labels, "往清河（R3·天下图）", new Vector3(XMin + 8f, 0, 46f), 5f);
-            T.Prop(e, "prop_notice_board", 46f, ZMax - 8f, solid: true);
+            Plant(e, "prop_notice_board", 46f, ZMax - 8f, solid: true);
             Label(labels, "往南皮（天下图）", new Vector3(46f, 0, ZMax - 8f), 5f);
         }
 
@@ -1037,13 +1091,13 @@ namespace ThreeKingdoms.EditorTools
                 string key = rng.Next(5) switch { 0 => "prop_tree_elm", 1 => "prop_tree_willow", 2 => "prop_bush", 3 => "prop_bush_b", _ => "prop_tree_locust" };
                 if (!T.Tex(key, optional: true)) key = "prop_tree_locust";
                 bool tree = key.Contains("tree");
-                T.Prop(g, key, x, z, scale: tree ? 0.8f + (float)rng.NextDouble() * 0.3f : 1.2f, solid: tree);
+                Plant(g, key, x, z, scale: tree ? 0.8f + (float)rng.NextDouble() * 0.3f : 1.2f, solid: tree);
                 placed++;
             }
             // Willows along the levee foot.
             for (float x = XMin + 20f; x < XMax - 20f; x += 34f)
                 if (Mathf.Abs(x - CityCx) > 20f && T.Tex("prop_tree_willow", optional: true))
-                    T.Prop(g, "prop_tree_willow", x + (float)rng.NextDouble() * 8f, LeveeNorth + 3f, scale: 0.9f, solid: true);
+                    Plant(g, "prop_tree_willow", x + (float)rng.NextDouble() * 8f, LeveeNorth + 3f, scale: 0.9f, solid: true);
         }
 
         // Clear of the city, the villages, the wild spots, the post station and every road.
@@ -1382,7 +1436,7 @@ namespace ThreeKingdoms.EditorTools
                     {
                         var p = a + d * t + right * s * (width / 2f + 2.6f);
                         if (AvenueBlocked(p, a, b)) continue;
-                        T.Prop(g, species[(n + (s > 0 ? 1 : 0)) % species.Length], p.x, p.z, scale: 0.9f, solid: true);
+                        Plant(g, species[(n + (s > 0 ? 1 : 0)) % species.Length], p.x, p.z, scale: 0.9f, solid: true);
                     }
                     n++;
                     carry = t + AvenueSpacing - len;
@@ -1431,8 +1485,8 @@ namespace ThreeKingdoms.EditorTools
             {
                 var root = T.Group(g, "Signpost " + name, at);
                 root.position = at;
-                if (T.Tex("prop_signpost", optional: true)) T.Prop(root, "prop_signpost", 0f, 0f, solid: true);
-                else T.Prop(root, "Signpost (stand-in)", 0f, 0f, key: "prop_notice_board", solid: true);
+                if (T.Tex("prop_signpost", optional: true)) Plant(root, "prop_signpost", 0f, 0f, solid: true);
+                else Plant(root, "Signpost (stand-in)", 0f, 0f, key: "prop_notice_board", solid: true);
                 var s = root.gameObject.AddComponent<Signpost>();
                 s.Names = ways.Select(w => w.to).ToArray();
                 s.Toward = ways.Select(w => w.toward).ToArray();
@@ -1579,7 +1633,7 @@ namespace ThreeKingdoms.EditorTools
                 if (c == Cell.Mountain || c == Cell.Foothill) return Inside(x, z, 3, k => k == Cell.Mountain || k == Cell.Foothill);
                 return Blocked(c);
             }
-            foreach (var r in Rects((x, z) => Wall(x, z) && !Covered(XMin + x + 0.5f, ZMin + z + 0.5f)))
+            foreach (var r in Rects((x, z) => Wall(x, z) && !((mask[x, z] == Cell.Mountain || mask[x, z] == Cell.Foothill) && WalkableHill(XMin + x + 0.5f, ZMin + z + 0.5f))))
                 Solid(walls, new Vector3(XMin + r.x + r.width / 2f, 3f, ZMin + r.y + r.height / 2f), new Vector3(r.width, 6f, r.height));
 
             // Ponds and marsh from the mask (the rivers are drawn from the plan's centre lines below).
@@ -1722,7 +1776,7 @@ namespace ThreeKingdoms.EditorTools
                     var shore = q + outward * 0.8f;
                     if (mud.Length > 0 && rng.Next(2) == 0) Decal(pg, mud[rng.Next(mud.Length)], shore.x, shore.y, rng, 0.6f + (float)rng.NextDouble() * 0.4f);
                     var reed = q + outward * (0.3f + (float)rng.NextDouble());
-                    T.Prop(pg, reeds, reed.x, reed.y);
+                    Plant(pg, reeds, reed.x, reed.y);
                 }
             }
         }
@@ -1795,10 +1849,10 @@ namespace ThreeKingdoms.EditorTools
                             for (int k = 0; k < n2; k++)
                             {
                                 var q = c0 + d * ((float)rng.NextDouble() - 0.5f) * 2.4f + right * s2 * (float)rng.NextDouble() * 1.4f;
-                                if (!Near(q.x, q.z) || At(q.x, q.z) == Cell.River) T.Prop(r, k == 0 ? clump : reeds, q.x, q.z, scale: 0.8f + (float)rng.NextDouble() * 0.5f);
+                                if (!Near(q.x, q.z) || At(q.x, q.z) == Cell.River) Plant(r, k == 0 ? clump : reeds, q.x, q.z, scale: 0.8f + (float)rng.NextDouble() * 0.5f);
                             }
                         }
-                        if (rng.NextDouble() < 0.35) { var q = edge + right * s2 * (1.5f + (float)rng.NextDouble() * 2f) + d * (float)(rng.NextDouble() - 0.5) * len; if (!Near(q.x, q.z)) T.Prop(r, stones, q.x, q.z); }
+                        if (rng.NextDouble() < 0.35) { var q = edge + right * s2 * (1.5f + (float)rng.NextDouble() * 2f) + d * (float)(rng.NextDouble() - 0.5) * len; if (!Near(q.x, q.z)) Plant(r, stones, q.x, q.z); }
                     }
                 }
             }
@@ -1851,10 +1905,12 @@ namespace ThreeKingdoms.EditorTools
                 {
                     float fx = x + (float)rng.NextDouble() * 3f, fz = z + (float)rng.NextDouble() * 3f;
                     if (At(XMin + fx, ZMin + fz) != Cell.Forest) continue;
+                    // 3D crowns fill more of the view than the painted cards: thin the inside of the wood to about half.
+                    if (treeModels && rng.Next(100) < 45 && Inside(Mathf.FloorToInt(fx), Mathf.FloorToInt(fz), 6, k => k == Cell.Forest)) continue;
                     bool edge = At(XMin + fx, ZMin + fz - 5f) != Cell.Forest || At(XMin + fx - 5f, ZMin + fz) != Cell.Forest || At(XMin + fx + 5f, ZMin + fz) != Cell.Forest;
                     string key = edge && cluster != null && rng.Next(3) == 0 ? cluster : trees[rng.Next(trees.Length)];
-                    T.Prop(fg, key, XMin + fx, ZMin + fz, scale: 0.85f + (float)rng.NextDouble() * 0.35f);
-                    if (edge && rng.Next(2) == 0) T.Prop(fg, under, XMin + fx + 1.2f, ZMin + fz - 1.6f);
+                    Plant(fg, key, XMin + fx, ZMin + fz, scale: 0.85f + (float)rng.NextDouble() * 0.35f);
+                    if (edge && rng.Next(2) == 0) Plant(fg, under, XMin + fx + 1.2f, ZMin + fz - 1.6f);
                 }
         }
 
@@ -1873,8 +1929,8 @@ namespace ThreeKingdoms.EditorTools
                 {
                     if (mask[x, z] != Cell.Forest) continue;
                     if (Inside(x, z, 2, k => k == Cell.Forest)) continue;   // only the 2 m edge band
-                    T.Prop(fg, trees[rng.Next(trees.Length)], XMin + x + 0.5f, ZMin + z + 0.5f, scale: 0.75f + (float)rng.NextDouble() * 0.35f);
-                    if (rng.Next(2) == 0) T.Prop(fg, under, XMin + x + (float)rng.NextDouble() * 2f - 1f, ZMin + z - 1.2f, scale: 0.9f);
+                    Plant(fg, trees[rng.Next(trees.Length)], XMin + x + 0.5f, ZMin + z + 0.5f, scale: 0.75f + (float)rng.NextDouble() * 0.35f);
+                    if (rng.Next(2) == 0) Plant(fg, under, XMin + x + (float)rng.NextDouble() * 2f - 1f, ZMin + z - 1.2f, scale: 0.9f);
                 }
         }
 
@@ -1991,7 +2047,7 @@ namespace ThreeKingdoms.EditorTools
                     if (footRng.Next(3) == 0) continue;
                     float fx = x + (float)footRng.NextDouble() * 2f - 1f, fz = z - 1.5f;
                     if (Near(XMin + fx, ZMin + fz) && At(XMin + fx, ZMin + fz) != Cell.Mountain && At(XMin + fx, ZMin + fz) != Cell.Foothill) continue;
-                    T.Prop(mg, footRng.Next(4) == 0 ? K("prop_rock_large", "prop_bush") : bush, XMin + fx, ZMin + fz, scale: 0.9f + (float)footRng.NextDouble() * 0.4f);
+                    Plant(mg, footRng.Next(4) == 0 ? K("prop_rock_large", "prop_bush") : bush, XMin + fx, ZMin + fz, scale: 0.9f + (float)footRng.NextDouble() * 0.4f);
                 }
             // Pines on the hills, rocks scattered along the foot.
             var rng = new System.Random(83);
@@ -2004,8 +2060,8 @@ namespace ThreeKingdoms.EditorTools
                     float d = dist[ix, iz];
                     if (d <= 0f || Covered(XMin + fx, ZMin + fz)) continue;
                     float y = Height(ix, iz);
-                    if (d < 6f) { if (rng.Next(2) == 0) T.Prop(mg, rng.Next(3) == 0 ? rock : pebble, XMin + fx, ZMin + fz, y: Mathf.Max(0f, y)); }
-                    else if (rng.Next(3) != 0) T.Prop(mg, pine, XMin + fx, ZMin + fz, y: y, scale: 0.9f + (float)rng.NextDouble() * 0.4f);
+                    if (d < 6f) { if (rng.Next(2) == 0) Plant(mg, rng.Next(3) == 0 ? rock : pebble, XMin + fx, ZMin + fz, y: Mathf.Max(0f, y)); }
+                    else if (rng.Next(3) != 0) Plant(mg, pine, XMin + fx, ZMin + fz, y: y, scale: 0.9f + (float)rng.NextDouble() * 0.4f);
                 }
         }
 
@@ -2322,11 +2378,12 @@ namespace ThreeKingdoms.EditorTools
             switch (kind)
             {
                 case "beacon":
+                    if (treeModels && BlenderModels.Place(TreeSet, root, "beacon_ruin_r2", "Beacon tower (ruin)", Vector3.zero, 0f, meshColliders: true)) return true;
                     if (Wild(root, "beacon_ruin", "Beacon tower (ruin)", Vector3.zero)) return true;
                     if (!HasAll("beacon_ruin_front", "beacon_ruin_side")) return false;
                     TexturedBlock(root, "Beacon tower (ruin)", Vector3.zero, "beacon_ruin_front", "beacon_ruin_side", K("hill_top", null));
                     string rubble = K("prop_rubble_heap", "prop_rock_small");
-                    foreach (var (x, z) in new[] { (-5f, -4.5f), (-2.4f, -5.5f), (3.6f, -4.8f), (5.4f, -2f), (-5.6f, 1.5f) }) T.Prop(root, rubble, x, z, solid: true);
+                    foreach (var (x, z) in new[] { (-5f, -4.5f), (-2.4f, -5.5f), (3.6f, -4.8f), (5.4f, -2f), (-5.6f, 1.5f) }) Plant(root, rubble, x, z, solid: true);
                     var rng = new System.Random(5);
                     string[] scree = Have("decal_scree_a", "decal_scree_b");
                     for (int i = 0; i < 6 && scree.Length > 0; i++) Decal(root, scree[rng.Next(scree.Length)], root.position.x - 6f + (float)rng.NextDouble() * 12f, root.position.z - 6f + (float)rng.NextDouble() * 10f, rng);
@@ -2342,8 +2399,8 @@ namespace ThreeKingdoms.EditorTools
                     TexturedBlock(root, "Que W", new Vector3(-4.5f, 0, -18f), "que_pillar_front", "que_pillar_side", null);
                     TexturedBlock(root, "Que E", new Vector3(4.5f, 0, -18f), "que_pillar_front", "que_pillar_side", null);
                     string beast = K("prop_stone_beast", "prop_rock_large"), tablet = K("prop_stone_tablet", "prop_rock_large");
-                    T.Prop(root, beast, -3f, -14f, solid: true); T.Prop(root, beast, 3f, -14f, solid: true);
-                    T.Prop(root, tablet, 0f, -12.5f, solid: true);
+                    Plant(root, beast, -3f, -14f, solid: true); Plant(root, beast, 3f, -14f, solid: true);
+                    Plant(root, tablet, 0f, -12.5f, solid: true);
                     return true;
                 default: return false;
             }
@@ -2419,13 +2476,13 @@ namespace ThreeKingdoms.EditorTools
                 T.Building(g, "Shop (enterable)", new Vector3(cx - 26f, 0, wz + 18f), 90f, "gaotang_shop_front", "gaotang_shop_side", null, roofKey: "tile", roofTexture: roof,
                     interior: "interior_shop_back_wall", floor: "floor_wood_planks");
             var props = T.Group(g, "Square props");
-            if (T.Tex("prop_gaotang_watch_drum", optional: true)) T.Prop(props, "prop_gaotang_watch_drum", cx + 10f, wz + 27f, solid: true);
-            if (T.Tex("prop_spear_rack_cart", optional: true)) { T.Prop(props, "prop_spear_rack_cart", cx + 12f, wz + 10f, solid: true); T.Prop(props, "prop_spear_rack_cart", cx - 12f, wz + 6f, solid: true); }
+            if (T.Tex("prop_gaotang_watch_drum", optional: true)) Plant(props, "prop_gaotang_watch_drum", cx + 10f, wz + 27f, solid: true);
+            if (T.Tex("prop_spear_rack_cart", optional: true)) { Plant(props, "prop_spear_rack_cart", cx + 12f, wz + 10f, solid: true); Plant(props, "prop_spear_rack_cart", cx - 12f, wz + 6f, solid: true); }
             string banner = K("prop_gaotang_banner", "prop_banner_han");
-            foreach (float x in new[] { -6f, 6f }) T.Prop(props, banner, cx + x, wz + 29.5f);
-            foreach (float x in new[] { -6.5f, 6.5f }) T.Prop(props, banner, cx + x, wz - 3f);
-            T.Prop(props, "prop_army_tent", cx + 26f, wz + 40f, solid: true);
-            T.Prop(props, "prop_army_tent", cx - 26f, wz + 40f, solid: true);
+            foreach (float x in new[] { -6f, 6f }) Plant(props, banner, cx + x, wz + 29.5f);
+            foreach (float x in new[] { -6.5f, 6.5f }) Plant(props, banner, cx + x, wz - 3f);
+            Plant(props, "prop_army_tent", cx + 26f, wz + 40f, solid: true);
+            Plant(props, "prop_army_tent", cx - 26f, wz + 40f, solid: true);
         }
 
         // ---------- road ribbons (user 2026-10-25: no square corners or square road ends) ----------
