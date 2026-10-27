@@ -46,7 +46,13 @@ namespace ThreeKingdoms.EditorTools
                 string json = Path.Combine(from, "materials.json");
                 if (File.Exists(json)) File.Copy(json, Path.Combine(to, "materials.json"), true);
                 if (Directory.Exists(Path.Combine(from, "textures")))
-                    foreach (string f in Directory.GetFiles(Path.Combine(from, "textures"), "*.png")) File.Copy(f, Path.Combine(to, Path.GetFileName(f)), true);
+                    foreach (string f in Directory.GetFiles(Path.Combine(from, "textures"), "*.png"))
+                    {
+                        // A set may carry its own copy of a town texture (roof_eave, roof_ridge…): the town's own wins,
+                        // or the copy, searched first, would re-skin every building.
+                        if (TownTexture(Path.GetFileNameWithoutExtension(f))) continue;
+                        File.Copy(f, Path.Combine(to, Path.GetFileName(f)), true);
+                    }
                 dirs.Insert(0, to);
             }
             AssetDatabase.Refresh();
@@ -64,6 +70,10 @@ namespace ThreeKingdoms.EditorTools
             }
             return dirs.ToArray();
         }
+
+        static readonly string[] TownArt = { "zhuojun-hd-ground", "zhuojun-hd-buildings", "zhuojun-hd-props", "zhuojun-hd-greenery" };
+        static bool TownTexture(string key) => TownArt.Any(d => File.Exists(Path.Combine(ArtRoot, d, key + ".png")))
+            || File.Exists($"{ZhuojunTownBuilder.TownDir}/{key}.png") || File.Exists($"{ZhuojunTownBuilder.MapDir}/{key}.png");
 
         public static bool Has(string model) => Enabled && models.ContainsKey(model);
 
