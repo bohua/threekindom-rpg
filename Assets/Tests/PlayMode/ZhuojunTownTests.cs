@@ -60,8 +60,9 @@ public sealed class ZhuojunTownTests
             // Pixel textures stay point-filtered; the HD renovation's painted textures (2026-10-26) are mipmapped instead.
             Assert.IsTrue(tex.filterMode == FilterMode.Point || tex.mipmapCount > 1, r.name + " " + tex.name + " " + tex.filterMode);
         }
-        var smithy = GameObject.Find("02 Weapons shop").transform.Find("Front").GetComponent<MeshRenderer>().sharedMaterial;
-        Assert.IsTrue(smithy.IsKeywordEnabled("_EMISSION"), "forge glow kept (RealtimeEmissive)");
+        // The forge glows whether the shop is quad-built or the Codex Blender model (2026-10-27).
+        var smithy = GameObject.Find("02 Weapons shop").GetComponentsInChildren<MeshRenderer>().SelectMany(r => r.sharedMaterials);
+        Assert.IsTrue(smithy.Any(m => m && m.IsKeywordEnabled("_EMISSION")), "forge glow kept (RealtimeEmissive)");
         Assert.Greater(Object.FindObjectsByType<PixelBillboard>(FindObjectsSortMode.None).Length, 80, "props are lit pixel billboards");
     }
 
@@ -69,9 +70,16 @@ public sealed class ZhuojunTownTests
     {
         yield return SceneManager.LoadSceneAsync("Zhuojun_Town");
         yield return null;
-        var boxes = Object.FindObjectsByType<BoxCollider>(FindObjectsSortMode.None)
-            .Where(b => b.transform.parent != null && b.transform.parent.Find("Front") != null)
-            .Select(b => (name: b.transform.parent.name, bounds: b.bounds)).ToList();
+        // Each building's solid footprint: its colliders together, quad-built or Blender model (2026-10-27).
+        string[] names = { "03 Tavern", "02 Weapons shop", "13 Gambling house", "06 Clinic", "09 Stable", "09 Post station",
+            "04 House A", "04 House B", "04 House C", "04 House D", "08 Granary W", "08 Granary E", "01 Commandery office" };
+        var boxes = names.Select(n => GameObject.Find(n)).Where(g => g)
+            .Select(g =>
+            {
+                var cs = g.GetComponentsInChildren<BoxCollider>();
+                var b = cs[0].bounds; foreach (var c in cs) b.Encapsulate(c.bounds);
+                return (name: g.name, bounds: b);
+            }).ToList();
         Assert.GreaterOrEqual(boxes.Count, 12, "the 13 buildings of the concept map (user 2026-10-23)");
         for (int i = 0; i < boxes.Count; i++)
         for (int j = i + 1; j < boxes.Count; j++)
