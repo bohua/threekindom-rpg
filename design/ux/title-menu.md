@@ -29,7 +29,7 @@
 
 ## 4. 美术
 
-- 2026-10-27 改名后 logo：Codex 设计 D:\BuildArtifacts\Codex\hd2d-jrpgrt\jiangshan-logo-concept（LOGO_A 单行版接入；LOGO_B 两层版备选），插画按旧 logo 重绘、补全人物下半身，字为 Noto Serif SC 900 排版。
+- 2026-10-27 改名后 logo：Codex 设计 D:\BuildArtifacts\Codex\hd2d-jrpg\art\jiangshan-logo-concept（LOGO_A 单行版接入；LOGO_B 两层版备选），插画按旧 logo 重绘、补全人物下半身，字为 Noto Serif SC 900 排版。
 
 - 设计图：D:\BuildArtifacts\Codex\hd2d-jrpg\art\title-menu-concept（v1）、title-menu-concept-v2（v2，现行）。
 - `Resources/TitleMenu/title_plate.png`：背景与 logo 按设计脚本（compose.py 的 background()+place_logo(1120, 5)）预合成，避免运行时混合冲淡 logo 蓝色。
