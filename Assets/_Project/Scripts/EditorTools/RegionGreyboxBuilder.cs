@@ -36,6 +36,8 @@ namespace ThreeKingdoms.EditorTools
             public RegionWater[] waters = new RegionWater[0];
             public float spawnX, spawnZ;
             public float[] openZone = new float[0];   // x, z pairs: the part open in the earliest year, outlined on the ground
+            public string wildSet, wildLayout;        // refinement: the region's Codex wild set and its placements in region metres
+            public string[] wildSkip = new string[0]; // wild pieces left out (the Taihang cliff shells fought the heightmap's own mountains)
         }
 
         [System.Serializable] public sealed class RegionPlace
@@ -98,6 +100,7 @@ namespace ThreeKingdoms.EditorTools
             matDir = dir + "/Materials";
             Directory.CreateDirectory(matDir);
             mats.Clear();
+            painted = false;
             LoadHeights(Path.Combine(src, "heights.bin"));
             foreach (var f in new[] { "ground_tint.png", "map.png", "map_labeled.png" })
                 if (File.Exists(Path.Combine(src, f))) File.Copy(Path.Combine(src, f), $"{dir}/{f}", true);
@@ -123,6 +126,7 @@ namespace ThreeKingdoms.EditorTools
             OpenZone(env);
             var spots = new GameObject("Spots").transform;
             foreach (var p in data.places) Place(env, labels, spots, p);
+            Wild(env);
             Edges(env);
 
             var sun = new GameObject("Midday sun").AddComponent<Light>();
@@ -230,13 +234,86 @@ namespace ThreeKingdoms.EditorTools
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
+        // ---------- refinement: the painted ground and the wild pieces ----------
+
+        // The region's own painted grounds blended by the baked index map (bake_ground.py writes greybox/ground_index.png,
+        // greybox/layers/NN_<name>.png at 512 px per 8 m tile and ground_layers.json); null while the region is still a greybox.
+        static Material GroundArray()
+        {
+            string src = Path.Combine(CodexArt, Regions.First(r => r.id == data.id).concept, "greybox");
+            string idx = Path.Combine(src, "ground_index.png"), layers = Path.Combine(src, "layers");
+            if (!File.Exists(idx) || !Directory.Exists(layers)) return null;
+            var files = Directory.GetFiles(layers, "*.png").OrderBy(f => f).ToArray();
+            if (files.Length == 0) return null;
+            var arr = new Texture2DArray(512, 512, files.Length, TextureFormat.RGBA32, true, false) { wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Trilinear, anisoLevel = 4 };
+            for (int i = 0; i < files.Length; i++)
+            {
+                var t = new Texture2D(2, 2, TextureFormat.RGBA32, true);
+                t.LoadImage(File.ReadAllBytes(files[i]));
+                if (t.width != 512 || t.height != 512) throw new System.InvalidOperationException("ground layer not 512 px: " + files[i]);
+                arr.SetPixels(t.GetPixels(), i, 0);
+                Object.DestroyImmediate(t);
+            }
+            arr.Apply(true);
+            string arrPath = $"{dir}/{data.id}_GroundLayers.asset";
+            AssetDatabase.DeleteAsset(arrPath);
+            AssetDatabase.CreateAsset(arr, arrPath);
+            File.Copy(idx, $"{dir}/ground_index.png", true);
+            AssetDatabase.ImportAsset($"{dir}/ground_index.png");
+            var imp = (TextureImporter)AssetImporter.GetAtPath($"{dir}/ground_index.png");
+            imp.sRGBTexture = false; imp.mipmapEnabled = false; imp.npotScale = TextureImporterNPOTScale.None; imp.maxTextureSize = 4096;
+            imp.textureCompression = TextureImporterCompression.Uncompressed; imp.filterMode = FilterMode.Point; imp.wrapMode = TextureWrapMode.Clamp;
+            imp.alphaIsTransparency = false;
+            imp.SaveAndReimport();
+            var m = new Material(Shader.Find("ThreeKingdoms/GroundArraySplat")) { name = "ground_painted" };
+            m.SetTexture("_Index", AssetDatabase.LoadAssetAtPath<Texture2D>($"{dir}/ground_index.png"));
+            m.SetTexture("_Layers", arr);
+            m.SetFloat("_TileMetres", 8f);   // Codex ground tiles are 960 px = 8 m
+            m.SetVector("_Bounds", new Vector4(0, 0, data.width, data.height));
+            m.SetColor("_Tint", new Color(1.18f, 1.16f, 1.08f));   // the painted grounds read dark under the region's sun
+            string mp = $"{matDir}/ground_painted.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(mp)) AssetDatabase.DeleteAsset(mp);
+            AssetDatabase.CreateAsset(m, mp);
+            painted = true;
+            return m;
+        }
+        static bool painted;
+
+        // Trees, reeds, villages, bridges, cliffs ... where Codex placed them, each set on the ground under it (models
+        // whose origin is the region origin, like the Taihang cliffs, keep their own heights).
+        static void Wild(Transform env)
+        {
+            if (string.IsNullOrEmpty(data.wildSet) || !BlenderModels.Import(data.wildSet)) return;
+            string path = Path.Combine(CodexArt, data.wildSet, data.wildLayout.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(path)) return;
+            var g = new GameObject("Wild").transform;
+            g.SetParent(env, false);
+            var file = JsonUtility.FromJson<LayoutFile>(File.ReadAllText(path));
+            foreach (var piece in file.placements)
+            {
+                var pos = piece.position_m != null && piece.position_m.Length >= 2 ? piece.position_m : piece.position;
+                // Codex roles: whole-region geometry (cliffs, the Fukou pass) keeps its own heights; bridges sit at their
+                // deck height; everything else stands on our ground (smoothed, so not Codex's sampled height).
+                float y = piece.placement_role == "world_geometry" ? (pos.Length > 2 ? pos[2] : 0f) + piece.elevation_offset_m
+                        : piece.placement_role == "bridge_surface" ? piece.deck_world_height_m
+                        : H(pos[0], pos[1]);
+                var at = new Vector3(pos[0], y, pos[1]);
+                if (data.wildSkip.Contains(piece.asset)) continue;
+                var t = BlenderModels.Place(data.wildSet, g, piece.asset, piece.asset, at, -(piece.rotation_z_deg + piece.rotation_z));
+                if (t && piece.hide_objects != null)
+                    foreach (var c in t.GetComponentsInChildren<Transform>(true).Where(c => piece.hide_objects.Contains(c.name)).ToArray())
+                        if (c) Object.DestroyImmediate(c.gameObject);
+                if (t && piece.scale > 0f) t.localScale *= piece.scale;
+            }
+        }
+
         // ---------- terrain: the heightmap as 64 m chunks, walkable, coloured by the painted layout ----------
 
         static void Terrain(Transform env)
         {
             var g = new GameObject("Terrain").transform;
             g.SetParent(env, false);
-            var mat = Mat("ground", Color.white, Tint());
+            var mat = GroundArray() ?? Mat("ground", Color.white, Tint());
             var meshes = $"{dir}/{data.id}_Terrain.asset";
             AssetDatabase.DeleteAsset(meshes);
             bool first = true;
@@ -289,16 +366,17 @@ namespace ThreeKingdoms.EditorTools
         {
             var g = new GameObject("Water").transform;
             g.SetParent(env, false);
-            var mat = Mat("water", new Color(0.36f, 0.58f, 0.70f, 0.82f), null, transparent: true);
+            var mat = Mat("water", new Color(0.30f, 0.52f, 0.56f, 0.72f), null, transparent: true);
             foreach (var w in data.waters)
             {
                 if (w.poly.Length >= 6) PolyMesh(g, w.id, Pts(w.poly), w.level, mat);
                 else if (w.line.Length >= 4)
                 {
-                    var line = Pts(w.line);
+                    var drawn = Pts(w.line);
+                    var line = Smooth(drawn, 2f);
                     // A falling river takes the level of its nearest drawn point.
-                    System.Func<Vector3, float> level = w.levels.Length == line.Count
-                        ? q => w.levels[Enumerable.Range(0, line.Count).OrderBy(i => (line[i] - new Vector3(q.x, 0, q.z)).sqrMagnitude).First()]
+                    System.Func<Vector3, float> level = w.levels.Length == drawn.Count
+                        ? q => w.levels[Enumerable.Range(0, drawn.Count).OrderBy(i => (drawn[i] - new Vector3(q.x, 0, q.z)).sqrMagnitude).First()]
                         : _ => w.level;
                     Ribbon(g, w.id, line, w.width, mat, level, 0f, false);
                 }
@@ -310,6 +388,7 @@ namespace ThreeKingdoms.EditorTools
             var g = new GameObject("Roads").transform;
             g.SetParent(env, false);
             var mat = Mat("road", new Color(0.80f, 0.70f, 0.52f));
+            if (painted) return;   // the painted ground already draws the roads, with their own edges
             // Inside a modelled hub the hub's own ground and streets take over: a road stops at its walls.
             var hubs = data.places.Where(p => !string.IsNullOrEmpty(p.layout) || !string.IsNullOrEmpty(p.wallModel)).ToArray();
             bool InHub(Vector3 q) => hubs.Any(p =>
@@ -523,7 +602,13 @@ namespace ThreeKingdoms.EditorTools
         }
 
         [System.Serializable] sealed class LayoutFile { public LayoutPiece[] placements = new LayoutPiece[0]; }
-        [System.Serializable] sealed class LayoutPiece { public string asset, child; public float[] position_m, position; public float rotation_z_deg, rotation_z; }
+        [System.Serializable] sealed class LayoutPiece
+        {
+            public string asset, child, placement_role;
+            public float[] position_m, position;
+            public float rotation_z_deg, rotation_z, scale, deck_world_height_m, elevation_offset_m;
+            public string[] hide_objects;
+        }
 
         // A hub laid out piece by piece as Codex assembled it in Blender (+Y north = +z, rotations anticlockwise).
         // A piece with a child keeps only that object of a prop group, moved to the piece's origin.

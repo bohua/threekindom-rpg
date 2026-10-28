@@ -23,6 +23,15 @@ if a.max() <= 255:
     a = a * 257.0
 H = a / 65535.0 * 65.0 - 5.0      # row 0 = north
 H = H[::-1].copy()                  # row 0 = south
+# Codex heightmaps step at river banks and cliff feet; a light blur turns the stairs into slopes (plots are
+# flattened again below, so platforms keep their stated heights).
+def _blur(a, sigma):
+    r = int(sigma * 3)
+    k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma) ** 2); k /= k.sum()
+    p = np.pad(a, r, mode='edge')
+    p = np.apply_along_axis(lambda v: np.convolve(v, k, 'valid'), 1, p)
+    return np.apply_along_axis(lambda v: np.convolve(v, k, 'valid'), 0, p)
+H = _blur(H, 1.3)
 rows, cols = H.shape
 W, D = cols - 1, rows - 1
 
@@ -127,6 +136,15 @@ for i, o in enumerate(L.get('wetland_pools', []) + L.get('lakes', []) + L.get('p
         waters.append(dict(id=o.get('id', f'pool_{i}'), level=float(o.get('water_surface_m', o.get('level_m', -0.8))),
                            width=0, poly=[v for p in ps for v in p]))
 
+# Places the refinement's wild set already models (its placements carry location_id) keep only their labels.
+wild = hubs.get('_wild')
+if wild:
+    wp = os.path.join(os.path.dirname(os.path.normpath(src)), wild['set'], wild['layout'])
+    if os.path.exists(wp):
+        modelled = {q.get('location_id') for q in json.load(open(wp, encoding='utf-8'))['placements'] if q.get('location_id')}
+        for p in places:
+            if p['id'] in modelled and 'set' not in p:
+                p['skip'] = True
 ents = L.get('entrances') or L.get('region_entries') or L.get('region_entrances') or []
 open_ents = [e for e in ents if 'x' in e and (str(e.get('status', 'open')) == 'open' and e.get('open', True))] or [e for e in ents if 'x' in e]
 sx, sz = hubs.get('_spawn') or (xz(open_ents[0]) if open_ents else (W / 2, D / 2))
@@ -135,7 +153,8 @@ sz = min(max(sz, 8), D - 8)
 zone = (L.get('opening_184') or {}).get('polygon_xz') or []
 
 region = dict(id=P, name=name, scene=f'Region_{P}', width=W, height=D, places=places, roads=roads, waters=waters,
-              spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p])
+              spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p],
+              wildSet=(hubs.get('_wild') or {}).get('set', ''), wildLayout=(hubs.get('_wild') or {}).get('layout', ''), wildSkip=(hubs.get('_wild') or {}).get('skip', []))
 json.dump(region, open(os.path.join(out, 'region.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 with open(os.path.join(out, 'heights.bin'), 'wb') as f:
     f.write(H.astype('<f4').tobytes())
