@@ -166,7 +166,7 @@ sx = min(max(sx, 8), W - 8)
 sz = min(max(sz, 8), D - 8)
 zone = (L.get('opening_184') or {}).get('polygon_xz') or []
 
-walls = [dict(id=o['id'], height=6.0, pts=[float(v) for p in o['polyline_xz'] for v in p])
+walls = [dict(dict(id=o['id'], height=6.0, pts=[float(v) for p in o['polyline_xz'] for v in p]), **(hubs.get('_wall') or {}))
          for o in L.get('barriers', []) if o.get('polyline_xz') and not o.get('passable', False)]
 
 region = dict(id=P, name=name, scene=f'Region_{P}', width=W, height=D, places=places, roads=roads, waters=waters,

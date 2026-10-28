@@ -1,0 +1,505 @@
+{
+ "_note": "Zhuojun's walls as seen from R1, from the town's own wall layout (ZhuojunTownBuilder.Walls); town (x, z), set zhuojun-blender-b2. The south gate is the pilot set's south_gate on the zhuo_south place.",
+ "placements": [
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -48.04,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -40.12,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -32.21,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -24.29,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -16.38,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -8.46,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    8.46,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    16.38,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    24.29,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    32.21,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    40.12,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    48.04,
+    -36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -48.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -40.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -32.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -24.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -16.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -8.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    0.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    8.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    16.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    24.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    32.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    40.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    48.0,
+    36.0,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    48.0,
+    -29.75,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    48.0,
+    -21.25,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    48.0,
+    -12.75,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    48.0,
+    -4.25,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    48.0,
+    4.25,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    48.0,
+    12.75,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    48.0,
+    21.25,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    48.0,
+    29.75,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -48.0,
+    -30.12,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -48.0,
+    -22.38,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -48.0,
+    -14.62,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -48.0,
+    -6.88,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -48.0,
+    6.88,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -48.0,
+    14.62,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -48.0,
+    22.38,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "wall_8",
+   "position_m": [
+    -48.0,
+    30.12,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  },
+  {
+   "asset": "corner_tower",
+   "position_m": [
+    -7.5,
+    -36,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "corner_tower",
+   "position_m": [
+    7.5,
+    -36,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "corner_tower",
+   "position_m": [
+    -48,
+    -6,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "corner_tower",
+   "position_m": [
+    -48,
+    6,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "corner_tower",
+   "position_m": [
+    -48,
+    -36,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "corner_tower",
+   "position_m": [
+    48,
+    -36,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "corner_tower",
+   "position_m": [
+    -48,
+    36,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "corner_tower",
+   "position_m": [
+    48,
+    36,
+    0
+   ],
+   "rotation_z_deg": 0,
+   "child": null
+  },
+  {
+   "asset": "west_gate",
+   "position_m": [
+    -48,
+    0,
+    0
+   ],
+   "rotation_z_deg": -90,
+   "child": null
+  }
+ ]
+}

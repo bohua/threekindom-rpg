@@ -56,7 +56,12 @@ namespace ThreeKingdoms.EditorTools
             public string gates;                              // walled places: sides with a gate, e.g. "S,W" (default "S")
         }
 
-        [System.Serializable] public sealed class RegionWall { public string id; public float height = 6f; public float[] pts = new float[0]; }
+        [System.Serializable] public sealed class RegionWall
+        {
+            public string id; public float height = 6f; public float[] pts = new float[0];
+            public string set, model, tower;              // Blender modules along the line (8 m pieces, a tower every few)
+            public float[] skipX = new float[0];          // an x range left to a hub's own layout (R1: the Juyong pass)
+        }
         [System.Serializable] public sealed class RegionSpot { public string name; public float x, z; }
 
         [System.Serializable] public sealed class RegionRoad { public string id; public float width = 5f; public float[] pts = new float[0]; }   // x, z pairs
@@ -107,7 +112,9 @@ namespace ThreeKingdoms.EditorTools
             foreach (var f in new[] { "ground_tint.png", "map.png", "map_labeled.png" })
                 if (File.Exists(Path.Combine(src, f))) File.Copy(Path.Combine(src, f), $"{dir}/{f}", true);
             AssetDatabase.Refresh();
-            foreach (var set in data.places.Where(p => !string.IsNullOrEmpty(p.set)).Select(p => p.set).Distinct()) BlenderModels.Import(set);
+            // Each set once: a second import would remake (and orphan) the materials already on placed pieces.
+            foreach (var set in data.places.Select(p => p.set).Concat(data.walls.Select(w => w.set)).Where(x => !string.IsNullOrEmpty(x)).Distinct())
+                BlenderModels.Import(set);
 
             MountedImporter.Import();
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -546,7 +553,8 @@ namespace ThreeKingdoms.EditorTools
         // A piece with a child keeps only that object of a prop group, moved to the piece's origin.
         static bool ModelLayout(Transform g, RegionPlace p)
         {
-            string path = Path.Combine(CodexArt, p.set, p.layout.Replace('/', Path.DirectorySeparatorChar));
+            // A layout of the set's own (Codex _checks/…), or one kept in the repository (tools/…: R1's view of Zhuojun's walls).
+            string path = p.layout.StartsWith("tools/") ? Path.GetFullPath(p.layout) : Path.Combine(CodexArt, p.set, p.layout.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(path)) return false;
             var file = JsonUtility.FromJson<LayoutFile>(File.ReadAllText(path));
             int n = 0;
@@ -623,6 +631,36 @@ namespace ThreeKingdoms.EditorTools
             }
         }
 
+        // A barrier line from Blender modules: 8 m pieces end to end along each leg, sunk to the lowest ground under the
+        // piece (the modules carry a deep footing), a tower every fourth piece. False when the set is missing.
+        static bool ModelWall(Transform g, RegionWall wall, List<Vector3> pts)
+        {
+            if (string.IsNullOrEmpty(wall.model)) return false;
+            bool any = false;
+            int n = 0;
+            for (int i = 0; i + 1 < pts.Count; i++)
+            {
+                var a = pts[i]; var b = pts[i + 1];
+                float len = Vector3.Distance(a, b);
+                int k = Mathf.Max(1, Mathf.RoundToInt(len / 8f));
+                float yaw = Mathf.Atan2(b.x - a.x, b.z - a.z) * Mathf.Rad2Deg - 90f;
+                for (int j = 0; j < k; j++)
+                {
+                    var p0 = Vector3.Lerp(a, b, j / (float)k); var p1 = Vector3.Lerp(a, b, (j + 1) / (float)k);
+                    var c = (p0 + p1) / 2f;
+                    if (wall.skipX.Length >= 2 && c.x > wall.skipX[0] && c.x < wall.skipX[1]) continue;
+                    float y = Mathf.Min(H(p0.x, p0.z), H(p1.x, p1.z), H(c.x, c.z));
+                    var t = BlenderModels.Place(wall.set, g, wall.model, $"{wall.id} {i}.{j}", new Vector3(c.x, y, c.z), yaw);
+                    if (!t) return any;
+                    any = true;
+                    t.localScale = new Vector3(len / k / 8f, 1f, 1f);
+                    if (!string.IsNullOrEmpty(wall.tower) && n++ % 4 == 0)
+                        BlenderModels.Place(wall.set, g, wall.tower, $"{wall.id} tower {i}.{j}", new Vector3(p0.x, Mathf.Min(H(p0.x, p0.z), y), p0.z), yaw);
+                }
+            }
+            return any;
+        }
+
         // Impassable walls along a line, following the ground (R1: the Great Wall along the Juyong ridge).
         static void BarrierWalls(Transform env)
         {
@@ -631,6 +669,7 @@ namespace ThreeKingdoms.EditorTools
             foreach (var wall in data.walls)
             {
                 var pts = Pts(wall.pts);
+                if (ModelWall(g, wall, pts)) continue;
                 for (int i = 0; i + 1 < pts.Count; i++)
                 {
                     var a = pts[i]; var b = pts[i + 1];
