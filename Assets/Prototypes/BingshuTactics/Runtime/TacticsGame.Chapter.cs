@@ -21,11 +21,12 @@ namespace Prototype.BingshuTactics
         public School School = School.Bing;
         public int Level, Hp, Atk, Def, Mat, Mdef, Speed, Move, Range = 1, Ep, Int, Wu;
         public Vector2Int Pos;
+        public float Floor;                 // 0.3：兵力不低于 MaxHp×Floor（吕布）
         public string[] Crafts = new string[0];
         public Element Element = Element.None;
     }
 
-    public enum TacticsActionKind { Banner, Line, Objective, Damage, Chaos, RetreatAll, Retreat, Fire, Win, Spawn }
+    public enum TacticsActionKind { Banner, Line, Objective, Damage, Chaos, RetreatAll, Retreat, Fire, Win, Spawn, Choice, Guard, Cancel, OpenExit }
 
     public sealed class TacticsAction
     {
@@ -36,18 +37,24 @@ namespace Prototype.BingshuTactics
         public int Turns;
         public Vector2Int[] Tiles = new Vector2Int[0];
         public TacticsUnitDef[] Units = new TacticsUnitDef[0];   // Spawn：登场的单位（落在最近的空格）
+        // 0.3（SYSTEMS_V03 §3）：Choice＝战中选择（Text 提问、Options 选项键文字、Branches 分支、Unit＝回传标记前缀）；
+        // Guard＝Speaker 对 Unit 施“众望”；Cancel＝取消 Unit 指名的事件；Spawn 时 Near 指名则贴着该单位落位。
+        public string[] Options = new string[0];
+        public TacticsAction[][] Branches = new TacticsAction[0][];
+        public string Near;
     }
 
     // Round > 0：到该回合时触发；HpBelow：该单位兵力低于 Ratio 时触发。每个事件只触发一次。
     public sealed class TacticsEvent
     {
+        public string Id;
         public int Round;
         public string HpBelow; public float Ratio;
         public TacticsAction[] Actions = new TacticsAction[0];
         internal bool Fired;
     }
 
-    public struct TacticsOutcome { public bool Victory; public int Rounds; }
+    public struct TacticsOutcome { public bool Victory; public int Rounds; public List<string> Flags; }
 
     // 对白立绘：Crop＝从顶部截取的高度比例，Axis＝水平中心
     public struct TacticsPortrait { public Texture2D Texture; public float Crop, Axis; public bool Flip; }
@@ -66,6 +73,9 @@ namespace Prototype.BingshuTactics
         public int Seed = 1;                // 混乱恢复的随机数种子（重开同一场结果一致）
         public bool AutoPlay;               // 测试与截图：我方也由电脑代打，台词自动翻页
         public bool NoRetreatOnDefeat;
+        public int Reputation;
+        public RectInt? ExitZone;
+        public List<TacticsUnitDef> Reserves = new List<TacticsUnitDef>();   // 0.5：后备武将（不在地图上，可换人上阵）           // 0.4：撤离区（OpenExit 之后，我方进入即撤出战场）              // 0.3：声望（“众望”的物防加成随之增强）
     }
 
     public sealed partial class TacticsGame
@@ -100,6 +110,7 @@ namespace Prototype.BingshuTactics
         void BuildChapterUnits()
         {
             foreach (var d in Chapter.Units) SpawnUnit(d, d.Pos);
+            BuildReserves();
             objective = Chapter.Objective;
         }
 
@@ -116,6 +127,8 @@ namespace Prototype.BingshuTactics
             };
             var u = NewUnit(d.Name, d.Key, d.Team, d.Troop, d.School, d.Hp, d.Atk, d.Def, d.Mat, d.Mdef, d.Speed, d.Move, d.Range, d.Ep, pos);
             u.Int = d.Int; u.Wu = d.Wu; u.Level = d.Level; u.Ai = d.Ai; u.Escort = d.Escort; u.Leader = d.Leader; u.Focus = d.Focus;
+            u.Floor = d.Floor;
+            AddChapter3Crafts(u, d, crafts);
             if (d.Element != Element.None) u.Element = d.Element;
             foreach (var c in d.Crafts) if (crafts.TryGetValue(c, out var s)) u.Crafts.Add(s);
             DefaultBooks(u);
@@ -166,9 +179,12 @@ namespace Prototype.BingshuTactics
         {
             foreach (var e in Chapter.Events.Where(e => !e.Fired && e.Round > 0 && e.Round <= CurrentRound).OrderBy(e => e.Round).ToList())
             {
+                if (e.Fired) continue;   // cancelled by an earlier event this pass (0.3)
+            {
                 e.Fired = true;
                 yield return RunActions(e.Actions);
                 if (mode == Mode.Victory || mode == Mode.Defeat) yield break;
+            }
             }
         }
 
@@ -204,7 +220,7 @@ namespace Prototype.BingshuTactics
                     case TacticsActionKind.Damage:
                         foreach (var t in units.Where(x => x.Alive && x.Team == a.Team && !x.Escort))
                         {
-                            int d = Mathf.Min(t.Hp - 1, Mathf.Max(1, Mathf.FloorToInt(t.MaxHp * a.Value)));
+                            int d = Mathf.Min(t.Hp - Mathf.Max(1, FloorHp(t)), Mathf.Max(1, Mathf.FloorToInt(t.MaxHp * a.Value)));
                             if (d <= 0) continue;
                             t.Hp -= d;
                             popups.Add((views[t].position + Vector3.up * (1.8f * HeadK), d.ToString(), new Color(1f, 0.6f, 0.3f), 0f));
@@ -236,16 +252,24 @@ namespace Prototype.BingshuTactics
                     case TacticsActionKind.Spawn:   // 援军登场（用户 2026-10-25：援军加入成为友军，不让敌军撤退）
                         for (int i = 0; i < a.Units.Length; i++)
                         {
-                            var u = SpawnUnit(a.Units[i], NearestFree(a.Units[i].Pos));
-                            u.At = now + 5f * (i + 1);
-                            popups.Add((views[u].position + Vector3.up * (2.2f * HeadK), "援军", new Color(0.6f, 1f, 0.75f), 0f));
-                            flashes.Add((new List<Vector2Int> { u.Pos }, new Color(0.5f, 1f, 0.7f), 0f));
+                            var u = SpawnUnit(a.Units[i], NearestFree(SpawnSpot(a, a.Units[i])));
+                            bool foe = u.Team == Team.Enemy;   // 0.5（REVIEW_V05 R12）：敌方波次红色“增援”，登场后延迟到下一轮才行动
+                            u.At = now + (foe ? 100f : 5f) * (i + 1);
+                            popups.Add((views[u].position + Vector3.up * (2.2f * HeadK), foe ? "增援" : "援军", foe ? new Color(1f, 0.5f, 0.45f) : new Color(0.6f, 1f, 0.75f), 0f));
+                            flashes.Add((new List<Vector2Int> { u.Pos }, foe ? new Color(1f, 0.4f, 0.35f) : new Color(0.5f, 1f, 0.7f), 0f));
                         }
                         yield return new WaitForSeconds(0.6f);
                         break;
                     case TacticsActionKind.Win:
                         CheckChapterEnd(forced: true);
                         yield break;
+                    case TacticsActionKind.Choice:
+                    case TacticsActionKind.Guard:
+                    case TacticsActionKind.Cancel:
+                    case TacticsActionKind.OpenExit:
+                        yield return RunAction3(a);
+                        if (mode == Mode.Victory || mode == Mode.Defeat) yield break;
+                        break;
                 }
             }
         }
@@ -309,8 +333,9 @@ namespace Prototype.BingshuTactics
         bool CheckChapterEnd(bool forced = false)
         {
             if (mode == Mode.Victory || mode == Mode.Defeat) return true;
+            if (ExitCheck()) return true;   // 0.4 阈值撤离
             bool escortDown = units.Any(x => x.Escort && !x.Alive);
-            bool partyDown = !units.Any(x => x.Alive && x.Team == Team.Player && !x.Ai);
+            bool partyDown = !units.Any(x => x.Alive && x.Team == Team.Player && !x.Ai) && exited.Count == 0;
             if (escortDown || partyDown)
             {
                 mode = Mode.Defeat;
@@ -353,7 +378,7 @@ namespace Prototype.BingshuTactics
                 if (!victoryReady) return;
                 ChapterFinished = true;
                 var done = Chapter.Finished;
-                done?.Invoke(new TacticsOutcome { Victory = true, Rounds = RoundNo });
+                done?.Invoke(new TacticsOutcome { Victory = true, Rounds = RoundNo, Flags = new List<string>(chapterFlags) });
             }
             else if (mode == Mode.Defeat)
             {
@@ -447,6 +472,7 @@ namespace Prototype.BingshuTactics
                 Rect(new Rect(0, r.yMax - 1.5f, sw, 1.5f), new Color(Silver.r, Silver.g, Silver.b, a));
                 GUI.Label(r, bannerText, St(38, new Color(Ivory.r, Ivory.g, Ivory.b, a), TextAnchor.MiddleCenter, true));
             }
+            DrawChoice(sw);
             if (line.HasValue)
             {
                 var r = new Rect(sw / 2 - 420, RefH - 300, 840, 120);

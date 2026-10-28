@@ -10,6 +10,7 @@ namespace ThreeKingdoms.Gameplay.Story
     {
         Line, Choice, Card, Background, Actor, Move, Hide, Face, Remember, Flag, Scroll, March, Fade, Rations,
         Advance, Load, Battle, Wait, Music, Reputation, Item, Autosave, Shake, Flash, Call, Comic, Pose, Letterbox, Focus,
+        Chronicle, ChronicleEvent, EndChronicle,   // 0.3: the realm-map chronicle (SYSTEMS_V03 §2)
     }
 
     public sealed class StageStep
@@ -87,5 +88,9 @@ namespace ThreeKingdoms.Gameplay.Story
         public static StageStep Shake(float seconds = 0.4f) => new StageStep { Op = StageOp.Shake, Seconds = seconds };
         public static StageStep Flash() => new StageStep { Op = StageOp.Flash };
         public static StageStep Call(Action action) => new StageStep { Op = StageOp.Call, Callback = action };
+        // 0.3 realm-map chronicle: year key and faction layout id; an event window (node, lord, text key); close.
+        public static StageStep Chronicle(string yearKey, string layout) => new StageStep { Op = StageOp.Chronicle, A = yearKey, B = layout };
+        public static StageStep ChronicleEvent(string node, string lord, string textKey) => new StageStep { Op = StageOp.ChronicleEvent, A = node, B = lord, C = textKey };
+        public static StageStep EndChronicle() => new StageStep { Op = StageOp.EndChronicle };
     }
 }

@@ -78,10 +78,72 @@ namespace ThreeKingdoms.EditorTools
         };
         const string Chapter2Source = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v02-characters-sprites";
 
-        // A 0.2 person's atlas now: their own once imported, else the stand-in resident's.
+        // 0.3 讨董篇 people (Codex art/v03-characters-sprites; design image art/v03-characters-concept), same sheet format.
+        public static readonly (string Id, string Key, string Prefix, bool Walks, string StandIn)[] Chapter3 =
+        {
+            ("D01", "NpcGongsunZan", "GONGSUN_ZAN", false, "N01"),
+            ("D02", "NpcBaimaRider", "BAIMA_RIDER", false, "N02"),
+            ("D03", "NpcJianYong", "JIAN_YONG", false, "N06"),
+            ("D04", "NpcTianYu", "TIAN_YU", false, "N12"),
+            ("D05", "NpcYuanShao", "YUAN_SHAO", false, "N03"),
+            ("D06", "NpcYuanShu", "YUAN_SHU", false, "N05"),
+            ("D07", "NpcKongRong", "KONG_RONG", false, "N06"),
+            ("D08", "NpcSunJian", "SUN_JIAN", false, "N01"),
+            ("D09", "NpcTaoQian", "TAO_QIAN", false, "N09"),
+            ("D10", "NpcHuaXiong", "HUA_XIONG", false, "N01"),
+            ("D11", "NpcChenGong", "CHEN_GONG", false, "N03"),
+            ("D12", "NpcLvBoshe", "LV_BOSHE", false, "N09"),
+            ("D13", "NpcAllySoldier", "ALLIANCE_SOLDIER", true, "N02"),
+        };
+        const string Chapter3Source = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v03-characters-sprites";
+
+        // 0.4 河北篇 people (Codex art/v04-characters-sprites; design art/v04-characters-concept).
+        public static readonly (string Id, string Key, string Prefix, bool Walks, string StandIn)[] Chapter4 =
+        {
+            ("E01", "NpcZhaoYun", "ZHAO_YUN", false, "N02"),
+            ("E02", "NpcWenChou", "WEN_CHOU", false, "N01"),
+            ("E03", "NpcQuYi", "QU_YI", false, "N01"),
+            ("E04", "NpcXiandeng", "XIANDENG", false, "N12"),
+            ("E05", "NpcCrossbow", "CROSSBOW", false, "N02"),
+            ("E06", "NpcYuanCavalry", "YUAN_CAVALRY", false, "N02"),
+            ("E07", "NpcTianKai", "TIAN_KAI", false, "N01"),
+            ("E08", "NpcRaiderChief", "RAIDER_CHIEF", false, "N12"),
+            ("E09", "NpcRaider", "RAIDER", false, "N12"),
+            ("E10", "NpcAssassin", "ASSASSIN", false, "N07"),
+            ("E11", "NpcZhaoBrother", "ZHAO_BROTHER", false, "N06"),
+            ("E12", "NpcPyMan", "PY_MAN", false, "N11"),
+            ("E13", "NpcPyWoman", "PY_WOMAN", false, "N08"),
+            ("E14", "NpcPyElder", "PY_ELDER", false, "N09"),
+            ("E15", "NpcPyChild", "PY_CHILD", false, "N10"),
+        };
+        const string Chapter4Source = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v04-characters-sprites";
+
+        // 0.5 徐州篇 people (Codex art/v05-characters-sprites; design art/v05-characters-concept).
+        public static readonly (string Id, string Key, string Prefix, bool Walks, string StandIn)[] Chapter5 =
+        {
+            ("F01", "NpcTaishiCi", "TAISHI_CI", false, "N12"),
+            ("F02", "NpcGuanHai", "GUAN_HAI", false, "N12"),
+            ("F03", "NpcMiZhu", "MI_ZHU", false, "N05"),
+            ("F04", "NpcChenDeng", "CHEN_DENG", false, "N06"),
+            ("F05", "NpcSunQian", "SUN_QIAN", false, "N06"),
+            ("F06", "NpcCaoBao", "CAO_BAO", false, "N01"),
+            ("F07", "NpcYuJin", "YU_JIN", false, "N01"),
+            ("F08", "NpcCaoRen", "CAO_REN", false, "N02"),
+            ("F09", "NpcChenGui", "CHEN_GUI", false, "N09"),
+            ("F10", "NpcLuBu", "LU_BU", false, "N01"),
+            ("F11", "NpcCaoInfantry", "CAO_INFANTRY", false, "N02"),
+            ("F12", "NpcCaoCavalry", "CAO_CAVALRY", false, "N02"),
+            ("F13", "NpcDanyang", "DANYANG", false, "N02"),
+            ("F14", "NpcYtRemnant", "YT_REMNANT", false, "N12"),
+            ("F15", "NpcRefugee", "REFUGEE", false, "N08"),
+            ("F16", "NpcOldSoldier", "OLD_SOLDIER", false, "N09"),
+        };
+        const string Chapter5Source = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v05-characters-sprites";
+
+        // A 0.2 / 0.3 person's atlas now: their own once imported, else the stand-in resident's.
         public static string ChapterKey(string id)
         {
-            var c = Chapter2.First(x => x.Id == id);
+            var c = Chapter2.Concat(Chapter3).Concat(Chapter4).Concat(Chapter5).First(x => x.Id == id);
             return File.Exists(HD2DSampleBuilder.AtlasPath(c.Key)) ? c.Key : Residents.First(x => x.Id == c.StandIn).Key;
         }
 
@@ -112,7 +174,10 @@ namespace ThreeKingdoms.EditorTools
             var sheets = Residents.Select(r => (r.Key, r.Prefix, r.Walks, Dir: root))
                 .Append((WaiterKey, "NPC_TAVERN_WAITER", true, WaiterSource))
                 .Concat(Townsfolk.Select(t => (t.Key, t.Prefix, t.Walks, Dir: TownsfolkSource)))
-                .Concat(Chapter2.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter2Source)));
+                .Concat(Chapter2.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter2Source)))
+                .Concat(Chapter3.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter3Source)))
+                .Concat(Chapter4.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter4Source)))
+                .Concat(Chapter5.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter5Source)));
             foreach (var (key, prefix, walks, dir) in sheets)
             {
                 string poses = Path.Combine(dir, prefix + "_3X3.png");

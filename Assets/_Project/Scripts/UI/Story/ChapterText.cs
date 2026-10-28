@@ -320,6 +320,9 @@ namespace ThreeKingdoms.UI.Story
             ["dong_zhuo"] = "董卓", ["liu_bei"] = "刘备",
         };
 
-        public static string Remembered(string who) => (Rememberers.TryGetValue(who ?? "", out var n) ? n : who) + "记住了这件事";
+        public static string Remembered(string who) => (Rememberers.TryGetValue(who ?? "", out var n) ? n
+            : ChapterText3.Rememberers.TryGetValue(who ?? "", out var n3) ? n3
+            : ChapterText4.Rememberers.TryGetValue(who ?? "", out var n4) ? n4
+            : ChapterText5.Rememberers.TryGetValue(who ?? "", out var n5) ? n5 : who) + "记住了这件事";
     }
 }

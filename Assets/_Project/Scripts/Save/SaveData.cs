@@ -13,12 +13,19 @@ namespace ThreeKingdoms.Save
         public const string TownLocation = "town";
         // 0.2 safe stages: Lu Zhi's camp and Anxi county (arrival autosave, manual save at the gate guard / the clerk).
         public const string CampLocation = "camp", AnxiLocation = "anxi";
+        // 0.3: Gongsun Zan's garrison and the Suanzao camp.
+        public const string GongsunLocation = "camp_gongsun", SuanzaoLocation = "suanzao";
+        // 0.5: Xiapi; the chapter-complete save (第二篇章 continues from it).
+        public const string XiapiLocation = "xiapi", ChapterDoneLocation = "chapter1_done";
+        // A post station in an open region (chapter 1 art probe): "region:R4".
+        public const string RegionPrefix = "region:";
 
         public int formatVersion = CurrentFormat;
         public string gameVersion = "";
         public string savedAt = "";           // ISO 8601, local time
         public string chapter = "";
-        // Safe stage (save-system GDD answer 6): "town" (the tavern) or a battle id = that battle's pre-battle state.
+        // Safe stage (save-system GDD answer 6): "town" (the tavern), a battle id = that battle's pre-battle state, or
+        // RegionPrefix + region id = that region's post station.
         public string location = TownLocation;
 
         // Story flags (story-events GDD)
@@ -40,6 +47,10 @@ namespace ThreeKingdoms.Save
         public int quizTakenAt = -1;
         public int archeryRewardedAt = -1;
         public WornEntry[] worn = Array.Empty<WornEntry>();
+        // Chronicle (chapter 1 year nodes, ADR-0004 amendment 2026-10-24); older saves read "" and start at the first node.
+        public string chronicleNode = "";
+        public string[] openRegions = Array.Empty<string>();
+        public string[] dangerAreas = Array.Empty<string>();
 
         // Slot summary only (answer 4: chapter, place, Liu Bei's level, copper, time); not read back into the game.
         public int leaderLevel;

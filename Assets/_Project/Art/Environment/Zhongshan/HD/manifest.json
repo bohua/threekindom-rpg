@@ -1,0 +1,240 @@
+{
+    "files": [
+        {
+            "filename": "bridge_rail.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "dirt_road_hd.png",
+            "tile_axes": "y"
+        },
+        {
+            "filename": "dirt_road_std_hd.png",
+            "tile_axes": "y"
+        },
+        {
+            "filename": "farm_field_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "forest_floor_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "fork_25.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "fork_40.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "fork_55.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "fork_70.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "fork_90.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "hill_slope_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "hill_top_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "packed_earth_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "pebble_flat_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "plain_grass_dry_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "plain_grass_hd_a.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "plain_grass_hd_b.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "prop_banner_heishan_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_cheval_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_ferry_boat_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_grass_tuft_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_millet_stack_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_persimmon_rack_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_rock_limestone_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_rock_small_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_scrub_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_signpost_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_tree_cypress_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_tree_jujube_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_tree_persimmon_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_tree_pine_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_well_stone_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "prop_wrecked_boat_hd.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "river_water_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "road_edge_hd.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "roof_anxi_eave.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "roof_anxi_ridge.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "roof_anxi_tiles.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "sand_flat_hd.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "shore_pebble_hd.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "terrace_wall_hd.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "wall_anxi_coping.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "wall_anxi_rammed.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "zs_beacon_front.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_beacon_side.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_cave_shrine_front.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_checkpoint_gate.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_cliff_face.png",
+            "tile_axes": "x"
+        },
+        {
+            "filename": "zs_dock_planks.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "zs_plank_road_broken.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_post_front.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_post_side.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_riverhouse_front.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_riverhouse_side.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_roof_reed.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "zs_roof_slate.png",
+            "tile_axes": "xy"
+        },
+        {
+            "filename": "zs_stonehouse_front.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_stonehouse_side.png",
+            "tile_axes": "none"
+        },
+        {
+            "filename": "zs_toll_booth.png",
+            "tile_axes": "none"
+        }
+    ]
+}

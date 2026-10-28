@@ -24,7 +24,7 @@ namespace ThreeKingdoms.EditorTools
             var config = Asset<BattleConfigDefinition>("Battle/BattleConfig", c =>
             {
                 c.AdvantagePercent = 140; c.GuardPercent = 50; c.MinModifierPercent = 20; c.MaxAttribute = 100;
-                c.ExpTable = new[] { 0, 10, 30, 60, 100, 150, 210 };   // 0.2: level cap 5 → 7 (SYSTEMS_V02 §4)
+                c.ExpTable = new[] { 0, 10, 30, 60, 100, 150, 210, 280, 370, 480, 610, 760, 930, 1120, 1330 };   // 0.2: level cap 5 → 7 (SYSTEMS_V02 §4); 0.3: → 9 (SYSTEMS_V03 §4); 0.4: → 12 (SYSTEMS_V04 §6); 0.5: → 15 (SYSTEMS_V05 §6)
             });
             var troops = Asset<TroopTableDefinition>("Battle/TroopTable", t =>
             {
@@ -62,7 +62,9 @@ namespace ThreeKingdoms.EditorTools
                 SkillTarget.AllEnemies, DamageKind.None, 0, stat: BattleStat.PhysicalAttack, mod: -20, turns: 2);
             var enemyFire = Skill("enemy_arson", "纵火（暂名）", "指挥部队纵火：单体 1.3 倍计策伤害。效果同火矢。", 4, SkillTarget.SingleEnemy, DamageKind.Strategy, 130);
 
-            var liu = General("liu_bei", "LiuBei", "刘备", TroopType.Archer, 65, 75, 75, 1, 2, 2, (1, regroup), (3, fireArrows));
+            // 0.3: Liu Bei's signature skill 众望 (SYSTEMS_V03 §3.6) — a tactics-map craft; the round battles never reach level 8.
+            var zhongwang = Skill("zhongwang", "众望", "替相邻友军承受下一次攻击，并提高其物防（随声望增强），持续 2 回合。", 5, SkillTarget.SingleAlly, DamageKind.None, 0);
+            var liu = General("liu_bei", "LiuBei", "刘备", TroopType.Archer, 65, 75, 75, 1, 2, 2, (1, regroup), (3, fireArrows), (8, zhongwang));
             var guan = General("guan_yu", "GuanYu", "关羽", TroopType.Cavalry, 90, 80, 60, 2, 2, 1, (1, charge), (3, breakFormation));
             var zhang = General("zhang_fei", "ZhangFei", "张飞", TroopType.Infantry, 95, 75, 45, 3, 2, 1, (1, sweep), (3, intimidate));
 
@@ -118,6 +120,45 @@ namespace ThreeKingdoms.EditorTools
                 (banditChief, 6), (bandit, 4), (bandit, 4), (bandit, 4));
             b6.Events = new[] { Event("opening", 1, Objective("剿灭山贼")) };
 
+            // 0.3 讨董篇 (V03_TAODONG_PLAN §4): the optional drill with the White Horse riders, Hulao Pass. Both are played on the
+            // tactics map; the encounter carries the enemies, levels and rewards.
+            var baimaRider = General("baima_rider", "BaimaRider", "白马义从", TroopType.Cavalry, 72, 62, 40, 0, 0, 0, (1, enemyCharge));
+            var luBu = General("lu_bu", "LuBu", "吕布", TroopType.Cavalry, 100, 85, 30, 0, 0, 0, (1, enemyCharge), (1, enemySweep));
+            var bingzhou = General("bingzhou_cavalry", "BingzhouCavalry", "并州骑", TroopType.Cavalry, 66, 55, 25, 0, 0, 0);
+            var b7 = Encounter("battle_7", "Battle7_Drill", "选做 · 校场演武", EnemyAiKind.FacingSlot, 70, 60, (baimaRider, 7), (baimaRider, 7), (baimaRider, 6));
+            // 0.4 河北篇 (V04_HEBEI_PLAN §4): Pingyuan's raiders, Wen Chou at the Panhe, Qu Yi's vanguard and crossbows at Jieqiao.
+            var raiderChief = General("liukou_chief", "RaiderChief", "流寇头目", TroopType.Infantry, 74, 58, 30, 0, 0, 0, (1, enemyCharge));
+            var raider = General("liukou", "Raider", "流寇", TroopType.Infantry, 52, 44, 20, 0, 0, 0);
+            var wenChou = General("wen_chou", "WenChou", "文丑", TroopType.Cavalry, 94, 78, 40, 0, 0, 0, (1, enemyCharge), (1, enemySweep));
+            var yuanCav = General("yuan_cavalry", "YuanCavalry", "袁军骑", TroopType.Cavalry, 66, 56, 25, 0, 0, 0);
+            var quYi = General("qu_yi", "QuYi", "麴义", TroopType.Infantry, 82, 90, 62, 0, 0, 0, (1, enemyCharge));
+            var xiandeng = General("xiandeng", "Xiandeng", "先登死士", TroopType.Infantry, 72, 76, 20, 0, 0, 0);
+            var crossbow = General("qiangnu", "Crossbow", "强弩手", TroopType.Archer, 70, 50, 30, 0, 0, 0);
+            var b9 = Encounter("battle_9", "Battle9_Pingyuan", "第九战 · 平原御寇", EnemyAiKind.FacingSlot, 90, 100,
+                (raiderChief, 10), (raider, 9), (raider, 9), (raider, 9), (raider, 9));
+            var b10 = Encounter("battle_10", "Battle10_Panhe", "第十战 · 磐河救公孙瓒", EnemyAiKind.FacingSlot, 110, 120,
+                (wenChou, 12), (yuanCav, 11), (yuanCav, 11), (yuanCav, 10));
+            var b11 = Encounter("battle_11", "Battle11_Jieqiao", "第十一战 · 界桥殿后", EnemyAiKind.FacingSlot, 130, 150,
+                (quYi, 12), (xiandeng, 11), (xiandeng, 11), (crossbow, 11), (crossbow, 11));
+            // 0.5 徐州篇 (V05_XUZHOU_PLAN §4): Guan Hai at Duchang; Cao's army east of Xiapi and at its walls; the Xiaopei patrol.
+            var guanHai = General("guan_hai", "GuanHai", "管亥", TroopType.YellowTurban, 86, 66, 30, 0, 0, 0, (1, enemyCharge), (1, enemySweep));
+            var ytRemnant = General("yt_remnant", "YellowRemnant", "黄巾余部", TroopType.YellowTurban, 64, 52, 24, 0, 0, 0);
+            var caoInf = General("cao_infantry", "CaoInfantry", "曹军步卒", TroopType.Infantry, 70, 64, 30, 0, 0, 0);
+            var caoCav = General("cao_cavalry", "CaoCavalry", "曹军骑兵", TroopType.Cavalry, 72, 60, 28, 0, 0, 0);
+            var caoArcher = General("cao_archer", "CaoArcher", "曹军弓手", TroopType.Archer, 66, 56, 34, 0, 0, 0);
+            var yuJin = General("yu_jin", "YuJin", "于禁", TroopType.Infantry, 84, 90, 70, 0, 0, 0, (1, enemyCharge));
+            var caoRen = General("cao_ren", "CaoRen", "曹仁", TroopType.Cavalry, 90, 86, 60, 0, 0, 0, (1, enemyCharge), (1, enemySweep));
+            var deserter = General("deserter", "Deserter", "散兵", TroopType.Infantry, 66, 54, 24, 0, 0, 0);
+            var b12 = Encounter("battle_12", "Battle12_Duchang", "第十二战 · 都昌解围", EnemyAiKind.FacingSlot, 150, 180,
+                (guanHai, 13), (ytRemnant, 12), (ytRemnant, 12), (ytRemnant, 11), (ytRemnant, 11));
+            var b13 = Encounter("battle_13", "Battle13_XiapiEast", "第十三战 · 下邳城东", EnemyAiKind.FacingSlot, 170, 200,
+                (caoInf, 12), (caoInf, 12), (caoArcher, 12));   // initial values; balance-check after the AI run lost at 13
+            var b14 = Encounter("battle_14", "Battle14_XiapiWalls", "第十四战 · 下邳保卫", EnemyAiKind.FacingSlot, 190, 220,
+                (caoRen, 14), (caoCav, 13), (caoCav, 13));
+            var b15 = Encounter("battle_15", "Battle15_Xiaopei", "选做 · 小沛巡防", EnemyAiKind.FacingSlot, 120, 150,
+                (deserter, 14), (deserter, 13), (raider, 13), (raider, 13), (deserter, 13));
+            var b8 = Encounter("battle_8", "Battle8_Hulao", "第八战 · 虎牢关·三英战吕布", EnemyAiKind.FacingSlot, 90, 120, (luBu, 9), (bingzhou, 7), (bingzhou, 7));
+
             // Equipment catalogue (equipment-items GDD, adopted 2026-10-19; names provisional, values to be tuned).
             var saber = Equip("ring_pommel_saber", "环首刀", EquipSlot.Weapon, TroopType.Infantry, gift: 15, atk: 4);
             var lance = Equip("cavalry_lance", "骑枪", EquipSlot.Weapon, TroopType.Cavalry, gift: 15, atk: 4);
@@ -139,11 +180,16 @@ namespace ThreeKingdoms.EditorTools
             var mirror = Equip("heart_mirror", "护心镜", EquipSlot.Accessory, null, buy: 90, def: 4, troops: 10, tier: 2);
             var luQuiver = Equip("lu_quiver", "“卢”字箭囊", EquipSlot.Accessory, null, gift: 20, tech: 1, speed: 1);   // corner reward in Lu Zhi's camp
             var woodCharm = Equip("anxi_charm", "护身木牌", EquipSlot.Accessory, null, gift: 10, def: 3);   // thanks of the Anxi townsfolk
+            // 0.3: Gongsun Zan's quartermaster (tier 3) and the stable's corner find.
+            var yanBow = Equip("yan_horn_bow", "燕地角弓", EquipSlot.Weapon, TroopType.Archer, buy: 210, atk: 16, speed: 1, tier: 3);
+            var baimaLance = Equip("baima_lance", "白马骑枪", EquipSlot.Weapon, TroopType.Cavalry, buy: 220, atk: 17, tier: 3);
+            var youSpear = Equip("youzhou_spear", "幽州铁矛", EquipSlot.Weapon, TroopType.Infantry, buy: 220, atk: 17, tier: 3);
+            var baimaBell = Equip("baima_bell", "白马铃", EquipSlot.Accessory, null, gift: 30, speed: 1, troops: 15);
             var economy = Asset<EconomyCatalog>("Economy/EconomyCatalog", c =>
             {
                 c.StartCopper = 120; c.StartRations = 2; c.RationPrice = 10; c.SellPercent = 50;
                 c.Equipment = new[] { saber, lance, huntingBow, cloth, spear, shuo, hornBow, leather, bracers, banner, manual, whip,
-                    forgedSaber, steelShuo, zheBow, lamellar, mirror, luQuiver, woodCharm };
+                    forgedSaber, steelShuo, zheBow, lamellar, mirror, luQuiver, woodCharm, yanBow, baimaLance, youSpear, baimaBell };
                 c.StartingGear = new[]
                 {
                     new StartingGearEntry { General = liu, Items = new[] { huntingBow, cloth } },
@@ -156,7 +202,7 @@ namespace ThreeKingdoms.EditorTools
             {
                 c.Config = config; c.Troops = troops; c.Ration = ration; c.Economy = economy;
                 c.Party = new[] { liu, guan, zhang };
-                c.Encounters = new[] { b1, b2, b3, b4, b5, b6 };
+                c.Encounters = new[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15 };
             });
             AssetDatabase.SaveAssets();
             catalog.ToRuntime();   // validate

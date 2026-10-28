@@ -283,12 +283,14 @@ namespace Prototype.BingshuTactics
         public int MaxHp, Hp, Atk, Def, Mat, Mdef, Speed, Move, AtkRange, MaxEp, Ep, Cp, Int, Wu;
         public Vector2Int Pos; public float At; public bool Defending;
         public int Level; public bool Ai, Escort, Leader; public string Focus;
+        public float Floor; public Unit Guardian;   // 0.3：兵力下限比例（不可击败的首领）；“众望”护卫者
         public bool Chaos; public int ChaosForced, ChaosTurns;   // 混乱：剧情强制的剩余次数、普通混乱已持续次数   // 0.2：友军由电脑操作、护送对象、头目标名、优先目标
         public List<Status> Statuses = new List<Status>();
         public List<SkillDef> Crafts = new List<SkillDef>();
         public Book[] Slots = new Book[7];
         public SkillDef PendingCast; public Unit PendingFollow; public float PendingMul; public Vector2Int PendingTarget; public Vector2Int PendingDir;
-        public bool Alive => Hp > 0;
+        public bool Benched;   // 0.5：在后备（不在地图上）
+        public bool Alive => Hp > 0 && !Benched;
         public CircuitDef Circuit => Circuits.Of(School);
 
         // 增益取最强、减益取最强，两者相乘

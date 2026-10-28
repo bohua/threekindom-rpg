@@ -204,9 +204,17 @@ public sealed class ChapterFlowTests
         picks.Clear();
         yield return TalkTo(anxi, "courier", 0, 0);
         float deadline = Time.realtimeSinceStartup + 60f;
-        while (SceneManager.GetActiveScene().name != GameRun.TitleScene) { Assert.Less(Time.realtimeSinceStartup, deadline); StoryCinematics.Advance(); yield return null; }
+        while (SceneManager.GetActiveScene().name != GameRun.StageScene) { Assert.Less(Time.realtimeSinceStartup, deadline); StoryCinematics.Advance(); yield return null; }
         Assert.AreEqual(ChapterScripts.ScrollAnxi, StoryCinematics.LastScroll);
         Assert.AreEqual(ChapterStep.Done, run.Chapter2.Step);
+        // 0.3: no seal on scroll ③; D1 drift and the 189 interlude follow on the story stage, then Gongsun Zan's garrison.
+        yield return WaitFor<StageController>();
+        var drift = Object.FindFirstObjectByType<StageController>();
+        Assert.AreEqual(ChapterScripts3.Drift, drift.StageId);
+        yield return Drive(drift, drift.Player);
+        yield return WaitFor<FieldStoryController>();
+        Assert.AreEqual(GameRun.GongsunScene, SceneManager.GetActiveScene().name);
+        Assert.AreEqual(ChapterStep.Gongsun, run.Chapter2.Step);
         Assert.AreEqual("A_self", run.Chapter2.Recall("liu_bei", "liubei_duyou"));
         // 鞭督邮 plays as an automatic in-game scene like the oath (user 2026-10-26): letterbox, the inspector on stage.
         Assert.IsTrue(letterboxSeen, "letterbox during 鞭督邮");

@@ -38,7 +38,35 @@ namespace ThreeKingdoms.EditorTools
             ("du_you", V02, "DU_YOU_PORTRAIT", true, false, 0.6f, 0.5f),
             ("bandit_chief", V02, "BANDIT_CHIEF_PORTRAIT", true, false, 0.6f, 0.5f),
             ("clerk", Scenario, "CASTLE_STEWARD_PORTRAIT", true, false, 0.62f, 0.45f),
+            // 0.3 讨董篇 (Codex art/v03-portraits after the approved design art/v03-characters-concept); Lü Bu from the
+            // tactics prototype, Tao Qian his own main portrait.
+            ("gongsun_zan", V03, "GONGSUN_ZAN_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("jian_yong", V03, "JIAN_YONG_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("tian_yu", V03, "TIAN_YU_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("yuan_shao", V03, "YUAN_SHAO_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("yuan_shu", V03, "YUAN_SHU_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("kong_rong", V03, "KONG_RONG_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("hua_xiong", V03, "HUA_XIONG_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("chen_gong", V03, "CHEN_GONG_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("lu_bu", @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\battle-poc-8dir-v3", "char_lubu_mainpose", true, false, 0.55f, 0.5f),
+            // 0.4 (Codex art/v04-portraits); Zhao Yun's main portrait from the four heroes.
+            ("zhao_yun", Heroes, "ZHAO_YUN_MAIN_POSE", true, false, 0.6f, 0.5f),
+            ("wen_chou", V04, "WEN_CHOU_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("qu_yi", V04, "QU_YI_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("tian_kai", V04, "TIAN_KAI_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("assassin", V04, "ASSASSIN_PORTRAIT", true, false, 0.6f, 0.5f),
+            // 0.5 (Codex art/v05-portraits after art/v05-characters-concept)
+            ("taishi_ci", V05, "TAISHI_CI_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("mi_zhu", V05, "MI_ZHU_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("chen_deng", V05, "CHEN_DENG_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("yu_jin", V05, "YU_JIN_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("cao_ren", V05, "CAO_REN_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("cao_bao", V05, "CAO_BAO_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("tao_qian", @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\tao-qian-portrait", "TAO_QIAN_MAIN_PORTRAIT", true, false, 0.6f, 0.5f),
         };
+        const string V05 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v05-portraits";
+        const string V04 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v04-portraits";
+        const string V03 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v03-portraits";
         const string V02 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v02-portraits";
 
         public static DialoguePortraitSet Import()

@@ -34,7 +34,10 @@ namespace ThreeKingdoms.UI.Battle
             Run = GameRun.Current ?? GameRun.ForChapter(Catalog, StepFor(EncounterId), ExpFor(EncounterId), 260, development: true);
             var data = Run.Data;
             var encounter = data.Encounter(EncounterId);
-            var def = Stages.Build(EncounterId, encounter, Run, data);
+            var def = Stages3.Handles(EncounterId) ? Stages3.Build(EncounterId, encounter, Run, data)
+                : Stages4.Handles(EncounterId) ? Stages4.Build(EncounterId, encounter, Run, data)
+                : Stages5.Handles(EncounterId) ? Stages5.Build(EncounterId, encounter, Run, data) : Stages.Build(EncounterId, encounter, Run, data);
+            def.Reputation = Run.Life.Reputation;
             if (Portraits)
                 foreach (var e in Portraits.Entries)
                 {
@@ -74,8 +77,14 @@ namespace ThreeKingdoms.UI.Battle
 
         void OnDestroy() { if (TacticsGame.Chapter != null && TacticsGame.Chapter.Id == EncounterId) TacticsGame.Chapter = null; }
 
-        static ChapterStep StepFor(string id) => id == "battle_4" ? ChapterStep.Yingchuan : id == "battle_5" ? ChapterStep.Guangzong : ChapterStep.Anxi;
-        static int ExpFor(string id) => id == "battle_4" ? 60 : id == "battle_5" ? 100 : 150;
+        static ChapterStep StepFor(string id) => id == "battle_4" ? ChapterStep.Yingchuan : id == "battle_5" ? ChapterStep.Guangzong
+            : id == "battle_7" ? ChapterStep.Gongsun : id == "battle_8" ? ChapterStep.Hulao
+            : id == "battle_9" ? ChapterStep.Pingyuan : id == "battle_10" || id == "battle_11" ? ChapterStep.Panhe
+            : id == "battle_12" ? ChapterStep.Beihai : id == "battle_13" ? ChapterStep.XuzhouRoad : id == "battle_14" ? ChapterStep.Xiapi
+            : id == "battle_15" ? ChapterStep.Echo : ChapterStep.Anxi;
+        static int ExpFor(string id) => id == "battle_4" ? 60 : id == "battle_5" ? 100 : id == "battle_7" || id == "battle_8" ? 210
+            : id == "battle_9" ? 370 : id == "battle_10" ? 460 : id == "battle_11" ? 570
+            : id == "battle_12" ? 660 : id == "battle_13" ? 810 : id == "battle_14" ? 980 : id == "battle_15" ? 1170 : 150;
 
         void OnFinished(TacticsOutcome outcome)
         {
@@ -84,8 +93,12 @@ namespace ThreeKingdoms.UI.Battle
             bool firstClear = Run.RecordVictory(EncounterId);
             LastApplied = Run.Progress.Apply(BattleResult.Victory(encounter, outcome.Rounds), firstClear);
             if (firstClear)
+            {
+                foreach (var f in outcome.Flags ?? new List<string>()) Run.Chapter2.Set(f);   // 0.3: in-battle choices (REVIEW_V03 R13)
                 foreach (var (who, key, value, text) in ChapterScripts.VictoryMemories(EncounterId))
-                    Run.Chapter2.Remember(who, key, value, text);
+                    if (value != null && (!value.StartsWith("?") || Run.Chapter2.Has(value.Substring(1).Split('|')[0])))
+                        Run.Chapter2.Remember(who, key, value.StartsWith("?") ? value.Split('|')[1] : value, text);
+            }
             TacticsGame.Chapter = null;
             var (scene, stage) = ChapterScripts.AfterVictory(EncounterId);
             if (Run.IsDevelopment || scene == null) { SceneManager.LoadScene(GameRun.TitleScene); return; }
@@ -222,7 +235,7 @@ namespace ThreeKingdoms.UI.Battle
                 return def;
             }
 
-            static List<(string, string)> Lines(IEnumerable<DialogueLine> lines) =>
+            internal static List<(string, string)> Lines(IEnumerable<DialogueLine> lines) =>
                 lines.Select(l => (StoryText.Speaker(l.Speaker), StoryText.Line(l.Line))).ToList();
 
             static TacticsAction Line(string speaker, string key) => new TacticsAction { Kind = TacticsActionKind.Line, Speaker = StoryText.Speaker(speaker), Text = StoryText.Line(key) };
@@ -306,7 +319,7 @@ namespace ThreeKingdoms.UI.Battle
                 return list.ToArray();
             }
 
-            static TacticsUnitDef Unit(GeneralSpec g, int level, UnitStats s, Team team, Vector2Int pos)
+            internal static TacticsUnitDef Unit(GeneralSpec g, int level, UnitStats s, Team team, Vector2Int pos)
             {
                 var troop = g.Troop switch
                 {
@@ -327,11 +340,12 @@ namespace ThreeKingdoms.UI.Battle
                 return u;
             }
 
-            static string KeyOf(string id) => id switch
+            internal static string KeyOf(string id) => id switch
             {
                 "liu_bei" => "LiuBei", "guan_yu" => "GuanYu", "zhang_fei" => "ZhangFei", "zhang_jiao" => "ZhangJiao",
                 "zhang_bao" => "ZhangBao", "zhang_liang" => "ZhangLiang", "yt_guard" => "YellowGuard", "dong_zhuo" => "DongZhuo",
-                "bandit" => "Bandit", "bandit_chief" => "BanditChief", _ => "Rebel",
+                "bandit" => "Bandit", "bandit_chief" => "BanditChief", "lu_bu" => "LuBu", "bingzhou_cavalry" => "Xiliang",
+                "baima_rider" => "BaimaRider", _ => "Rebel",
             };
         }
     }

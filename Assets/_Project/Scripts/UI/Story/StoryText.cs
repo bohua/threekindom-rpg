@@ -56,6 +56,18 @@ namespace ThreeKingdoms.UI.Story
             ["tavern.11"] = "若蒙不弃，关某愿随兄长同行！",
             ["tavern.12"] = "好！俺庄后有一桃园，花开正盛。明日便在园中祭告天地，结为兄弟！",
             // The peach-garden oath, about 30 s on its own (user 2026-10-24); the oath words follow 演义 第1回.
+            // The first arrival in Zhuojun (user 2026-10-26): through the south gate to the square, then the landmarks.
+            ["arrival.1"] = "幽州涿郡。中平元年春，黄巾将起，城里依旧熙熙攘攘。",
+            ["arrival.2"] = "北望燕山。这里是刘备的故乡。",
+            ["arrival.office"] = "郡署：涿郡太守的治所，募兵的榜文从这里发出。",
+            ["arrival.tavern"] = "酒肆：南来北往的客人在此歇脚，消息也最灵通。",
+            ["arrival.smithy"] = "铁匠铺：打造兵器甲胄，可以买卖、更换装备。",
+            ["arrival.casino"] = "赌坊：骰子声日夜不停。",
+            ["arrival.clinic"] = "医舍：坐堂的医者，也卖草药。",
+            ["arrival.post"] = "驿站与马厩：公文和驿马由此往来。",
+            ["arrival.barracks"] = "军营：官军正在操练，营门前有人排队应募。",
+            ["arrival.granary"] = "粮仓：郡中存粮的地方。",
+            ["arrival.grove"] = "出西门不远，是一片正在盛开的桃林。",
             ["oath.1"] = "城西桃园，桃花正盛。香案已备，三牲俱全。",
             ["oath.2"] = "二位贤弟，今日焚香告天，结为兄弟。",
             ["oath.3"] = "痛快！俺盼这一天好久了！",
@@ -189,7 +201,10 @@ namespace ThreeKingdoms.UI.Story
         };
 
         public static string Speaker(string key) => key != null && Speakers.TryGetValue(key, out var s) ? s
-            : key != null && ChapterText.Speakers.TryGetValue(key, out var c) ? c : "";
+            : key != null && ChapterText.Speakers.TryGetValue(key, out var c) ? c
+            : key != null && ChapterText3.Speakers.TryGetValue(key, out var c3) ? c3
+            : key != null && ChapterText4.Speakers.TryGetValue(key, out var c4) ? c4
+            : key != null && ChapterText5.Speakers.TryGetValue(key, out var c5) ? c5 : "";
         public static string Line(string key)
         {
             if (key != null && key.StartsWith("warn:no_weapon:")) return $"{key.Substring(15)}没有装备武器，仍可出战。可先回城整备，再走近黄巾军便开战。";
@@ -211,6 +226,9 @@ namespace ThreeKingdoms.UI.Story
                 case "archery.reward": return $"得到彩头{part[1]}文（现有铜钱{part[2]}）。";
             }
             if (ChapterText.Lines.TryGetValue(key, out var chapterLine)) return chapterLine;   // 0.2 黄巾篇
+            if (ChapterText3.Lines.TryGetValue(key, out var chapter3Line)) return chapter3Line;   // 0.3 讨董篇
+            if (ChapterText4.Lines.TryGetValue(key, out var chapter4Line)) return chapter4Line;   // 0.4 河北篇
+            if (ChapterText5.Lines.TryGetValue(key, out var chapter5Line)) return chapter5Line;   // 0.5 徐州篇
             // A resident with nothing new to say repeats the earlier line (.won → .after → base).
             for (string k = key; k != null; k = k.EndsWith(".won") ? k.Substring(0, k.Length - 4) + ".after" : k.EndsWith(".after") ? k.Substring(0, k.Length - 6) : null)
                 if (Lines.TryGetValue(k, out var s)) return s;

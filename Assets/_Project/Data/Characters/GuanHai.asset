@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f339b962fc7237b4caa3336b2137fa37, type: 3}
+  m_Name: GuanHai
+  m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
+  Id: guan_hai
+  DisplayName: "\u7BA1\u4EA5"
+  Troop: 3
+  Force: 86
+  Command: 66
+  Intellect: 30
+  ForceGrowth: 0
+  CommandGrowth: 0
+  IntellectGrowth: 0
+  Skills:
+  - Level: 1
+    Skill: {fileID: 11400000, guid: 9d5bff9ccef94a0468dfdbcd9304cd86, type: 2}
+  - Level: 1
+    Skill: {fileID: 11400000, guid: 2ae30168802e5524d9fde6a405808c75, type: 2}

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Jrpg;
@@ -33,27 +33,45 @@ namespace ThreeKingdoms.EditorTools
         const string MeshPath = TownDir + "/Town_Meshes.asset";
         static string materialDir = TownMaterialDir;
         const float Ppm = 30f;
+        // High-res painted environment art (user 2026-10-25): textures in a folder named HD are 120 px per metre,
+        // smoothly filtered with mipmaps, and their soft alpha is blended rather than clipped.
+        const float HdPpm = 120f;
+        internal static bool IsHd(Texture2D t) => t && AssetDatabase.GetAssetPath(t).Contains("/HD/");
+        static float PpmOf(Texture2D t) => IsHd(t) ? HdPpm : Ppm;
+        // A builder can swap a key for its HD counterpart (key -> HD key), used whenever the HD file exists.
+        internal static readonly Dictionary<string, string> HdAliases = new Dictionary<string, string>();
         public static readonly Vector3 PlayerStart = new Vector3(0f, 0f, -46f);   // outside the south gate (design §5 step 1)
+        // The HD renovation (user 2026-10-26: redo Zhuojun the way Anxi was made): Codex 120 px/m painted textures under
+        // the same keys and the same sizes in metres, one sub-folder per batch, searched before the pixel originals.
+        // Plan: production/levels/zhuojun/hd-renovation.md.
+        public const string HdRoot = "Assets/_Project/Art/Environment/ZhuojunHD/HD";
+        static readonly string[] HdBatches = { "zhuojun-hd-ground", "zhuojun-hd-buildings", "zhuojun-hd-props", "zhuojun-hd-greenery" };
+        const string CodexArt = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art";
 
         static Mesh container;
         static readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
         static readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
         static readonly Dictionary<string, string> axes = new Dictionary<string, string>();
+        static string[] extraDirs = System.Array.Empty<string>();
 
         [MenuItem("JRPG/Build Zhuojun Town (native textures)")]
         public static void Build()
         {
-            BeginSession(TownMaterialDir, MeshPath);
+            BeginSession(TownMaterialDir, MeshPath, ImportHd());
+            townSession = true;
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
+            // Bright spring noon (user 2026-10-25: 白天色调明媚，不要昏黄), the same light as Anxi and the camp.
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.78f, 0.80f, 0.92f);
-            RenderSettings.ambientEquatorColor = new Color(0.70f, 0.64f, 0.58f);
-            RenderSettings.ambientGroundColor = new Color(0.36f, 0.30f, 0.24f);
+            RenderSettings.ambientSkyColor = new Color(0.86f, 0.90f, 1.0f);
+            RenderSettings.ambientEquatorColor = new Color(0.78f, 0.78f, 0.76f);
+            RenderSettings.ambientGroundColor = new Color(0.42f, 0.40f, 0.36f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Exponential;
-            RenderSettings.fogDensity = 0.006f;
-            RenderSettings.fogColor = new Color(0.78f, 0.74f, 0.68f);
+            // Lighter haze than Anxi: the town camera is close and the painted colours washed out under 0.005.
+            // Thinner still once the modelled Yan hills stand 260–620 m out, or they fade into the haze.
+            RenderSettings.fogDensity = ZhuojunModels.Has("yan_mountains") ? 0.0011f : 0.0025f;
+            RenderSettings.fogColor = new Color(0.82f, 0.88f, 0.93f);
 
             var env = new GameObject("Environment").transform;
             Ground(env);
@@ -63,16 +81,17 @@ namespace ThreeKingdoms.EditorTools
             SouthRows(env);
             Greenery(env);
             Outside(env);
+            RegionExits(env);
             TownsfolkProps(env);
             EndSession();
 
-            var sun = new GameObject("Late-afternoon sun").AddComponent<Light>();
+            var sun = new GameObject("Noon sun").AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.color = new Color(1f, 0.92f, 0.80f);
-            sun.intensity = 2.2f;
+            sun.color = new Color(1f, 0.98f, 0.94f);
+            sun.intensity = 2.3f;
             sun.shadows = LightShadows.Soft;
-            sun.shadowStrength = 0.8f;
-            sun.transform.rotation = Quaternion.Euler(42f, -32f, 0f);
+            sun.shadowStrength = 0.7f;
+            sun.transform.rotation = Quaternion.Euler(55f, -25f, 0f);
 
             var people = new GameObject("People").transform;
             var player = HD2DSampleBuilder.Character("Liu Bei", "LiuBei", PlayerStart, 3, isPlayer: true);
@@ -86,9 +105,9 @@ namespace ThreeKingdoms.EditorTools
             var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camGo.AddComponent<Camera>();
             cam.fieldOfView = HD2DSampleBuilder.CameraFov;
-            cam.nearClipPlane = 1f; cam.farClipPlane = 300f;
+            cam.nearClipPlane = 1f; cam.farClipPlane = ZhuojunModels.Has("yan_mountains") ? 700f : 300f;   // the modelled Yan hills reach 320 m out
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = RenderSettings.fogColor;
+            cam.backgroundColor = new Color(0.72f, 0.84f, 0.96f);
             var camData = camGo.AddComponent<UniversalAdditionalCameraData>();
             camData.renderPostProcessing = true;
             camData.antialiasing = AntialiasingMode.None;
@@ -103,8 +122,9 @@ namespace ThreeKingdoms.EditorTools
             follow.Pitch = HD2DSampleBuilder.CameraPitch; follow.Distance = HD2DSampleBuilder.CameraDistance; follow.Fov = HD2DSampleBuilder.CameraFov;
             camGo.AddComponent<SeeThroughOccluders>().Target = player.transform;
 
-            var high = AssetDatabase.LoadAssetAtPath<VolumeProfile>(HD2DSampleBuilder.HighProfilePath);
-            var low = AssetDatabase.LoadAssetAtPath<VolumeProfile>(HD2DSampleBuilder.LowProfilePath);
+            // The noon grade the 0.2 scenes use: no warm LUT, neutral tonemapping.
+            var high = ChapterFieldBuilder.NoonProfile(ChapterFieldBuilder.NoonHighPath, depthOfField: true);
+            var low = ChapterFieldBuilder.NoonProfile(ChapterFieldBuilder.NoonLowPath, depthOfField: false);
             var volumeGo = new GameObject("Global Volume");
             var volume = volumeGo.AddComponent<Volume>();
             volume.isGlobal = true;
@@ -252,20 +272,69 @@ namespace ThreeKingdoms.EditorTools
 
         // Other builders (the battle backdrop diorama) reuse the building and prop helpers with their own material
         // folder and mesh asset, so the town scene's materials keep their GUIDs.
-        internal static void BeginSession(string materials, string meshPath)
+        // extraTextureDirs (the Bohai plain probe's own art) are searched before the town folders and imported the same way.
+        internal static void BeginSession(string materials, string meshPath, params string[] extraTextureDirs)
         {
+            extraDirs = extraTextureDirs ?? System.Array.Empty<string>();
             ReadManifests();
             ConfigureTextures(TownDir);
             if (Directory.Exists(MapDir)) ConfigureTextures(MapDir);
+            foreach (string dir in extraDirs) if (Directory.Exists(dir)) ConfigureTextures(dir);
             ZhuojunTownBuilder.materials.Clear();
             materialDir = materials;
             Directory.CreateDirectory(materialDir);
             BeginMeshes(meshPath);
         }
 
+        // Copies the delivered HD batches into the project (each keeps its manifest for the tiling axes) and returns their
+        // folders; a batch not yet delivered is skipped, so its keys fall back to the pixel textures.
+        static string[] ImportHd()
+        {
+            var dirs = new List<string>();
+            foreach (string batch in HdBatches)
+            {
+                string from = Path.Combine(CodexArt, batch), to = $"{HdRoot}/{batch}";
+                if (!Directory.Exists(from)) continue;
+                Directory.CreateDirectory(to);
+                foreach (string f in Directory.GetFiles(from, "*.png"))
+                    if (Path.GetFileName(f) != "preview.png") File.Copy(f, Path.Combine(to, Path.GetFileName(f)), true);
+                if (File.Exists(Path.Combine(from, "manifest.json"))) File.Copy(Path.Combine(from, "manifest.json"), Path.Combine(to, "manifest.json"), true);
+                dirs.Add(to);
+            }
+            AssetDatabase.Refresh();
+            // Blender pilot models (user 2026-10-26) and any textures Codex painted for them.
+            dirs.InsertRange(0, ZhuojunModels.Import());
+            return dirs.ToArray();
+        }
+
+        // True while the town itself is built: only then do Building() and Prop() swap in the Blender models (other
+        // builders borrow these helpers with their own textures).
+        static bool townSession;
+        static readonly HashSet<Transform> modelled = new HashSet<Transform>();
+
+        // Front texture -> Blender model (art/zhuojun-blender-b1); the model's origin is the foot of its front wall.
+        static readonly Dictionary<string, string> BuildingModels = new Dictionary<string, string>
+        {
+            ["tavern_front"] = "tavern", ["smithy_front"] = "smithy", ["casino_front"] = "casino", ["clinic_front"] = "clinic",
+            ["stable_front"] = "stable", ["post_station_front"] = "post_station", ["house_b_front"] = "house_b",
+            ["house_c_front"] = "house_c", ["granary_front"] = "granary",
+        };
+        // Prop texture -> Blender model (art/zhuojun-blender-b3); origin at the bottom centre.
+        static readonly Dictionary<string, string> PropModels = new Dictionary<string, string>
+        {
+            ["prop_stall"] = "stall_produce", ["prop_stall_cloth"] = "stall_cloth", ["prop_stall_bamboo"] = "stall_bamboo", ["prop_stall_grain"] = "stall_grain",
+            ["prop_notice_board"] = "notice_board", ["prop_army_tent"] = "army_tent", ["prop_weapon_rack"] = "weapon_rack", ["prop_bow_rack"] = "bow_rack",
+            ["prop_archery_target"] = "archery_target", ["prop_training_dummy"] = "training_dummy", ["prop_war_drum"] = "war_drum",
+            ["prop_recruit_desk"] = "recruit_desk", ["prop_well"] = "well", ["prop_handcart"] = "handcart", ["prop_ox_cart"] = "ox_cart", ["prop_dice_table"] = "dice_table",
+        };
+
         internal static void EndSession()
         {
+            townSession = false;
+            modelled.Clear();
             EndMeshes();
+            extraDirs = System.Array.Empty<string>();
+            HdAliases.Clear();
             materialDir = TownMaterialDir;
         }
 
@@ -275,15 +344,19 @@ namespace ThreeKingdoms.EditorTools
         static void ReadManifests()
         {
             axes.Clear();
-            foreach (var dir in new[] { CornerDir, TownDir, MapDir })
+            foreach (var dir in new[] { CornerDir, TownDir, MapDir }.Concat(extraDirs))
             {
                 if (!File.Exists($"{dir}/manifest.json")) continue;
                 var m = JsonUtility.FromJson<Manifest>(File.ReadAllText($"{dir}/manifest.json"));
-                foreach (var f in m.files) axes[Path.GetFileNameWithoutExtension(f.filename)] = f.tile_axes ?? "none";
+                // The bridge's own manifests (HD batches) list paths without tiling; an HD key then keeps the axes of
+                // the pixel texture it replaces.
+                foreach (var f in m.files ?? new ManifestFile[0])
+                    if (!string.IsNullOrEmpty(f.filename) && (!string.IsNullOrEmpty(f.tile_axes) || !axes.ContainsKey(Path.GetFileNameWithoutExtension(f.filename))))
+                        axes[Path.GetFileNameWithoutExtension(f.filename)] = string.IsNullOrEmpty(f.tile_axes) ? "none" : f.tile_axes;
             }
         }
 
-        static void ConfigureTextures(string dir)
+        internal static void ConfigureTextures(string dir)
         {
             foreach (string path in Directory.GetFiles(dir, "*.png"))
             {
@@ -293,6 +366,22 @@ namespace ThreeKingdoms.EditorTools
                 if (importer == null) continue;
                 axes.TryGetValue(key, out string a); a ??= "none";
                 bool mask = key.Contains("mask");
+                if (assetPath.Contains("/HD/"))
+                {
+                    importer.textureType = TextureImporterType.Default;
+                    importer.filterMode = FilterMode.Trilinear;
+                    importer.mipmapEnabled = true;
+                    importer.anisoLevel = 4;
+                    importer.maxTextureSize = 2048;
+                    importer.textureCompression = TextureImporterCompression.CompressedHQ;
+                    importer.npotScale = TextureImporterNPOTScale.None;
+                    importer.sRGBTexture = true;
+                    importer.alphaIsTransparency = true;
+                    importer.wrapModeU = a.Contains("x") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                    importer.wrapModeV = a.Contains("y") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                    Reimport(importer);
+                    continue;
+                }
                 importer.textureType = TextureImporterType.Default;
                 importer.filterMode = FilterMode.Point;
                 importer.mipmapEnabled = false;
@@ -302,20 +391,40 @@ namespace ThreeKingdoms.EditorTools
                 importer.alphaIsTransparency = !mask;
                 importer.wrapModeU = a.Contains("x") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
                 importer.wrapModeV = a.Contains("y") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
-                importer.SaveAndReimport();
+                Reimport(importer);
             }
         }
 
-        static Texture2D Tex(string key) =>
-            AssetDatabase.LoadAssetAtPath<Texture2D>($"{MapDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png")
+        // Reimports only when a setting changed, and frees the import memory now and then: the 146 HD textures of the
+        // renovation ran a batch-mode editor out of memory when every one was reimported in a row.
+        static int reimports;
+        static void Reimport(TextureImporter importer)
+        {
+            if (!EditorUtility.IsDirty(importer)) return;
+            importer.SaveAndReimport();
+            if (++reimports % 16 == 0) { EditorUtility.UnloadUnusedAssetsImmediate(); System.GC.Collect(); }
+        }
+
+        internal static Texture2D Tex(string key) =>
+            Extra(key) ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{MapDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png")
             ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png") ?? throw new FileNotFoundException("Missing town texture " + key);
 
+        static Texture2D Extra(string key)
+        {
+            if (HdAliases.TryGetValue(key, out string hd))
+            {
+                var h = extraDirs.Select(d => AssetDatabase.LoadAssetAtPath<Texture2D>($"{d}/{hd}.png")).FirstOrDefault(t => t);
+                if (h) return h;
+            }
+            return extraDirs.Select(d => AssetDatabase.LoadAssetAtPath<Texture2D>($"{d}/{key}.png")).FirstOrDefault(t => t);
+        }
+
         // Null when a not-yet-delivered texture is missing (art still with Codex).
-        static Texture2D Tex(string key, bool optional) =>
-            AssetDatabase.LoadAssetAtPath<Texture2D>($"{MapDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png")
+        internal static Texture2D Tex(string key, bool optional) =>
+            Extra(key) ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{MapDir}/{key}.png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TownDir}/{key}.png")
             ?? AssetDatabase.LoadAssetAtPath<Texture2D>($"{CornerDir}/{key}.png") ?? (optional ? null : throw new FileNotFoundException("Missing town texture " + key));
 
-        static Material Mat(string key, bool clip = false, bool twoSided = false, string emissionMask = null, Color? glow = null)
+        internal static Material Mat(string key, bool clip = false, bool twoSided = false, string emissionMask = null, Color? glow = null)
         {
             string id = key + (clip ? "_clip" : "") + (twoSided ? "_2s" : "");
             if (materials.TryGetValue(id, out var cached)) return cached;
@@ -325,7 +434,21 @@ namespace ThreeKingdoms.EditorTools
             m.SetFloat("_Smoothness", 0f);
             m.SetFloat("_SpecularHighlights", 0f); m.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
             m.SetFloat("_EnvironmentReflections", 0f); m.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
-            if (clip)
+            // Zhuojun's own HD set comes with clean 0/255 alpha like Anxi and is cut out, so fronts, gables and people
+            // still sort by depth; other HD sets keep their soft painted edge.
+            if (clip && IsHd(Tex(key)) && !AssetDatabase.GetAssetPath(Tex(key)).Contains("/ZhuojunHD/"))
+            {
+                // Soft painted edge: alpha blend, drawn after the opaque ground.
+                m.SetFloat("_Surface", 1f); m.SetFloat("_Blend", 0f);
+                m.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha); m.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+                m.SetFloat("_SrcBlendAlpha", (float)BlendMode.One); m.SetFloat("_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
+                // Without this URP keeps ambient/sky light on fully transparent texels: a pale blue film past the edge.
+                m.SetFloat("_BlendModePreserveSpecular", 0f);
+                m.SetFloat("_ZWrite", 0f); m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                m.SetOverrideTag("RenderType", "Transparent");
+                m.renderQueue = (int)RenderQueue.Transparent - 50;
+            }
+            else if (clip)
             {
                 m.SetFloat("_AlphaClip", 1f); m.SetFloat("_Cutoff", 0.5f); m.EnableKeyword("_ALPHATEST_ON");
                 m.renderQueue = (int)RenderQueue.AlphaTest;
@@ -373,7 +496,7 @@ namespace ThreeKingdoms.EditorTools
             return mesh;
         }
 
-        static GameObject Quad(Transform parent, string name, Vector3 center, Vector3 euler, Vector2 size, Material m, Vector2? repeat = null, bool castShadows = true)
+        internal static GameObject Quad(Transform parent, string name, Vector3 center, Vector3 euler, Vector2 size, Material m, Vector2? repeat = null, bool castShadows = true)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -386,15 +509,15 @@ namespace ThreeKingdoms.EditorTools
             return go;
         }
 
-        static Vector2 Repeat(string key, Vector2 size)
+        internal static Vector2 Repeat(string key, Vector2 size)
         {
             var t = Tex(key);
-            return new Vector2(size.x * Ppm / t.width, size.y * Ppm / t.height);
+            return new Vector2(size.x * PpmOf(t) / t.width, size.y * PpmOf(t) / t.height);
         }
 
-        static Vector2 Metres(string key) { var t = Tex(key); return new Vector2(t.width / Ppm, t.height / Ppm); }
+        internal static Vector2 Metres(string key) { var t = Tex(key); return new Vector2(t.width / PpmOf(t), t.height / PpmOf(t)); }
 
-        static Transform Group(Transform parent, string name, Vector3 at = default, float yaw = 0f)
+        internal static Transform Group(Transform parent, string name, Vector3 at = default, float yaw = 0f)
         {
             var g = new GameObject(name).transform;
             g.SetParent(parent, false);
@@ -437,7 +560,7 @@ namespace ThreeKingdoms.EditorTools
             }
         }
 
-        static void Solid(Transform parent, Vector3 center, Vector3 size)
+        internal static void Solid(Transform parent, Vector3 center, Vector3 size)
         {
             var box = new GameObject("Collider").AddComponent<BoxCollider>();
             box.transform.SetParent(parent, false);
@@ -454,7 +577,7 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A grass block with an irregular grass fringe over its hard edges onto the earth (grass_border, when delivered).
-        static void GrassBlock(Transform parent, string name, float xMin, float xMax, float zMin, float zMax)
+        internal static void GrassBlock(Transform parent, string name, float xMin, float xMax, float zMin, float zMax)
         {
             Patch(parent, name, "ground_grass", xMin, xMax, zMin, zMax, 0.003f);
             if (!Tex("grass_border", optional: true)) return;
@@ -483,7 +606,7 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A grass fringe lying on a road edge at `edge`, its ragged side pointing along `yaw` onto the road.
-        static void RoadFringe(Transform parent, string name, Vector3 edge, float yaw, float length)
+        internal static void RoadFringe(Transform parent, string name, Vector3 edge, float yaw, float length)
         {
             float depth = Metres("grass_border").y, o = depth / 2f - depth / 3f;
             var size = new Vector2(length, depth);
@@ -495,7 +618,7 @@ namespace ThreeKingdoms.EditorTools
 
         // A low stone curb along a paved edge from a to b (along X or Z), lying on the paving; `outward` (+1/-1) is the
         // side the earth is on (+x/+z or -x/-z). Dedicated curb art when delivered, else the stone-step treads and risers.
-        static void Curb(Transform parent, Vector3 a, Vector3 b, int outward)
+        internal static void Curb(Transform parent, Vector3 a, Vector3 b, int outward)
         {
             bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
             float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
@@ -512,7 +635,7 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A square curb stone covering the meeting of two curb runs.
-        static void CurbCorner(Transform parent, Vector3 at)
+        internal static void CurbCorner(Transform parent, Vector3 at)
         {
             string key = Tex("curb_corner", optional: true) ? "curb_corner" : "steps_tread";
             var c = Group(parent, "Curb corner", at);
@@ -525,7 +648,7 @@ namespace ThreeKingdoms.EditorTools
 
         // A square post or quoin column at a corner, `size` across and `height` tall, with a top cap. `face` stretches
         // over each side when it is dedicated corner art, else tiles.
-        static void Column(Transform parent, string name, Vector3 baseCentre, float size, float height, string face, string cap)
+        internal static void Column(Transform parent, string name, Vector3 baseCentre, float size, float height, string face, string cap)
         {
             var c = Group(parent, name, baseCentre);
             bool tiled = axes.TryGetValue(face, out string ax) && ax != "none";
@@ -540,6 +663,147 @@ namespace ThreeKingdoms.EditorTools
         static void Ground(Transform env)
         {
             var g = Group(env, "Ground");
+            if (!BlendedGround(g)) SquareGround(g);
+            if (Tex("decal_pebbles", optional: true))
+            {
+                var rng = new System.Random(23);
+                for (int i = 0; i < 70; i++)
+                {
+                    float x = -45f + (float)rng.NextDouble() * 90f, z = -33f + (float)rng.NextDouble() * 66f;
+                    if (Mathf.Abs(x) < 10.5f && z > -9.5f && z < 15f) continue;   // not on the paved square
+                    if (Mathf.Abs(x) < 3.5f) continue;                             // nor the main axis
+                    Quad(g, "Pebbles", new Vector3(x, 0.0075f, z), new Vector3(90f, rng.Next(4) * 90f, 0), Metres("decal_pebbles"), Mat("decal_pebbles", clip: true), castShadows: false);
+                }
+            }
+            Patch(g, "Vegetable plot", "ground_vegetable_plot", -45.5f, -41.5f, -32f, -27.5f, 0.004f);
+            // Raised curbs round every paved edge (user 2026-10-24): the main axis and the market square.
+            var curbs = Group(g, "Curbs");
+            Curb(curbs, new Vector3(-3f, 0, -34f), new Vector3(-3f, 0, -9f), -1);
+            Curb(curbs, new Vector3(3f, 0, -34f), new Vector3(3f, 0, -9f), 1);
+            Curb(curbs, new Vector3(-10f, 0, -9f), new Vector3(-10f, 0, 14.5f), -1);
+            Curb(curbs, new Vector3(10f, 0, -9f), new Vector3(10f, 0, 14.5f), 1);
+            Curb(curbs, new Vector3(-10f, 0, -9f), new Vector3(-3f, 0, -9f), -1);
+            Curb(curbs, new Vector3(3f, 0, -9f), new Vector3(10f, 0, -9f), -1);
+            Curb(curbs, new Vector3(-10f, 0, 14.5f), new Vector3(-3f, 0, 14.5f), 1);
+            Curb(curbs, new Vector3(3f, 0, 14.5f), new Vector3(10f, 0, 14.5f), 1);
+            foreach (var (x, z) in new[] { (-10f, -9f), (10f, -9f), (-10f, 14.5f), (10f, 14.5f), (-3f, -9f), (3f, -9f) })
+                CurbCorner(curbs, new Vector3(x, 0, z));
+            var floor = new GameObject("Ground collider").AddComponent<BoxCollider>();
+            floor.transform.SetParent(g, false);
+            floor.center = new Vector3(-10f, -0.05f, 0f); floor.size = new Vector3(200f, 0.1f, 160f);
+            // Invisible bounds of the walkable outside area (south road and west grove).
+            Solid(g, new Vector3(-10f, 2f, -79f), new Vector3(200f, 4f, 1f));
+            Solid(g, new Vector3(-79f, 2f, 0f), new Vector3(1f, 4f, 160f));
+            Solid(g, new Vector3(56f, 2f, 0f), new Vector3(1f, 4f, 160f));
+            Solid(g, new Vector3(-10f, 2f, 44f), new Vector3(200f, 4f, 1f));
+        }
+
+        // ---------- blended ground (user 2026-10-25: no square blocks, every terrain change through a transition) ----------
+        // One quad over the whole map drawn by ThreeKingdoms/GroundSplat (the Bohai plain's shader): packed earth as the
+        // base, then grass, the stone paving, worn rutted earth and the petal-strewn grove where a 2 px/m control map
+        // says so. Grass blocks are rounded rectangles whose outline wanders; the shader breaks every border into a
+        // noisy fade. Only the paving keeps a straight edge, under its curbs.
+
+        const float GXMin = -110f, GXMax = 90f, GZMin = -80f, GZMax = 80f, GPpm = 2f;
+
+        static readonly (float x0, float x1, float z0, float z1)[] GrassBlocks =
+        {
+            (-39f, -11f, 3f, 11f), (11f, 23f, 2f, 11f), (31f, 43f, -17f, -11f), (-45f, -40f, -22f, -14f), (-45f, -13f, 24.5f, 34f),
+            (12.5f, 17.5f, 17f, 34f), (-17.5f, -12.5f, 16f, 24.5f), (-17f, -14f, -11f, -7.5f), (-36f, -26f, -13f, -9f), (31f, 36f, -23f, -18f),
+            (-12f, -8.5f, -34f, -30f), (8.5f, 22f, -34f, -31f), (-46f, -44.5f, 4f, 22f),
+        };
+
+        // Signed distance to a rounded rectangle (negative inside).
+        static float RoundRect(float x, float z, float x0, float x1, float z0, float z1, float r)
+        {
+            float cx = (x0 + x1) / 2f, cz = (z0 + z1) / 2f;
+            r = Mathf.Min(r, (x1 - x0) / 2f, (z1 - z0) / 2f);
+            float qx = Mathf.Abs(x - cx) - ((x1 - x0) / 2f - r), qz = Mathf.Abs(z - cz) - ((z1 - z0) / 2f - r);
+            return new Vector2(Mathf.Max(qx, 0f), Mathf.Max(qz, 0f)).magnitude + Mathf.Min(Mathf.Max(qx, qz), 0f) - r;
+        }
+
+        // 1 inside, 0 outside, fading over `feather` metres across an outline pushed in and out by noise.
+        static float Soft(float d, float x, float z, float wobble, float feather, float seed)
+        {
+            float w = (Mathf.PerlinNoise(x * 0.13f + seed, z * 0.13f - seed) - 0.5f) * 2f * wobble + (Mathf.PerlinNoise(x * 0.5f - seed, z * 0.5f + seed) - 0.5f) * wobble * 0.5f;
+            return Mathf.Clamp01(0.5f - (d + w) / feather);
+        }
+
+        static bool BlendedGround(Transform g)
+        {
+            var shader = Shader.Find("ThreeKingdoms/GroundSplat");
+            string[] keys = { "ground_packed_earth", "ground_grass", "ground_street_stone", "ground_earth_ruts", "ground_petals" };
+            if (!shader || keys.Any(k => !Tex(k, optional: true))) return false;
+            float tile = Metres(keys[0]).x;
+            if (keys.Any(k => Mathf.Abs(Metres(k).x - tile) > 0.01f)) return false;   // the shader tiles every layer alike
+            int w = Mathf.RoundToInt((GXMax - GXMin) * GPpm), h = Mathf.RoundToInt((GZMax - GZMin) * GPpm);
+            var px = new Color32[w * h];
+            byte B(float v) => (byte)Mathf.RoundToInt(Mathf.Clamp01(v) * 255f);
+            for (int iz = 0; iz < h; iz++)
+                for (int ix = 0; ix < w; ix++)
+                {
+                    float x = GXMin + (ix + 0.5f) / GPpm, z = GZMin + (iz + 0.5f) / GPpm;
+                    // Outside the walls: grass, except the roads (a little wander in their width) and the grove's bare lane.
+                    float town = Soft(RoundRect(x, z, -47f, 47f, -35f, 35f, 1f), x, z, 0f, 0.5f, 0f);
+                    float southRoad = Soft(Mathf.Abs(x) - 3.6f, x, z, 0.7f, 1.6f, 3f) * (z < -36f ? 1f : 0f);
+                    float westLane = Soft(Mathf.Abs(z) - 2.2f, x, z, 0.6f, 1.4f, 7f) * (x < -48f && x > -82f ? 1f : 0f);
+                    float road = Mathf.Max(southRoad, westLane);
+                    float grass = (1f - town) * (1f - road);
+                    // Inside: the grass blocks of the concept map, rounded and ragged.
+                    foreach (var (x0, x1, z0, z1) in GrassBlocks)
+                        grass = Mathf.Max(grass, town * Soft(RoundRect(x, z, x0, x1, z0, z1, 1.8f), x, z, 0.7f, 1.4f, x0 * 0.37f + z0));
+                    // Paving: straight under the curbs.
+                    float paving = Mathf.Max(
+                        Mathf.Clamp01(0.5f - RoundRect(x, z, -3f, 3f, -36f, -9f, 0f) / 0.12f),
+                        Mathf.Clamp01(0.5f - RoundRect(x, z, -10f, 10f, -9f, 14.5f, 0f) / 0.12f));
+                    // Worn ruts on the busy earth: along both roads outside, the ring road inside the walls, and the gate.
+                    float ruts = Mathf.Max(road * Soft(Mathf.Abs(z < -36f ? x : z) - 1.8f, x, z, 0.5f, 1.6f, 11f),
+                        town * Mathf.Max(Soft(RoundRect(x, z, -44f, -39.5f, -24f, 10f, 2f), x, z, 0.8f, 2f, 13f),
+                                         Soft(RoundRect(x, z, -44f, 46f, -9.5f, -6f, 1.5f), x, z, 0.8f, 2.2f, 17f) * 0.8f));
+                    ruts *= 1f - paving;
+                    ruts *= Mathf.Lerp(0.55f, 1f, Mathf.PerlinNoise(x * 0.08f + 40f, z * 0.08f));
+                    // Petals under the peach trees, thinning out at the grove's edge.
+                    float petals = Soft(RoundRect(x, z, -79f, -55f, -15f, 15f, 6f), x, z, 2f, 6f, 21f);
+                    petals *= Mathf.Lerp(0.6f, 1f, Mathf.PerlinNoise(x * 0.1f, z * 0.1f + 9f));
+                    px[iz * w + ix] = new Color32(B(grass * (1f - paving)), B(paving), B(ruts), B(petals * (1f - town) * (1f - road)));
+                }
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false, linear: true);
+            tex.SetPixels32(px); tex.Apply();
+            Directory.CreateDirectory(TownDir + "/Terrain");
+            string path = TownDir + "/Terrain/zhuojun_ground_control.png";
+            File.WriteAllBytes(path, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(path);
+            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+            imp.sRGBTexture = false; imp.mipmapEnabled = false; imp.npotScale = TextureImporterNPOTScale.None;
+            imp.textureCompression = TextureImporterCompression.Uncompressed; imp.filterMode = FilterMode.Bilinear; imp.wrapMode = TextureWrapMode.Clamp;
+            imp.alphaIsTransparency = false;
+            imp.SaveAndReimport();
+
+            var m = new Material(shader) { name = "zhuojun_ground_splat" };
+            m.SetTexture("_Control", AssetDatabase.LoadAssetAtPath<Texture2D>(path));
+            m.SetTexture("_Base", Tex(keys[0])); m.SetTexture("_LayerR", Tex(keys[1])); m.SetTexture("_LayerG", Tex(keys[2]));
+            m.SetTexture("_LayerB", Tex(keys[3])); m.SetTexture("_LayerA", Tex(keys[4]));
+            m.SetFloat("_TileMetres", tile);
+            m.SetFloat("_Smooth", IsHd(Tex(keys[0])) ? 1f : 0f);
+            m.SetFloat("_Ragged", 0.18f);
+            m.SetVector("_Bounds", new Vector4(GXMin, GZMin, GXMax, GZMax));
+            string mp = $"{materialDir}/zhuojun_ground_splat.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(mp)) AssetDatabase.DeleteAsset(mp);
+            AssetDatabase.CreateAsset(m, mp);
+            ZhuojunModels.Ground = m;
+            // With the modelled country outside (art/zhuojun-blender-b4) the flat quad covers only the town inside the
+            // walls; the terrain mesh, cut out there, carries the same world-space material outside.
+            if (ZhuojunModels.Has("terrain_near"))
+                Quad(g, "Blended ground (town)", new Vector3(0f, 0f, 0f), new Vector3(90f, 0, 0), new Vector2(100f, 76f), m, castShadows: false);
+            else
+                Quad(g, "Blended ground", new Vector3((GXMin + GXMax) / 2f, 0f, (GZMin + GZMax) / 2f), new Vector3(90f, 0, 0), new Vector2(GXMax - GXMin, GZMax - GZMin), m, castShadows: false);
+            return true;
+        }
+
+        // The pre-renovation ground of patches and fringe strips, kept for a build without the splat shader.
+        static void SquareGround(Transform g)
+        {
             Patch(g, "Grass outside", "ground_grass", -110f, 90f, -80f, 80f, -0.01f);
             Patch(g, "Town earth", "ground_packed_earth", -46f, 46f, -34f, 34f, 0f);
             Patch(g, "Main axis paving", "ground_street_stone", -3f, 3f, -34f, -9f, 0.004f);
@@ -571,17 +835,6 @@ namespace ThreeKingdoms.EditorTools
                 Patch(g, "Gravel along the south wall", "ground_earth_gravel", -46f, 46f, -34f, -32.5f, 0.002f);
                 Patch(g, "Gravel by the granaries", "ground_earth_gravel", -44f, -20f, 15.5f, 18.5f, 0.002f);
             }
-            if (Tex("decal_pebbles", optional: true))
-            {
-                var rng = new System.Random(23);
-                for (int i = 0; i < 70; i++)
-                {
-                    float x = -45f + (float)rng.NextDouble() * 90f, z = -33f + (float)rng.NextDouble() * 66f;
-                    if (Mathf.Abs(x) < 10.5f && z > -9.5f && z < 15f) continue;   // not on the paved square
-                    if (Mathf.Abs(x) < 3.5f) continue;                             // nor the main axis
-                    Quad(g, "Pebbles", new Vector3(x, 0.0075f, z), new Vector3(90f, rng.Next(4) * 90f, 0), Metres("decal_pebbles"), Mat("decal_pebbles", clip: true), castShadows: false);
-                }
-            }
             Patch(g, "Road to the south gate", "ground_packed_earth", -3.5f, 3.5f, -80f, -38f, 0.002f);
             Patch(g, "Lane to the west gate", "ground_packed_earth", -80f, -50f, -2f, 2f, 0.002f);
             if (Tex("grass_border", optional: true))
@@ -594,27 +847,6 @@ namespace ThreeKingdoms.EditorTools
             }
             else Patch(g, "Earth edge at the road", "ground_earth_to_grass", -9f, 9f, -46f, -38f, 0.001f);
             Patch(g, "Peach grove petals", "ground_petals", -78f, -55f, -14f, 14f, 0.001f);
-            Patch(g, "Vegetable plot", "ground_vegetable_plot", -45.5f, -41.5f, -32f, -27.5f, 0.004f);
-            // Raised curbs round every paved edge (user 2026-10-24): the main axis and the market square.
-            var curbs = Group(g, "Curbs");
-            Curb(curbs, new Vector3(-3f, 0, -34f), new Vector3(-3f, 0, -9f), -1);
-            Curb(curbs, new Vector3(3f, 0, -34f), new Vector3(3f, 0, -9f), 1);
-            Curb(curbs, new Vector3(-10f, 0, -9f), new Vector3(-10f, 0, 14.5f), -1);
-            Curb(curbs, new Vector3(10f, 0, -9f), new Vector3(10f, 0, 14.5f), 1);
-            Curb(curbs, new Vector3(-10f, 0, -9f), new Vector3(-3f, 0, -9f), -1);
-            Curb(curbs, new Vector3(3f, 0, -9f), new Vector3(10f, 0, -9f), -1);
-            Curb(curbs, new Vector3(-10f, 0, 14.5f), new Vector3(-3f, 0, 14.5f), 1);
-            Curb(curbs, new Vector3(3f, 0, 14.5f), new Vector3(10f, 0, 14.5f), 1);
-            foreach (var (x, z) in new[] { (-10f, -9f), (10f, -9f), (-10f, 14.5f), (10f, 14.5f), (-3f, -9f), (3f, -9f) })
-                CurbCorner(curbs, new Vector3(x, 0, z));
-            var floor = new GameObject("Ground collider").AddComponent<BoxCollider>();
-            floor.transform.SetParent(g, false);
-            floor.center = new Vector3(-10f, -0.05f, 0f); floor.size = new Vector3(200f, 0.1f, 160f);
-            // Invisible bounds of the walkable outside area (south road and west grove).
-            Solid(g, new Vector3(-10f, 2f, -79f), new Vector3(200f, 4f, 1f));
-            Solid(g, new Vector3(-79f, 2f, 0f), new Vector3(1f, 4f, 160f));
-            Solid(g, new Vector3(56f, 2f, 0f), new Vector3(1f, 4f, 160f));
-            Solid(g, new Vector3(-10f, 2f, 44f), new Vector3(200f, 4f, 1f));
         }
 
         // ---------- city walls & gates ----------
@@ -629,6 +861,24 @@ namespace ThreeKingdoms.EditorTools
             float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
             var run = Group(parent, name, (a + b) / 2f, alongX ? 0f : 90f);
             run.gameObject.AddComponent<Occluder>();
+            // Blender modules (art/zhuojun-blender-b2): 8 m pieces end to end, stretched a little to fill the run.
+            if (townSession && ZhuojunModels.Has("wall_8"))
+            {
+                string piece = len < 6f ? "wall_4" : "wall_8";
+                float unit = piece == "wall_4" ? 4f : 8f;
+                int k = Mathf.Max(1, Mathf.RoundToInt(len / unit));
+                float stretch = len / (k * unit);
+                for (int i = 0; i < k; i++)
+                {
+                    var m = ZhuojunModels.Place(run, piece, $"Wall piece {i + 1}", new Vector3(-len / 2f + (i + 0.5f) * unit * stretch, 0, 0));
+                    if (!m) break;
+                    m.localScale = new Vector3(m.localScale.x * stretch, m.localScale.y, m.localScale.z);
+                    Object.DestroyImmediate(m.GetComponent<Occluder>());
+                    foreach (var c in m.GetComponentsInChildren<BoxCollider>()) Object.DestroyImmediate(c.gameObject);
+                }
+                Solid(run, new Vector3(0, WallH / 2f, 0), new Vector3(len, WallH, WallT));
+                return;
+            }
             var face = new Vector2(len, WallH);
             Quad(run, "Face south", new Vector3(0, WallH / 2f, -WallT / 2f), Vector3.zero, face, Mat("citywall_face"), Repeat("citywall_face", face));
             Quad(run, "Face north", new Vector3(0, WallH / 2f, WallT / 2f), new Vector3(0, 180, 0), face, Mat("citywall_face"), Repeat("citywall_face", face));
@@ -662,9 +912,10 @@ namespace ThreeKingdoms.EditorTools
 
         // A square bastion 6 m across standing proud of the wall, with a timber arrow tower on top (watchtower_* art when
         // delivered). The whole tower is one occluder.
-        static void ArrowTower(Transform walls, string name, Vector3 at)
+        internal static void ArrowTower(Transform walls, string name, Vector3 at)
         {
             const float side = 6f, baseH = WallH + 0.4f;
+            if (townSession && ZhuojunModels.Place(walls, "corner_tower", name, at)) return;   // art/zhuojun-blender-b2
             var t = Group(walls, name, at);
             t.gameObject.AddComponent<Occluder>();
             var face = new Vector2(side, baseH);
@@ -685,6 +936,15 @@ namespace ThreeKingdoms.EditorTools
 
         static void SouthGate(Transform walls)
         {
+            // Blender pilot: the modelled gate block and tower; the piers and the lintel block stay solid, the passage open.
+            var model = ZhuojunModels.Place(walls, "south_gate", "10 South gate", new Vector3(0, 0, -36f));
+            if (model)
+            {
+                foreach (var c in model.GetComponentsInChildren<BoxCollider>()) Object.DestroyImmediate(c.gameObject);
+                foreach (int s in new[] { -1, 1 }) Solid(model, new Vector3(s * 3.25f, WallH / 2f, 0), new Vector3(2.5f, WallH, WallT));
+                Solid(model, new Vector3(0, 4.3f, 0), new Vector3(4f, 1.4f, WallT));
+                return;
+            }
             var g = Group(walls, "10 South gate", new Vector3(0, 0, -36f));
             g.gameObject.AddComponent<Occluder>();
             var front = Metres("south_gate_wall_front");   // 9 × 5, flat timber-lintel opening 4 × 3.6
@@ -712,6 +972,16 @@ namespace ThreeKingdoms.EditorTools
 
         static void WestGate(Transform walls)
         {
+            // Blender (art/zhuojun-blender-b2), modelled facing south and turned to face west; the passage stays open.
+            var model = ZhuojunModels.Place(walls, "west_gate", "12 West gate", new Vector3(-48f, 0, 0f), 90f);
+            if (model)
+            {
+                foreach (var c in model.GetComponentsInChildren<BoxCollider>()) Object.DestroyImmediate(c.gameObject);
+                var piers = Group(model.parent, "West gate piers", new Vector3(-48f, 0, 0f), 90f);
+                foreach (int s in new[] { -1, 1 }) Solid(piers, new Vector3(s * 2.1f, WallH / 2f, 0), new Vector3(1.8f, WallH, WallT));
+                Solid(piers, new Vector3(0, 4f, 0), new Vector3(2.5f, 2f, WallT));
+                return;
+            }
             // The west gate faces west; its front texture is seen side-on from the town camera, so it is mirrored on both faces.
             var g = Group(walls, "12 West gate", new Vector3(-48f, 0, 0f), 90f);
             g.gameObject.AddComponent<Occluder>();
@@ -732,8 +1002,14 @@ namespace ThreeKingdoms.EditorTools
         // A building whose front faces south (yaw 0) or north (yaw 180, back toward the camera). Size comes from the
         // textures: front = width × wall height, side = depth × (wall + gable). roofKey "tile" or "thatch".
         internal static Transform Building(Transform parent, string name, Vector3 frontCenter, float yaw, string front, string side, string back,
-            string roofKey = "tile", string glowMask = null, bool collide = true, string interior = null, string floor = null, float interiorFrom = 0f)
+            string roofKey = "tile", string glowMask = null, bool collide = true, string interior = null, string floor = null, float interiorFrom = 0f,
+            string roofTexture = null, string eaveTexture = null)
         {
+            if (townSession && BuildingModels.TryGetValue(front, out string model))
+            {
+                var placed = ZhuojunModels.Place(parent, model, name, frontCenter, yaw);
+                if (placed) { modelled.Add(placed); return placed; }
+            }
             var f = Metres(front); var sd = Metres(side);
             float width = f.x, wall = f.y, depth = sd.x, gable = Mathf.Max(0.4f, sd.y - wall);
             var b = Group(parent, name, frontCenter, yaw);
@@ -777,12 +1053,13 @@ namespace ThreeKingdoms.EditorTools
             float run = half + eave, length = run / Mathf.Cos(slope), drop = run * Mathf.Tan(slope);
             float eaveY = ridgeY - drop, deg = slope * Mathf.Rad2Deg;
             var roofSize = new Vector2(roofW, length);
-            string roofTex = thatch ? "roof_thatch" : "roof_tiles_grey";
+            // Another town's own roofing (Pingyuan's golden reed thatch) can replace the Zhuojun roof textures.
+            string roofTex = roofTexture ?? (thatch ? "roof_thatch" : "roof_tiles_grey");
             var roofMat = Mat(roofTex);
             Quad(b, "Roof front", new Vector3(0, (ridgeY + eaveY) / 2f + 0.05f, half - run / 2f), new Vector3(90f - deg, 0, 0), roofSize, roofMat, Repeat(roofTex, roofSize));
             Quad(b, "Roof back", new Vector3(0, (ridgeY + eaveY) / 2f + 0.05f, half + run / 2f), new Vector3(90f - deg, 180, 0), roofSize, roofMat, Repeat(roofTex, roofSize));
             Quad(b, "Roof underside", new Vector3(0, (ridgeY + eaveY) / 2f - 0.02f, half - run / 2f), new Vector3(-90f - deg, 0, 0), roofSize, Mat("roof_underside"), Repeat("roof_underside", roofSize), castShadows: false);
-            string eaveTex = thatch ? "roof_thatch_eave" : "roof_eave";
+            string eaveTex = eaveTexture ?? (thatch ? "roof_thatch_eave" : "roof_eave");
             var eaveSize = new Vector2(roofW, 0.6f);
             foreach (int s in new[] { 1, -1 })
                 Quad(b, "Eave", new Vector3(0, eaveY - 0.22f, s > 0 ? -eave - 0.02f : depth + eave + 0.02f), new Vector3(deg * 0.5f * s, s > 0 ? 0 : 180, 0), eaveSize,
@@ -801,7 +1078,7 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // Signboards are flat on the façade, not billboards.
-        static void Plaque(Transform parent, string key, Vector3 at, float yaw) =>
+        internal static void Plaque(Transform parent, string key, Vector3 at, float yaw) =>
             Quad(parent, key, at, new Vector3(0, yaw, 0), Metres(key), Mat(key, clip: true, twoSided: true), castShadows: false);
 
         // Height of the eave line for a building made from these textures (same geometry as Building()).
@@ -814,11 +1091,14 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A shop sign hung on the front edge of the eave, where the eave strip cannot hide it.
-        internal static void EaveSign(Transform building, string key, string front, string side) =>
+        internal static void EaveSign(Transform building, string key, string front, string side)
+        {
+            if (modelled.Contains(building)) return;   // the Blender model carries its own plaque
             Plaque(building, key, new Vector3(0, EaveY(front, side) - 0.25f, -0.72f), 0f);
+        }
 
         // A flat run of a tileable fence-like strip (courtyard wall, palisade, wattle) along X or Z.
-        static void Strip(Transform parent, string name, string key, Vector3 a, Vector3 b, float height, bool solid = true, string capKey = null)
+        internal static void Strip(Transform parent, string name, string key, Vector3 a, Vector3 b, float height, bool solid = true, string capKey = null)
         {
             bool alongX = Mathf.Abs(b.x - a.x) > Mathf.Abs(b.z - a.z);
             float len = alongX ? Mathf.Abs(b.x - a.x) : Mathf.Abs(b.z - a.z);
@@ -857,6 +1137,14 @@ namespace ThreeKingdoms.EditorTools
             // 01 Commandery office: a 2.1 m stone platform (x -12..12, z 17.5..33.5) reached by six steps in line
             // with the main axis, walled on three sides, the hall at the back.
             var office = Group(row, "01 Commandery office");
+            // Blender (art/zhuojun-blender-b2): platform, steps, parapets, courtyard walls and hall in one model whose
+            // origin is the front edge of the lowest step (z 14.5); the banners, lanterns and trees stay.
+            if (ZhuojunModels.Place(office, "commandery", "Commandery model", new Vector3(0, 0, 14.5f)))
+            {
+                CommanderyProps(office);
+                Barracks(row);
+                return;
+            }
             Solid(office, new Vector3(0, Terrace / 2f, 25.5f), new Vector3(24f, Terrace, 16f));
             var topSize = new Vector2(24f, 16f);
             Quad(office, "Platform top", new Vector3(0, Terrace + 0.004f, 25.5f), new Vector3(90f, 0, 0), topSize, Mat("ground_square_brick"), Repeat("ground_square_brick", topSize), castShadows: false);
@@ -903,18 +1191,27 @@ namespace ThreeKingdoms.EditorTools
                 Column(office, "Parapet end post " + n, new Vector3(x, Terrace, 17.8f), 0.5f, 1.2f, post, "courtyard_wall_cap");
             var hall = Building(office, "Office hall", new Vector3(0, Terrace, 24f), 0f, "yamen_hall_front", "yamen_hall_side", null);
             EaveSign(hall, "plaque_yamen", "yamen_hall_front", "yamen_hall_side");
+            // Door sill 1.05 m above the platform: three 0.35 m risers, under the controller's 0.4 m step offset.
+            Stairs(office, "Hall steps", new Vector3(0, Terrace, 24f), 3.2f, 3, 0.35f, 0.4f, 0.7f);
+            CommanderyProps(office);
+            Barracks(row);
+        }
+
+        static void CommanderyProps(Transform office)
+        {
             var op = Group(office, "Office props");
             Prop(op, "prop_banner_han", -3.8f, 23.2f, y: Terrace);
             Prop(op, "prop_banner_han", 3.8f, 23.2f, y: Terrace);
             Prop(op, "prop_banner_han", -4.2f, 14.0f);
             Prop(op, "prop_banner_han", 4.2f, 14.0f);
-            // Door sill 1.05 m above the platform: three 0.35 m risers, under the controller's 0.4 m step offset.
-            Stairs(op, "Hall steps", new Vector3(0, Terrace, 24f), 3.2f, 3, 0.35f, 0.4f, 0.7f);
             Prop(op, "prop_lantern_red", -2.6f, 23.6f, y: Terrace + 2.6f);
             Prop(op, "prop_lantern_red", 2.6f, 23.6f, y: Terrace + 2.6f);
             Prop(op, "prop_potted_tree", -9f, 20.5f, y: Terrace, key: "prop_tree_elm", scale: 0.7f);
             Prop(op, "prop_potted_tree", 9f, 20.5f, y: Terrace, key: "prop_tree_elm", scale: 0.7f);
+        }
 
+        static void Barracks(Transform row)
+        {
             // 07 Barracks: palisade compound with a drill yard, gate x 26..32 on the north road.
             var camp = Group(row, "07 Barracks");
             float stakeH = Metres("palisade_stakes").y;
@@ -998,7 +1295,10 @@ namespace ThreeKingdoms.EditorTools
         {
             var row = Group(env, "South rows");
             // 04 Four houses in the south-west, tiled like the style reference (one thatched, as on the map).
-            Building(row, "04 House A", new Vector3(-36f, 0, -30f), 0f, "house_front", "house_side", "house_back");
+            // Blender pilot: the modelled house keeps its front wall at z -30 (its origin is the centre of plinth and
+            // door step together, 0.2 m south of the wall centre).
+            if (!ZhuojunModels.Place(row, "house_a", "04 House A", new Vector3(-36f, 0, -30f + Metres("house_side").x / 2f - 0.2f)))
+                Building(row, "04 House A", new Vector3(-36f, 0, -30f), 0f, "house_front", "house_side", "house_back");
             Building(row, "04 House B", new Vector3(-31f, 0, -19f), 0f, "house_b_front", "house_b_side", "house_b_back", roofKey: "thatch");
             Building(row, "04 House C", new Vector3(-21.5f, 0, -20f), 0f, "house_c_front", "house_c_side", "house_c_back");
             Building(row, "04 House D", new Vector3(-16f, 0, -30f), 0f, "house_c_front", "house_c_side", "house_c_back");
@@ -1121,21 +1421,52 @@ namespace ThreeKingdoms.EditorTools
             return m;
         }
 
+        // The ways out to the R1 涿蓟 region (user 2026-10-27: the big map round Zhuojun): the south road's end and the
+        // peach grove's far edge. R1 (x, z) = town (x + 360, z + 72). Open only once the party has come in from the region,
+        // so the story's own gate rules in the early chapter stay as they are.
+        static void RegionExits(Transform env)
+        {
+            var g = new GameObject("Region exits (R1)").transform;
+            g.SetParent(env, false);
+            void Exit(string name, Vector3 at, Vector2 size, string arrival, Vector3 facing)
+            {
+                var portal = new GameObject(name).AddComponent<RegionPortal>();
+                portal.transform.SetParent(g, false);
+                portal.transform.localPosition = at;
+                portal.Size = size; portal.TargetScene = "Region_R1"; portal.ArrivalSpot = arrival; portal.Facing = facing;
+                portal.AfterRegionVisit = true;
+            }
+            Exit("Exit south gate", new Vector3(0, 0, -76f), new Vector2(16f, 4f), "Spot From Zhuojun south", Vector3.back);
+            Exit("Exit west grove", new Vector3(-76f, 0, 0), new Vector2(4f, 30f), "Spot From Zhuojun west", Vector3.left);
+            new GameObject("Spot R1 south gate arrival").transform.position = new Vector3(0, 0, -42f);
+            new GameObject("Spot R1 west grove arrival").transform.position = new Vector3(-71f, GroundY(-71f, 0f), 0f);
+        }
+
         static void Outside(Transform env)
         {
             var o = Group(env, "Outside");
+            // The modelled country (user 2026-10-27: 野外部分的地势和山川都做出来): rolling ground flat where the player
+            // walks, rocks, the peach knoll and the Yan hills; trees then stand on its height.
+            var land = Group(o, "Terrain");
+            terrainPlaced = ZhuojunModels.Place(land, "terrain_near", "Terrain near", Vector3.zero, terrain: true);
+            ZhuojunModels.Place(land, "peach_knoll", "Peach knoll", Vector3.zero, terrain: true);
+            ZhuojunModels.Place(land, "rocks", "Rocks", Vector3.zero, terrain: true);
+            bool mountains = ZhuojunModels.Place(land, "yan_mountains", "Yan mountains", Vector3.zero, terrain: true);
+            Physics.SyncTransforms();
             // The road south of the gate and the peach grove outside the west gate (design §3 #12).
-            Prop(o, "prop_tree_locust", -12f, -48f, scale: 0.9f, solid: true);
-            Prop(o, "prop_tree_locust", 14f, -52f, scale: 0.8f, solid: true);
+            Prop(o, "prop_tree_locust", -12f, -48f, y: GroundY(-12f, -48f), scale: 0.9f, solid: true);
+            Prop(o, "prop_tree_locust", 14f, -52f, y: GroundY(14f, -52f), scale: 0.8f, solid: true);
             Prop(o, "prop_bush", -6.5f, -42f, scale: 1.4f);
             Prop(o, "prop_bush", 7f, -44f, scale: 1.6f);
             Prop(o, "prop_flowers", 5.2f, -40.5f);
+            if (terrainPlaced) HillTrees(o);
             var rng = new System.Random(7);
-            for (int i = 0; i < 18; i++)
+            // A full grove in bloom, as in the approved concept (art/zhuojun-hd-concept/zhuojun_concept_peach.png).
+            for (int i = 0; i < 46; i++)
             {
-                float x = -76f + (float)rng.NextDouble() * 19f, z = -12f + (float)rng.NextDouble() * 24f;
-                if (Mathf.Abs(z) < 3f) continue;   // keep the lane clear
-                Prop(o, i % 3 == 0 ? "prop_tree_peach_small" : "prop_tree_peach", x, z, solid: true);
+                float x = -77f + (float)rng.NextDouble() * 21f, z = -14f + (float)rng.NextDouble() * 28f;
+                if (Mathf.Abs(z) < 3.2f) continue;   // keep the lane clear
+                Prop(o, i % 3 == 0 ? "prop_tree_peach_small" : "prop_tree_peach", x, z, y: GroundY(x, z), solid: true);
             }
             // The peach-garden oath (user 2026-10-24): the altar with incense, offerings and wine in front of the
             // three, and petals drifting down; both shown only while the oath plays (TownStoryController.Oath).
@@ -1147,9 +1478,43 @@ namespace ThreeKingdoms.EditorTools
             petals.transform.position = new Vector3(-66f, 0f, -0.6f);
             petals.Material = Tex("oath_petal", optional: true) ? Mat("oath_petal", clip: true, twoSided: true) : PetalMaterial();
             petals.gameObject.SetActive(false);
+            if (mountains) return;   // the modelled Yan hills replace the painted backdrop
             // Distant hills beyond the north wall.
-            Prop(o, "bg_hills_far", 0f, 70f, scale: 7f);
+            // Far enough back and large enough to rise over the commandery roof from the square (user 2026-10-26).
+            Prop(o, "bg_hills_far", 0f, 120f, scale: 12f);
             Prop(o, "bg_town_rooftops_far", -70f, 60f, scale: 3f);
+        }
+
+        static bool terrainPlaced;
+
+        // Height of the modelled terrain under (x, z); 0 without it.
+        static float GroundY(float x, float z)
+        {
+            if (!terrainPlaced) return 0f;
+            foreach (var hit in Physics.RaycastAll(new Vector3(x, 300f, z), Vector3.down, 600f, ~0, QueryTriggerInteraction.Ignore).OrderBy(h => h.distance))
+                if (hit.collider is MeshCollider) return hit.point.y;
+            return 0f;
+        }
+
+        // Elms, locusts, willows and cypresses over the hills outside the walls, clear of the road, the grove and the
+        // walls, each standing on the slope.
+        static void HillTrees(Transform o)
+        {
+            var g = Group(o, "Hill trees");
+            var rng = new System.Random(57);
+            string[] kinds = { "prop_tree_elm", "prop_tree_locust", "prop_tree_elm", "prop_tree_cypress", "prop_tree_willow", "prop_bush", "prop_bush_b" };
+            int placed = 0;
+            for (int i = 0; i < 1200 && placed < 260; i++)
+            {
+                float x = -200f + (float)rng.NextDouble() * 380f, z = -125f + (float)rng.NextDouble() * 360f;
+                if (Mathf.Abs(x) < 56f && Mathf.Abs(z) < 44f) continue;               // the walls and their foot
+                if (Mathf.Abs(x) < 24f && z < -36f) continue;                           // the south road
+                if (x < -46f && x > -84f && Mathf.Abs(z) < 20f) continue;               // the peach grove and west lane
+                string key = kinds[rng.Next(kinds.Length)];
+                if (!Tex(key, optional: true)) continue;
+                Prop(g, key, x, z, y: GroundY(x, z) - 0.1f, scale: 0.8f + (float)rng.NextDouble() * 0.5f);
+                placed++;
+            }
         }
 
         // ---------- props, people, lights ----------
@@ -1157,8 +1522,9 @@ namespace ThreeKingdoms.EditorTools
         internal static void Prop(Transform parent, string name, float x, float z, float y = 0f, float scale = 1f, bool solid = false, string key = null, string glowMask = null)
         {
             key ??= name;
+            if (townSession && PropModels.TryGetValue(key, out string model) && ZhuojunModels.Place(parent, model, name, new Vector3(x, y, z))) return;
             var t = Tex(key);
-            var size = new Vector2(t.width / Ppm, t.height / Ppm) * scale;
+            var size = new Vector2(t.width / PpmOf(t), t.height / PpmOf(t)) * scale;
             var root = new GameObject(name).transform;
             root.SetParent(parent, false);
             root.localPosition = new Vector3(x, y, z);
@@ -1302,17 +1668,21 @@ namespace ThreeKingdoms.EditorTools
         static void CameraZones()
         {
             var g = new GameObject("Camera zones").transform;
-            void Zone(string name, float x0, float x1, float z0, float z1, float pitch, float distance, float yaw = 0f, float fov = 20f, float lookUp = 0.8f, float sway = 0f, int priority = 0)
+            void Zone(string name, float x0, float x1, float z0, float z1, float pitch, float distance, float yaw = 0f, float fov = 20f, float lookUp = 0.8f, float sway = 0f, int priority = 0, float blend = 0f)
             {
                 var z = new GameObject(name).AddComponent<CameraZone>();
                 z.transform.SetParent(g, false);
                 z.transform.position = new Vector3((x0 + x1) / 2f, 0, (z0 + z1) / 2f);
                 z.Size = new Vector2(x1 - x0, z1 - z0);
-                z.Pitch = pitch; z.Distance = distance; z.Yaw = yaw; z.Fov = fov; z.LookOffset = new Vector3(0, lookUp, 0); z.Sway = sway; z.Priority = priority;
+                z.Pitch = pitch; z.Distance = distance; z.Yaw = yaw; z.Fov = fov; z.LookOffset = new Vector3(0, lookUp, 0); z.Sway = sway; z.Priority = priority; z.BlendSeconds = blend;
             }
             Zone("Outside the south gate", -20f, 20f, -80f, -37f, 15f, 27f, fov: 22f, lookUp: 1.6f);
-            Zone("Inside the south gate", -10f, 10f, -34f, -23f, 22f, 30f);
-            Zone("Main axis and square", -10f, 10f, -23f, 11f, 32f, 40f, sway: 0.6f);
+            // From the south gate the camera sinks step by step, lowest on the square (user 2026-10-26: 有种进城的感觉).
+            Zone("Inside the south gate", -10f, 10f, -34f, -23f, 15f, 27f, fov: 22f, lookUp: 2.2f, blend: 2.4f);
+            Zone("Main axis", -10f, 10f, -23f, -9f, 11f, 25f, fov: 24f, lookUp: 3f, sway: 0.4f, blend: 2.6f);
+            // Stepping onto the market square the camera sinks slowly toward the ground until the Yan hills rise over
+            // the commandery roofs (user 2026-10-26).
+            Zone("Market square (low, the hills behind)", -10f, 10f, -9f, 11f, 8f, 24f, fov: 26f, lookUp: 3.6f, sway: 0.4f, priority: 2, blend: 2.8f);
             Zone("Commandery steps", -12f, 12f, 11f, 34f, 17f, 26f, lookUp: 2.2f, priority: 1);
             Zone("Tavern front", -28f, -11f, -13f, -2f, 24f, 24f, yaw: -12f);
             Zone("Smithy and gambling house", 20f, 46f, -13f, -2f, 24f, 26f, yaw: 12f);

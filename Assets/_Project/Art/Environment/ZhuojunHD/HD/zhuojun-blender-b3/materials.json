@@ -1,0 +1,152 @@
+{
+  "bamboo": {
+    "texture": "textures/bamboo.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "bronze": {
+    "texture": "textures/bronze.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "burlap": {
+    "texture": "textures/burlap.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "canvas_ivory": {
+    "texture": "textures/canvas_ivory.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "cloth_indigo": {
+    "texture": "textures/cloth_indigo.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "cloth_red": {
+    "texture": "textures/cloth_red.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "cloth_sage": {
+    "texture": "textures/cloth_sage.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "dice_ivory": {
+    "texture": "textures/dice_ivory.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "fruit_red": {
+    "texture": "textures/fruit_red.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "grain_cream": {
+    "texture": "textures/grain_cream.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "grain_gold": {
+    "texture": "textures/grain_gold.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "iron": {
+    "texture": "textures/iron.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "leaf_green": {
+    "texture": "textures/leaf_green.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "leather": {
+    "texture": "textures/leather.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "notice_paper": {
+    "texture": "textures/notice_paper.png",
+    "alpha_clip": false,
+    "tiling": false,
+    "two_sided": false
+  },
+  "radish_ivory": {
+    "texture": "textures/radish_ivory.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "ridge_carving": {
+    "texture": "textures/ridge_carving.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": true
+  },
+  "roof_eave": {
+    "texture": "textures/roof_eave.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "roof_ridge": {
+    "texture": "textures/roof_ridge.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "roof_tiles_grey": {
+    "texture": "textures/roof_tiles_grey.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "roof_underside": {
+    "texture": "textures/roof_underside.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "stone_well": {
+    "texture": "textures/stone_well.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "timber_beam": {
+    "texture": "textures/timber_beam.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "water_dark": {
+    "texture": "textures/water_dark.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "wicker": {
+    "texture": "textures/wicker.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  }
+}

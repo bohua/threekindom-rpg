@@ -25,7 +25,7 @@ namespace ThreeKingdoms.Gameplay.Story
             ToYingchuan => ToYingchuanSteps().ToList(),
             ToGuangzong => ToGuangzongSteps().ToList(),
             AfterGuangzong => AfterGuangzongSteps().ToList(),
-            _ => new List<StageStep>(),
+            _ => ChapterScripts3.Stage(id) ?? new List<StageStep>(),   // 0.3
         };
 
         // Zhuojun south gate → march → Lu Zhi's camp (the confirm box was answered in town).
@@ -150,7 +150,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 ("dong_zhuo", "dongzhuo_baishen", "seen", "mem.dongzhuo_baishen"),
                 ("zhang_fei", "zhangfei_dongzhuo", "held_back", "mem.zhangfei_dongzhuo"),
             },
-            _ => new (string, string, string, string)[0],
+            _ => ChapterScripts3.VictoryMemories(encounterId) ?? new (string, string, string, string)[0],
         };
 
         // Where "continue" leads after a won battle of the chapter: the story stage, or Anxi after the bandits.
@@ -159,7 +159,7 @@ namespace ThreeKingdoms.Gameplay.Story
             "battle_4" => (GameRun.StageScene, ToGuangzong),
             "battle_5" => (GameRun.StageScene, AfterGuangzong),
             "battle_6" => (GameRun.AnxiScene, null),
-            _ => (null, null),
+            _ => ChapterScripts3.AfterVictory(encounterId),
         };
     }
 }

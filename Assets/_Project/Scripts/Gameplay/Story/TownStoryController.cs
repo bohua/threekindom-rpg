@@ -176,7 +176,10 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             Run = GameRun.Current ?? GameRun.NewGame(Catalog);
             var story = Run.Story;
-            Place(Player.transform, Run.NextArrival switch
+            // Coming in from the R1 region through a gate (user 2026-10-27): stand where that portal says.
+            var fromRegion = RegionPortal.TakeArrival(out var regionFacing);
+            bool firstArrival = Run.NextArrival == GameRun.Arrival.NewGame && !fromRegion;
+            Place(Player.transform, fromRegion ? fromRegion : Run.NextArrival switch
             {
                 GameRun.Arrival.ReturnFromBattle => ReturnSpot,
                 GameRun.Arrival.AtSouthGate => ReturnSpot,
@@ -189,7 +192,7 @@ namespace ThreeKingdoms.Gameplay.Story
             // Neither stands in town any more: Zhang Fei walks up at the notice board, Guan Yu is met in the tavern.
             if (GuanYu) GuanYu.gameObject.SetActive(false);
             if (ZhangFei) ZhangFei.gameObject.SetActive(false);
-            ShowFollowers(Vector3.back);   // arriving through the south gate: the party trails into the passage
+            ShowFollowers(fromRegion ? -regionFacing : Vector3.back);   // arriving through the south gate: the party trails into the passage
             ShowBlockers();
             wasInside = TownInside.Contains(Player.transform.position);
             SetControl(true);
@@ -199,6 +202,8 @@ namespace ThreeKingdoms.Gameplay.Story
             if (TakePrologue()) StartCoroutine(PlayPrologue(true));
             else if (story.Phase == StoryPhase.Oath) StartCoroutine(PlayOath());
             else if (Run.Chapter2.Step == ChapterStep.ZouJingOrders) StartCoroutine(PlayZouJingOrders());   // 0.2 C1
+            else if (firstArrival && PlayArrivalIntro && story.Phase == StoryPhase.FindCompanions && !story.ZhangFeiJoined)
+                StartCoroutine(PlayArrival());   // the first look at Zhuojun (user 2026-10-26)
             Changed?.Invoke();
         }
 

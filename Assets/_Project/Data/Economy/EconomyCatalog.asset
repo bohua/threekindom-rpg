@@ -36,6 +36,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3d6a9820adc07c144ba58a71b5099379, type: 2}
   - {fileID: 11400000, guid: 2791f870e173690428748709e9823fb6, type: 2}
   - {fileID: 11400000, guid: 3f3f79a2fd51431429c906483e66a89e, type: 2}
+  - {fileID: 11400000, guid: bb2ceaee39383d742bae71863be54f19, type: 2}
+  - {fileID: 11400000, guid: a73b28ed4483d6e4bae8ac743c531da6, type: 2}
+  - {fileID: 11400000, guid: 062b5c15205ad6546b05d1c38dfae4ce, type: 2}
+  - {fileID: 11400000, guid: 69f60f305d4dce74489602c6dcbea861, type: 2}
   StartingGear:
   - General: {fileID: 11400000, guid: 5e29858fabf05534791eb726680d1824, type: 2}
     Items:

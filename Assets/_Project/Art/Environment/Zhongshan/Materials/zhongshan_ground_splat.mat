@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: zhongshan_ground_splat
+  m_Shader: {fileID: 4800000, guid: d022ab087db39c14ab2673aa946c1f4a, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _Base:
+        m_Texture: {fileID: 2800000, guid: 5efd57ed4a2167240b2758690bd98919, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Control:
+        m_Texture: {fileID: 2800000, guid: 97b2768a2db36494c9bd679807cc8801, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LayerA:
+        m_Texture: {fileID: 2800000, guid: b9d31243b8b6c3b459d072ec18a8a8f5, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LayerB:
+        m_Texture: {fileID: 2800000, guid: 5a801ce8c01345e479e5072837b06f8c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LayerG:
+        m_Texture: {fileID: 2800000, guid: 0af95befdd2a631429e47627a9e014a7, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LayerR:
+        m_Texture: {fileID: 2800000, guid: a0339214835459240825056ff361b96b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _PixelsPerMetre: 30
+    - _Ragged: 0.22
+    - _Smooth: 1
+    - _TileMetres: 12
+    m_Colors:
+    - _Bounds: {r: 0, g: 0, b: 400, a: 240}
+    - _Tint: {r: 0.93, g: 0.93, b: 0.88, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

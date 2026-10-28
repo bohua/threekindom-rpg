@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-26T00:07:09.918081+00:00",
+  "task": "0.5 剧情舞台背景（都昌城外·北海宴厅·徐州难民路·下邳州府正堂）",
+  "asset_type": "texture_set",
+  "generation_count": 5,
+  "generation_budget": 12,
+  "deliverables": [
+    "stage_duchang_outside.png",
+    "stage_beihai_hall.png",
+    "stage_refugee_road.png",
+    "stage_xiapi_hall.png",
+    "preview.png",
+    "PROMPTS.md",
+    "manifest.json"
+  ],
+  "files": [
+    {
+      "path": "stage_duchang_outside.png",
+      "bytes": 3729462,
+      "sha256": "4861c06248ad1bf060bb7c99188d5daf698d97a60bd43e8312726f11d4cc88c7",
+      "purpose": "都昌城外剧情舞台；夯土城墙、小城门、残破黄巾营栅，前景保留连续空地。",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "format": "PNG",
+      "opaque": true
+    },
+    {
+      "path": "stage_beihai_hall.png",
+      "bytes": 3216190,
+      "sha256": "97e2c352febd15de8efc140d3e41b2619bff07103084cca99804adc82ee0f809",
+      "purpose": "北海孔融宴厅剧情舞台；青色帷幔、低宴案与山水屏风，地面去除方格接缝。",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "format": "PNG",
+      "opaque": true
+    },
+    {
+      "path": "stage_refugee_road.png",
+      "bytes": 3799408,
+      "sha256": "b576405c6d5c9f93db065efeba06b4dead2c0957815cfe5719b10a7f307f981e",
+      "purpose": "徐州难民路剧情舞台；空村、焦黑屋架与远山，以白日空旷表现凝重。",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "format": "PNG",
+      "opaque": true
+    },
+    {
+      "path": "stage_xiapi_hall.png",
+      "bytes": 3333624,
+      "sha256": "43bf570f128d4ceb745a9e734be7d3c89cfa6721a3631a09b1c40554b0eb7706",
+      "purpose": "下邳州府正堂剧情舞台；中轴主座、徐州字屏风与两侧廊柱，门外明亮。",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "format": "PNG",
+      "opaque": true
+    },
+    {
+      "path": "preview.png",
+      "bytes": 4062293,
+      "sha256": "309e557925d960f9ded7d228f4854478a23ba8d4f0bb62027f95428ebe2edb29",
+      "purpose": "四景合并预览；标题只用于预览。",
+      "width": 1920,
+      "height": 1160,
+      "mode": "RGB",
+      "format": "PNG",
+      "opaque": true
+    },
+    {
+      "path": "PROMPTS.md",
+      "bytes": 15901,
+      "sha256": "90a755e4c3ac1c1c0dc9979607cbbb862af6c02f38fa1d84099fcac68942a804",
+      "purpose": "实际生成与局部修订提示词。"
+    }
+  ],
+  "manifest_self_reference": "manifest.json is listed in deliverables; its own hash is omitted to avoid recursive hashing.",
+  "design_decisions": [
+    "高清精细手绘质感、正面略俯视舞台构图；正式背景下方40%为无人物、无阻挡物的连续地面。",
+    "保持中午白日光与蓝色天光；户外地面自然过渡，不做地形方格拼块。",
+    "四景分别以城防营栅、文雅青帷、战后空村、州府廊柱区分；下邳仅保留指定徐州二字。"
+  ],
+  "processing": "1672x941 generated sources; minimal center crop and Lanczos resampling to 1920x1080 opaque RGB PNG.",
+  "sources_directory": "_sources/",
+  "prompts_directory": "_prompts/",
+  "limitations": [
+    "未做引擎内验收。",
+    "下邳内景未展示完整外部重檐屋顶轮廓。"
+  ],
+  "authority": "Created under the user repair instruction requiring manifest.json; supersedes the earlier bridge-owned manifest assumption."
+}

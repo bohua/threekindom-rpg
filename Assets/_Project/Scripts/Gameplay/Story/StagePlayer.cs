@@ -76,6 +76,15 @@ namespace ThreeKingdoms.Gameplay.Story
         public float Fade { get; private set; }
         public bool Cinematic { get; private set; }
         public MarchShot March { get; private set; }
+
+        // 0.3 realm-map chronicle (SYSTEMS_V03 §2): read by ChronicleHud; only shows, never writes the story state.
+        public sealed class ChronicleShot
+        {
+            public string Year, Layout, EventNode, EventLord, EventText;
+            public float EventAt = -99f;
+            public readonly Dictionary<string, string> Changes = new Dictionary<string, string>();   // node → lord after events
+        }
+        public static ChronicleShot ChronicleNow { get; private set; }
         // Set when a Load / Battle step left the scene: nothing after it plays.
         public bool Left { get; private set; }
 
@@ -115,7 +124,7 @@ namespace ThreeKingdoms.Gameplay.Story
             try { yield return Steps(steps); }
             finally
             {
-                Line = null; Choices = null; Card = null; Comic = null; March = null; Cinematic = false; Letterbox = false;
+                Line = null; Choices = null; Card = null; Comic = null; March = null; Cinematic = false; Letterbox = false; ChronicleNow = null;
                 Playing = false;
                 Changed?.Invoke();
             }
@@ -230,6 +239,14 @@ namespace ThreeKingdoms.Gameplay.Story
                     break;
                 case StageOp.Wait: yield return WaitSeconds(s.Seconds); break;
                 case StageOp.Call: s.Callback?.Invoke(); break;
+                case StageOp.Chronicle: ChronicleNow = new ChronicleShot { Year = s.A, Layout = s.B }; break;
+                case StageOp.ChronicleEvent:
+                    if (ChronicleNow == null) break;
+                    ChronicleNow.Changes[s.A] = s.B;
+                    ChronicleNow.EventNode = s.A; ChronicleNow.EventLord = s.B; ChronicleNow.EventText = s.C; ChronicleNow.EventAt = Time.time;
+                    yield return WaitConfirmOr(2.2f);
+                    break;
+                case StageOp.EndChronicle: ChronicleNow = null; break;
                 case StageOp.Load:
                     Left = true;
                     if (run != null) run.PendingStage = s.B;

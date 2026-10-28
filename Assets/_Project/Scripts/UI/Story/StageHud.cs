@@ -36,6 +36,12 @@ namespace ThreeKingdoms.UI.Story
         {
             ["zhuojun"] = new Vector2(0.369f, 0.306f), ["guangzong"] = new Vector2(0.323f, 0.503f), ["yingchuan"] = new Vector2(0.229f, 0.741f),
             ["anxi"] = new Vector2(0.314f, 0.390f), ["wancheng"] = new Vector2(0.156f, 0.903f),
+            // 0.3
+            ["gaotang"] = new Vector2(0.384f, 0.520f), ["ji"] = new Vector2(0.392f, 0.270f), ["suanzao"] = new Vector2(0.271f, 0.667f),
+            ["hulao"] = new Vector2(0.204f, 0.690f), ["luoyang"] = new Vector2(0.172f, 0.694f), ["pingyuan"] = new Vector2(0.411f, 0.424f),
+            ["jieqiao"] = new Vector2(0.334f, 0.463f), ["zhending"] = new Vector2(0.290f, 0.460f),
+            // 0.5
+            ["duchang"] = new Vector2(0.5625f, 0.511f), ["xuzhou"] = new Vector2(0.483f, 0.727f),
         };
 
         IStoryScreen S => Screen as IStoryScreen;

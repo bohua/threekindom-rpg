@@ -1,0 +1,63 @@
+{
+ "_note": "R1 涿蓟. Zhuojun is its own scene (Zhuojun_Town): here only its walls and the south and west gates as ways in. Town (x, z) = R1 (x - 360, z - 72); the town scene reaches 40 m out of its gates, so the way into it from the west is at the peach grove's far edge.",
+ "zhuojun": {
+  "gates": "S,W"
+ },
+ "ji": {
+  "gates": "S,E",
+  "set": "r1-blender-ji",
+  "layout": "_checks/layout_placements.json"
+ },
+ "camp": {
+  "kind": "camp",
+  "year": 191
+ },
+ "mulberry": {
+  "kind": "tree",
+  "skip": true
+ },
+ "zhuo_south": {
+  "portalScene": "Zhuojun_Town",
+  "portalArrival": "Spot R1 south gate arrival",
+  "portalX": 0,
+  "portalZ": -3,
+  "portalW": 9,
+  "portalD": 4,
+  "portalFacing": [
+   0,
+   0,
+   1
+  ]
+ },
+ "zhuo_west": {
+  "portalScene": "Zhuojun_Town",
+  "portalArrival": "Spot R1 west grove arrival",
+  "portalX": 0,
+  "portalZ": -27,
+  "portalW": 30,
+  "portalD": 4,
+  "portalFacing": [
+   1,
+   0,
+   0
+  ]
+ },
+ "_spots": {
+  "From Zhuojun south": [
+   360,
+   24
+  ],
+  "From Zhuojun west": [
+   280,
+   72
+  ]
+ },
+ "_spawn": [
+  280,
+  72
+ ],
+ "lousang": {
+  "set": "r1-blender-lousang",
+  "layout": "_checks/layout_placements.json"
+ }
+}
