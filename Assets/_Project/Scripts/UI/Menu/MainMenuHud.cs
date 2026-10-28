@@ -187,12 +187,13 @@ namespace ThreeKingdoms.UI.Menu
             else if (dir != Vector2Int.zero && Time.unscaledTime >= repeatAt) { repeatAt = Time.unscaledTime + 0.09f; Move(dir.x, dir.y); }
         }
 
-        // Y / Tab: 武将 → 技能; 兵书 cycles 命盘 / 藏书阁 / 策略一览; 系统 switches settings / saves.
+        // Y / Tab: 武将 → 技能; 兵书 cycles 命盘 / 藏书阁 / 策略一览; 系统 switches settings / saves; 史事 switches the narration.
         public void Alternate()
         {
             if (CurrentTab == Tab.Generals) Show(Tab.Skills);
             else if (CurrentTab == Tab.Bingshu) bingshuFocus = (bingshuFocus + 1) % 3;
             else if (CurrentTab == Tab.System) column = column == 2 ? 1 : 2;
+            else if (CurrentTab == Tab.Chronicle) ToggleNarration();
         }
 
         // X / C: take a book out of the circuit, or the gear off the chosen slot.
@@ -298,7 +299,7 @@ namespace ThreeKingdoms.UI.Menu
                 case Tab.Skills: yield return ("A", "Enter", "使用"); break;
                 case Tab.Generals: yield return ("A", "Enter", "查看装备"); yield return ("Y", "Tab", "查看技能"); break;
                 case Tab.Bingshu: yield return ("A", "Enter", "镶嵌兵书"); yield return ("X", "C", "卸下"); yield return ("Y", "Tab", "切换列表"); break;
-                case Tab.Chronicle: yield return ("A", "Enter", "重看序章"); break;
+                case Tab.Chronicle: yield return ("A", "Enter", "重看序章"); yield return ("Y", "Tab", "旁白文体"); break;
                 default: yield return ("A", "Enter", "确认"); break;
             }
             yield return ("B", "X", "返回");

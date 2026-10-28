@@ -17,6 +17,8 @@ namespace ThreeKingdoms.UI.Menu
 
         void ConfirmChronicle() => Controller.PlayChronicle(TownStoryController.PrologueEntry);
 
+        public void ToggleNarration() => GameSettings.ClassicNarration = !GameSettings.ClassicNarration;
+
         void MoveChronicle(int dy)
         {
             if (dy != 0) sourceIndex = Wrap(sourceIndex + dy, PrologueText.Sources.Length);
@@ -78,6 +80,18 @@ namespace ThreeKingdoms.UI.Menu
                 ry += h;
             }
             Button(1138, 792, 298, 42, "重看序章", ButtonKind.Normal, ConfirmChronicle, size: 26);
+            // 旁白文体 (user 2026-10-28): modern or 演义体; Y / Tab or a click switches, kept per machine.
+            bool classic = GameSettings.ClassicNarration;
+            p.Text(752, 792, 120, 42, "旁白", 21, MenuPaint.Mist);
+            for (int i = 0; i < 2; i++)
+            {
+                bool on = (i == 1) == classic;
+                var r = p.R(810 + i * 132, 794, 126, 38);
+                p.Frame(r, on ? "tab_selected" : "slot_row", on ? MenuPaint.Cyan : SilverA(0.4f), on ? new Color(MenuPaint.SelectBg.r, MenuPaint.SelectBg.g, MenuPaint.SelectBg.b, 0.92f) : new Color(0.06f, 0.11f, 0.18f, 0.85f));
+                GUI.Label(r, i == 0 ? PrologueText.StyleModern : PrologueText.StyleClassic, p.St(20, on ? Color.white : MenuPaint.Mist, TextAnchor.MiddleCenter));
+                bool pick = i == 1;
+                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) GameSettings.ClassicNarration = pick;
+            }
         }
 
         // 史实 unless the title carries its kind in 〔〕.

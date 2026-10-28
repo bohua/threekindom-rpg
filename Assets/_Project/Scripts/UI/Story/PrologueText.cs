@@ -33,6 +33,27 @@ namespace ThreeKingdoms.UI.Story
             new Shot(Form.Scene, "中平元年春，涿郡城门的告示栏前。", "一个白身的青年，正在看那张榜文。"),
         };
 
+        // The second narration (user 2026-10-28): the same lines in the half-classical voice of 《三国演义》, one for one
+        // with Shots so the pictures keep their timing. Chosen in 史事 (GameSettings.NarrationStyle).
+        public static readonly string[][] ClassicLines =
+        {
+            new[] { "话说汉室自高祖斩白蛇而起义，一统天下；后来光武中兴，定鼎洛阳。", "传至桓、灵二帝，四百年之气数，渐渐衰微。" },
+            new[] { "桓帝、灵帝宠信宦官，两兴党锢之狱，天下名士尽遭禁锢；", "又于西园卖官鬻爵，三公之位，各有定价。", "朝廷视天下如市肆，百姓视朝廷如仇雠。" },
+            new[] { "更兼连年大旱，蝗虫蔽天，疫疠流行，饥民塞道。", "此乃中平元年（184）春，天下之大势也。" },
+            new[] { "却说巨鹿郡有一人，姓张名角，以符水为人治病，号太平道，十余年间，徒众数十万，", "青、徐、幽、冀、荆、扬、兖、豫八州之人，家家奉事。", "角遂与众约定甲子年起事，传言曰：", "“苍天已死，黄天当立，岁在甲子，天下大吉。”" },
+            new[] { "二月，八州同日俱起，皆以黄巾裹头，旬月之间，天下响应，京师震动。", "朝廷乃解党锢，拜何进为大将军，屯兵以卫洛阳。" },
+            new[] { "朝廷遣北中郎将卢植讨张角于冀州，左中郎将皇甫嵩、右中郎将朱儁讨颍川贼众。", "又诏各州郡自募义兵，以御贼寇。", "此诏一下，天下有志之士、怀野心之人，皆得持刀而起矣。" },
+            new[] { "是年，骑都尉曹操，年方三十，正随皇甫嵩南下颍川；", "下邳丞孙坚，于淮泗之间募得千余人；", "河东太守董卓，尚候一纸调令。", "此数人者，彼时尚不相识。" },
+            new[] { "刘备，涿郡楼桑村人，以织席贩履为业，年二十四。自言中山靖王之后，少时曾师事卢植，然此时不过一介白身。",
+                "关羽，河东解良人，因事亡命，流落涿郡已五六年，于市上卖豆为生。", "张飞，涿郡人氏，颇有庄田，卖酒屠猪，专好结交天下豪杰。" },
+            new[] { "中平元年春，涿郡城门榜文之下。", "有一白身之人，正立于榜前观看。" },
+        };
+
+        public const string StyleModern = "现代文", StyleClassic = "演义体";
+
+        // The lines of a shot in the chosen voice.
+        public static string[] LinesOf(int shot, bool classic) => classic ? ClassicLines[shot] : Shots[shot].Lines;
+
         // The pins of shots 4 and 7: who, the line under the name, and the map anchor they stand at (map_anchors).
         public readonly struct Pin
         {

@@ -18,7 +18,8 @@ namespace ThreeKingdoms.UI.Story
     public sealed partial class StoryCinematicsView
     {
         const string PrologueArt = "Prologue/";
-        // Narration, one clip per subtitle line: Resources/Audio/Voice/Prologue/prologue_<shot>_<line> (1-based). A line
+        // Narration, one clip per subtitle line: Resources/Audio/Voice/Prologue/prologue_<shot>_<line> (1-based), and
+        // prologue_c_<shot>_<line> for the 演义体 lines. A line
         // stays up at least as long as its clip; a missing clip leaves that line silent at reading pace.
         const string PrologueVoice = "Audio/Voice/Prologue/prologue_";
         const float VoiceTail = 0.6f, MusicUnderVoice = 0.4f;
@@ -56,6 +57,7 @@ namespace ThreeKingdoms.UI.Story
             Stage = "prologue";
             PrologueShot = -1;
             skipByPointer = false;
+            bool classic = ThreeKingdoms.UI.Menu.GameSettings.ClassicNarration;
             BuildPrologue();
             StoryMusic.Play(StoryMusic.PrologueCue, fadeIn: 1.2f);
             bool skipped = false;
@@ -68,14 +70,14 @@ namespace ThreeKingdoms.UI.Story
                 {
                     PrologueShot = s;
                     proHeader.text = $"{PrologueText.Title}   │   {s + 1} / {shots.Length}";
-                    var lines = shots[s].Lines;
+                    var lines = PrologueText.LinesOf(s, classic);
                     var starts = new float[lines.Length];
                     var spans = new float[lines.Length];
                     var clips = new AudioClip[lines.Length];
                     float t0 = ShotLead;
                     for (int i = 0; i < lines.Length; i++)
                     {
-                        clips[i] = Resources.Load<AudioClip>($"{PrologueVoice}{s + 1}_{i + 1}");
+                        clips[i] = Resources.Load<AudioClip>($"{PrologueVoice}{(classic ? "c_" : "")}{s + 1}_{i + 1}");
                         spans[i] = Mathf.Max(LineTime(lines[i]), clips[i] ? clips[i].length + VoiceTail : 0f);
                         starts[i] = t0; t0 += spans[i] + LineGap;
                     }

@@ -68,6 +68,19 @@ public sealed class PrologueTests
         Assert.Less(Vector3.Distance(c.Player.transform.position, c.NoticeSpot.position), 0.3f);
     }
 
+    [Test] public void BothNarrationsHaveTheSameLinesAndAVoiceForEach()
+    {
+        for (int s = 0; s < PrologueText.Shots.Length; s++)
+        {
+            Assert.AreEqual(PrologueText.Shots[s].Lines.Length, PrologueText.ClassicLines[s].Length, $"shot {s + 1}: 演义体 line count matches the pictures' timing");
+            for (int l = 0; l < PrologueText.Shots[s].Lines.Length; l++)
+            {
+                Assert.IsNotNull(Resources.Load<AudioClip>($"Audio/Voice/Prologue/prologue_{s + 1}_{l + 1}"), $"modern voice {s + 1}-{l + 1}");
+                Assert.IsNotNull(Resources.Load<AudioClip>($"Audio/Voice/Prologue/prologue_c_{s + 1}_{l + 1}"), $"classic voice {s + 1}-{l + 1}");
+            }
+        }
+    }
+
     [UnityTest] public IEnumerator OnlyANewGamePlaysIt()
     {
         int before = StoryCinematics.PrologueCount;
