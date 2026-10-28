@@ -629,6 +629,16 @@ namespace ThreeKingdoms.EditorTools
             c.Spots = new[] { Spot(f, "quiver 草堆", new Vector3(23.4f, 0, 13.2f)) };
             c.ArrivalSpot = Spot(f, "Arrival (inside the gate)", new Vector3(0, 0, -17f));
             c.ReturnSpot = c.ArrivalSpot;
+            // Out through the gate into the R3 巨鹿 region (the Guangzong country round the camp) while the camp is free to
+            // walk; back in through its gate arrives inside it (RegionGreyboxBuilder, tools/regions/hubs_R3.json).
+            var gateOut = new GameObject("Portal to the Julu region").AddComponent<RegionPortal>();
+            gateOut.transform.SetParent(env, false);
+            gateOut.transform.position = new Vector3(0, 0, -25f);
+            gateOut.Size = new Vector2(8f, 3f);
+            gateOut.TargetScene = "Region_R3";
+            gateOut.ArrivalSpot = "Arrival outside Lu Zhi camp gate";
+            gateOut.Facing = Vector3.back;
+            gateOut.Steps = new[] { (int)ChapterStep.Camp };
             Huds(c);
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), CampPath);
         }

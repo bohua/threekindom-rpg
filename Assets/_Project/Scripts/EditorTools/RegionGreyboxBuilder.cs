@@ -48,7 +48,10 @@ namespace ThreeKingdoms.EditorTools
             public string layout;           // a hub set's own layout (Codex _checks/layout_*.json): every piece where Codex placed it
             public bool skip;               // a sub-place drawn by its hub's layout: label only
             public float layoutX, layoutZ;  // where the layout's origin sits relative to the place centre (e.g. its gate)
+            public float layoutY;           // added to every piece's height (layouts written in absolute regional heights)
             public string portalScene, portalArrival;
+            public int[] portalSteps = new int[0];   // ChapterStep values during which the doorway is open (empty: always)
+            public string arrivalName;      // the spot in front of the place, named so a portal from the hub scene finds it
         }
 
         [System.Serializable] public sealed class RegionRoad { public string id; public float width = 5f; public float[] pts = new float[0]; }   // x, z pairs
@@ -503,7 +506,7 @@ namespace ThreeKingdoms.EditorTools
                         break;
                 }
             Label(labels, p.name, g.position + new Vector3(0, Mathf.Max(8f, d * 0.12f), 0));
-            var spot = new GameObject("Spot " + p.name);
+            var spot = new GameObject(string.IsNullOrEmpty(p.arrivalName) ? "Spot " + p.name : p.arrivalName);
             spot.transform.SetParent(spots, false);
             // In front of the place (south of it in its own frame), where the party stands on arrival.
             var front = g.position + g.rotation * new Vector3(0, 0, -(d / 2f + 4f));
@@ -515,6 +518,7 @@ namespace ThreeKingdoms.EditorTools
                 portal.transform.localPosition = new Vector3(0, 0, -d / 2f);
                 portal.Size = new Vector2(6f, 2.5f); portal.TargetScene = p.portalScene; portal.ArrivalSpot = p.portalArrival;
                 portal.Facing = Vector3.forward;
+                portal.Steps = p.portalSteps ?? new int[0];
             }
         }
 
@@ -533,7 +537,7 @@ namespace ThreeKingdoms.EditorTools
             {
                 // Codex names the fields differently per set (position_m / rotation_z_deg, position / rotation_z).
                 var pos = piece.position_m != null && piece.position_m.Length >= 2 ? piece.position_m : piece.position;
-                var at = new Vector3(pos[0] + p.layoutX, pos.Length > 2 ? pos[2] : 0f, pos[1] + p.layoutZ);
+                var at = new Vector3(pos[0] + p.layoutX, (pos.Length > 2 ? pos[2] : 0f) + p.layoutY, pos[1] + p.layoutZ);
                 var t = BlenderModels.Place(p.set, g, piece.asset, string.IsNullOrEmpty(piece.child) ? piece.asset : piece.child, at, -(piece.rotation_z_deg + piece.rotation_z));
                 if (!t) continue;
                 n++;
