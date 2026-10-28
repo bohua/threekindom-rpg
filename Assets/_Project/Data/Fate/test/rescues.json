@@ -1,0 +1,88 @@
+[
+  {
+    "id": "rescue.t_doomed.tv.N2",
+    "characterId": "t_doomed",
+    "subject": "npc",
+    "volume": "tv",
+    "node": "tv.N2",
+    "historicalFate": "tv.N2 城破战死（测试用）",
+    "source": "【测试】突围为原创 if",
+    "canonLevel": "Provisional",
+    "hint": {
+      "fromStage": "tv.N1",
+      "level": "rumor",
+      "condition": {
+        "favorAtLeast": [
+          "t_doomed",
+          30
+        ]
+      },
+      "textKey": "hint.rescue.t_doomed"
+    },
+    "eligibility": {
+      "all": [
+        {
+          "flag": "t_relief_ready"
+        },
+        {
+          "favorAtLeast": [
+            "t_doomed",
+            50
+          ]
+        }
+      ]
+    },
+    "fulfillment": {
+      "all": [
+        {
+          "battleObjective": "t_breakout"
+        }
+      ]
+    },
+    "sceneVariant": {
+      "kind": "battle",
+      "default": "battle_t_siege",
+      "eligible": "battle_t_siege_rescue"
+    },
+    "onSuccess": {
+      "liftAnchor": "dies",
+      "tierAfter": "T1S",
+      "afterRouteId": "t_doomed.tv.survivor",
+      "unchangedDeaths": [
+        "t_squire"
+      ],
+      "survivorConstraints": {
+        "factionsAllowed": [
+          "wanderer"
+        ],
+        "cannotHoldPosts": [
+          "t_post_a"
+        ],
+        "mustNotBePresentAt": []
+      },
+      "powerTransfer": {
+        "position": "t_post_a",
+        "successor": "t_heir",
+        "mode": "retires_wounded",
+        "atNode": "tv.N3"
+      },
+      "affectedNodes": [
+        {
+          "node": "tv.N4",
+          "dialogueVariant": "dlg_t_doomed_alive"
+        }
+      ],
+      "epilogueVariantId": "ep.t_doomed_alive"
+    },
+    "onFail": {
+      "historical": true,
+      "memoryBroadcast": [
+        {
+          "who": "t_heir",
+          "key": "t_doomed_death",
+          "importance": 5
+        }
+      ]
+    }
+  }
+]

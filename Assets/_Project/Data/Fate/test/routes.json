@@ -1,0 +1,636 @@
+[
+  {
+    "characterId": "t_loyal",
+    "volume": "tv",
+    "activeFrom": "tv.N1",
+    "defaultRoute": [
+      {
+        "stage": "tv.N1",
+        "optionId": "t_loyal.tv.serve"
+      },
+      {
+        "stage": "tv.N2",
+        "optionId": "t_loyal.tv.serve_battle"
+      },
+      {
+        "stage": "tv.N3",
+        "optionId": "t_loyal.tv.serve"
+      },
+      {
+        "stage": "tv.N4",
+        "optionId": "t_loyal.tv.serve"
+      },
+      {
+        "stage": "tv.N5",
+        "optionId": "t_loyal.tv.serve"
+      }
+    ],
+    "anchors": [
+      {
+        "id": "t_loyal.anchor.tv.N1.house",
+        "stage": "tv.N1",
+        "strength": "HARD",
+        "state": {
+          "faction": [
+            "t_loyal",
+            "t_house"
+          ]
+        },
+        "departureSceneId": "scene_t_loyal_departs",
+        "source": "【测试】",
+        "canonLevel": "Provisional"
+      },
+      {
+        "id": "t_loyal.anchor.tv.N2.battle",
+        "stage": "tv.N2",
+        "strength": "HARD",
+        "state": {
+          "presentAt": [
+            "t_loyal",
+            "battle_t2"
+          ]
+        },
+        "source": "【测试】",
+        "canonLevel": "Provisional"
+      }
+    ],
+    "fateOptions": [
+      {
+        "id": "t_loyal.tv.serve",
+        "stages": [
+          "tv.N1",
+          "tv.N3",
+          "tv.N4",
+          "tv.N5"
+        ],
+        "effect": {
+          "faction": "t_house",
+          "role": "家将"
+        },
+        "playerProximity": 0,
+        "requiresCause": [],
+        "twoStep": false,
+        "ambitionsServed": [
+          "serve_house"
+        ],
+        "summaryTemplate": "{p:t_loyal}仍事旧主。",
+        "canonLevel": "Provisional",
+        "source": "【测试】",
+        "tags": {
+          "loyalty": 60,
+          "righteousness": 40,
+          "benevolence": 0,
+          "courage": 0,
+          "cunning": 0,
+          "fame": 0,
+          "profit": 0,
+          "pride": 0
+        }
+      },
+      {
+        "id": "t_loyal.tv.serve_battle",
+        "stages": [
+          "tv.N2"
+        ],
+        "effect": {
+          "faction": "t_house",
+          "presentAt": [
+            "battle_t2"
+          ]
+        },
+        "playerProximity": 0,
+        "requiresCause": [],
+        "twoStep": false,
+        "ambitionsServed": [
+          "serve_house"
+        ],
+        "summaryTemplate": "{p:t_loyal}随旧主出战。",
+        "canonLevel": "Provisional",
+        "source": "【测试】",
+        "tags": {
+          "loyalty": 60,
+          "righteousness": 0,
+          "benevolence": 0,
+          "courage": 40,
+          "cunning": 0,
+          "fame": 0,
+          "profit": 0,
+          "pride": 0
+        }
+      },
+      {
+        "id": "t_loyal.tv.wander",
+        "stages": [
+          "tv.N3",
+          "tv.N4"
+        ],
+        "effect": {
+          "faction": "wanderer",
+          "location": "t_town",
+          "recruitState": "available"
+        },
+        "playerProximity": 1,
+        "requiresCause": [
+          "PLAYER:benevolence"
+        ],
+        "twoStep": false,
+        "ambitionsServed": [
+          "find_true_lord"
+        ],
+        "summaryTemplate": "{p:t_loyal}辞别旧主，欲寻仁主。",
+        "canonLevel": "Provisional",
+        "source": "【测试】",
+        "tags": {
+          "loyalty": 0,
+          "righteousness": 40,
+          "benevolence": 60,
+          "courage": 0,
+          "cunning": 0,
+          "fame": 0,
+          "profit": 0,
+          "pride": 0
+        }
+      }
+    ],
+    "initialRelations": [
+      {
+        "target": "t_doomed",
+        "favor": 30,
+        "trust": 40,
+        "tags": []
+      }
+    ],
+    "randomEvents": []
+  },
+  {
+    "characterId": "t_proud",
+    "volume": "tv",
+    "activeFrom": "tv.N1",
+    "defaultRoute": [
+      {
+        "stage": "tv.N1",
+        "optionId": "t_proud.tv.follow"
+      },
+      {
+        "stage": "tv.N2",
+        "optionId": "t_proud.tv.follow"
+      },
+      {
+        "stage": "tv.N3",
+        "optionId": "t_proud.tv.follow"
+      },
+      {
+        "stage": "tv.N4",
+        "optionId": "t_proud.tv.follow"
+      },
+      {
+        "stage": "tv.N5",
+        "optionId": "t_proud.tv.follow"
+      }
+    ],
+    "anchors": [],
+    "fateOptions": [
+      {
+        "id": "t_proud.tv.follow",
+        "stages": [
+          "tv.N1",
+          "tv.N2",
+          "tv.N3",
+          "tv.N4",
+          "tv.N5"
+        ],
+        "effect": {
+          "faction": "t_lord_band"
+        },
+        "playerProximity": 1,
+        "requiresCause": [],
+        "twoStep": false,
+        "ambitionsServed": [],
+        "summaryTemplate": "{p:t_proud}随{p:t_lord}行动。",
+        "canonLevel": "Provisional",
+        "source": "【测试】",
+        "tags": {
+          "loyalty": 50,
+          "righteousness": 50,
+          "benevolence": 0,
+          "courage": 0,
+          "cunning": 0,
+          "fame": 0,
+          "profit": 0,
+          "pride": -50
+        }
+      },
+      {
+        "id": "t_proud.tv.leave_party",
+        "stages": [
+          "tv.N2",
+          "tv.N3",
+          "tv.N4",
+          "tv.N5"
+        ],
+        "effect": {
+          "faction": "t_rival_band",
+          "location": "t_town",
+          "recruitState": "departed"
+        },
+        "playerProximity": -1,
+        "requiresCause": [
+          "PLAYER:insult",
+          "PLAYER:-"
+        ],
+        "twoStep": true,
+        "ambitionsServed": [
+          "win_fame"
+        ],
+        "summaryTemplate": "{p:t_proud}负气出走。",
+        "canonLevel": "Provisional",
+        "source": "【测试】",
+        "warningSceneId": "scene_t_proud_warning",
+        "preconditions": {
+          "any": [
+            {
+              "not": {
+                "favorAtLeast": [
+                  "t_proud",
+                  0
+                ]
+              }
+            },
+            {
+              "not": {
+                "trustAtLeast": [
+                  "t_proud",
+                  15
+                ]
+              }
+            }
+          ]
+        },
+        "tags": {
+          "loyalty": 0,
+          "righteousness": 0,
+          "benevolence": 0,
+          "courage": 0,
+          "cunning": 0,
+          "fame": 60,
+          "profit": 0,
+          "pride": 80
+        }
+      }
+    ],
+    "initialRelations": [
+      {
+        "target": "t_lord",
+        "favor": 10,
+        "trust": 30,
+        "tags": []
+      },
+      {
+        "target": "t_rival",
+        "favor": 80,
+        "trust": 50,
+        "tags": [
+          "旧识"
+        ]
+      }
+    ],
+    "randomEvents": []
+  },
+  {
+    "characterId": "t_rival",
+    "volume": "tv",
+    "activeFrom": "tv.N1",
+    "defaultRoute": [
+      {
+        "stage": "tv.N1",
+        "optionId": "generic.stay"
+      },
+      {
+        "stage": "tv.N2",
+        "optionId": "generic.stay"
+      },
+      {
+        "stage": "tv.N3",
+        "optionId": "generic.stay"
+      },
+      {
+        "stage": "tv.N4",
+        "optionId": "generic.stay"
+      },
+      {
+        "stage": "tv.N5",
+        "optionId": "generic.stay"
+      }
+    ],
+    "anchors": [],
+    "fateOptions": [],
+    "genericOptions": [
+      "generic.stay",
+      "generic.join_protagonist",
+      "generic.wander"
+    ],
+    "initialRelations": [
+      {
+        "target": "t_lord",
+        "favor": 60,
+        "trust": 20,
+        "tags": []
+      }
+    ],
+    "randomEvents": []
+  },
+  {
+    "characterId": "t_doomed",
+    "volume": "tv",
+    "activeFrom": "tv.N1",
+    "defaultRoute": [
+      {
+        "stage": "tv.N1",
+        "optionId": "t_doomed.tv.hold"
+      },
+      {
+        "stage": "tv.N2",
+        "optionId": "t_doomed.tv.hold"
+      }
+    ],
+    "anchors": [
+      {
+        "id": "t_doomed.anchor.tv.N2.dies",
+        "stage": "tv.N2",
+        "strength": "HARD",
+        "kind": "dies",
+        "source": "【测试】史实阵亡",
+        "canonLevel": "Provisional"
+      }
+    ],
+    "fateOptions": [
+      {
+        "id": "t_doomed.tv.hold",
+        "stages": [
+          "tv.N1",
+          "tv.N2"
+        ],
+        "effect": {
+          "role": "守将"
+        },
+        "playerProximity": 0,
+        "requiresCause": [],
+        "twoStep": false,
+        "ambitionsServed": [],
+        "summaryTemplate": "{p:t_doomed}坚守城池。",
+        "canonLevel": "Provisional",
+        "source": "【测试】"
+      }
+    ],
+    "initialRelations": [],
+    "randomEvents": []
+  },
+  {
+    "characterId": "t_doomed",
+    "routeId": "t_doomed.tv.survivor",
+    "volume": "tv",
+    "activeFrom": "tv.N3",
+    "defaultRoute": [
+      {
+        "stage": "tv.N3",
+        "optionId": "t_doomed.tv.retire"
+      },
+      {
+        "stage": "tv.N4",
+        "optionId": "t_doomed.tv.retire"
+      },
+      {
+        "stage": "tv.N5",
+        "optionId": "t_doomed.tv.retire"
+      }
+    ],
+    "anchors": [],
+    "fateOptions": [
+      {
+        "id": "t_doomed.tv.retire",
+        "stages": [
+          "tv.N3",
+          "tv.N4",
+          "tv.N5"
+        ],
+        "effect": {
+          "faction": "wanderer",
+          "location": "t_town",
+          "role": "退养"
+        },
+        "playerProximity": 0,
+        "requiresCause": [],
+        "twoStep": false,
+        "ambitionsServed": [],
+        "summaryTemplate": "{p:t_doomed}伤重退养。",
+        "canonLevel": "Provisional",
+        "source": "【测试】"
+      }
+    ],
+    "initialRelations": [],
+    "randomEvents": []
+  },
+  {
+    "characterId": "t_squire",
+    "volume": "tv",
+    "activeFrom": "tv.N1",
+    "defaultRoute": [
+      {
+        "stage": "tv.N1",
+        "optionId": "t_squire.tv.attend"
+      },
+      {
+        "stage": "tv.N2",
+        "optionId": "t_squire.tv.attend"
+      }
+    ],
+    "anchors": [
+      {
+        "id": "t_squire.anchor.tv.N2.dies",
+        "stage": "tv.N2",
+        "strength": "HARD",
+        "kind": "dies",
+        "source": "【测试】与 t_doomed 同死",
+        "canonLevel": "Provisional"
+      }
+    ],
+    "fateOptions": [
+      {
+        "id": "t_squire.tv.attend",
+        "stages": [
+          "tv.N1",
+          "tv.N2"
+        ],
+        "effect": {
+          "role": "亲随"
+        },
+        "playerProximity": 0,
+        "requiresCause": [],
+        "twoStep": false,
+        "ambitionsServed": [],
+        "summaryTemplate": "{p:t_squire}随侍左右。",
+        "canonLevel": "Provisional",
+        "source": "【测试】"
+      }
+    ],
+    "initialRelations": [],
+    "randomEvents": []
+  },
+  {
+    "characterId": "t_heir",
+    "volume": "tv",
+    "activeFrom": "tv.N1",
+    "defaultRoute": [
+      {
+        "stage": "tv.N1",
+        "optionId": "generic.stay"
+      },
+      {
+        "stage": "tv.N2",
+        "optionId": "generic.stay"
+      },
+      {
+        "stage": "tv.N3",
+        "optionId": "generic.stay"
+      },
+      {
+        "stage": "tv.N4",
+        "optionId": "generic.stay"
+      },
+      {
+        "stage": "tv.N5",
+        "optionId": "generic.stay"
+      }
+    ],
+    "anchors": [],
+    "fateOptions": [
+      {
+        "id": "t_heir.tv.hide",
+        "stages": [
+          "tv.N2",
+          "tv.N3"
+        ],
+        "effect": {
+          "location": "t_village"
+        },
+        "playerProximity": 0,
+        "requiresCause": [
+          "HISTORY:h.t_purge"
+        ],
+        "twoStep": false,
+        "ambitionsServed": [],
+        "summaryTemplate": "{p:t_heir}避祸乡间。",
+        "canonLevel": "Provisional",
+        "source": "【测试】",
+        "tags": {
+          "loyalty": -40,
+          "righteousness": 0,
+          "benevolence": 0,
+          "courage": 0,
+          "cunning": -60,
+          "fame": 0,
+          "profit": 0,
+          "pride": 0
+        }
+      }
+    ],
+    "genericOptions": [
+      "generic.stay"
+    ],
+    "initialRelations": [
+      {
+        "target": "t_doomed",
+        "favor": 50,
+        "trust": 60,
+        "tags": [
+          "族人"
+        ]
+      }
+    ],
+    "randomEvents": []
+  },
+  {
+    "characterId": "t_wild",
+    "volume": "tv",
+    "activeFrom": "tv.N1",
+    "defaultRoute": [
+      {
+        "stage": "tv.N1",
+        "optionId": "t_wild.tv.live"
+      },
+      {
+        "stage": "tv.N2",
+        "optionId": "t_wild.tv.live"
+      },
+      {
+        "stage": "tv.N3",
+        "optionId": "t_wild.tv.live"
+      },
+      {
+        "stage": "tv.N4",
+        "optionId": "t_wild.tv.live"
+      },
+      {
+        "stage": "tv.N5",
+        "optionId": "t_wild.tv.live"
+      }
+    ],
+    "anchors": [],
+    "fateOptions": [
+      {
+        "id": "t_wild.tv.live",
+        "stages": [
+          "tv.N1",
+          "tv.N2",
+          "tv.N3",
+          "tv.N4",
+          "tv.N5"
+        ],
+        "effect": {},
+        "playerProximity": 0,
+        "requiresCause": [],
+        "twoStep": false,
+        "ambitionsServed": [],
+        "summaryTemplate": "{p:t_wild}安居乡里。",
+        "canonLevel": "Provisional",
+        "source": "【测试】"
+      },
+      {
+        "id": "t_wild.tv.plague_death",
+        "stages": [
+          "tv.N2",
+          "tv.N3",
+          "tv.N4",
+          "tv.N5"
+        ],
+        "effect": {
+          "dies": true
+        },
+        "playerProximity": 0,
+        "requiresCause": [
+          "RANDOM:re.t_plague"
+        ],
+        "twoStep": true,
+        "ambitionsServed": [],
+        "summaryTemplate": "{p:t_wild}染疫而亡。",
+        "canonLevel": "Provisional",
+        "source": "【测试】",
+        "warningSceneId": "scene_t_wild_sick",
+        "tags": {
+          "loyalty": 0,
+          "righteousness": 0,
+          "benevolence": 0,
+          "courage": 0,
+          "cunning": 0,
+          "fame": 0,
+          "profit": -40,
+          "pride": 0
+        }
+      }
+    ],
+    "initialRelations": [],
+    "randomEvents": [
+      "re.t_plague"
+    ]
+  }
+]
