@@ -71,12 +71,13 @@ namespace ThreeKingdoms.UI.Story
         // not certain, so his pin only names 幽州.
         public static readonly Pin[] Heroes =
         {
-            new Pin("cao_cao", "曹操", "骑都尉 · 洛阳", "luoyang", -70, -90),
-            new Pin("yuan_shao", "袁绍", "大将军幕下 · 洛阳", "luoyang", 80, -90),
-            new Pin("sun_jian", "孙坚", "下邳丞", "xiapi", 0, -90),
-            new Pin("dong_zhuo", "董卓", "河东太守", "hedong", 0, -90),
-            new Pin("liu_biao", "刘表", "党人 · 山阳", "shanyang", 0, -90),
-            new Pin("gongsun_zan", "公孙瓒", "幽州", "youzhou", 0, -90),
+            // Spread apart so no two overlap (user 2026-10-28: 董卓 sat on 曹操); a dot marks the city itself.
+            new Pin("cao_cao", "曹操", "骑都尉 · 洛阳", "luoyang", -90, 120),
+            new Pin("yuan_shao", "袁绍", "大将军幕下 · 洛阳", "luoyang", 95, 120),
+            new Pin("sun_jian", "孙坚", "下邳丞", "xiapi", 95, -30),
+            new Pin("dong_zhuo", "董卓", "河东太守", "hedong", -160, -30),
+            new Pin("liu_biao", "刘表", "党人 · 山阳", "shanyang", 10, 110),
+            new Pin("gongsun_zan", "公孙瓒", "幽州", "youzhou", 0, -30),
         };
 
 

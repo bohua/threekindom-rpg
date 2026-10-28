@@ -22,9 +22,9 @@ namespace ThreeKingdoms.UI.Story
         // prologue_c_<shot>_<line> for the 演义体 lines. A line
         // stays up at least as long as its clip; a missing clip leaves that line silent at reading pace.
         const string PrologueVoice = "Audio/Voice/Prologue/prologue_";
-        const float VoiceTail = 0.6f;   // the music stays at full level under the narration (user 2026-10-28)
+        const float VoiceTail = 0.25f;   // the music stays at full level under the narration (user 2026-10-28)
         AudioSource voice;
-        const float CharsPerSecond = 7f, MinLine = 2.5f, LineGap = 0.35f, ShotLead = 1.0f, ShotTail = 0.8f;
+        const float CharsPerSecond = 11f, MinLine = 1.6f, LineGap = 0.12f, ShotLead = 0.6f, ShotTail = 0.4f;   // brisk (user 2026-10-28: far too slow)
         static readonly Color Night = new Color(0.063f, 0.11f, 0.19f);       // #101C30
         static readonly Color PanelBlue = new Color(0.125f, 0.208f, 0.29f);      // #20354A
         static readonly Color Ivory = new Color(0.957f, 0.945f, 0.91f);      // #F4F1E8
@@ -507,6 +507,18 @@ namespace ThreeKingdoms.UI.Story
             v.style.top = Length.Percent(at.y * 100f + pin.Dy / 10.8f);
             v.style.width = 170; v.style.marginLeft = -85; v.style.marginTop = -66;
             v.style.alignItems = Align.Center;
+            if (pin.Dx != 0 || pin.Dy != 0)
+            {
+                // The pin stands off to one side; a dot (with a faint line) marks the city it belongs to.
+                var dot = new VisualElement { pickingMode = PickingMode.Ignore };
+                dot.style.position = Position.Absolute;
+                dot.style.width = dot.style.height = 14;
+                dot.style.left = 85 - pin.Dx - 7; dot.style.top = 66 - pin.Dy - 7;
+                dot.style.backgroundColor = yellow ? new Color(0.84f, 0.73f, 0.47f) : Ivory;
+                Border(dot, Night, 2f);
+                Round(dot, 7);
+                v.Add(dot);
+            }
             var face = new VisualElement { pickingMode = PickingMode.Ignore };
             face.style.width = 116; face.style.height = 116;
             var tex = Art("tag_" + pin.Id);
