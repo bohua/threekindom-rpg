@@ -19,16 +19,13 @@ MonoBehaviour:
     Level: 12
     FocusEscort: 0
   - General: {fileID: 11400000, guid: 7c8f3be2cb770384289a48a2108d1e3f, type: 2}
-    Level: 11
-    FocusEscort: 0
-  - General: {fileID: 11400000, guid: 7c8f3be2cb770384289a48a2108d1e3f, type: 2}
-    Level: 11
-    FocusEscort: 0
-  - General: {fileID: 11400000, guid: 7c8f3be2cb770384289a48a2108d1e3f, type: 2}
     Level: 10
     FocusEscort: 0
   - General: {fileID: 11400000, guid: 7c8f3be2cb770384289a48a2108d1e3f, type: 2}
     Level: 10
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 7c8f3be2cb770384289a48a2108d1e3f, type: 2}
+    Level: 9
     FocusEscort: 0
   - General: {fileID: 11400000, guid: 7c8f3be2cb770384289a48a2108d1e3f, type: 2}
     Level: 9

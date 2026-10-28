@@ -24,12 +24,6 @@ MonoBehaviour:
   - General: {fileID: 11400000, guid: 577249990b5ce724393cabd15ded3e0e, type: 2}
     Level: 12
     FocusEscort: 0
-  - General: {fileID: 11400000, guid: 577249990b5ce724393cabd15ded3e0e, type: 2}
-    Level: 11
-    FocusEscort: 0
-  - General: {fileID: 11400000, guid: 577249990b5ce724393cabd15ded3e0e, type: 2}
-    Level: 11
-    FocusEscort: 0
   Ai: 1
   SkillEveryRounds: 3
   ExpReward: 210

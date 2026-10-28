@@ -52,7 +52,7 @@ public sealed class ShopTests
 
         // Worn items are refused with a reason; a bag item asks first, then sells for half.
         hud.Go(ShopHud.Mode.Sell);
-        hud.AskSell(inv.Data.Find("hunting_bow"));
+        hud.AskSell(inv.Data.Find("ring_pommel_saber"));   // 刘备's starting saber (v1.3: infantry)
         StringAssert.Contains("卸下", hud.Message);
         Assert.AreEqual(ShopHud.Mode.Sell, hud.Current);
         hud.AskSell(bracers);

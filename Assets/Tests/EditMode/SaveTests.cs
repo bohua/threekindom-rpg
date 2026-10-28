@@ -60,7 +60,7 @@ namespace ThreeKingdoms.Tests.EditMode
             Assert.AreEqual("iron_shuo", r.Inventory.Worn("guan_yu", EquipSlot.Weapon).Id);
             Assert.AreEqual(1, r.Inventory.Count(eco.Find("cavalry_lance")));
             Assert.AreEqual(1, r.Inventory.Count(eco.Find("leather_bracers")));
-            Assert.AreEqual("hunting_bow", r.Inventory.Worn("liu_bei", EquipSlot.Weapon).Id);
+            Assert.AreEqual("ring_pommel_saber", r.Inventory.Worn("liu_bei", EquipSlot.Weapon).Id);
             Assert.That(r.Exp, Is.EquivalentTo(exp.Select(kv => (kv.Key, kv.Value))));
             Assert.AreEqual(2, read.leaderLevel);
             Assert.AreEqual("第一章", read.chapter);

@@ -47,21 +47,21 @@ namespace ThreeKingdoms.Tests.EditMode
         {
             Assert.AreEqual(120, inv.Copper);
             Assert.AreEqual(2, inv.Rations);
-            Assert.AreEqual("hunting_bow", inv.Worn("liu_bei", EquipSlot.Weapon).Id);
+            Assert.AreEqual("ring_pommel_saber", inv.Worn("liu_bei", EquipSlot.Weapon).Id);   // 刘备 leads infantry (v1.3)
             Assert.AreEqual("cloth_armor", inv.Worn("liu_bei", EquipSlot.Armor).Id);
             Assert.IsNull(inv.Worn("liu_bei", EquipSlot.Accessory));
             Assert.AreEqual("cavalry_lance", inv.Worn("guan_yu", EquipSlot.Weapon).Id);
-            Assert.AreEqual("ring_pommel_saber", inv.Worn("zhang_fei", EquipSlot.Weapon).Id);
+            Assert.AreEqual("cavalry_lance", inv.Worn("zhang_fei", EquipSlot.Weapon).Id);   // 张飞 leads cavalry (v1.3)
             Assert.IsFalse(inv.Bag.Any());
         }
 
         [Test]
         public void StartingGearCountsInBattleStats()
         {
-            // 1 级关羽：物攻 10 + 90/2 = 55，骑枪 +4 → 59；物防 5 + 80/3 = 31，布甲 +3 → 34.
+            // 1 级关羽（武将表 96/88/70）：物攻 10 + 96/2 = 58，骑枪 +4 → 62；物防 5 + 88/3 = 34，布甲 +3 → 37.
             var s = BattleRules.Compute(guan, 1, inv.Bonus("guan_yu"), data.Troops, data.Config);
-            Assert.AreEqual(59, s.PhysicalAttack);
-            Assert.AreEqual(34, s.PhysicalDefense);
+            Assert.AreEqual(62, s.PhysicalAttack);
+            Assert.AreEqual(37, s.PhysicalDefense);
         }
 
         [Test]
@@ -73,7 +73,7 @@ namespace ThreeKingdoms.Tests.EditMode
             Assert.AreEqual(5, then.PhysicalAttack - now.PhysicalAttack, "+9 replaces +4");
             Assert.IsTrue(shuo.Fits(guan.Troop));
             Assert.IsFalse(shuo.Fits(liu.Troop));
-            Assert.IsFalse(shuo.Fits(zhang.Troop));
+            Assert.IsTrue(shuo.Fits(zhang.Troop));   // 张飞 leads cavalry (v1.3)
         }
 
         [Test]
@@ -105,10 +105,10 @@ namespace ThreeKingdoms.Tests.EditMode
             var saber = Item("ring_pommel_saber");
             Assert.AreEqual(TradeResult.StillEquipped, inv.Sell(saber));
             Assert.AreEqual(120, inv.Copper);
-            Assert.AreEqual(TradeResult.Ok, inv.Unequip("zhang_fei", EquipSlot.Weapon));
+            Assert.AreEqual(TradeResult.Ok, inv.Unequip("liu_bei", EquipSlot.Weapon));
             Assert.AreEqual(TradeResult.Ok, inv.Sell(saber));
             Assert.AreEqual(135, inv.Copper, "starting weapon sells for its configured 15");
-            Assert.IsNull(inv.Worn("zhang_fei", EquipSlot.Weapon), "an empty weapon slot is allowed");
+            Assert.IsNull(inv.Worn("liu_bei", EquipSlot.Weapon), "an empty weapon slot is allowed");
         }
 
         [Test]

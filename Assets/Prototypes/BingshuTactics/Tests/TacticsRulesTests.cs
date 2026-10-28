@@ -209,8 +209,9 @@ public class TacticsRulesTests
         Assert.IsFalse(r.ContainsKey(new Vector2Int(2, 0)));   // 沙2＋浅滩2 超出移动力
         Assert.AreEqual(1.2f, Combat.HeightMul(3, 0), 1e-4);   // 封顶 +20%
         Assert.AreEqual(0.9f, Combat.HeightMul(0, 1), 1e-4);
-        var t = new Unit();
+        var t = new Unit { Troop = Troop.Archer };
         Assert.AreEqual(0.85f, Combat.TakenMul(t, true), 1e-4);   // 营寨
+        Assert.AreEqual(0.7f, Combat.TakenMul(new Unit { Troop = Troop.Infantry }, true), 1e-4);   // 步兵守营寨翻倍（主稿 §3.14）
         t.Defending = true;
         Assert.AreEqual(0.5f, Combat.TakenMul(t, true), 1e-4);    // 只取最强
     }

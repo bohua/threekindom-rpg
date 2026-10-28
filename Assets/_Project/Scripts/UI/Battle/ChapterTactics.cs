@@ -331,6 +331,10 @@ namespace ThreeKingdoms.UI.Battle
                 return list.ToArray();
             }
 
+            // Guest generals (Zhao Yun, Taishi Ci) ride with their own kit: an improved weapon and leather armour, like ours by
+            // then. Under v1.3 attack grows faster than defence, so a bare guest fell in a few hits (AI play-through, battle 12).
+            internal static readonly StatBonus GuestGear = new StatBonus { PhysicalAttack = 9, PhysicalDefense = 6, Troops = 10 };
+
             internal static TacticsUnitDef Unit(GeneralSpec g, int level, UnitStats s, Team team, Vector2Int pos)
             {
                 // The tactics prototype's Troop enum mirrors TroopType value for value (BALANCE_MODEL_v1 §3.14).

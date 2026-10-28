@@ -88,7 +88,7 @@ namespace ThreeKingdoms.UI.Battle
             }
             TacticsUnitDef Zhao(Vector2Int pos)
             {
-                var s = BattleRules.Compute(ZhaoYun, partyLevel, default, data.Troops, data.Config);
+                var s = BattleRules.Compute(ZhaoYun, partyLevel, ChapterTactics.Stages.GuestGear, data.Troops, data.Config);
                 var u = ChapterTactics.Stages.Unit(ZhaoYun, partyLevel, s, Team.Player, pos);
                 u.Key = "ZhaoYun"; u.Crafts = new[] { "援护", "连击" };
                 return u;

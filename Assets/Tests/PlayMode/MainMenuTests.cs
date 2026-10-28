@@ -43,10 +43,10 @@ public sealed class MainMenuTests
         Assert.IsTrue(menu.ItemRows().All(r => r.IsRation), "消耗品 filter");
         menu.ItemFilter = 0;
 
-        // 技能: Liu Bei's own skills, 火矢 locked until Lv.3, nothing usable out of battle.
+        // 技能: Liu Bei's own skills, 流矢 (v1.3 name) locked until Lv.3, nothing usable out of battle.
         menu.Show(MainMenuHud.Tab.Skills);
         var skills = menu.SkillRows();
-        Assert.That(skills.Take(2).Select(s => s.Skill.DisplayName), Is.EqualTo(new[] { "整队", "火矢" }));
+        Assert.That(skills.Take(2).Select(s => s.Skill.DisplayName), Is.EqualTo(new[] { "整队", "流矢" }));
         Assert.IsTrue(menu.Learned(skills[0]));
         Assert.IsFalse(menu.Learned(skills[1]));
         Assert.AreEqual("Lv.3 解锁", menu.SkillUseBlocked(skills[1]));

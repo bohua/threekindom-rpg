@@ -126,7 +126,7 @@ namespace ThreeKingdoms.EditorTools
             var baimaRider = E(General("baima_rider", "BaimaRider", "白马义从", TroopType.HorseArcher, 72, 62, 40, 0, 0, 0, (1, enemyCharge)), UnitElement.Fire);
             var luBu = E(General("lu_bu", "LuBu", "吕布", TroopType.Cavalry, 100, 88, 25, 0, 0, 0, (1, enemyCharge), (1, enemySweep)), UnitElement.Fire);
             var bingzhou = E(General("bingzhou_cavalry", "BingzhouCavalry", "并州骑", TroopType.Cavalry, 66, 55, 25, 0, 0, 0), UnitElement.Fire);
-            var b7 = Encounter("battle_7", "Battle7_Drill", "选做 · 校场演武", EnemyAiKind.FacingSlot, 70, 60, (baimaRider, 5), (baimaRider, 5), (baimaRider, 4), (baimaRider, 4));   // §3.11: 弓骑 5 5 4 4
+            var b7 = Encounter("battle_7", "Battle7_Drill", "选做 · 校场演武", EnemyAiKind.FacingSlot, 70, 60, (baimaRider, 5), (baimaRider, 5), (baimaRider, 4));   // §3.11 says 弓骑 5 5 4 4; the AI play-through lost 4 (they focus one rider), so 3 until play-tested
             // 0.4 河北篇 (V04_HEBEI_PLAN §4): Pingyuan's raiders, Wen Chou at the Panhe, Qu Yi's vanguard and crossbows at Jieqiao.
             var raiderChief = E(General("liukou_chief", "RaiderChief", "流寇头目", TroopType.YellowTurban, 72, 55, 28, 0, 0, 0, (1, enemyCharge)), UnitElement.Metal);
             var raider = E(General("liukou", "Raider", "流寇", TroopType.YellowTurban, 52, 44, 20, 0, 0, 0), UnitElement.Metal);
@@ -151,11 +151,11 @@ namespace ThreeKingdoms.EditorTools
             var caoRen = E(General("cao_ren", "CaoRen", "曹仁", TroopType.Cavalry, 82, 88, 60, 0, 0, 0, (1, enemyCharge), (1, enemySweep)), UnitElement.Fire);
             var deserter = E(General("deserter", "Deserter", "散兵", TroopType.Infantry, 66, 54, 24, 0, 0, 0), UnitElement.Fire);
             var b12 = Encounter("battle_12", "Battle12_Duchang", "第十二战 · 都昌解围", EnemyAiKind.FacingSlot, 170, 180,   // §3.10 (C18): 0.5 exp 170 / 190 / 210 / 140
-                (guanHai, 12), (ytRemnant, 11), (ytRemnant, 11), (ytRemnant, 10), (ytRemnant, 10), (ytRemnant, 9));
+                (guanHai, 12), (ytRemnant, 10), (ytRemnant, 10), (ytRemnant, 9), (ytRemnant, 9));   // §3.11 sized it for four of ours (11 11 10 10 9); the 0.5 cap fields three, so five foes (≤ 3 × 1.75), one level lower
             var b13 = Encounter("battle_13", "Battle13_XiapiEast", "第十三战 · 下邳城东", EnemyAiKind.FacingSlot, 190, 200,
-                (caoInf, 11), (caoInf, 10), (caoArcher, 10), (caoArcher, 10));   // §3.11: 枪弓 4 人
+                (caoInf, 10), (caoInf, 9), (caoArcher, 9), (caoArcher, 9));   // §3.11 枪弓 4 人 (11 10 10 10) was sized for four of ours; the 0.5 cap fields three, so one level lower
             var b14 = Encounter("battle_14", "Battle14_XiapiWalls", "第十四战 · 下邳保卫", EnemyAiKind.FacingSlot, 210, 220,
-                (caoRen, 14), (caoCav, 12), (caoCav, 12), (caoCav, 11), (caoCav, 11));
+                (caoRen, 14), (caoCav, 12), (caoCav, 12));   // §3.11: 曹仁 + 曹骑 12 12 11 11 — the two 11s come as the round-5 wave
             var b15 = Encounter("battle_15", "Battle15_Xiaopei", "选做 · 小沛巡防", EnemyAiKind.FacingSlot, 140, 150,
                 (deserter, 13), (deserter, 13), (raider, 12), (raider, 12), (deserter, 12), (deserter, 11));
             var b8 = Encounter("battle_8", "Battle8_Hulao", "第八战 · 虎牢关·三英战吕布", EnemyAiKind.FacingSlot, 90, 120, (luBu, 9), (bingzhou, 4), (bingzhou, 4), (bingzhou, 4));   // §3.11: Floor 0.5 instead of extra troops

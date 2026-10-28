@@ -96,7 +96,7 @@ namespace ThreeKingdoms.UI.Battle
             }
             TacticsUnitDef Guest(GeneralSpec g, string key, Vector2Int pos, params string[] crafts)
             {
-                var u = ChapterTactics.Stages.Unit(g, partyLevel, BattleRules.Compute(g, partyLevel, default, data.Troops, data.Config), Team.Player, pos);
+                var u = ChapterTactics.Stages.Unit(g, partyLevel, BattleRules.Compute(g, partyLevel, ChapterTactics.Stages.GuestGear, data.Troops, data.Config), Team.Player, pos);
                 u.Key = key; u.Crafts = crafts;
                 return u;
             }
@@ -149,9 +149,8 @@ namespace ThreeKingdoms.UI.Battle
                     for (int i = 0; i < 2; i++) def.Units.Add(Make(pick[i], slots[i + 1]));
                     foreach (var k in all.Where(k => !pick.Contains(k))) def.Reserves.Add(Make(k, At(rows, 7, 11)));
                     Enemies(new[] { At(rows, 7, 4), At(rows, 4, 5), At(rows, 11, 5), At(rows, 2, 1), At(rows, 13, 1), At(rows, 7, 2) },
-                        new[] { null, "黄巾余部甲", "黄巾余部乙", "黄巾弓手甲", "黄巾弓手乙", "黄巾余部丙" });
+                        new[] { null, "黄巾余部甲", "黄巾余部乙", "黄巾余部丙", "黄巾余部丁", "黄巾余部戊" });   // BALANCE_MODEL_v1 §3.11: 管亥 + 五名余部（贼众，近战）
                     def.Units[0 + 3 + 0].Leader = true;
-                    foreach (var u in def.Units.Where(x => x.Team == Team.Enemy && x.Name.Contains("弓手"))) { u.Move = 0; u.Range = 3; }
                     def.Objective = "击溃管亥，解都昌之围";
                     def.Events.Add(new TacticsEvent { Round = 2, Actions = new[] { Line("taishi_ci", "b12.hint.1"), Line("liu_bei", "b12.hint.2") } });
                     def.OpeningLines = Lines("guan_hai", "b12.open.1", "taishi_ci", "b12.open.2", "liu_bei", "b12.open.3");
@@ -166,7 +165,7 @@ namespace ThreeKingdoms.UI.Battle
                     var cb = Ally(CaoBao, "CaoBao", 12, At(rows, 12, 3)); cb.Leader = true;
                     def.Units.Add(cb);
                     Enemies(new[] { At(rows, 7, 9), At(rows, 10, 9), At(rows, 9, 11), At(rows, 6, 11) });
-                    def.Objective = "迎击曹军前锋（三波）";
+                    def.Objective = "迎击曹军前锋（两波）";
                     var yj = Foe(YuJin, 13, At(rows, 9, 11), "YuJin"); yj.Leader = true; yj.Floor = 0.45f;
                     def.Events.Add(new TacticsEvent { Round = 2, Actions = new[] { Goal("曹军第二波将至（于禁）") } });
                     def.Events.Add(new TacticsEvent
@@ -175,7 +174,7 @@ namespace ThreeKingdoms.UI.Battle
                         Actions = new[]
                         {
                             Banner("第二波 · 于禁出阵"),
-                            new TacticsAction { Kind = TacticsActionKind.Spawn, Units = new[] { yj, Foe(CaoInf, 11, At(rows, 5, 11), "CaoInfantry"), Foe(CaoInf, 11, At(rows, 12, 11), "CaoInfantry") } },   // BALANCE_MODEL_v1 §3.11: 杂兵 = our level − 1
+                            new TacticsAction { Kind = TacticsActionKind.Spawn, Units = new[] { yj } },   // BALANCE_MODEL_v1 §3.11: four foes plus Yu Jin (≤ 3 × 1.75)   // BALANCE_MODEL_v1 §3.11: 杂兵 = our level − 1
                             Line("yu_jin", "b13.yujin.1"), Goal("把于禁的兵力压到一半以下，或坚持到第 6 回合"),
                         },
                     });
@@ -184,8 +183,8 @@ namespace ThreeKingdoms.UI.Battle
                         Round = 5,
                         Actions = new[]
                         {
-                            Banner("第三波 · 曹军骑兵"),
-                            new TacticsAction { Kind = TacticsActionKind.Spawn, Units = new[] { Foe(CaoCav, 11, At(rows, 3, 11), "CaoCavalry"), Foe(CaoCav, 11, At(rows, 14, 11), "CaoCavalry") } },
+                            Banner("曹军后队逼近"),
+                            Goal("于禁兵力过半或坚持到第 6 回合即可撤入城门"),
                         },
                     });
                     // The way back in opens when Yu Jin falls below half, or at the latest at round 6 (the AI play-through
@@ -215,13 +214,13 @@ namespace ThreeKingdoms.UI.Battle
                     def.Events.Add(new TacticsEvent
                     {
                         Round = 3,
-                        Actions = new[] { Banner("第二波 · 曹军步卒"), new TacticsAction { Kind = TacticsActionKind.Spawn, Units = new[] { Foe(CaoInf, 12, At(rows, 4, 11), "CaoInfantry"), Foe(CaoInf, 12, At(rows, 12, 11), "CaoInfantry") } } },
+                        Actions = new[] { Banner("曹军攻城") },   // BALANCE_MODEL_v1 §3.11: five in all, the infantry wave is gone
                     });
                     def.Events.Add(new TacticsEvent { Round = 4, Actions = new[] { Banner("曹军阵中骚动"), Line("narrator", "b14.stir.1") } });   // REVIEW_V05 R3
                     def.Events.Add(new TacticsEvent
                     {
                         Round = 5,
-                        Actions = new[] { Banner("第三波 · 曹军骑兵"), new TacticsAction { Kind = TacticsActionKind.Spawn, Units = new[] { Foe(CaoCav, 12, At(rows, 2, 11), "CaoCavalry"), Foe(CaoCav, 12, At(rows, 13, 11), "CaoCavalry") } } },
+                        Actions = new[] { Banner("第二波 · 曹军骑兵"), new TacticsAction { Kind = TacticsActionKind.Spawn, Units = new[] { Foe(CaoCav, 11, At(rows, 2, 11), "CaoCavalry"), Foe(CaoCav, 11, At(rows, 13, 11), "CaoCavalry") } } },
                     });
                     // Cao Ren sounds the retreat when he falls below half, or when word of Yanzhou reaches him (round 7, the
                     // betrayal the round-4 stir foreshadows; REVIEW_V05 R3).

@@ -52,6 +52,10 @@ namespace Prototype.BingshuTactics.EditorTools
             var lubu8 = ImportArt("char_lubu_idlewalk_8dir_96.png", game.LiuBeiMat); if (lubu8) game.LuBuMat = lubu8;
             var guan8 = ImportArt("char_guanyu_idlewalk_8dir_96.png", game.LiuBeiMat); if (guan8) game.GuanYuMat = guan8;
             var zhang8 = ImportArt("char_zhangfei_idlewalk_8dir_96.png", game.LiuBeiMat); if (zhang8) game.ZhangFeiMat = zhang8;
+            // 骑系人物在战场上骑马（数值主稿 v1.3 §3.14，Codex art/mounted-tactics-8dir，128 格八向）：关羽枣红、张飞乌云踏雪、赵云白马
+            var guanM = ImportArt("char_guanyu_mounted_8dir_128.png", game.LiuBeiMat); if (guanM) game.GuanYuMat = guanM;
+            var zhangM = ImportArt("char_zhangfei_mounted_8dir_128.png", game.LiuBeiMat); if (zhangM) game.ZhangFeiMat = zhangM;
+            var zhaoM = ImportArt("char_zhaoyun_mounted_8dir_128.png", game.LiuBeiMat, "ZhaoYun_Mounted"); if (zhaoM) game.CharMats.Add(zhaoM);
             game.LuBuBust = ImportTexture("char_lubu_bust.png", false);
             game.UiTextures = ImportUiSlices();
             game.DestinyTextures = ImportDestinySlices();
@@ -126,6 +130,8 @@ namespace Prototype.BingshuTactics.EditorTools
             // 用户 2026-10-23 要求刘备缩小头部，重画稿在单独目录，优先取
             var rev = Path.Combine(ArtSource + "-liubei-r2", file);
             if (string.IsNullOrEmpty(srcDir) && File.Exists(rev)) src = rev;
+            var mounted = Path.Combine(ArtSource.Replace("battle-poc-8dir-v3", "mounted-tactics-8dir"), file);
+            if (string.IsNullOrEmpty(srcDir) && File.Exists(mounted)) src = mounted;
             if (!File.Exists(src)) return null;
             Directory.CreateDirectory(ArtDir);
             var dst = $"{ArtDir}/{file}";
@@ -262,11 +268,11 @@ namespace Prototype.BingshuTactics.EditorTools
         }
 
         // 用旧像素材质（Lit、alpha clip）做模板，换上新图
-        static Material ImportArt(string file, Material template)
+        static Material ImportArt(string file, Material template, string name = null)
         {
             var tex = ImportTexture(file, true);
             if (!tex) return null;
-            var m = new Material(template) { name = Path.GetFileNameWithoutExtension(file) };
+            var m = new Material(template) { name = name ?? Path.GetFileNameWithoutExtension(file) };
             m.SetTexture("_BaseMap", tex); m.mainTexture = tex;
             m.SetVector("_BaseMap_ST", new Vector4(1, 1, 0, 0));
             Debug.Log("BINGSHU_ART_IMPORTED " + file + " " + tex.width + "x" + tex.height);

@@ -977,7 +977,9 @@ namespace Prototype.BingshuTactics
                 u.At = now + AtClock.Delay(70, u.Speed);
                 yield break;
             }
-            var strats = StrategiesOf(u);
+            // 电脑代打的我方武将优先武技与普攻，策略留给文官（主稿 T2）；敌军仍按原型规则
+            bool caster = u.Team != Team.Player || u.Int >= 75 || u.Troop == Troop.Strategist || u.Troop == Troop.Shaman;
+            var strats = caster ? StrategiesOf(u) : new List<LitStrategy>();
             var bigLit = strats.FirstOrDefault(l => l.Def.Area == Area.Circle && l.Def.Effect == Effect.Damage && u.Ep >= l.Def.Cost);
             if (bigLit.Def != null)
             {
@@ -994,7 +996,8 @@ namespace Prototype.BingshuTactics
                 var t = units.Where(x => x.Alive && x.Team != u.Team && Grid.Dist(x.Pos, u.Pos) <= single.Range).OrderBy(x => x.Hp).FirstOrDefault();
                 // 武将优先武技与普攻，策略只给文官或够不着时用（主稿 T2）
                 bool strategist = u.Int >= 75 || u.Troop == Troop.Strategist || u.Troop == Troop.Shaman;
-                if (t != null && (strategist || AttackableTargets(u, u.AtkRange).Count == 0) && Random.value < 0.6f) { BeginCast(u, single, singleLit.PowerMul, t.Pos, singleLit.CastCut); yield break; }
+                bool engaged = u.Team == Team.Player && Foes(u).Any(f => Grid.Dist(f.Pos, u.Pos) <= 1);   // 代打：被贴身时不站着咏唱
+                if (t != null && !engaged && (strategist || AttackableTargets(u, u.AtkRange).Count == 0) && Random.value < 0.6f) { BeginCast(u, single, singleLit.PowerMul, t.Pos, singleLit.CastCut); yield break; }
             }
 
             // 电脑代打的我方：气势够就放伤害武技／绝学（横扫要两人以上在身边）
