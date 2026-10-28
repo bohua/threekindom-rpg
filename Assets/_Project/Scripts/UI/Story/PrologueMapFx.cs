@@ -36,18 +36,20 @@ namespace ThreeKingdoms.UI.Story
             var ringArt = Load("cinnabar_circle");
             var c = anchor("luoyang");
             ring = new Reveal(mapInner, ringArt ? Sample(ringArt) : RingStroke(c, 75f / 1920f, 7));
-            ring.Order = AngleOrder(ring.Source, c);
+            var ringPath = CentreLines("cinnabar_circle");   // follows the stroke, overshoot included
+            ring.Order = ringPath.Count > 0 ? PathOrder(ring.Source, ringPath) : AngleOrder(ring.Source, c);
 
             var arrowArt = Load("march_arrows");
-            var paths = ArrowPaths();
+            var paths = CentreLines("march_arrows");
+            if (paths.Count == 0) paths = DefaultArrows();
             arrows = new Reveal(mapInner, arrowArt ? Sample(arrowArt) : ArrowStrokes(paths));
             arrows.Order = PathOrder(arrows.Source, paths);
 
             bannerFrames = Slice(Load("banner_wave"), BannerFrames);
             fireFrames = Slice(Load("fire_loop"), FireFrames);
             var spots = Spots(spread, 16);
-            foreach (var (pos, at) in spots) banners.Add((Mark(mapInner, pos, 52, 64, true), at));
-            for (int i = 0; i < spots.Count; i += 2) fires.Add((Mark(mapInner, spots[i].pos + new Vector2(0.012f, 0.012f), 40, 54, false), spots[i].at));
+            foreach (var (pos, at) in spots) banners.Add((Mark(mapInner, pos, 64, 80, true), at));
+            for (int i = 0; i < spots.Count; i += 2) fires.Add((Mark(mapInner, spots[i].pos + new Vector2(0.012f, 0.012f), 52, 70, false), spots[i].at));
             Reset();
         }
 
@@ -202,7 +204,7 @@ namespace ThreeKingdoms.UI.Story
                     }
                     // map_states is a faint wash (alpha ≈ 69); its shape is the mask, the strength is ours.
                     float mask = Mathf.Min(1f, s.a / 60f), deep = Mathf.Clamp01(age * 2.2f);
-                    byte alpha = (byte)(Mathf.Min(255f, mask * (135f + 70f * deep) + 80f * front * mask) * a);
+                    byte alpha = (byte)(Mathf.Min(255f, mask * (105f + 55f * deep) + 90f * front * mask) * a);
                     buffer[i] = new Color32(c.r, c.g, c.b, alpha);
                 }
                 tex.SetPixels32(buffer);
@@ -326,11 +328,11 @@ namespace ThreeKingdoms.UI.Story
             return o;
         }
 
-        // The arrows' centre lines as map fractions (from march_arrows.json when present).
-        List<Vector2[]> ArrowPaths()
+        // Centre lines as map fractions from Resources/Prologue/<name>.json (converted by CinematicsArtImporter).
+        static List<Vector2[]> CentreLines(string name)
         {
             var list = new List<Vector2[]>();
-            var file = Resources.Load<TextAsset>("Prologue/march_arrows");
+            var file = Resources.Load<TextAsset>("Prologue/" + name);
             if (file)
             {
                 try
@@ -343,9 +345,14 @@ namespace ThreeKingdoms.UI.Story
                         if (pts.Length > 1) list.Add(pts);
                     }
                 }
-                catch (ArgumentException e) { Debug.LogWarning("march_arrows.json unreadable: " + e.Message); }
+                catch (ArgumentException e) { Debug.LogWarning(name + ".json unreadable: " + e.Message); }
             }
-            if (list.Count > 0) return list;
+            return list;
+        }
+
+        List<Vector2[]> DefaultArrows()
+        {
+            var list = new List<Vector2[]>();
             Vector2 lo = anchor("luoyang"), gz = anchor("guangzong"), yc = anchor("yingchuan");
             list.Add(new[] { lo, Vector2.Lerp(lo, gz, 0.5f) + new Vector2(0f, -0.03f), gz });
             list.Add(new[] { lo + new Vector2(0.005f, 0.01f), Vector2.Lerp(lo, yc, 0.5f) + new Vector2(0f, -0.035f), yc + new Vector2(0f, -0.012f) });
