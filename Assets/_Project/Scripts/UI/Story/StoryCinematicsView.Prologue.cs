@@ -18,6 +18,11 @@ namespace ThreeKingdoms.UI.Story
     public sealed partial class StoryCinematicsView
     {
         const string PrologueArt = "Prologue/";
+        // Narration, one clip per subtitle line: Resources/Audio/Voice/Prologue/prologue_<shot>_<line> (1-based). A line
+        // stays up at least as long as its clip; a missing clip leaves that line silent at reading pace.
+        const string PrologueVoice = "Audio/Voice/Prologue/prologue_";
+        const float VoiceTail = 0.6f, MusicUnderVoice = 0.4f;
+        AudioSource voice;
         const float CharsPerSecond = 7f, MinLine = 2.5f, LineGap = 0.35f, ShotLead = 1.0f, ShotTail = 0.8f;
         static readonly Color Night = new Color(0.063f, 0.11f, 0.19f);       // #101C30
         static readonly Color PanelBlue = new Color(0.125f, 0.208f, 0.29f);      // #20354A
@@ -65,8 +70,16 @@ namespace ThreeKingdoms.UI.Story
                     proHeader.text = $"{PrologueText.Title}   │   {s + 1} / {shots.Length}";
                     var lines = shots[s].Lines;
                     var starts = new float[lines.Length];
+                    var spans = new float[lines.Length];
+                    var clips = new AudioClip[lines.Length];
                     float t0 = ShotLead;
-                    for (int i = 0; i < lines.Length; i++) { starts[i] = t0; t0 += LineTime(lines[i]) + LineGap; }
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        clips[i] = Resources.Load<AudioClip>($"{PrologueVoice}{s + 1}_{i + 1}");
+                        spans[i] = Mathf.Max(LineTime(lines[i]), clips[i] ? clips[i].length + VoiceTail : 0f);
+                        starts[i] = t0; t0 += spans[i] + LineGap;
+                    }
+                    int spoken = -1;
                     float length = t0 + ShotTail;
                     for (float t = 0; t < length; )
                     {
@@ -75,24 +88,28 @@ namespace ThreeKingdoms.UI.Story
                         {
                             int answer = ReadSkipInput();
                             if (answer == 0) { skipped = true; break; }
-                            if (answer == 1) proSkip.style.display = DisplayStyle.None;
+                            if (answer == 1) { proSkip.style.display = DisplayStyle.None; if (voice) voice.UnPause(); }
                         }
                         else
                         {
-                            if (ConfirmPressed() || CancelPressed()) AskSkip();
+                            if (ConfirmPressed() || CancelPressed()) { AskSkip(); if (voice) voice.Pause(); }
                             else t += Time.unscaledDeltaTime * PrologueSpeed;
                         }
                         int line = -1;
                         for (int i = 0; i < starts.Length; i++) if (t >= starts[i]) line = i;
+                        if (line != spoken) { spoken = line; Speak(line >= 0 ? clips[line] : null); }
+                        StoryMusic.Duck = voice && voice.isPlaying ? MusicUnderVoice : 1f;
                         ApplyShot(s, Mathf.Min(t, length), length, line, line >= 0 ? t - starts[line] : 0f);
-                        ShowLine(line >= 0 ? lines[line] : null, line >= 0 ? t - starts[line] : 0f, line >= 0 ? LineTime(lines[line]) : 1f);
-                        if (line >= 0 && t - starts[line] > LineTime(lines[line]) * 0.6f) ShotForReview($"prologue-{s + 1}-{line + 1}");
+                        ShowLine(line >= 0 ? lines[line] : null, line >= 0 ? t - starts[line] : 0f, line >= 0 ? spans[line] : 1f);
+                        if (line >= 0 && t - starts[line] > spans[line] * 0.6f) ShotForReview($"prologue-{s + 1}-{line + 1}");
                         yield return null;
                     }
                 }
                 // Into the town: the scene picture fades away over the live street (also after a skip).
                 proSkip.style.display = DisplayStyle.None;
                 proSubBar.style.display = DisplayStyle.None;
+                Speak(null);
+                StoryMusic.Duck = 1f;
                 StoryMusic.Stop(1.2f);
                 float from = proRoot.resolvedStyle.opacity;
                 yield return Tween(skipped ? 0.6f : 1.4f, k => SetOpacity(proRoot, from * (1f - k)));
@@ -101,6 +118,8 @@ namespace ThreeKingdoms.UI.Story
             finally
             {
                 if (StoryMusic.Current == StoryMusic.PrologueCue) StoryMusic.Stop(0.4f);
+                StoryMusic.Duck = 1f;
+                if (voice) voice.Stop();
                 if (proRoot != null) proRoot.style.display = DisplayStyle.None;
                 PrologueShot = -1;
                 Stage = null;
@@ -133,6 +152,21 @@ namespace ThreeKingdoms.UI.Story
             var args = Environment.GetCommandLineArgs();
             int i = Array.IndexOf(args, "-prologueShots");
             return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+        }
+
+        // Plays one line's narration (null stops it). Tests at a faster pace stay silent.
+        void Speak(AudioClip clip)
+        {
+            if (!voice)
+            {
+                voice = gameObject.AddComponent<AudioSource>();
+                voice.playOnAwake = false;
+                voice.ignoreListenerPause = true;
+            }
+            voice.Stop();
+            if (!clip || PrologueSpeed > 1.01f) return;
+            voice.clip = clip;
+            voice.Play();
         }
 
         static float LineTime(string line) => Mathf.Max(MinLine, line.Length / CharsPerSecond + 1.0f);

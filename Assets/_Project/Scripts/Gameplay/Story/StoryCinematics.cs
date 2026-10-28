@@ -70,6 +70,8 @@ namespace ThreeKingdoms.Gameplay.Story
 
         // The cue now asked to play (also when its clip is missing), or null.
         public static string Current { get; private set; }
+        // 0..1 multiplier under narration (the prologue lowers the music while a line is spoken).
+        public static float Duck { get; set; } = 1f;
 
         public static void Play(string cue, bool loop = false, float fadeIn = 0.6f)
         {
@@ -122,12 +124,12 @@ namespace ThreeKingdoms.Gameplay.Story
             void Update()
             {
                 if (!music) return;
-                music.volume = Mathf.MoveTowards(music.volume, fadeTo, fadeSpeed * Time.unscaledDeltaTime);
+                music.volume = Mathf.MoveTowards(music.volume, fadeTo * Duck, fadeSpeed * Time.unscaledDeltaTime);
                 if (fadeTo <= 0f && music.volume <= 0f && music.isPlaying) music.Stop();
             }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { music = sfx = null; Current = null; fadeTo = 0f; }
+        static void ResetStatics() { music = sfx = null; Current = null; fadeTo = 0f; Duck = 1f; }
     }
 }
