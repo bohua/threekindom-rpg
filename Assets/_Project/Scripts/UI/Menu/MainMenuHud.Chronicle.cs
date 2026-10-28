@@ -69,7 +69,7 @@ namespace ThreeKingdoms.UI.Menu
                 float h = open ? 112 : 42;
                 if (open) p.Fill(748, ry, 862, h, new Color(MenuPaint.Base.r, MenuPaint.Base.g, MenuPaint.Base.b, 0.75f));
                 p.HLine(748, ry + h, 862, SilverA(0.25f));
-                p.Text(756, ry, 24, 42, open ? "⌄" : "›", 22, open ? MenuPaint.Cyan : MenuPaint.Mist, TextAnchor.MiddleCenter);
+                p.Text(756, ry, 24, 42, open ? "▼" : "›", open ? 14 : 22, open ? MenuPaint.Cyan : MenuPaint.Mist, TextAnchor.MiddleCenter);
                 p.Text(784, ry, 600, 42, src[i].Title, 23, MenuPaint.Ivory);
                 p.Text(1440, ry, 160, 42, SourceKind(src[i].Title), 17, MenuPaint.Mist, TextAnchor.MiddleRight);
                 if (open) p.Text(784, ry + 42, 816, 68, src[i].Text, 19, MenuPaint.Ivory, TextAnchor.UpperLeft, false, true);

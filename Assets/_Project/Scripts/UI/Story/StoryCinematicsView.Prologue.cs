@@ -86,6 +86,7 @@ namespace ThreeKingdoms.UI.Story
                         for (int i = 0; i < starts.Length; i++) if (t >= starts[i]) line = i;
                         ApplyShot(s, Mathf.Min(t, length), length, line, line >= 0 ? t - starts[line] : 0f);
                         ShowLine(line >= 0 ? lines[line] : null, line >= 0 ? t - starts[line] : 0f, line >= 0 ? LineTime(lines[line]) : 1f);
+                        if (line >= 0 && t - starts[line] > LineTime(lines[line]) * 0.6f) ShotForReview($"prologue-{s + 1}-{line + 1}");
                         yield return null;
                     }
                 }
@@ -95,6 +96,7 @@ namespace ThreeKingdoms.UI.Story
                 StoryMusic.Stop(1.2f);
                 float from = proRoot.resolvedStyle.opacity;
                 yield return Tween(skipped ? 0.6f : 1.4f, k => SetOpacity(proRoot, from * (1f - k)));
+                if (ReviewDir() != null) { proRoot.style.display = DisplayStyle.None; yield return new WaitForSecondsRealtime(1f); ShotForReview("prologue-landed"); }
             }
             finally
             {
@@ -103,6 +105,34 @@ namespace ThreeKingdoms.UI.Story
                 PrologueShot = -1;
                 Stage = null;
             }
+        }
+
+        // -prologueShots <dir>: one frame per subtitle line (and the skip question once) for review.
+        readonly HashSet<string> reviewShots = new HashSet<string>();
+
+        void ShotForReview(string key)
+        {
+            string dir = ReviewDir();
+            if (dir == null || !reviewShots.Add(key)) return;
+            System.IO.Directory.CreateDirectory(dir);
+            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, key + ".png"));
+            if (key == "prologue-4-1") StartCoroutine(SkipQuestionShot(dir));
+        }
+
+        IEnumerator SkipQuestionShot(string dir)
+        {
+            AskSkip();
+            yield return new WaitForSecondsRealtime(0.3f);
+            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "prologue-skip.png"));
+            yield return new WaitForSecondsRealtime(0.3f);
+            proSkip.style.display = DisplayStyle.None;
+        }
+
+        static string ReviewDir()
+        {
+            var args = Environment.GetCommandLineArgs();
+            int i = Array.IndexOf(args, "-prologueShots");
+            return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
         }
 
         static float LineTime(string line) => Mathf.Max(MinLine, line.Length / CharsPerSecond + 1.0f);
@@ -192,7 +222,7 @@ namespace ThreeKingdoms.UI.Story
             float widthPct = 100f * aspect / (16f / 9f);
             proScroll.style.width = new Length(widthPct, LengthUnit.Percent);
             float travel = widthPct - 100f;
-            proScroll.style.left = new Length(-travel * (1f - Ease(k)) , LengthUnit.Percent);
+            proScroll.style.left = new Length(-travel * (1f - Mathf.SmoothStep(0f, 1f, k)), LengthUnit.Percent);   // an even drift, slow at both ends
             // Unrolling from the right: a black curtain over what is not yet open.
             proBlack.style.display = DisplayStyle.Flex;
             proBlack.style.right = new Length(100f * unrolled, LengthUnit.Percent);
