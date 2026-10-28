@@ -32,8 +32,48 @@
   "skip": [
    "taihang_cliff_a",
    "taihang_cliff_b",
-   "taihang_cliff_c"
-  ]
+   "taihang_cliff_c",
+   "village_ground_burned",
+   "village_ground_reed",
+   "village_ground_elm"
+  ],
+  "tint": {
+   "adobe_pale": [
+    0.8,
+    0.76,
+    0.7
+   ],
+   "reed_thatch": [
+    0.78,
+    0.72,
+    0.6
+   ],
+   "woven_straw": [
+    0.8,
+    0.74,
+    0.62
+   ],
+   "foundation_house": [
+    0.82,
+    0.78,
+    0.72
+   ],
+   "foundation_village": [
+    0.82,
+    0.78,
+    0.72
+   ],
+   "foundation_ruin": [
+    0.8,
+    0.76,
+    0.7
+   ],
+   "foundation_post": [
+    0.82,
+    0.78,
+    0.72
+   ]
+  }
  },
  "siege_trench": {
   "set": "r3-blender-luzhi-camp",
@@ -44,5 +84,9 @@
  },
  "fukou": {
   "skip": true
+ },
+ "_detail": {
+  "set": "r3-wild-detail",
+  "layout": "_checks/r3_detail_placements.json"
  }
 }

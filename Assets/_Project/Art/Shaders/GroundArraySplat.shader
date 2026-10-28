@@ -56,14 +56,30 @@ Shader "ThreeKingdoms/GroundArraySplat"
                 return o;
             }
 
+            float Hash(float2 p) { return frac(sin(dot(p, float2(127.1, 311.7))) * 43758.5453); }
+            float Noise(float2 p)
+            {
+                float2 c = floor(p), f = frac(p);
+                float2 u = f * f * (3.0 - 2.0 * f);
+                return lerp(lerp(Hash(c), Hash(c + float2(1, 0)), u.x), lerp(Hash(c + float2(0, 1)), Hash(c + float2(1, 1)), u.x), u.y);
+            }
+
+            // One layer without visible repeats (user 2026-10-28: "地面……不够精细"): the tile is sampled twice, the second
+            // time larger, turned and shifted, and the two are mixed by a slow noise, so no 8 m square reads twice.
+            half3 Layer(float2 uv, float idx, float mixN)
+            {
+                half3 a = SAMPLE_TEXTURE2D_ARRAY(_Layers, sampler_trilinear_repeat, uv, idx).rgb;
+                float2 uv2 = float2(uv.x * 0.62 - uv.y * 0.39, uv.x * 0.39 + uv.y * 0.62) + 0.43;
+                half3 b = SAMPLE_TEXTURE2D_ARRAY(_Layers, sampler_trilinear_repeat, uv2, idx).rgb;
+                return lerp(a, b, smoothstep(0.3, 0.7, mixN));
+            }
+
             // One index texel's ground: its two layers mixed by its weight.
-            half3 Texel(float2 tuv, float2 uv)
+            half3 Texel(float2 tuv, float2 uv, float mixN)
             {
                 float4 s = SAMPLE_TEXTURE2D(_Index, sampler_point_clamp, tuv);
                 float a = round(s.r * 255.0), b = round(s.g * 255.0);
-                half3 ca = SAMPLE_TEXTURE2D_ARRAY(_Layers, sampler_trilinear_repeat, uv, a).rgb;
-                half3 cb = SAMPLE_TEXTURE2D_ARRAY(_Layers, sampler_trilinear_repeat, uv + 0.37, b).rgb;
-                return lerp(ca, cb, s.b);
+                return lerp(Layer(uv, a, mixN), Layer(uv + 0.37, b, mixN), s.b);
             }
 
             half4 frag(Varyings i) : SV_Target
@@ -75,8 +91,11 @@ Shader "ThreeKingdoms/GroundArraySplat"
                 float2 t = cuv * _Index_TexelSize.zw - 0.5;
                 float2 f = frac(t), base = (floor(t) + 0.5) * _Index_TexelSize.xy;
                 float2 dx = float2(_Index_TexelSize.x, 0), dy = float2(0, _Index_TexelSize.y);
-                half3 c00 = Texel(base, uv), c10 = Texel(base + dx, uv), c01 = Texel(base + dy, uv), c11 = Texel(base + dx + dy, uv);
+                float mixN = Noise(xz * 0.045);
+                half3 c00 = Texel(base, uv, mixN), c10 = Texel(base + dx, uv, mixN), c01 = Texel(base + dy, uv, mixN), c11 = Texel(base + dx + dy, uv, mixN);
                 half3 albedo = lerp(lerp(c00, c10, f.x), lerp(c01, c11, f.x), f.y) * _Tint.rgb;
+                // Large, soft light and dark drifts across the open country (sun-bleached and damp patches).
+                albedo *= 0.9 + 0.2 * (Noise(xz * 0.012 + 7.0) * 0.7 + Noise(xz * 0.05) * 0.3);
                 float3 n = normalize(i.normalWS);
                 Light ml = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 half3 c = albedo * (ml.color * (ml.shadowAttenuation * ml.distanceAttenuation) * saturate(dot(n, ml.direction)) + SampleSH(n));

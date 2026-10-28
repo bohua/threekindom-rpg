@@ -37,6 +37,8 @@ namespace ThreeKingdoms.EditorTools
             public float spawnX, spawnZ;
             public float[] openZone = new float[0];   // x, z pairs: the part open in the earliest year, outlined on the ground
             public string wildSet, wildLayout;        // refinement: the region's Codex wild set and its placements in region metres
+            public string detailSet, detailLayout;    // second refinement: ground clutter and finer vegetation
+            public string[] wildTint = new string[0]; // "material:r,g,b": painted textures that read too bright at noon
             public string[] wildSkip = new string[0]; // wild pieces left out (the Taihang cliff shells fought the heightmap's own mountains)
         }
 
@@ -241,23 +243,25 @@ namespace ThreeKingdoms.EditorTools
         static Material GroundArray()
         {
             string src = Path.Combine(CodexArt, Regions.First(r => r.id == data.id).concept, "greybox");
-            string idx = Path.Combine(src, "ground_index.png"), layers = Path.Combine(src, "layers");
-            if (!File.Exists(idx) || !Directory.Exists(layers)) return null;
-            var files = Directory.GetFiles(layers, "*.png").OrderBy(f => f).ToArray();
-            if (files.Length == 0) return null;
-            var arr = new Texture2DArray(512, 512, files.Length, TextureFormat.RGBA32, true, false) { wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Trilinear, anisoLevel = 4 };
-            for (int i = 0; i < files.Length; i++)
-            {
-                var t = new Texture2D(2, 2, TextureFormat.RGBA32, true);
-                t.LoadImage(File.ReadAllBytes(files[i]));
-                if (t.width != 512 || t.height != 512) throw new System.InvalidOperationException("ground layer not 512 px: " + files[i]);
-                arr.SetPixels(t.GetPixels(), i, 0);
-                Object.DestroyImmediate(t);
-            }
-            arr.Apply(true);
-            string arrPath = $"{dir}/{data.id}_GroundLayers.asset";
-            AssetDatabase.DeleteAsset(arrPath);
-            AssetDatabase.CreateAsset(arr, arrPath);
+            string idx = Path.Combine(src, "ground_index.png"), atlas = Path.Combine(src, "ground_layers.png"), grid = Path.Combine(src, "ground_layers_grid.json");
+            if (!File.Exists(idx) || !File.Exists(atlas) || !File.Exists(grid)) return null;
+            // The grounds at full detail (1024 px per 8 m tile) as one compressed texture array, imported from the grid.
+            var g = JsonUtility.FromJson<LayerGrid>(File.ReadAllText(grid));
+            string arrPath = $"{dir}/ground_layers.png";
+            File.Copy(atlas, arrPath, true);
+            AssetDatabase.ImportAsset(arrPath);
+            var ai = (TextureImporter)AssetImporter.GetAtPath(arrPath);
+            ai.textureShape = TextureImporterShape.Texture2DArray;
+            var settings = new TextureImporterSettings();
+            ai.ReadTextureSettings(settings);
+            settings.flipbookColumns = g.columns; settings.flipbookRows = g.rows;
+            ai.SetTextureSettings(settings);
+            ai.sRGBTexture = true; ai.mipmapEnabled = true; ai.npotScale = TextureImporterNPOTScale.None; ai.maxTextureSize = 8192;
+            ai.textureCompression = TextureImporterCompression.CompressedHQ; ai.filterMode = FilterMode.Trilinear; ai.anisoLevel = 8;
+            ai.wrapMode = TextureWrapMode.Repeat;
+            ai.SaveAndReimport();
+            var arr = AssetDatabase.LoadAssetAtPath<Texture2DArray>(arrPath);
+            if (!arr) throw new System.InvalidOperationException("ground layers did not import as a texture array: " + arrPath);
             File.Copy(idx, $"{dir}/ground_index.png", true);
             AssetDatabase.ImportAsset($"{dir}/ground_index.png");
             var imp = (TextureImporter)AssetImporter.GetAtPath($"{dir}/ground_index.png");
@@ -278,19 +282,35 @@ namespace ThreeKingdoms.EditorTools
             return m;
         }
         static bool painted;
+        [System.Serializable] sealed class LayerGrid { public int columns, rows, count; }
 
         // Trees, reeds, villages, bridges, cliffs ... where Codex placed them, each set on the ground under it (models
         // whose origin is the region origin, like the Taihang cliffs, keep their own heights).
         static void Wild(Transform env)
         {
             if (string.IsNullOrEmpty(data.wildSet) || !BlenderModels.Import(data.wildSet)) return;
-            string path = Path.Combine(CodexArt, data.wildSet, data.wildLayout.Replace('/', Path.DirectorySeparatorChar));
+            foreach (var t in data.wildTint)
+            {
+                var kv = t.Split(':'); var c = kv[1].Split(',').Select(v => float.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+                BlenderModels.Tint(data.wildSet, kv[0], new Color(c[0], c[1], c[2]));
+            }
+            // The second refinement pass (user 2026-10-28 "野外……不够精细"): ground clutter by the thousand, and finer
+            // trees and reeds that replace the first set's pieces of the same name.
+            bool detail = !string.IsNullOrEmpty(data.detailSet) && BlenderModels.Import(data.detailSet);
+            Scatter(env, "Wild", data.wildSet, data.wildLayout, detail ? data.detailSet : null, combine: false);
+            if (detail) Scatter(env, "Ground detail", data.detailSet, data.detailLayout, null, combine: true);
+        }
+
+        static void Scatter(Transform env, string name, string set, string layout, string preferSet, bool combine)
+        {
+            string path = Path.Combine(CodexArt, set, layout.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(path)) return;
-            var g = new GameObject("Wild").transform;
+            var g = new GameObject(name).transform;
             g.SetParent(env, false);
             var file = JsonUtility.FromJson<LayoutFile>(File.ReadAllText(path));
             foreach (var piece in file.placements)
             {
+                if (data.wildSkip.Contains(piece.asset)) continue;
                 var pos = piece.position_m != null && piece.position_m.Length >= 2 ? piece.position_m : piece.position;
                 // Codex roles: whole-region geometry (cliffs, the Fukou pass) keeps its own heights; bridges sit at their
                 // deck height; everything else stands on our ground (smoothed, so not Codex's sampled height).
@@ -298,12 +318,51 @@ namespace ThreeKingdoms.EditorTools
                         : piece.placement_role == "bridge_surface" ? piece.deck_world_height_m
                         : H(pos[0], pos[1]);
                 var at = new Vector3(pos[0], y, pos[1]);
-                if (data.wildSkip.Contains(piece.asset)) continue;
-                var t = BlenderModels.Place(data.wildSet, g, piece.asset, piece.asset, at, -(piece.rotation_z_deg + piece.rotation_z));
+                float yaw = -(piece.rotation_z_deg + piece.rotation_z);
+                var t = (preferSet != null ? BlenderModels.Place(preferSet, g, piece.asset, piece.asset, at, yaw) : null)
+                        ?? BlenderModels.Place(set, g, piece.asset, piece.asset, at, yaw);
                 if (t && piece.hide_objects != null)
                     foreach (var c in t.GetComponentsInChildren<Transform>(true).Where(c => piece.hide_objects.Contains(c.name)).ToArray())
                         if (c) Object.DestroyImmediate(c.gameObject);
                 if (t && piece.scale > 0f) t.localScale *= piece.scale;
+            }
+            if (combine) CombineByCell(g, 48f);
+        }
+
+        // Thousands of small pieces would be thousands of objects: merge them per 48 m cell and material into a few
+        // meshes (no colliders, no occluders: grass and pebbles never block the party or the camera).
+        static void CombineByCell(Transform g, float cell)
+        {
+            foreach (var c in g.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
+            foreach (var o in g.GetComponentsInChildren<Occluder>(true)) Object.DestroyImmediate(o);
+            var groups = new Dictionary<(int, int, Material), List<CombineInstance>>();
+            foreach (var r in g.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                var mf = r.GetComponent<MeshFilter>();
+                if (!mf || !mf.sharedMesh) continue;
+                var p = r.transform.position;
+                for (int i = 0; i < mf.sharedMesh.subMeshCount && i < r.sharedMaterials.Length; i++)
+                {
+                    var key = ((int)(p.x / cell), (int)(p.z / cell), r.sharedMaterials[i]);
+                    if (!groups.TryGetValue(key, out var list)) groups[key] = list = new List<CombineInstance>();
+                    list.Add(new CombineInstance { mesh = mf.sharedMesh, subMeshIndex = i, transform = r.transform.localToWorldMatrix });
+                }
+            }
+            for (int i = g.childCount - 1; i >= 0; i--) Object.DestroyImmediate(g.GetChild(i).gameObject);
+            string meshes = $"{dir}/{data.id}_Terrain.asset";
+            int n = 0;
+            foreach (var kv in groups)
+            {
+                if (!kv.Key.Item3) continue;
+                var mesh = new Mesh { name = $"{g.name} {n++}", indexFormat = IndexFormat.UInt32 };
+                mesh.CombineMeshes(kv.Value.ToArray(), true, true);
+                AssetDatabase.AddObjectToAsset(mesh, meshes);
+                var go = new GameObject(mesh.name);
+                go.transform.SetParent(g, false);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = kv.Key.Item3;
+                mr.shadowCastingMode = ShadowCastingMode.Off;
             }
         }
 
