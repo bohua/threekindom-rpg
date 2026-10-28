@@ -527,8 +527,13 @@ namespace ThreeKingdoms.EditorTools
 
             Ground(env, "Grass outside", "ground_camp_grass", grass, -70, 70, -60, 60, -0.02f);
             Ground(env, "Camp ground", "ground_camp_dirt_a", dirt, -30, 30, -20, 20);
-            Ground(env, "Main road", "ground_camp_ruts", new Color(0.72f, 0.62f, 0.46f), -2.5f, 2.5f, -24, 4, 0.01f);
-            Ground(env, "Command square", "ground_camp_dirt_b", new Color(0.82f, 0.72f, 0.54f), -6, 6, 0, 11, 0.012f);
+            // The road and the command square used to be two hard rectangles of another dirt on the camp ground (user
+            // 2026-10-28: every ground change needs a transition); with the Blender camp the camp dirt alone carries them.
+            if (!Directory.Exists(Path.Combine(Art, CampSet)))
+            {
+                Ground(env, "Main road", "ground_camp_ruts", new Color(0.72f, 0.62f, 0.46f), -2.5f, 2.5f, -24, 4, 0.01f);
+                Ground(env, "Command square", "ground_camp_dirt_b", new Color(0.82f, 0.72f, 0.54f), -6, 6, 0, 11, 0.012f);
+            }
 
             // Codex Blender models (user 2026-10-27: hubs are modelled, art/r3-blender-luzhi-camp); without the set, the
             // painted billboards as before.
