@@ -168,6 +168,15 @@ namespace ThreeKingdoms.Gameplay.Story
         public void SaveTo(string slot, string location) => Slots().Write(slot, Capture(location));
 
         // Rebuilds a play-through from a save and loads its scene: the tavern, or the saved battle's pre-battle state.
+        // Scene changes started from the title go through here, so the title's cloud curtain can load them in the
+        // background while its loading animation runs; everywhere else (and with no curtain) it is a plain load.
+        public static System.Action<string> SceneLoadOverride { get; set; }
+        public static void LoadScene(string scene)
+        {
+            if (SceneLoadOverride != null) SceneLoadOverride(scene);
+            else SceneManager.LoadScene(scene);
+        }
+
         public static bool TryLoad(BattleCatalog catalog, SaveData save, out string error)
         {
             var data = catalog.ToRuntime();
@@ -178,21 +187,21 @@ namespace ThreeKingdoms.Gameplay.Story
             if (restored.Location == SaveData.TownLocation)
             {
                 Current.NextArrival = Arrival.AtTavern;
-                SceneManager.LoadScene(TownScene);
+                LoadScene(TownScene);
             }
-            else if (restored.Location == SaveData.CampLocation) SceneManager.LoadScene(CampScene);
-            else if (restored.Location == SaveData.AnxiLocation) SceneManager.LoadScene(AnxiScene);
-            else if (restored.Location == SaveData.GongsunLocation) SceneManager.LoadScene(GongsunScene);
-            else if (restored.Location == SaveData.SuanzaoLocation) SceneManager.LoadScene(SuanzaoScene);
-            else if (restored.Location == SaveData.XiapiLocation) SceneManager.LoadScene(XiapiScene);
+            else if (restored.Location == SaveData.CampLocation) LoadScene(CampScene);
+            else if (restored.Location == SaveData.AnxiLocation) LoadScene(AnxiScene);
+            else if (restored.Location == SaveData.GongsunLocation) LoadScene(GongsunScene);
+            else if (restored.Location == SaveData.SuanzaoLocation) LoadScene(SuanzaoScene);
+            else if (restored.Location == SaveData.XiapiLocation) LoadScene(XiapiScene);
             else if (restored.Location == SaveData.ChapterDoneLocation) { Current = null; error = "第一篇章已完成，第二篇章尚未开放。"; return false; }
             else if (restored.Location.StartsWith(SaveData.RegionPrefix))
             {
                 if (!RegionScenes.TryGetValue(restored.Location.Substring(SaveData.RegionPrefix.Length), out string scene))
                 { error = $"区域 {restored.Location} 还没有场景"; Current = null; return false; }
-                SceneManager.LoadScene(scene);
+                LoadScene(scene);
             }
-            else SceneManager.LoadScene(SceneFor(restored.Location));
+            else LoadScene(SceneFor(restored.Location));
             return true;
         }
     }

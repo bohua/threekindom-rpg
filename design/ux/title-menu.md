@@ -5,7 +5,7 @@
 ## 1. 范围
 
 - 替换原深色纯文字标题，改为《最终幻想》式明亮白底：上部居中的《三国·江山如画》正式 logo（2026-10-27 用户改名，替换曾用名「三国志 Fantasy」），正中一列菜单，白色手套光标。
-- 只改标题场景（`Title.unity`、`TitleHud`、`TitleWhiteFade`、`TitleController`）。不改存档格式与读档规则（ADR-0004）、行旅菜单、城镇或战斗场景。
+- 只改标题场景（`Title.unity`、`TitleHud`、`CloudCurtain`、`TitleController`，及 `GameRun.LoadScene` 钩子）。不改存档格式与读档规则（ADR-0004）、行旅菜单、城镇或战斗场景。
 - 统一 UI 风格（UI_STYLE_GUIDE，苍蓝银辉）仍是游戏内界面基线；标题按用户要求用白底，面板细框、青蓝选中借用统一风格的色彩语言。
 
 ## 2. 菜单项
@@ -24,7 +24,7 @@
 
 - 左滑：菜单中心 x 960→240，320 ms easeOutCubic；返回 220 ms。细线由左右对称渐隐变为向右渐隐（x 150–420）。
 - 面板：点击后 100 ms 开始，从右 24 px 处淡入，240 ms；返回 160 ms 淡出右移 16 px。面板到位前不显示光标。
-- 进入游戏：3 次闪烁（0–80、180–260、360–460 ms，入口字发青白光＋光带＋35% 白屏），再 260 ms 升到全白，保持 120 ms 后切场景；新场景里白色 600 ms easeOutCubic 淡出（`TitleWhiteFade`，IMGUI 盖在所有 UI 上）。
+- 进入游戏（2026-10-28 用户：“不管是新开还是读取，都实际上是一朵云雾打开，然后进入游戏。如果有 loading 的话，那么这里可以做一些动画。”）：选中项微光一次并响起进入音效，四边云雾 600 ms 卷入合拢（easeInOutSine），全屏云底上转动水墨日轮（8 帧、8 fps），场景在云下后台加载（至少停 500 ms），就绪后 800 ms 从中间拨开（`CloudCurtain`，独立 UI 文档 sortingOrder 1000，跨场景保留，不接收输入）。读档失败时云在标题上拨开并显示原因。编辑器里为避免异步加载过慢改为直接加载；正式版本异步加载。设计与切图：D:\BuildArtifacts\Codex\hd2d-jrpg\art\title-cloud-transition。原三次闪烁＋白场已取消。
 - 音效：`Resources/Audio/Sfx/title_start.wav`，程序合成的原创上行琶音＋水晶钟声约 2 秒，不引用任何现有游戏旋律。标题音乐 `Resources/Audio/Music/title_theme` 预留（文件不存在时静音），进入游戏时淡出。
 
 ## 4. 美术

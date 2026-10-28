@@ -13,8 +13,8 @@ namespace ThreeKingdoms.UI.Save
 {
     // Title screen after the Codex design v2 (design/ux/title-menu.md, art/title-menu-concept-v2): Final Fantasy style
     // white backdrop with the 三国·江山如画 logo above a centred menu and a glove pointer. Load and settings slide the
-    // menu to the left and bring their panel into the middle; continue and new game flash three times and go through
-    // white into the game with the start chime. Positions are the design's own 1920×1080 pixels (the panel settings
+    // menu to the left and bring their panel into the middle; continue, new game and load go into the game through
+    // the clouds (CloudCurtain) with the start chime. Positions are the design's own 1920×1080 pixels (the panel settings
     // scale to that resolution). An unreadable save shows why and stays on screen; the file is never changed.
     [RequireComponent(typeof(UIDocument))]
     public sealed class TitleHud : MonoBehaviour
@@ -34,14 +34,14 @@ namespace ThreeKingdoms.UI.Save
         const float MenuCentre = 960, MenuLeftCentre = 240, MenuY = 640, MenuStep = 54, EntryW = 300;
         const float PanelX = 560, PanelY = 600, PanelW = 1140, PanelH = 408;
 
-        VisualElement root, menu, panel, rows, cursor, flash;
+        VisualElement root, menu, panel, rows, cursor;
         Label panelTitle, hint, message;
         readonly List<Button> mainEntries = new List<Button>();
         Font serif, sans;
         Texture2D ruleCentre, ruleCentreLit, ruleRight, ruleRightLit, glow;
         int openedFrame;
         float slideT, panelT, panelDelay;
-        bool busy;   // flashing into the game: nothing else is taken
+        bool busy;   // going into the game: nothing else is taken
         Button menuMark;   // the main entry whose page is open
         Focusable shownFocus;   // the focus the highlights were last painted for (focus events arrive before it moves)
 
@@ -85,15 +85,13 @@ namespace ThreeKingdoms.UI.Save
             if (glove) cursor.style.backgroundImage = glove;
             root.Add(cursor);
 
-            flash = Box(root, 0, 0, 1920, 1080);
-            flash.style.backgroundColor = Color.white;
-            flash.style.opacity = 0;
 
             root.RegisterCallback<NavigationCancelEvent>(e => { e.StopPropagation(); if (Current != Mode.Main && !busy) ShowMain(); }, TrickleDown.TrickleDown);
             root.RegisterCallback<NavigationMoveEvent>(OnMove, TrickleDown.TrickleDown);
             openedFrame = Time.frameCount;
             ShowMain();
             slideT = panelT = 0;
+            CloudCurtain.Preload();
             int shots = Array.IndexOf(Environment.GetCommandLineArgs(), "-titleShots");
             if (shots >= 0 && shots + 1 < Environment.GetCommandLineArgs().Length) StartCoroutine(Shots(Environment.GetCommandLineArgs()[shots + 1]));
         }
@@ -116,10 +114,25 @@ namespace ThreeKingdoms.UI.Save
             yield return new WaitForSecondsRealtime(1f);
             mainEntries[1].Focus();
             yield return null;
-            StartCoroutine(FlashThen(mainEntries[1], null));
-            yield return new WaitForSecondsRealtime(0.40f);
-            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "title_flash.png"));
-            yield return new WaitForSecondsRealtime(1.5f);
+            // The curtain outlives this scene, so the rest of the run follows it from a persistent runner.
+            CloudCurtain.Persist(CurtainShots(dir));
+            StartNewGame();
+        }
+
+        static IEnumerator CurtainShots(string dir)
+        {
+            while (!CloudCurtain.Busy) yield return null;
+            while (CloudCurtain.Busy && CloudCurtain.Closing < 0.5f) yield return null;
+            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "cloud_closing.png"));
+            while (CloudCurtain.Busy && !CloudCurtain.Holding) yield return null;
+            yield return new WaitForSecondsRealtime(0.3f);
+            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "cloud_loading.png"));
+            while (CloudCurtain.Busy && CloudCurtain.Opening < 0.4f) yield return null;
+            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "cloud_opening.png"));
+            while (CloudCurtain.Busy) yield return null;
+            yield return new WaitForSecondsRealtime(0.5f);
+            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "cloud_done.png"));
+            yield return new WaitForSecondsRealtime(0.5f);
             Application.Quit();
         }
 
@@ -170,49 +183,40 @@ namespace ThreeKingdoms.UI.Save
             (back != null && back.enabledSelf ? back : hasLatest ? mainEntries[0] : mainEntries[1]).Focus();
         }
 
-        // Continue: the slot saved last (TitleController.LatestSlot), through the same flash as a new game.
+        // Continue: the slot saved last (TitleController.LatestSlot), through the clouds like a new game.
         public void Continue()
         {
             var slot = Controller.LatestSlot();
-            if (slot != null) StartCoroutine(FlashThen(mainEntries[0], () => Load(slot)));
+            if (slot != null) EnterThen(mainEntries[0], () => LoadNow(slot));
         }
 
-        void StartNewGame() => StartCoroutine(FlashThen(mainEntries[1], Controller.NewGame));
+        void StartNewGame() => EnterThen(mainEntries[1], Controller.NewGame);
 
-        // Three flashes of the chosen entry with a 35% white over the screen, then full white; the scene changes under
-        // the white and TitleWhiteFade lifts it in the next scene (DESIGN_NOTES v2 timing).
-        IEnumerator FlashThen(Button entry, Action then)
+        // Into the game through the clouds (CloudCurtain): the chosen entry glows once with the start chime, the
+        // clouds close, `then` starts the scene load under them and they part over the new scene. A save refused
+        // after all (TryLoad) leaves the title as it was, the clouds parting over it with the reason shown.
+        void EnterThen(Button entry, Action then)
         {
+            if (busy || CloudCurtain.Busy) return;
             busy = true;
             StoryMusic.Stop(0.6f);
             StoryMusic.Sfx(StartSfx);
+            if (entry != null) StartCoroutine(Pulse(entry));
+            CloudCurtain.Play(GetComponent<UIDocument>().panelSettings, () => { then(); busy = false; });
+        }
+
+        IEnumerator Pulse(Button entry)
+        {
             var band = entry.Q("band");
-            float[] on = { 0f, 0.18f, 0.36f }, length = { 0.08f, 0.08f, 0.10f };
-            float t = 0;
-            while (t < 0.46f)
+            for (float t = 0; t < 0.3f; t += Time.unscaledDeltaTime)
             {
-                float peak = 0;
-                for (int i = 0; i < 3; i++)
-                    if (t >= on[i] && t < on[i] + length[i]) peak = Mathf.Sin((t - on[i]) / length[i] * Mathf.PI);
-                Glow(entry, peak);
-                band.style.opacity = peak;
-                flash.style.opacity = 0.35f * peak;
+                float k = Mathf.Sin(t / 0.3f * Mathf.PI);
+                Glow(entry, k);
+                if (band != null) band.style.opacity = k;
                 yield return null;
-                t += Time.unscaledDeltaTime;
             }
             Glow(entry, 0);
-            for (t = 0; t < 0.26f; t += Time.unscaledDeltaTime)
-            {
-                flash.style.opacity = Mathf.Lerp(0.35f, 1f, 0.5f - 0.5f * Mathf.Cos(Mathf.PI * t / 0.26f));
-                yield return null;
-            }
-            flash.style.opacity = 1;
-            yield return new WaitForSecondsRealtime(0.12f);
-            if (then == null) { busy = false; flash.style.opacity = 0; yield break; }   // screenshot run
-            TitleWhiteFade.Begin(0.6f);
-            then();
-            busy = false;
-            if (!string.IsNullOrEmpty(message.text)) { TitleWhiteFade.Cancel(); flash.style.opacity = 0; }   // the save was refused
+            if (band != null) band.style.opacity = 0;
         }
 
         static void Glow(Button entry, float k)
@@ -306,7 +310,15 @@ namespace ThreeKingdoms.UI.Save
             return usable;
         }
 
+        // A slot that cannot be read says why at once; a readable one goes into the game through the clouds.
         public void Load(string slot)
+        {
+            var status = Controller.Slots.Read(slot, out _);
+            if (status != SaveReadStatus.Ok) { message.text = SaveText.Status(status); return; }
+            EnterThen(null, () => LoadNow(slot));
+        }
+
+        void LoadNow(string slot)
         {
             var status = Controller.Load(slot, out string error);
             if (status == SaveReadStatus.Ok) return;   // the saved scene is loading
@@ -589,7 +601,7 @@ namespace ThreeKingdoms.UI.Save
             return t;
         }
 
-        // The soft light band under a flashing entry.
+        // The soft light band under the chosen entry.
         static Texture2D Glow()
         {
             var t = new Texture2D(128, 16, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontSave };

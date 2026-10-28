@@ -24,6 +24,7 @@ public sealed class TitleMenuTests
     public void Fresh()
     {
         GameRun.Clear();
+        CloudCurtain.Clear();
         dir = Path.Combine(Application.temporaryCachePath, "title-menu-" + Guid.NewGuid().ToString("N"));
         GameRun.SaveDirectoryOverride = dir;
     }
@@ -68,9 +69,11 @@ public sealed class TitleMenuTests
         Assert.IsTrue(title.Entries[2].enabledSelf);
         Assert.AreEqual(SaveSlots.Auto, title.Controller.LatestSlot());
         title.Continue();
+        Assert.IsTrue(CloudCurtain.Busy, "continue goes into the game through the clouds");
         float deadline = Time.realtimeSinceStartup + 20f;
         while (SceneManager.GetActiveScene().name != "Battle_Tutorial02") { Assert.Less(Time.realtimeSinceStartup, deadline); yield return null; }
-        yield return null;
+        Assert.AreEqual("Battle_Tutorial02", CloudCurtain.Loading, "loaded in the background under the clouds");
+        while (CloudCurtain.Busy) { Assert.Less(Time.realtimeSinceStartup, deadline); yield return null; }
         Assert.AreEqual(BattleController.Phase.Preparing, UnityEngine.Object.FindFirstObjectByType<BattleController>().Current);
     }
 

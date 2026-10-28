@@ -25,7 +25,7 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             StoryMusic.Stop();
             GameRun.Clear();
-            SceneManager.LoadScene(GameRun.TownScene);
+            GameRun.LoadScene(GameRun.TownScene);
         }
 
         // Every slot in menu order: the rolling pre-battle save, then the manual ones.

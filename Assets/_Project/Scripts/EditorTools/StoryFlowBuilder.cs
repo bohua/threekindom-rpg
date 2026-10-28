@@ -176,17 +176,17 @@ namespace ThreeKingdoms.EditorTools
         // white backdrop with the logo. The art lives in Resources/TitleMenu; it is drawn by UI Toolkit, uncompressed.
         static void BuildTitle()
         {
-            foreach (var name in new[] { "title_plate", "title_cursor" })
+            foreach (var name in new[] { "title_plate", "title_cursor", "Clouds/cloud_left", "Clouds/cloud_right", "Clouds/cloud_top", "Clouds/cloud_bottom", "Clouds/cloud_fill", "Clouds/loading_sheet" })
             {
                 var importer = AssetImporter.GetAtPath($"Assets/_Project/Resources/TitleMenu/{name}.png") as TextureImporter;
                 if (!importer) continue;
                 importer.textureType = TextureImporterType.Default;
-                importer.alphaIsTransparency = name == "title_cursor";
+                importer.alphaIsTransparency = name != "title_plate" && name != "Clouds/cloud_fill";
                 importer.mipmapEnabled = false;
                 importer.npotScale = TextureImporterNPOTScale.None;
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
                 importer.wrapMode = TextureWrapMode.Clamp;
-                importer.maxTextureSize = 2048;
+                importer.maxTextureSize = 4096;
                 importer.SaveAndReimport();
             }
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
