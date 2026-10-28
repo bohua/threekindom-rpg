@@ -38,6 +38,7 @@ namespace ThreeKingdoms.EditorTools
             public float[] openZone = new float[0];   // x, z pairs: the part open in the earliest year, outlined on the ground
             public string wildSet, wildLayout;        // refinement: the region's Codex wild set and its placements in region metres
             public string detailSet, detailLayout;    // second refinement: ground clutter and finer vegetation
+            public string[] dropPads = new string[0];  // materials of flat apron decals the baked earth replaces
             public string[] wildTint = new string[0]; // "material:r,g,b": painted textures that read too bright at noon
             public string[] wildSkip = new string[0]; // wild pieces left out (the Taihang cliff shells fought the heightmap's own mountains)
         }
@@ -129,6 +130,7 @@ namespace ThreeKingdoms.EditorTools
             var spots = new GameObject("Spots").transform;
             foreach (var p in data.places) Place(env, labels, spots, p);
             Wild(env);
+            DropPads(env);
             Edges(env);
 
             var sun = new GameObject("Midday sun").AddComponent<Light>();
@@ -299,6 +301,19 @@ namespace ThreeKingdoms.EditorTools
             bool detail = !string.IsNullOrEmpty(data.detailSet) && BlenderModels.Import(data.detailSet);
             Scatter(env, "Wild", data.wildSet, data.wildLayout, detail ? data.detailSet : null, combine: false);
             if (detail) Scatter(env, "Ground detail", data.detailSet, data.detailLayout, null, combine: true);
+        }
+
+        // The models' flat earth aprons sit on the ground as a lighter, hard-edged patch; the baked ground already blends
+        // earth into grass under every place (bake_ground.py), so in a painted region the aprons go (user 2026-10-28).
+        static void DropPads(Transform env)
+        {
+            if (!painted || data.dropPads.Length == 0) return;
+            foreach (var r in env.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (!r || r.sharedMaterials.Length == 0 || r.bounds.size.y > 0.35f) continue;
+                if (r.sharedMaterials.All(m => m && data.dropPads.Contains(System.Text.RegularExpressions.Regex.Replace(m.name, @"\.\d+$", ""))))
+                    Object.DestroyImmediate(r.gameObject);
+            }
         }
 
         static void Scatter(Transform env, string name, string set, string layout, string preferSet, bool combine)

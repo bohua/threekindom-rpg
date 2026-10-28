@@ -156,6 +156,7 @@ region = dict(id=P, name=name, scene=f'Region_{P}', width=W, height=D, places=pl
               spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p],
               wildSet=(hubs.get('_wild') or {}).get('set', ''), wildLayout=(hubs.get('_wild') or {}).get('layout', ''), wildSkip=(hubs.get('_wild') or {}).get('skip', []),
               detailSet=(hubs.get('_detail') or {}).get('set', ''), detailLayout=(hubs.get('_detail') or {}).get('layout', ''),
+              dropPads=hubs.get('_dropPads', []),
               wildTint=[f"{k}:{c[0]},{c[1]},{c[2]}" for k, c in ((hubs.get('_wild') or {}).get('tint') or {}).items()])
 json.dump(region, open(os.path.join(out, 'region.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 with open(os.path.join(out, 'heights.bin'), 'wb') as f:

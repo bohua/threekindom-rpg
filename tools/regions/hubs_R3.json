@@ -30,12 +30,13 @@
   "set": "r3-blender-wild",
   "layout": "_checks/r3_wild_placements.json",
   "skip": [
-   "taihang_cliff_a",
-   "taihang_cliff_b",
    "taihang_cliff_c",
    "village_ground_burned",
+   "taihang_cliff_b",
+   "r3_wild_foundations",
    "village_ground_reed",
-   "village_ground_elm"
+   "village_ground_elm",
+   "taihang_cliff_a"
   ],
   "tint": {
    "adobe_pale": [
@@ -88,5 +89,12 @@
  "_detail": {
   "set": "r3-wild-detail",
   "layout": "_checks/r3_detail_placements.json"
- }
+ },
+ "_dropPads": [
+  "mud_camp",
+  "foundation_house",
+  "foundation_village",
+  "foundation_ruin",
+  "foundation_post"
+ ]
 }

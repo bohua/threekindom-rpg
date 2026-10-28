@@ -594,6 +594,12 @@ namespace ThreeKingdoms.EditorTools
             Billboard(env, "Straw mat A", "straw_mat", -10.8f, -2.4f, new Vector3(2f, 0.2f, 1f), new Color(0.80f, 0.70f, 0.44f));
             Billboard(env, "Straw mat B", "straw_mat", -13.4f, -2.4f, new Vector3(2f, 0.2f, 1f), new Color(0.80f, 0.70f, 0.44f));
             // Stable (north-east) and training ground (north-west).
+            // The models' flat earth aprons are a lighter patch with a hard edge on the camp dirt (user 2026-10-28: "军营帐篷到
+            // 旁边的土地……颜色明显就是一个断层"): the camp ground is earth already, so they go.
+            if (campModels)
+                foreach (var r in env.GetComponentsInChildren<MeshRenderer>(true))
+                    if (r && r.bounds.size.y < 0.35f && r.sharedMaterials.Length > 0 && r.sharedMaterials.All(m => m && m.name.StartsWith("mud_camp")))
+                        Object.DestroyImmediate(r.gameObject);
             if (!M("camp_stable", "Stable", 19f, 12f)) Billboard(env, "Stable", "stable_shed", 19f, 14f, new Vector3(10f, 5f, 5f), wood, solid: true);
             Billboard(env, "Horse", "horse_brown", 17.4f, 12.6f, new Vector3(2.5f, 2f, 0.8f), new Color(0.48f, 0.30f, 0.18f));
             Billboard(env, "Trough", "horse_trough", 21f, 12.2f, new Vector3(3f, 1f, 1f), wood);
