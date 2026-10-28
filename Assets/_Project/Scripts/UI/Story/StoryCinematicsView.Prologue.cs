@@ -22,7 +22,7 @@ namespace ThreeKingdoms.UI.Story
         // prologue_c_<shot>_<line> for the 演义体 lines. A line
         // stays up at least as long as its clip; a missing clip leaves that line silent at reading pace.
         const string PrologueVoice = "Audio/Voice/Prologue/prologue_";
-        const float VoiceTail = 0.6f, MusicUnderVoice = 0.4f;
+        const float VoiceTail = 0.6f;   // the music stays at full level under the narration (user 2026-10-28)
         AudioSource voice;
         const float CharsPerSecond = 7f, MinLine = 2.5f, LineGap = 0.35f, ShotLead = 1.0f, ShotTail = 0.8f;
         static readonly Color Night = new Color(0.063f, 0.11f, 0.19f);       // #101C30
@@ -34,13 +34,14 @@ namespace ThreeKingdoms.UI.Story
         static readonly Color Cyan = new Color(0.384f, 0.843f, 0.91f);       // #62D7E8
 
         // The map layers in the order they come up.
-        static readonly string[] MapLayers = { "map_julu", "map_spread", "map_states", "map_alert", "map_arrows", "map_recruit" };
+        static readonly string[] MapLayers = { "map_julu", "map_spread", "map_recruit" };   // the held land, ring and arrows are drawn by PrologueMapFx
 
-        VisualElement proRoot, proScroll, proMap, proMapInner, proCards, proScene, proSubBar, proSkip, proBlack;
+        VisualElement proRoot, proScroll, proMap, proMapInner, proScene, proSubBar, proSkip, proBlack;
         Label proSub, proHeader, proHint;
         Label[] skipButtons;
         readonly Dictionary<string, VisualElement> proLayers = new Dictionary<string, VisualElement>();
-        readonly List<VisualElement> proYellowPins = new List<VisualElement>(), proHeroPins = new List<VisualElement>(), proCardViews = new List<VisualElement>();
+        readonly List<VisualElement> proYellowPins = new List<VisualElement>(), proHeroPins = new List<VisualElement>();
+        PrologueMapFx mapFx;
         Dictionary<string, Vector2> anchors;
         Texture2D[] scrollArt;
         int skipChoice;   // 0 是, 1 否
@@ -82,6 +83,7 @@ namespace ThreeKingdoms.UI.Story
                         starts[i] = t0; t0 += spans[i] + LineGap;
                     }
                     int spoken = -1;
+                    starts1 = starts.Length > 1 ? starts[1] : 0f;
                     float length = t0 + ShotTail;
                     for (float t = 0; t < length; )
                     {
@@ -100,7 +102,6 @@ namespace ThreeKingdoms.UI.Story
                         int line = -1;
                         for (int i = 0; i < starts.Length; i++) if (t >= starts[i]) line = i;
                         if (line != spoken) { spoken = line; Speak(line >= 0 ? clips[line] : null); }
-                        StoryMusic.Duck = voice && voice.isPlaying ? MusicUnderVoice : 1f;
                         ApplyShot(s, Mathf.Min(t, length), length, line, line >= 0 ? t - starts[line] : 0f);
                         ShowLine(line >= 0 ? lines[line] : null, line >= 0 ? t - starts[line] : 0f, line >= 0 ? spans[line] : 1f);
                         if (line >= 0 && t - starts[line] > spans[line] * 0.6f) ShotForReview($"prologue-{s + 1}-{line + 1}");
@@ -111,16 +112,15 @@ namespace ThreeKingdoms.UI.Story
                 proSkip.style.display = DisplayStyle.None;
                 proSubBar.style.display = DisplayStyle.None;
                 Speak(null);
-                StoryMusic.Duck = 1f;
-                StoryMusic.Stop(1.2f);
+                // Zhuo carries the piece on as its own music; elsewhere it fades out.
+                if (StoryMusic.Background == StoryMusic.PrologueCue) StoryMusic.Loop(); else StoryMusic.Stop(1.2f);
                 float from = proRoot.resolvedStyle.opacity;
                 yield return Tween(skipped ? 0.6f : 1.4f, k => SetOpacity(proRoot, from * (1f - k)));
                 if (ReviewDir() != null) { proRoot.style.display = DisplayStyle.None; yield return new WaitForSecondsRealtime(1f); ShotForReview("prologue-landed"); }
             }
             finally
             {
-                if (StoryMusic.Current == StoryMusic.PrologueCue) StoryMusic.Stop(0.4f);
-                StoryMusic.Duck = 1f;
+                if (StoryMusic.Current == StoryMusic.PrologueCue && StoryMusic.Background != StoryMusic.PrologueCue) StoryMusic.Stop(0.4f);
                 if (voice) voice.Stop();
                 if (proRoot != null) proRoot.style.display = DisplayStyle.None;
                 PrologueShot = -1;
@@ -175,6 +175,8 @@ namespace ThreeKingdoms.UI.Story
 
         // ---------- what each shot shows at time t ----------
 
+        float starts1;   // when the current shot's second line begins (shot 4 starts the spreading there)
+
         void ApplyShot(int s, float t, float length, int line, float lineT)
         {
             float k = length > 0 ? t / length : 1f;
@@ -197,52 +199,58 @@ namespace ThreeKingdoms.UI.Story
                     Visible(proMap, m > 0f); SetOpacity(proMap, m);
                     break;
                 case 3:
+                    // Ju Lu lights up, the three Zhang appear, and the preaching spreads out in the last lines.
                     MapOnly();
                     Layer("map_julu", Mathf.Clamp01(t / 1.5f) * (0.85f + 0.15f * Mathf.Sin(t * 3f)));
                     for (int i = 0; i < proYellowPins.Count; i++) Pin(proYellowPins[i], Mathf.Clamp01((t - 1.8f - i * 0.9f) / 0.5f));
-                    Layer("map_spread", Mathf.Clamp01((line - 1 + lineT / 2f)));
+                    Layer("map_spread", Mathf.Clamp01(line - 1 + lineT / 2f));
+                    mapFx.Spread(line >= 1 ? 0.28f * Mathf.Clamp01((t - starts1) / Mathf.Max(1f, length - starts1)) : 0f, t);
                     break;
                 case 4:
+                    // The rising: banners go up and the held land creeps out, deepening and burning at its edge; then
+                    // one stroke of cinnabar rings Luo Yang.
                     MapOnly();
-                    Layer("map_julu", 1f); Layer("map_spread", 1f - Mathf.Clamp01(k / 0.3f) * 0.5f);
+                    Layer("map_julu", 1f); Layer("map_spread", 1f - 0.5f * Mathf.Clamp01(k / 0.3f));
                     foreach (var p in proYellowPins) Pin(p, 1f - Mathf.Clamp01(t / 0.8f));
-                    Layer("map_states", Mathf.Clamp01(t / 3f));
-                    Layer("map_alert", line >= 1 ? Mathf.Clamp01(lineT / 1.2f) : 0f);
+                    mapFx.Spread(Mathf.Lerp(0.28f, 1.15f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / Mathf.Max(1f, length * 0.8f)))), t);
+                    mapFx.Ring(line >= 1 ? Mathf.Clamp01(lineT / 1.4f) : 0f, t);
                     break;
                 case 5:
+                    // Three thick arrows draw themselves out of Luo Yang; the recruitment notices come up after.
                     MapOnly();
-                    Layer("map_julu", 1f); Layer("map_spread", 0.5f); Layer("map_states", 1f); Layer("map_alert", 1f);
-                    Layer("map_arrows", Mathf.Clamp01((t - 0.6f) / 2.4f));
+                    Layer("map_julu", 1f); Layer("map_spread", 0.5f);
+                    mapFx.Spread(1.2f, t); mapFx.Ring(1f, t);
+                    mapFx.Arrows(Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.6f) / 3.2f)), t);
                     Layer("map_recruit", line >= 1 ? Mathf.Clamp01(lineT / 1.5f) : 0f);
                     break;
                 case 6:
                     MapOnly();
-                    Layer("map_julu", 1f); Layer("map_spread", 0.5f); Layer("map_states", 1f); Layer("map_alert", 1f);
-                    // The armies' arrows and notices step back while the pins speak.
-                    Layer("map_arrows", 1f - 0.6f * Mathf.Clamp01(t / 1.2f)); Layer("map_recruit", 1f - 0.6f * Mathf.Clamp01(t / 1.2f));
+                    Layer("map_julu", 1f); Layer("map_spread", 0.5f);
+                    mapFx.Spread(1.2f, t); mapFx.Ring(1f, t); mapFx.Arrows(1f, t);
+                    // The armies and notices step back while the pins speak.
+                    float back = 1f - 0.55f * Mathf.Clamp01(t / 1.2f);
+                    mapFx.SetOpacity(back, back, back);
+                    Layer("map_recruit", back);
                     float per = Mathf.Max(0.6f, (length - ShotLead - ShotTail) / (proHeroPins.Count + 1));
                     for (int i = 0; i < proHeroPins.Count; i++) Pin(proHeroPins[i], Mathf.Clamp01((t - ShotLead * 0.5f - i * per) / 0.5f));
                     break;
                 case 7:
-                    // Push north-east from Luo Yang to Zhuo, then the three cards turn over, one per line.
+                    // "And our story begins with …": the map pushes north-east from Luo Yang to Zhuo.
                     Visible(proScroll, false);
                     Visible(proMap, true);
                     foreach (var p in proHeroPins) Pin(p, 1f - Mathf.Clamp01(t / 0.6f));
-                    ZoomMap(Ease(Mathf.Clamp01(t / ShotLead / 1.6f)));
-                    SetOpacity(proMap, 1f - 0.55f * Mathf.Clamp01((t - 0.8f) / 1f));
-                    Visible(proCards, true);
-                    for (int i = 0; i < proCardViews.Count; i++) Flip(proCardViews[i], i < line ? 1f : i == line ? Mathf.Clamp01(lineT / 0.6f) : 0f);
+                    mapFx.Spread(1.2f, t);
+                    ZoomMap(Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / Mathf.Max(2f, length * 0.85f))));
                     break;
                 case 8:
-                    // Cards fold away, the notice board at the gate fades in and slowly closes on Liu Bei's back.
-                    foreach (var c in proCardViews) Flip(c, 1f - Mathf.Clamp01(t / 0.7f));
+                    // The notice board at the gate fades in and slowly closes on the young man's back.
                     Visible(proScene, true);
-                    float sc = Mathf.Clamp01((t - 0.4f) / 1.2f);
+                    float sc = Mathf.Clamp01((t - 0.2f) / 1.4f);
                     SetOpacity(proScene, sc);
-                    SetOpacity(proMap, 0.45f * (1f - sc));
+                    SetOpacity(proMap, 1f - sc);
                     float zoom = 1f + 0.07f * Ease(k);
                     proScene.style.scale = new Scale(new Vector3(zoom, zoom, 1));
-                    if (sc >= 1f) { Visible(proMap, false); Visible(proCards, false); }
+                    if (sc >= 1f) Visible(proMap, false);
                     break;
             }
         }
@@ -288,14 +296,6 @@ namespace ThreeKingdoms.UI.Story
             pin.style.opacity = a;
             float s = 0.7f + 0.3f * Ease(a);
             pin.style.scale = new Scale(new Vector3(s, s, 1));
-        }
-
-        static void Flip(VisualElement card, float a)
-        {
-            a = Mathf.Clamp01(a);
-            card.style.visibility = a > 0f ? Visibility.Visible : Visibility.Hidden;
-            card.style.scale = new Scale(new Vector3(Ease(a), 1, 1));
-            card.style.opacity = Mathf.Clamp01(a * 2f);
         }
 
         // The map scaled about Zhuo so it ends near the middle of the screen.
@@ -384,6 +384,9 @@ namespace ThreeKingdoms.UI.Story
             else proMapInner.style.backgroundColor = Night;
             proMapInner.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
             anchors = ReadAnchors();
+            // A light veil over the map so the moving marks stand out (user 2026-10-28: the marks were easy to miss).
+            var veil = Layer(proMapInner);
+            veil.style.backgroundColor = new Color(0.03f, 0.05f, 0.09f, 0.22f);
             foreach (var id in MapLayers)
             {
                 var tex = Art(id);
@@ -393,14 +396,10 @@ namespace ThreeKingdoms.UI.Story
                 v.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
                 proLayers[id] = v;
             }
+            mapFx = new PrologueMapFx(proMapInner, Anchor);
             foreach (var p in PrologueText.YellowTurbans) proYellowPins.Add(MakePin(p, true));
             foreach (var p in PrologueText.Heroes) proHeroPins.Add(MakePin(p, false));
 
-            proCards = Layer(proRoot);
-            proCards.style.flexDirection = FlexDirection.Row;
-            proCards.style.justifyContent = Justify.Center;
-            proCards.style.alignItems = Align.Center;
-            foreach (var c in PrologueText.Cards) proCardViews.Add(MakeCard(c));
 
             proScene = Layer(proRoot);
             var scene = Art("zhuojun_notice");
@@ -419,7 +418,7 @@ namespace ThreeKingdoms.UI.Story
         void ResetPrologue()
         {
             proRoot.BringToFront();
-            Visible(proScroll, false); Visible(proMap, false); Visible(proCards, false); Visible(proScene, false);
+            Visible(proScroll, false); Visible(proMap, false); Visible(proScene, false);
             proBlack.style.display = DisplayStyle.Flex; proBlack.style.right = 0; SetOpacity(proBlack, 1);
             SetOpacity(proMap, 0); SetOpacity(proScene, 0); SetOpacity(proScroll, 1);
             proScene.style.scale = new Scale(Vector3.one);
@@ -428,7 +427,7 @@ namespace ThreeKingdoms.UI.Story
             foreach (var id in MapLayers) Layer(id, 0f);
             foreach (var p in proYellowPins) Pin(p, 0f);
             foreach (var p in proHeroPins) Pin(p, 0f);
-            foreach (var c in proCardViews) Flip(c, 0f);
+            mapFx.Reset(); mapFx.SetOpacity(1f, 1f, 1f);
             proSub.text = ""; SetOpacity(proSub, 0);
             proSubBar.style.display = DisplayStyle.Flex;
             proSkip.style.display = DisplayStyle.None;
@@ -506,17 +505,17 @@ namespace ThreeKingdoms.UI.Story
             v.style.position = Position.Absolute;
             v.style.left = Length.Percent(at.x * 100f + pin.Dx / 19.2f);
             v.style.top = Length.Percent(at.y * 100f + pin.Dy / 10.8f);
-            v.style.width = 150; v.style.marginLeft = -75; v.style.marginTop = -56;
+            v.style.width = 170; v.style.marginLeft = -85; v.style.marginTop = -66;
             v.style.alignItems = Align.Center;
             var face = new VisualElement { pickingMode = PickingMode.Ignore };
-            face.style.width = 96; face.style.height = 96;
+            face.style.width = 116; face.style.height = 116;
             var tex = Art("tag_" + pin.Id);
             if (tex) face.style.backgroundImage = tex;
             else
             {
                 face.style.backgroundColor = yellow ? new Color(0.62f, 0.5f, 0.16f) : PanelBlue;
                 Border(face, yellow ? new Color(0.84f, 0.73f, 0.47f) : SilverEdge, 2f);
-                Round(face, 48);
+                Round(face, 58);
                 var ch = new Label(pin.Name.Substring(0, 1)) { pickingMode = PickingMode.Ignore };
                 ch.style.fontSize = 40; ch.style.color = Ivory; ch.style.unityTextAlign = TextAnchor.MiddleCenter; ch.style.flexGrow = 1;
                 face.Add(ch);
@@ -534,35 +533,6 @@ namespace ThreeKingdoms.UI.Story
             plate.Add(name); plate.Add(note);
             v.Add(plate);
             proMapInner.Add(v);
-            return v;
-        }
-
-        // A tall card: the Codex card art (900×1400, label band left empty) or a plain panel, with the words over its
-        // lower band.
-        VisualElement MakeCard(PrologueText.Card card)
-        {
-            var v = new VisualElement { pickingMode = PickingMode.Ignore };
-            v.style.width = 400; v.style.height = 622; v.style.marginLeft = v.style.marginRight = 28;
-            v.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
-            var tex = Art("card_" + card.Id);
-            if (tex) { v.style.backgroundImage = tex; v.style.unityBackgroundScaleMode = ScaleMode.StretchToFill; }
-            else { v.style.backgroundColor = PanelBlue; Border(v, SilverEdge, 2f); }
-            var words = new VisualElement { pickingMode = PickingMode.Ignore };
-            words.style.position = Position.Absolute;
-            words.style.left = 0; words.style.right = 0; words.style.bottom = 40;
-            words.style.alignItems = Align.Center;
-            v.Add(words);
-            var name = new Label(card.Name) { pickingMode = PickingMode.Ignore };
-            name.style.fontSize = 52; name.style.color = Ivory;
-            words.Add(name);
-            foreach (var line in new[] { card.Courtesy, card.Home, card.Age })
-            {
-                if (string.IsNullOrEmpty(line)) continue;
-                var l = new Label(line) { pickingMode = PickingMode.Ignore };
-                l.style.fontSize = 24; l.style.color = Mist; l.style.marginTop = 4;
-                words.Add(l);
-            }
-            proCards.Add(v);
             return v;
         }
 

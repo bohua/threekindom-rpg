@@ -70,8 +70,23 @@ namespace ThreeKingdoms.Gameplay.Story
 
         // The cue now asked to play (also when its clip is missing), or null.
         public static string Current { get; private set; }
-        // 0..1 multiplier under narration (the prologue lowers the music while a line is spoken).
+        // 0..1 multiplier on the music (kept for narration that wants the music lower; the prologue leaves it at 1).
         public static float Duck { get; set; } = 1f;
+        // The place's own music, looped whenever no story cue plays (user 2026-10-28: Zhuo keeps the prologue's piece
+        // so the town does not break off from it). Null where a place has none.
+        public static string Background { get; set; }
+
+        // Lets the cue now playing run on in a loop (the prologue's piece carrying on into the town).
+        public static void Loop()
+        {
+            if (music && music.isPlaying) music.loop = true;
+        }
+
+        // Called by a place each frame: starts its background piece again once a story cue has ended.
+        public static void KeepBackground()
+        {
+            if (Background != null && Current == null) Play(Background, loop: true, fadeIn: 2f);
+        }
 
         public static void Play(string cue, bool loop = false, float fadeIn = 0.6f)
         {
@@ -130,7 +145,7 @@ namespace ThreeKingdoms.Gameplay.Story
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { music = sfx = null; Current = null; fadeTo = 0f; Duck = 1f; }
+        static void ResetStatics() { music = sfx = null; Current = null; fadeTo = 0f; Duck = 1f; Background = null; }
 
         // Most scenes are built by code without an AudioListener, so nothing at all was heard (user 2026-10-28 “没有音乐和
         // 人声”). Every loaded scene gets one on its main camera when it has none.

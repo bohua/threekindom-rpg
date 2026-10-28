@@ -10,7 +10,7 @@ namespace ThreeKingdoms.UI.Story
         public const string SkipYes = "是", SkipNo = "否";
         public const string SkipNote = "跳过后可在行旅 · 史事中重看";
 
-        public enum Form { Scroll, Map, Cards, Scene }
+        public enum Form { Scroll, Map, Push, Scene }
 
         public readonly struct Shot
         {
@@ -28,9 +28,8 @@ namespace ThreeKingdoms.UI.Story
             new Shot(Form.Map, "二月，八州同时举事，皆着黄巾。旬月之间，天下响应，京师震动。", "朝廷解除党锢，以何进为大将军守洛阳。"),
             new Shot(Form.Map, "朝廷派出三路大军：北中郎将卢植讨张角于冀州，皇甫嵩、朱儁讨颍川黄巾。", "又下诏各州郡自募义兵。", "这一纸诏书，让天下有志之人、有野心之人，都有了拿起刀的理由。"),
             new Shot(Form.Map, "这一年，骑都尉曹操三十岁，正随皇甫嵩南下颍川；", "下邳丞孙坚在淮泗募了千余人；", "河东太守董卓还在等一纸调令。", "他们彼此还不认识。"),
-            new Shot(Form.Cards, "刘备，涿郡楼桑村，织席贩履为生的青年，二十四岁。他说自己是中山靖王之后，少年时曾师事卢植。但眼下，他只是个白身。",
-                "关羽，河东解人，亡命涿郡已经五六年，在市上卖豆。", "张飞，涿郡本地人，家有田庄，卖酒屠猪，好结交豪杰。"),
-            new Shot(Form.Scene, "中平元年春，涿郡城门的告示栏前。", "一个白身的青年，正在看那张榜文。"),
+            new Shot(Form.Push, "天下纷乱，豪杰并起。", "而我们的故事，要从涿郡一个白身的青年说起。"),
+            new Shot(Form.Scene, "中平元年春，涿郡城门的告示栏前，聚着几个看榜的百姓。", "人群里，那个白身的青年，正盯着那张榜文。"),
         };
 
         // The second narration (user 2026-10-28): the same lines in the half-classical voice of 《三国演义》, one for one
@@ -44,9 +43,8 @@ namespace ThreeKingdoms.UI.Story
             new[] { "二月，八州同日俱起，皆以黄巾裹头，旬月之间，天下响应，京师震动。", "朝廷乃解党锢，拜何进为大将军，屯兵以卫洛阳。" },
             new[] { "朝廷遣北中郎将卢植讨张角于冀州，左中郎将皇甫嵩、右中郎将朱儁讨颍川贼众。", "又诏各州郡自募义兵，以御贼寇。", "此诏一下，天下有志之士、怀野心之人，皆得持刀而起矣。" },
             new[] { "是年，骑都尉曹操，年方三十，正随皇甫嵩南下颍川；", "下邳丞孙坚，于淮泗之间募得千余人；", "河东太守董卓，尚候一纸调令。", "此数人者，彼时尚不相识。" },
-            new[] { "刘备，涿郡楼桑村人，以织席贩履为业，年二十四。自言中山靖王之后，少时曾师事卢植，然此时不过一介白身。",
-                "关羽，河东解良人，因事亡命，流落涿郡已五六年，于市上卖豆为生。", "张飞，涿郡人氏，颇有庄田，卖酒屠猪，专好结交天下豪杰。" },
-            new[] { "中平元年春，涿郡城门榜文之下。", "有一白身之人，正立于榜前观看。" },
+            new[] { "正是：天下大乱，豪杰并起。", "今日且不说那王侯将相，单表涿郡一个白身之人。" },
+            new[] { "时值中平元年春，涿郡城门之下，榜文高悬，百姓围看。", "那白身之人挤在人丛之中，正看那张榜文。" },
         };
 
         public const string StyleModern = "现代文", StyleClassic = "演义体";
@@ -81,19 +79,6 @@ namespace ThreeKingdoms.UI.Story
             new Pin("gongsun_zan", "公孙瓒", "幽州", "youzhou", 0, -90),
         };
 
-        public readonly struct Card
-        {
-            public readonly string Id, Name, Courtesy, Home, Age;
-            public Card(string id, string name, string courtesy, string home, string age) { Id = id; Name = name; Courtesy = courtesy; Home = home; Age = age; }
-        }
-
-        // Only Liu Bei's age is known (161); the others' are left off rather than guessed.
-        public static readonly Card[] Cards =
-        {
-            new Card("liu_bei", "刘备", "字玄德", "幽州涿郡涿县", "二十四岁"),
-            new Card("guan_yu", "关羽", "字云长", "司隶河东解县", null),
-            new Card("zhang_fei", "张飞", "字翼德", "幽州涿郡", null),
-        };
 
         // 史事簿 (travel menu 史事): the prologue entry and its sources, opened one at a time on the right.
         public const string EntryTitle = "序章 · 天下大势", EntryWhen = "中平元年（184）春以前";
@@ -104,7 +89,6 @@ namespace ThreeKingdoms.UI.Story
             ("太平道", "张角奉黄老道，以符水咒说疗病，十余年间徒众数十万，连结青、徐、幽、冀、荆、扬、兖、豫八州。“苍天已死，黄天当立”见《后汉书·皇甫嵩传》。"),
             ("三路官军", "中平元年，北中郎将卢植讨张角于冀州，左中郎将皇甫嵩、右中郎将朱儁讨颍川黄巾。《后汉书》卢植、皇甫嵩传。"),
             ("募义兵榜文〔演义〕", "幽州刘焉出榜招军见《三国演义》第一回；史书中刘焉此时尚非幽州牧，刘备从校尉邹靖讨黄巾为史实。"),
-            ("关张出身〔民间与演义〕", "关羽亡命奔涿郡见《三国志·关羽传》；卖豆、张飞卖酒屠猪出自民间传说与演义。"),
         };
     }
 }

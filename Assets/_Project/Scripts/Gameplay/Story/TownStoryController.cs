@@ -185,6 +185,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 _ => NewGameSpot,
             });
             Run.NextArrival = GameRun.Arrival.ReturnFromBattle;   // any later town load is a return
+            StoryMusic.Background = StoryMusic.PrologueCue;   // Zhuo's music is the prologue's piece (user 2026-10-28)
             // Neither stands in town any more: Zhang Fei walks up at the notice board, Guan Yu is met in the tavern.
             if (GuanYu) GuanYu.gameObject.SetActive(false);
             if (ZhangFei) ZhangFei.gameObject.SetActive(false);
@@ -201,9 +202,18 @@ namespace ThreeKingdoms.Gameplay.Story
             Changed?.Invoke();
         }
 
+        void OnDestroy()
+        {
+            // Leaving Zhuo (a battle, the march south) ends its music.
+            if (StoryMusic.Background != StoryMusic.PrologueCue) return;
+            StoryMusic.Background = null;
+            if (StoryMusic.Current == StoryMusic.PrologueCue) StoryMusic.Stop(0.8f);
+        }
+
         void Update()
         {
             UpdateBubbles();
+            if (!Cinematic) StoryMusic.KeepBackground();
             // Residents stop while a conversation or panel holds the town, and while they speak to Liu Bei.
             foreach (var r in Residents)
                 if (r && r.TryGetComponent<NpcPatrol>(out var patrol)) patrol.Paused = Busy || speaking.Contains(r);

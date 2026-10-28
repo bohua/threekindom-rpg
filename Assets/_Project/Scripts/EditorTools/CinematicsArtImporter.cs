@@ -70,33 +70,39 @@ namespace ThreeKingdoms.EditorTools
         // The prologue 天下大势 (design/gdd/prologue.md): Codex art/prologue-art into Resources/Prologue, where the
         // player reads it by name. Scrolls are 3840 wide; the map layers keep their alpha. Missing files are skipped.
         public const string PrologueDir = "Assets/_Project/Resources/Prologue";
-        const string PrologueSource = @"art\prologue-art";
+        static readonly string[] PrologueSources = { @"art\prologue-art", @"art\prologue-map-fx" };
+        // Layers the map animation reads pixel by pixel (PrologueMapFx).
+        static readonly string[] ReadableLayers = { "map_states.png", "cinnabar_circle.png", "march_arrows.png" };
 
         [MenuItem("JRPG/Import prologue art")]
         public static void ImportPrologue()
         {
-            string from = Path.Combine(Root, PrologueSource);
-            if (!Directory.Exists(from)) { Debug.LogWarning("No prologue art at " + from); return; }
             Directory.CreateDirectory(PrologueDir);
-            foreach (var file in Directory.GetFiles(from))
+            foreach (var source in PrologueSources)
             {
-                string name = Path.GetFileName(file);
-                bool picture = name.EndsWith(".png") && name != "preview.png";
-                if (!picture && name != "map_anchors.json") continue;
-                string to = $"{PrologueDir}/{name}";
-                File.Copy(file, to, true);
-                AssetDatabase.ImportAsset(to, ImportAssetOptions.ForceUpdate);
-                if (!picture) continue;
-                var importer = (TextureImporter)AssetImporter.GetAtPath(to);
-                importer.textureType = TextureImporterType.Default;
-                importer.mipmapEnabled = false;
-                importer.alphaIsTransparency = true;
-                importer.filterMode = FilterMode.Bilinear;
-                importer.textureCompression = TextureImporterCompression.Uncompressed;
-                importer.maxTextureSize = 4096;
-                importer.npotScale = TextureImporterNPOTScale.None;
-                importer.wrapMode = TextureWrapMode.Clamp;
-                importer.SaveAndReimport();
+                string from = Path.Combine(Root, source);
+                if (!Directory.Exists(from)) { Debug.LogWarning("No prologue art at " + from); continue; }
+                foreach (var file in Directory.GetFiles(from))
+                {
+                    string name = Path.GetFileName(file);
+                    bool picture = name.EndsWith(".png") && name != "preview.png" && !name.StartsWith("card_");
+                    if (!picture && !name.EndsWith(".json")) continue;
+                    string to = $"{PrologueDir}/{name}";
+                    File.Copy(file, to, true);
+                    AssetDatabase.ImportAsset(to, ImportAssetOptions.ForceUpdate);
+                    if (!picture) continue;
+                    var importer = (TextureImporter)AssetImporter.GetAtPath(to);
+                    importer.textureType = TextureImporterType.Default;
+                    importer.mipmapEnabled = false;
+                    importer.alphaIsTransparency = true;
+                    importer.filterMode = FilterMode.Bilinear;
+                    importer.textureCompression = TextureImporterCompression.Uncompressed;
+                    importer.maxTextureSize = 4096;
+                    importer.npotScale = TextureImporterNPOTScale.None;
+                    importer.wrapMode = TextureWrapMode.Clamp;
+                    importer.isReadable = System.Array.IndexOf(ReadableLayers, name) >= 0;
+                    importer.SaveAndReimport();
+                }
             }
             AssetDatabase.Refresh();
         }
