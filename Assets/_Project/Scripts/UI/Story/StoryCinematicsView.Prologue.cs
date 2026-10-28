@@ -42,6 +42,10 @@ namespace ThreeKingdoms.UI.Story
         readonly Dictionary<string, VisualElement> proLayers = new Dictionary<string, VisualElement>();
         readonly List<VisualElement> proYellowPins = new List<VisualElement>(), proHeroPins = new List<VisualElement>();
         PrologueMapFx mapFx;
+        PrologueDiorama diorama;
+        VisualElement veil;
+        Texture2D flatMap;
+        readonly Dictionary<VisualElement, (Vector2 at, float dx, float dy)> pinPlaces = new Dictionary<VisualElement, (Vector2, float, float)>();
         Dictionary<string, Vector2> anchors;
         Texture2D[] scrollArt;
         int skipChoice;   // 0 是, 1 否
@@ -60,6 +64,7 @@ namespace ThreeKingdoms.UI.Story
             skipByPointer = false;
             bool classic = ThreeKingdoms.UI.Menu.GameSettings.ClassicNarration;
             BuildPrologue();
+            UseDiorama(PrologueDiorama.TryCreate());
             StoryMusic.Play(StoryMusic.PrologueCue, fadeIn: 1.2f);
             bool skipped = false;
             try
@@ -122,6 +127,7 @@ namespace ThreeKingdoms.UI.Story
             {
                 if (StoryMusic.Current == StoryMusic.PrologueCue && StoryMusic.Background != StoryMusic.PrologueCue) StoryMusic.Stop(0.4f);
                 if (voice) voice.Stop();
+                UseDiorama(null);
                 if (proRoot != null) proRoot.style.display = DisplayStyle.None;
                 PrologueShot = -1;
                 Stage = null;
@@ -220,7 +226,9 @@ namespace ThreeKingdoms.UI.Story
                     MapOnly();
                     Layer("map_julu", 1f); Layer("map_spread", 0.5f);
                     mapFx.Spread(1.2f, t); mapFx.Ring(1f, t);
-                    mapFx.Arrows(Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.6f) / 3.2f)), t);
+                    // On the 3D map the arrows wait until the camera has flown out of the pass and risen over Luo Yang.
+                    float arrowsFrom = diorama != null ? length * 0.5f : 0.6f;
+                    mapFx.Arrows(Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - arrowsFrom) / 3.2f)), t);
                     Layer("map_recruit", line >= 1 ? Mathf.Clamp01(lineT / 1.5f) : 0f);
                     break;
                 case 6:
@@ -240,7 +248,7 @@ namespace ThreeKingdoms.UI.Story
                     Visible(proMap, true);
                     foreach (var p in proHeroPins) Pin(p, 1f - Mathf.Clamp01(t / 0.6f));
                     mapFx.Spread(1.2f, t);
-                    ZoomMap(Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / Mathf.Max(2f, length * 0.85f))));
+                    if (diorama == null) ZoomMap(Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / Mathf.Max(2f, length * 0.85f))));
                     break;
                 case 8:
                     // The notice board at the gate fades in and slowly closes on the young man's back.
@@ -252,6 +260,72 @@ namespace ThreeKingdoms.UI.Story
                     proScene.style.scale = new Scale(new Vector3(zoom, zoom, 1));
                     if (sc >= 1f) Visible(proMap, false);
                     break;
+            }
+            if (diorama != null && s >= 2)
+            {
+                var pose = DioramaPose(s, t, length, k);
+                diorama.View(pose.Position, pose.LookAt, pose.Fov);
+                foreach (var pin in proYellowPins) FollowPin(pin);
+                foreach (var pin in proHeroPins) FollowPin(pin);
+                mapFx.Sync();
+            }
+        }
+
+        // ---------- the 3D map ----------
+
+        // On (a diorama) or off (null): the map panel shows the diorama's camera instead of the flat map.
+        void UseDiorama(PrologueDiorama d)
+        {
+            if (diorama != null && diorama != d) diorama.Dispose();
+            diorama = d;
+            mapFx.Diorama = d;
+            proMapInner.style.backgroundImage = d != null ? new StyleBackground(Background.FromRenderTexture((RenderTexture)d.Image)) : new StyleBackground(flatMap);
+            veil.style.display = d != null ? DisplayStyle.None : DisplayStyle.Flex;
+        }
+
+        // A pin stands where its city falls on screen, shifted by its offset; hidden while the city is out of view.
+        void FollowPin(VisualElement pin)
+        {
+            if (!pinPlaces.TryGetValue(pin, out var place)) return;
+            var at = diorama.Project(place.at, 1.2f);
+            if (at == null) { pin.style.visibility = Visibility.Hidden; return; }
+            pin.style.visibility = Visibility.Visible;
+            pin.style.left = Length.Percent(at.Value.x * 100f + place.dx / 19.2f);
+            pin.style.top = Length.Percent(at.Value.y * 100f + place.dy / 10.8f);
+        }
+
+        // The camera over the diorama for each map shot: the whole land, down to Ju Lu, up over the rising, the
+        // Taihang pass toward Luo Yang (route A) while the armies march, the whole land for the people, then north
+        // to Zhuo (route C).
+        PrologueDiorama.Pose DioramaPose(int s, float t, float length, float k)
+        {
+            var overview = new PrologueDiorama.Pose(new Vector3(60f, 64f, -24f), new Vector3(60f, 0f, 35f), 45f);
+            var julu = PrologueDiorama.ToWorld(Anchor("julu"), 0.6f);
+            var juluClose = new PrologueDiorama.Pose(julu + new Vector3(0f, 14f, -18f), julu, 45f);
+            var east = new PrologueDiorama.Pose(new Vector3(64f, 36f, 6f), new Vector3(62f, 0f, 42f), 45f);
+            var a = PrologueDiorama.RouteOf("A");
+            var c = PrologueDiorama.RouteOf("C");
+            var aStart = a != null ? PrologueDiorama.Along(a, 0f) : east;
+            var aEnd = a != null ? PrologueDiorama.Along(a, 1f) : east;
+            var luoyangAt = PrologueDiorama.ToWorld(Anchor("luoyang"), 0.6f);
+            var luoyangHigh = new PrologueDiorama.Pose(luoyangAt + new Vector3(-6f, 24f, -20f), luoyangAt + new Vector3(6f, 0f, 2f), 45f);
+            var cStart = c != null ? PrologueDiorama.Along(c, 0f) : overview;
+            float sk = Mathf.SmoothStep(0f, 1f, k);
+            switch (s)
+            {
+                case 2: return overview;
+                case 3: return PrologueDiorama.Pose.Lerp(overview, juluClose, sk);
+                case 4: return PrologueDiorama.Pose.Lerp(juluClose, east, sk);
+                case 5:
+                    // Low out of the Taihang pass toward Luo Yang (route A), then up over the city to watch the arrows.
+                    if (k < 0.12f) return PrologueDiorama.Pose.Lerp(east, aStart, Mathf.SmoothStep(0f, 1f, k / 0.12f));
+                    if (k < 0.45f) return a != null ? PrologueDiorama.Along(a, (k - 0.12f) / 0.33f) : east;
+                    return PrologueDiorama.Pose.Lerp(aEnd, luoyangHigh, Mathf.SmoothStep(0f, 1f, (k - 0.45f) / 0.2f));
+                case 6: return PrologueDiorama.Pose.Lerp(luoyangHigh, overview, Mathf.SmoothStep(0f, 1f, t / 1.6f));
+                case 7:
+                    if (k < 0.15f) return PrologueDiorama.Pose.Lerp(overview, cStart, Mathf.SmoothStep(0f, 1f, k / 0.15f));
+                    return c != null ? PrologueDiorama.Along(c, (k - 0.15f) / 0.85f) : overview;
+                default: return c != null ? PrologueDiorama.Along(c, 1f) : overview;
             }
         }
 
@@ -285,6 +359,7 @@ namespace ThreeKingdoms.UI.Story
         {
             if (!proLayers.TryGetValue(id, out var v)) return;
             a = Mathf.Clamp01(a);
+            if (diorama != null) { diorama.Overlay(id, (Texture)v.userData, a); a = 0f; }
             v.style.display = a > 0f ? DisplayStyle.Flex : DisplayStyle.None;
             v.style.opacity = a;
         }
@@ -380,12 +455,13 @@ namespace ThreeKingdoms.UI.Story
             proMap = Layer(proRoot);
             proMapInner = Layer(proMap);
             var baseMap = Art("map_base");
+            flatMap = baseMap;
             if (baseMap) proMapInner.style.backgroundImage = baseMap;
             else proMapInner.style.backgroundColor = Night;
             proMapInner.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
             anchors = ReadAnchors();
             // A light veil over the map so the moving marks stand out (user 2026-10-28: the marks were easy to miss).
-            var veil = Layer(proMapInner);
+            veil = Layer(proMapInner);
             veil.style.backgroundColor = new Color(0.03f, 0.05f, 0.09f, 0.22f);
             foreach (var id in MapLayers)
             {
@@ -394,6 +470,7 @@ namespace ThreeKingdoms.UI.Story
                 var v = Layer(proMapInner);
                 v.style.backgroundImage = tex;
                 v.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
+                v.userData = tex;
                 proLayers[id] = v;
             }
             mapFx = new PrologueMapFx(proMapInner, Anchor);
@@ -502,6 +579,7 @@ namespace ThreeKingdoms.UI.Story
         {
             var at = Anchor(pin.Anchor);
             var v = new VisualElement { pickingMode = PickingMode.Ignore };
+            pinPlaces[v] = (at, pin.Dx, pin.Dy);
             v.style.position = Position.Absolute;
             v.style.left = Length.Percent(at.x * 100f + pin.Dx / 19.2f);
             v.style.top = Length.Percent(at.y * 100f + pin.Dy / 10.8f);

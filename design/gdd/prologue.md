@@ -100,3 +100,7 @@
 5. 旁白改为更深沉的说书声线（临时语音 zh-CN-YunjianNeural，语速 −14%、音高 −12 Hz，低频加厚、轻压缩）；说话时不再压低背景音乐。
 
 - 2026-10-28 用户：“张角的口号还是改回旁白”。口号一句改回旁白声线（与前后同一配音），第 9 节第 2 条作废。
+
+## 10. 3D 青绿山水沙盘（用户 2026-10-28 19:18、19:22）
+
+天下图镜头（第 3–8 镜）改为 3D 沙盘：Codex 效果图 art/prologue-3d-map-concept，Blender 建模 art/prologue-3d-map-blender（120×67.5 米，1 米＝平面舆图 16 像素，地形 UV＝舆图；8K 手绘地形贴图，边缘渐变淡入宣纸与雾，层叠青绿山系、城池、树、雾）。`PrologueDioramaBuilder` 生成 Resources/Prologue/TianxiaDiorama.prefab 与 tianxia_routes.json；`PrologueDiorama` 运行时放在远处用独立相机渲染到贴图，剧情层（黄巾蔓延、朱砂圈、箭头、巨鹿光、传教线、告示）投到地形覆盖层，头像与旗帜按 3D 投影跟随。镜头：俯瞰 → 推近巨鹿 → 升起看蔓延 → 太行南口低飞向洛阳（路线 A）→ 升到洛阳上空看三路箭头 → 俯瞰群雄 → 北上涿郡（路线 C）。缺 prefab 时自动退回平面舆图。

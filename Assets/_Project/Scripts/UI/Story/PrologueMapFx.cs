@@ -22,8 +22,12 @@ namespace ThreeKingdoms.UI.Story
 
         readonly Func<string, Vector2> anchor;
         Reveal spread, ring, arrows;
-        readonly List<(VisualElement v, float at)> banners = new List<(VisualElement, float)>();
-        readonly List<(VisualElement v, float at)> fires = new List<(VisualElement, float)>();
+        readonly List<(VisualElement v, float at, Vector2 pos)> banners = new List<(VisualElement, float, Vector2)>();
+        readonly List<(VisualElement v, float at, Vector2 pos)> fires = new List<(VisualElement, float, Vector2)>();
+
+        // The 3D map (PrologueDiorama): the drawn layers go onto its ground instead of the flat map, and the banners
+        // and fires follow the camera. Null on the flat map.
+        public PrologueDiorama Diorama;
         Sprite[] bannerFrames, fireFrames;
 
         public PrologueMapFx(VisualElement mapInner, Func<string, Vector2> anchor)
@@ -48,16 +52,20 @@ namespace ThreeKingdoms.UI.Story
             bannerFrames = Slice(Load("banner_wave"), BannerFrames);
             fireFrames = Slice(Load("fire_loop"), FireFrames);
             var spots = Spots(spread, 16);
-            foreach (var (pos, at) in spots) banners.Add((Mark(mapInner, pos, 64, 80, true), at));
-            for (int i = 0; i < spots.Count; i += 2) fires.Add((Mark(mapInner, spots[i].pos + new Vector2(0.012f, 0.012f), 52, 70, false), spots[i].at));
+            foreach (var (pos, at) in spots) banners.Add((Mark(mapInner, pos, 64, 80, true), at, pos));
+            for (int i = 0; i < spots.Count; i += 2)
+            {
+                var pos = spots[i].pos + new Vector2(0.012f, 0.012f);
+                fires.Add((Mark(mapInner, pos, 52, 70, false), spots[i].at, pos));
+            }
             Reset();
         }
 
         public void Reset()
         {
             spread.Draw(0f, 0f, Paint.Spread); ring.Draw(0f, 0f, Paint.Plain); arrows.Draw(0f, 0f, Paint.Plain);
-            foreach (var (v, _) in banners) v.style.display = DisplayStyle.None;
-            foreach (var (v, _) in fires) v.style.display = DisplayStyle.None;
+            foreach (var (v, _, _) in banners) v.style.display = DisplayStyle.None;
+            foreach (var (v, _, _) in fires) v.style.display = DisplayStyle.None;
         }
 
         // p 0..1: how far the rising has spread; t: seconds, for flicker and waving.
@@ -67,8 +75,9 @@ namespace ThreeKingdoms.UI.Story
             int frame = (int)(t * FrameRate);
             for (int i = 0; i < banners.Count; i++)
             {
-                var (v, at) = banners[i];
+                var (v, at, pos) = banners[i];
                 float a = Mathf.Clamp01((p - at) / 0.05f);
+                if (!Follow(v, pos)) a = 0f;
                 v.style.display = a > 0f ? DisplayStyle.Flex : DisplayStyle.None;
                 if (a <= 0f) continue;
                 v.style.opacity = a * marksAlpha;
@@ -78,10 +87,11 @@ namespace ThreeKingdoms.UI.Story
             }
             for (int i = 0; i < fires.Count; i++)
             {
-                var (v, at) = fires[i];
+                var (v, at, pos) = fires[i];
                 // A fire burns for a while where the rising arrives, then dies to embers.
                 float age = p - at;
                 float a = age <= 0f ? 0f : Mathf.Clamp01(age / 0.04f) * Mathf.Clamp01((0.45f - age) / 0.15f);
+                if (!Follow(v, pos)) a = 0f;
                 v.style.display = a > 0f ? DisplayStyle.Flex : DisplayStyle.None;
                 if (a <= 0f) continue;
                 v.style.opacity = a * marksAlpha;
@@ -91,6 +101,29 @@ namespace ThreeKingdoms.UI.Story
 
         public void Ring(float p, float t) => ring.Draw(p, t, Paint.Plain);
         public void Arrows(float p, float t) => arrows.Draw(p, t, Paint.Plain);
+
+        // On the 3D map: hands the drawn layers to the diorama's ground (call after the frame's Spread / Ring / Arrows).
+        public void Sync()
+        {
+            if (Diorama == null) return;
+            foreach (var (r, id) in new[] { (spread, "spread"), (ring, "ring"), (arrows, "arrows") })
+            {
+                bool shown = r.View.style.display == DisplayStyle.Flex;
+                float a = r.View.style.opacity.keyword == StyleKeyword.Undefined ? r.View.style.opacity.value : 1f;
+                r.View.style.visibility = Visibility.Hidden;
+                Diorama.Overlay(id, r.Texture, shown ? a : 0f);
+            }
+        }
+
+        // A mark stands where its map point falls on screen (the 3D map); false when that point is out of view.
+        bool Follow(VisualElement v, Vector2 pos)
+        {
+            if (Diorama == null) return true;
+            var at = Diorama.Project(pos, 1.0f);
+            if (at == null) return false;
+            v.style.left = Length.Percent(at.Value.x * 100f); v.style.top = Length.Percent(at.Value.y * 100f);
+            return true;
+        }
         // Dims the drawn layers (and the banners with the held land) while later shots speak over them.
         public void SetOpacity(float spreadA, float ringA, float arrowsA)
         {
@@ -156,6 +189,7 @@ namespace ThreeKingdoms.UI.Story
         {
             public readonly VisualElement View;
             public readonly Color32[] Source;
+            public Texture2D Texture => tex;
             public float[] Order;
             readonly Texture2D tex;
             readonly Color32[] buffer;
