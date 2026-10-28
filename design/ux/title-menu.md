@@ -29,6 +29,8 @@
 
 ## 4. 美术
 
+- 2026-10-28 现行 logo：用户指定的成稿（单行“三国·江山如画”，大字三国、水墨刘备鹰山），原图存 D:\BuildArtifacts\Codex\hd2d-jrpgrt\_refs	itle-menu\JIANGSHAN_LOGO_USER_PICK_20261028.png，按 place_logo(1300, 28) 合成进 title_plate.png；此前 Codex 各版只作历史。
+
 - 2026-10-27 改名后 logo：Codex 设计 D:\BuildArtifacts\Codex\hd2d-jrpg\art\jiangshan-logo-concept（第一轮单行／两层两版未用）；同日用户要求“突出三国……江山如画比较小，类似副标题”，v2 在 jiangshan-logo-concept-v2，接入 LOGO_B（大字“三国”、右侧小字副标题“江山如画”，底线贯通），LOGO_A（副标题在下）备选，插画按旧 logo 重绘、补全人物下半身，字为 Noto Serif SC 900 排版。
 
 - 设计图：D:\BuildArtifacts\Codex\hd2d-jrpg\art\title-menu-concept（v1）、title-menu-concept-v2（v2，现行）。
