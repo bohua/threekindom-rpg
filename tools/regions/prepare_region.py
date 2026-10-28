@@ -47,7 +47,7 @@ def centre(o):
 
 def size(o):
     f = o.get('footprint') or {}
-    if f.get('shape') == 'circle':
+    if f.get('shape') == 'circle' or ('radius_m' in f and 'width_m' not in f):
         r = float(f.get('radius_m', 8))
         return 2 * r, 2 * r
     w = f.get('width_x_m') or f.get('size_x_m') or f.get('width_m') or 10
@@ -56,7 +56,7 @@ def size(o):
 
 
 def facing(o):
-    for k in ('facing_degrees', 'facing_deg_clockwise_from_north', 'facing_degrees_from_north', 'facing_deg'):
+    for k in ('facing_degrees', 'facing_deg_clockwise_from_north', 'facing_degrees_from_north', 'facing_deg', 'yaw_degrees'):
         if o.get(k) is not None:
             return float(o[k])
     return 180.0
@@ -64,10 +64,10 @@ def facing(o):
 
 def kind(t):
     t = (t or '').lower()
-    for key, k in (('blocked', 'barrier'), ('barrier', 'barrier'), ('stage_gate', 'barrier'), ('camp', 'camp'),
+    for key, k in (('blocked', 'barrier'), ('checkpoint', 'explore'), ('orchard', 'explore'), ('future', 'explore'), ('barrier', 'barrier'), ('stage_gate', 'barrier'), ('camp', 'camp'),
                    ('command', 'explore'), ('tent', 'explore'), ('city', 'town'), ('hub', 'town'),
                    ('fortress', 'gate_town'), ('gate', 'gate_town'), ('village', 'village'), ('relay', 'post_station'),
-                   ('waystation', 'post_station'), ('ferry', 'ferry'), ('bridge', 'bridge'), ('battle', 'battlefield'),
+                   ('waystation', 'post_station'), ('post_station', 'post_station'), ('ferry', 'ferry'), ('bridge', 'bridge'), ('battle', 'battlefield'),
                    ('exit', 'exit')):
         if key in t:
             return k
@@ -76,13 +76,18 @@ def kind(t):
 
 # ---- places, each plot flattened to its stated ground height (blended over 8 m) ----
 places = []
-for o in L.get('locations', []):
+# Houses Codex placed one by one (R1 'structures'): drawn as houses, and their villages as a bare-earth yard only.
+houses = [o for o in L.get('structures', []) if o.get('type') == 'house']
+housed = {o.get('parent_id') for o in houses}
+for o in L.get('locations') or L.get('places') or []:
     x, z = centre(o)
     w, d = size(o)
     k = kind(o.get('type'))
     y = o.get('ground_height_m')
     p = dict(id=o['id'], name=o.get('name_zh', o['id']), kind=k, x=x, z=z, y=float(y if y is not None else 0),
              w=w, d=d, yaw=facing(o) - 180.0, year=int(o.get('open_year') or 0))
+    if o['id'] in housed and k == 'village':
+        p['kind'] = 'hamlet'
     p.update(hubs.get(o['id'], {}))
     places.append(p)
     if y is None or k in ('bridge', 'explore', 'battlefield', 'exit') or o.get('type') in ('river_bend', 'siege_earthwork'):
@@ -102,6 +107,29 @@ for o in L.get('locations', []):
             t = t * t * (3 - 2 * t)
             H[zz, xx] = float(y) * (1 - t) + H[zz, xx] * t
 
+for o in houses:
+    if (hubs.get(o.get('parent_id')) or {}).get('layout'):
+        continue   # the village's own Blender layout places its houses
+    x, z = centre(o)
+    w, d = size(o)
+    places.append(dict(id=o['id'], name='民居', kind='house', x=x, z=z, y=float(o.get('ground_height_m') or 0), w=w, d=d,
+                       yaw=facing(o) - 180.0, year=0))
+for o in L.get('bridges', []):
+    (ax, az), (bx, bz) = o['deck_polyline_xz'][0], o['deck_polyline_xz'][-1]
+    x, z = centre(o)
+    places.append(dict(id=o['id'], name=o.get('name_zh', '木桥'), kind='bridge', x=x, z=z, y=float(o.get('deck_y_m', 0)),
+                       w=float(o.get('length_m', 20)), d=float(o.get('width_m', 4)),
+                       yaw=-math.degrees(math.atan2(bz - az, bx - ax)), year=0))
+for i, o in enumerate(L.get('exits', []) if isinstance(L.get('exits'), list) else []):
+    places.append(dict(id=o.get('id', f'exit_{i}'), name=o.get('name_zh', '出口'), kind='exit', x=min(max(float(o['x']), 4), W - 4),
+                       z=min(max(float(o['z']), 4), D - 4), y=float(o.get('y', 0)), w=8, d=8, yaw=0, year=0))
+for o in L.get('gates', []):
+    if o['id'] in hubs:   # gates the hub file wires up (portals into a town scene)
+        g = dict(id=o['id'], name=o.get('name_zh', o['id']), kind='gate', x=float(o['x']), z=float(o['z']), y=float(o.get('y', 0)),
+                 w=8, d=4, yaw=facing(o) - 180.0, year=0)
+        g.update(hubs[o['id']])
+        places.append(g)
+
 # ---- roads, water ----
 roads = []
 for o in L.get('roads', []):
@@ -109,7 +137,16 @@ for o in L.get('roads', []):
     if len(ps) >= 2:
         roads.append(dict(id=o['id'], width=float(o.get('width_m', 5)), pts=[v for p in ps for v in p]))
 waters = []
-for o in L.get('rivers', []):
+rivers = L.get('rivers') or ([dict(L['river'], id=L['river'].get('id', 'river'))] if isinstance(L.get('river'), dict) else [])
+for o in rivers:
+    cl = o.get('centerline') or []
+    if cl and isinstance(cl[0], dict) and 'water_y_m' in cl[0]:
+        wid = float(o.get('water_width_m') or o.get('width_m') or 12)
+        for i in range(len(cl) - 1):
+            a, b = cl[i], cl[i + 1]
+            waters.append(dict(id=f"{o['id']}_{i}", level=(a['water_y_m'] + b['water_y_m']) / 2, width=wid,
+                               line=[a['x'], a['z'], b['x'], b['z']]))
+        continue
     ps = pts(o, 'centerline_xz', 'centerline', 'points', 'points_xz')
     cl = o.get('centerline') or []
     wid = o.get('width_m') or (sum(q.get('width_m', 12) for q in cl) / len(cl) if cl and isinstance(cl[0], dict) else 12)
@@ -129,8 +166,11 @@ sx = min(max(sx, 8), W - 8)
 sz = min(max(sz, 8), D - 8)
 zone = (L.get('opening_184') or {}).get('polygon_xz') or []
 
+walls = [dict(id=o['id'], height=6.0, pts=[float(v) for p in o['polyline_xz'] for v in p])
+         for o in L.get('barriers', []) if o.get('polyline_xz') and not o.get('passable', False)]
+
 region = dict(id=P, name=name, scene=f'Region_{P}', width=W, height=D, places=places, roads=roads, waters=waters,
-              spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p])
+              walls=walls, spots=[dict(name=k, x=float(v[0]), z=float(v[1])) for k, v in (hubs.get('_spots') or {}).items()], spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p])
 json.dump(region, open(os.path.join(out, 'region.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 with open(os.path.join(out, 'heights.bin'), 'wb') as f:
     f.write(H.astype('<f4').tobytes())

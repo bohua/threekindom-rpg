@@ -34,6 +34,8 @@ namespace ThreeKingdoms.EditorTools
             public RegionPlace[] places = new RegionPlace[0];
             public RegionRoad[] roads = new RegionRoad[0];
             public RegionWater[] waters = new RegionWater[0];
+            public RegionWall[] walls = new RegionWall[0];   // impassable barriers along a line (R1: the Great Wall by Juyong)
+            public RegionSpot[] spots = new RegionSpot[0];   // named arrival points ("Spot <name>") for portals from other scenes
             public float spawnX, spawnZ;
             public float[] openZone = new float[0];   // x, z pairs: the part open in the earliest year, outlined on the ground
         }
@@ -49,7 +51,13 @@ namespace ThreeKingdoms.EditorTools
             public bool skip;               // a sub-place drawn by its hub's layout: label only
             public float layoutX, layoutZ;  // where the layout's origin sits relative to the place centre (e.g. its gate)
             public string portalScene, portalArrival;
+            public float portalX, portalZ, portalW, portalD;   // the portal box in the place's frame (default: its south edge, 6 x 2.5 m)
+            public float[] portalFacing = new float[0];       // the way the party faces on arrival in the other scene
+            public string gates;                              // walled places: sides with a gate, e.g. "S,W" (default "S")
         }
+
+        [System.Serializable] public sealed class RegionWall { public string id; public float height = 6f; public float[] pts = new float[0]; }
+        [System.Serializable] public sealed class RegionSpot { public string name; public float x, z; }
 
         [System.Serializable] public sealed class RegionRoad { public string id; public float width = 5f; public float[] pts = new float[0]; }   // x, z pairs
         [System.Serializable] public sealed class RegionWater { public string id; public float level; public float width; public float[] line = new float[0]; public float[] poly = new float[0]; }
@@ -57,7 +65,7 @@ namespace ThreeKingdoms.EditorTools
         // The regions built so far; their concept folder under art/.
         static readonly (string id, string concept)[] Regions =
         {
-            ("R3", "r3-julu-concept"), ("R5A", "r5a-suanzao-concept"), ("R5B", "r5b-luoyang-concept"),
+            ("R1", "r1-zhuoji-concept"), ("R3", "r3-julu-concept"), ("R5A", "r5a-suanzao-concept"), ("R5B", "r5b-luoyang-concept"),
             ("R7", "r7-qingzhou-concept"), ("R8", "r8-xuzhou-concept"), ("R6", "r6-yanzhou-concept"),
         };
 
@@ -120,6 +128,13 @@ namespace ThreeKingdoms.EditorTools
             OpenZone(env);
             var spots = new GameObject("Spots").transform;
             foreach (var p in data.places) Place(env, labels, spots, p);
+            BarrierWalls(env);
+            foreach (var sp in data.spots)
+            {
+                var at = new GameObject("Spot " + sp.name).transform;
+                at.SetParent(spots, false);
+                at.position = new Vector3(sp.x, H(sp.x, sp.z), sp.z);
+            }
             Edges(env);
 
             var sun = new GameObject("Midday sun").AddComponent<Light>();
@@ -423,7 +438,7 @@ namespace ThreeKingdoms.EditorTools
         {
             var g = new GameObject($"{p.kind} {p.name}").transform;
             g.SetParent(env, false);
-            float y = H(p.x, p.z);
+            float y = p.kind == "bridge" ? p.y : H(p.x, p.z);
             g.position = new Vector3(p.x, y, p.z);
             g.rotation = Quaternion.Euler(0, p.yaw, 0);
             float w = Mathf.Max(p.w, 4f), d = Mathf.Max(p.d, 4f);
@@ -436,7 +451,7 @@ namespace ThreeKingdoms.EditorTools
                 {
                     case "town":
                     case "gate_town":
-                        Walls(g, w, d, p.kind == "town" ? 6f : 5f, gateOpen: p.year <= 0 || !string.IsNullOrEmpty(p.portalScene));
+                        Walls(g, w, d, p.kind == "town" ? 6f : 5f, gateOpen: p.year <= 0 || !string.IsNullOrEmpty(p.portalScene), sides: p.gates);
                         if (p.kind == "town") { Box(g, "Hall", new Vector3(0, 0, d * 0.25f), new Vector3(14f, 5f, 9f), 0.6f); for (int i = -1; i <= 1; i += 2) Box(g, "Block", new Vector3(i * w * 0.25f, 0, 0), new Vector3(10f, 4f, 8f), 0.64f); }
                         break;
                     case "camp":
@@ -454,6 +469,26 @@ namespace ThreeKingdoms.EditorTools
                             Box(g, "House", at, new Vector3(6f, 3.4f, 5f), 0.66f, i * 17f);
                         }
                         break;
+                    case "hamlet":
+                        // Houses placed one by one (kind "house"); the village itself is a yard of bare earth.
+                        Box(g, "Yard", new Vector3(0, -0.12f, 0), new Vector3(w * 0.8f, 0.3f, d * 0.8f), 0.7f, 0f, solid: false);
+                        break;
+                    case "house":
+                        Box(g, "Foundation", new Vector3(0, -0.1f, 0), new Vector3(p.w + 4f, 0.3f, p.d + 4f), 0.72f, 0f, solid: false);
+                        Box(g, "House", Vector3.zero, new Vector3(p.w, 3.2f, p.d), 0.66f);
+                        Box(g, "Roof", new Vector3(0, 3.2f, 0), new Vector3(p.w + 0.6f, 1.2f, p.d + 0.6f), 0.42f, 0f, solid: false);
+                        return;   // no label or spot of its own
+                    case "tree":
+                        // A landmark tree (R1: the great mulberry at Lousang, seen from afar).
+                        Box(g, "Trunk", Vector3.zero, new Vector3(1.6f, 6f, 1.6f), 0.38f);
+                        var crown = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                        Object.DestroyImmediate(crown.GetComponent<Collider>());
+                        crown.name = "Crown"; crown.transform.SetParent(g, false);
+                        crown.transform.localPosition = new Vector3(0, 9f, 0); crown.transform.localScale = new Vector3(15f, 8f, 15f);
+                        crown.GetComponent<MeshRenderer>().sharedMaterial = Mat("tree crown", new Color(0.46f, 0.62f, 0.36f));
+                        break;
+                    case "gate":
+                        break;   // a way into a town scene: only its portal
                     case "post_station":
                         Box(g, "Post station", new Vector3(0, 0, 3f), new Vector3(8f, 3.6f, 6f), 0.7f);
                         Box(g, "Stable", new Vector3(9f, 0, 3f), new Vector3(7f, 3f, 5f), 0.6f);
@@ -463,7 +498,7 @@ namespace ThreeKingdoms.EditorTools
                         Box(g, "Guard post", new Vector3(w / 2f + 3f, 0, -2f), new Vector3(3f, 6f, 3f), 0.42f);
                         break;
                     case "bridge":
-                        Box(g, "Deck", new Vector3(0, -0.2f, 0), new Vector3(Mathf.Max(5f, p.w), 0.4f, Mathf.Max(5f, p.d)), 0.55f, 0f, solid: false);
+                        Box(g, "Deck", new Vector3(0, -0.2f, 0), new Vector3(Mathf.Max(5f, p.w), 0.4f, Mathf.Max(5f, p.d)), 0.55f, 0f, solid: p.y > 0f);
                         break;
                     case "ferry":
                         Box(g, "Landing", new Vector3(0, -0.3f, 0), new Vector3(8f, 0.3f, 6f), 0.55f, 0f, solid: false);
@@ -478,6 +513,15 @@ namespace ThreeKingdoms.EditorTools
                         break;
                 }
             Label(labels, p.name, g.position + new Vector3(0, Mathf.Max(8f, d * 0.12f), 0));
+            if (!string.IsNullOrEmpty(p.layout))
+            {
+                // A disabled review shot of a modelled hub (-camera "Review <id>"), from the south and above.
+                var review = new GameObject("Review " + p.id).AddComponent<UnityEngine.Camera>();
+                review.enabled = false; review.fieldOfView = 30f; review.farClipPlane = 1500f;
+                float back = Mathf.Max(w, d) * 0.95f + 20f;
+                review.transform.position = g.position + new Vector3(0, back * 0.75f, -back);
+                review.transform.LookAt(g.position);
+            }
             var spot = new GameObject("Spot " + p.name);
             spot.transform.SetParent(spots, false);
             // In front of the place (south of it in its own frame), where the party stands on arrival.
@@ -487,9 +531,11 @@ namespace ThreeKingdoms.EditorTools
             {
                 var portal = new GameObject("Portal " + p.name).AddComponent<RegionPortal>();
                 portal.transform.SetParent(g, false);
-                portal.transform.localPosition = new Vector3(0, 0, -d / 2f);
-                portal.Size = new Vector2(6f, 2.5f); portal.TargetScene = p.portalScene; portal.ArrivalSpot = p.portalArrival;
-                portal.Facing = Vector3.forward;
+                bool custom = p.portalW > 0f;
+                portal.transform.localPosition = custom ? new Vector3(p.portalX, 0, p.portalZ) : new Vector3(0, 0, -d / 2f);
+                portal.Size = custom ? new Vector2(p.portalW, p.portalD) : new Vector2(6f, 2.5f);
+                portal.TargetScene = p.portalScene; portal.ArrivalSpot = p.portalArrival;
+                portal.Facing = p.portalFacing.Length >= 3 ? new Vector3(p.portalFacing[0], p.portalFacing[1], p.portalFacing[2]) : Vector3.forward;
             }
         }
 
@@ -556,17 +602,50 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A rectangle of wall round a place with a 7 m gap in the middle of its south side.
-        static void Walls(Transform g, float w, float d, float h, bool gateOpen, float shade = 0.52f)
+        // sides: the sides with a gate ("S,W"), default the south one.
+        static void Walls(Transform g, float w, float d, float h, bool gateOpen, float shade = 0.52f, string sides = null)
         {
             float t = 2f, gap = 7f;
-            Box(g, "Wall N", new Vector3(0, 0, d / 2f), new Vector3(w, h, t), shade);
-            Box(g, "Wall W", new Vector3(-w / 2f, 0, 0), new Vector3(t, h, d), shade);
-            Box(g, "Wall E", new Vector3(w / 2f, 0, 0), new Vector3(t, h, d), shade);
-            float side = (w - gap) / 2f;
-            Box(g, "Wall SW", new Vector3(-(gap + side) / 2f, 0, -d / 2f), new Vector3(side, h, t), shade);
-            Box(g, "Wall SE", new Vector3((gap + side) / 2f, 0, -d / 2f), new Vector3(side, h, t), shade);
-            Box(g, "Gate tower", new Vector3(0, h, -d / 2f), new Vector3(gap + 2f, 2.5f, t + 1f), shade * 0.9f, 0f, solid: false);
-            if (!gateOpen) Box(g, "Gate (shut)", new Vector3(0, 0, -d / 2f), new Vector3(gap, h, 0.6f), 0.3f);
+            var gated = (string.IsNullOrEmpty(sides) ? "S" : sides).Split(',').Select(x => x.Trim()).ToArray();
+            foreach (var (side, centre, along) in new[] { ("S", new Vector3(0, 0, -d / 2f), w), ("N", new Vector3(0, 0, d / 2f), w),
+                                                          ("W", new Vector3(-w / 2f, 0, 0), d), ("E", new Vector3(w / 2f, 0, 0), d) })
+            {
+                bool ew = side == "W" || side == "E";
+                Vector3 dir = ew ? Vector3.forward : Vector3.right;
+                Vector3 Size(float len) => ew ? new Vector3(t, h, len) : new Vector3(len, h, t);
+                if (!gated.Contains(side)) { Box(g, "Wall " + side, centre, Size(along), shade); continue; }
+                float part = (along - gap) / 2f;
+                Box(g, $"Wall {side}1", centre - dir * (gap + part) / 2f, Size(part), shade);
+                Box(g, $"Wall {side}2", centre + dir * (gap + part) / 2f, Size(part), shade);
+                var tower = ew ? new Vector3(t + 1f, 2.5f, gap + 2f) : new Vector3(gap + 2f, 2.5f, t + 1f);
+                Box(g, "Gate tower " + side, centre + Vector3.up * h, tower, shade * 0.9f, 0f, solid: false);
+                if (!gateOpen) Box(g, "Gate (shut) " + side, centre, ew ? new Vector3(0.6f, h, gap) : new Vector3(gap, h, 0.6f), 0.3f);
+            }
+        }
+
+        // Impassable walls along a line, following the ground (R1: the Great Wall along the Juyong ridge).
+        static void BarrierWalls(Transform env)
+        {
+            var g = new GameObject("Barrier walls").transform;
+            g.SetParent(env, false);
+            foreach (var wall in data.walls)
+            {
+                var pts = Pts(wall.pts);
+                for (int i = 0; i + 1 < pts.Count; i++)
+                {
+                    var a = pts[i]; var b = pts[i + 1];
+                    int n = Mathf.Max(1, Mathf.CeilToInt(Vector3.Distance(a, b) / 6f));
+                    for (int k = 0; k < n; k++)
+                    {
+                        var p0 = Vector3.Lerp(a, b, k / (float)n); var p1 = Vector3.Lerp(a, b, (k + 1) / (float)n);
+                        var c = (p0 + p1) / 2f;
+                        float y = Mathf.Min(H(p0.x, p0.z), H(p1.x, p1.z), H(c.x, c.z)) - 1f;
+                        float yaw = Mathf.Atan2(p1.x - p0.x, p1.z - p0.z) * Mathf.Rad2Deg;
+                        Box(g, $"{wall.id} {i}.{k}", new Vector3(c.x, y, c.z), new Vector3(2.4f, wall.height + 1f, Vector3.Distance(p0, p1) + 0.4f), 0.5f, yaw);
+                    }
+                    if (i % 2 == 0) Box(g, $"{wall.id} tower {i}", new Vector3(a.x, H(a.x, a.z) - 1f, a.z), new Vector3(5f, wall.height + 4f, 5f), 0.46f);
+                }
+            }
         }
 
         static void Label(Transform labels, string text, Vector3 at)

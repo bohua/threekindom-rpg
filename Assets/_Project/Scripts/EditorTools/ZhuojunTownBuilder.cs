@@ -81,6 +81,7 @@ namespace ThreeKingdoms.EditorTools
             SouthRows(env);
             Greenery(env);
             Outside(env);
+            RegionExits(env);
             TownsfolkProps(env);
             EndSession();
 
@@ -1418,6 +1419,27 @@ namespace ThreeKingdoms.EditorTools
             if (AssetDatabase.LoadAssetAtPath<Material>(path)) AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(m, path);
             return m;
+        }
+
+        // The ways out to the R1 涿蓟 region (user 2026-10-27: the big map round Zhuojun): the south road's end and the
+        // peach grove's far edge. R1 (x, z) = town (x + 360, z + 72). Open only once the party has come in from the region,
+        // so the story's own gate rules in the early chapter stay as they are.
+        static void RegionExits(Transform env)
+        {
+            var g = new GameObject("Region exits (R1)").transform;
+            g.SetParent(env, false);
+            void Exit(string name, Vector3 at, Vector2 size, string arrival, Vector3 facing)
+            {
+                var portal = new GameObject(name).AddComponent<RegionPortal>();
+                portal.transform.SetParent(g, false);
+                portal.transform.localPosition = at;
+                portal.Size = size; portal.TargetScene = "Region_R1"; portal.ArrivalSpot = arrival; portal.Facing = facing;
+                portal.AfterRegionVisit = true;
+            }
+            Exit("Exit south gate", new Vector3(0, 0, -76f), new Vector2(16f, 4f), "Spot From Zhuojun south", Vector3.back);
+            Exit("Exit west grove", new Vector3(-76f, 0, 0), new Vector2(4f, 30f), "Spot From Zhuojun west", Vector3.left);
+            new GameObject("Spot R1 south gate arrival").transform.position = new Vector3(0, 0, -42f);
+            new GameObject("Spot R1 west grove arrival").transform.position = new Vector3(-71f, GroundY(-71f, 0f), 0f);
         }
 
         static void Outside(Transform env)
