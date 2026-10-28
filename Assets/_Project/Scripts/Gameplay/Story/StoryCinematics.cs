@@ -131,5 +131,23 @@ namespace ThreeKingdoms.Gameplay.Story
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() { music = sfx = null; Current = null; fadeTo = 0f; Duck = 1f; }
+
+        // Most scenes are built by code without an AudioListener, so nothing at all was heard (user 2026-10-28 “没有音乐和
+        // 人声”). Every loaded scene gets one on its main camera when it has none.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        static void WatchScenes()
+        {
+            EnsureListener();
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += (_, __) => EnsureListener();
+        }
+
+        public static void EnsureListener()
+        {
+            if (Object.FindAnyObjectByType<AudioListener>()) return;
+            var cam = Camera.main;
+            Debug.Log("No AudioListener in this scene; adding one to " + (cam ? cam.name : "a listener object"));
+            if (cam) cam.gameObject.AddComponent<AudioListener>();
+            else Object.DontDestroyOnLoad(new GameObject("Audio listener").AddComponent<AudioListener>().gameObject);
+        }
     }
 }
