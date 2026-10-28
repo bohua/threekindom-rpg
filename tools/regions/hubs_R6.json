@@ -1,1 +1,21 @@
-{"puyang": {"set": "r6-blender-puyang", "layout": "_checks/layout_placements.json"}}
+{
+ "puyang": {
+  "set": "r6-blender-puyang",
+  "layout": "_checks/layout_placements.json"
+ },
+ "_wild": {
+  "set": "r6-blender-wild",
+  "layout": "_checks/r6_wild_placements.json"
+ },
+ "_detail": {
+  "set": "r6-hd-ground",
+  "layout": "_checks/r6_detail_placements.json"
+ },
+ "_dropPads": [
+  "foundation_house",
+  "foundation_village",
+  "foundation_ruin",
+  "foundation_post",
+  "mud_camp"
+ ]
+}

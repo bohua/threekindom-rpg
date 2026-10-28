@@ -183,7 +183,10 @@ namespace ThreeKingdoms.EditorTools
         {
             if (!imported) return null;
             string key = Regex.Replace(imported.name, "\\.\\d+$", "");
-            return made.TryGetValue(set + "/" + key, out var m) ? m : imported;
+            if (made.TryGetValue(set + "/" + key, out var m)) return m;
+            // Some sets name the Blender material with a region prefix ("R6_granite") and the table without it.
+            string bare = Regex.Replace(key, "^R\\d+[A-Za-z]?_", "");
+            return made.TryGetValue(set + "/" + bare, out m) ? m : imported;
         }
 
         static Bounds LocalBounds(Transform root, MeshFilter f)

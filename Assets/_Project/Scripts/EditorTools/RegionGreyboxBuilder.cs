@@ -653,7 +653,9 @@ namespace ThreeKingdoms.EditorTools
                     case "battlefield":
                     case "explore":
                     default:
-                        // A low pad the size of the place and a marker post, so the spot reads without blocking it.
+                        // A low pad the size of the place and a marker post, so the spot reads without blocking it. In a
+                        // painted region the ground and the wild set already show the place: no grey pad on the earth.
+                        if (painted) break;
                         Box(g, "Pad", new Vector3(0, -0.1f, 0), new Vector3(Mathf.Min(w, 16f), 0.3f, Mathf.Min(d, 16f)), 0.62f, 0f, solid: false);
                         Box(g, "Post", Vector3.zero, new Vector3(0.4f, 3f, 0.4f), 0.4f);
                         break;

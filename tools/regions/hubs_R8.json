@@ -1,1 +1,26 @@
-{"xiapi": {"set": "r8-blender-xiapi", "layout": "_checks/layout_placements.json", "layoutY": -2.5}, "_spawn": [440, 366]}
+{
+ "xiapi": {
+  "set": "r8-blender-xiapi",
+  "layout": "_checks/layout_placements.json",
+  "layoutY": -2.5
+ },
+ "_spawn": [
+  440,
+  366
+ ],
+ "_wild": {
+  "set": "r8-blender-wild",
+  "layout": "_checks/r8_wild_placements.json"
+ },
+ "_detail": {
+  "set": "r8-hd-ground",
+  "layout": "_checks/r8_detail_placements.json"
+ },
+ "_dropPads": [
+  "foundation_house",
+  "foundation_village",
+  "foundation_ruin",
+  "foundation_post",
+  "mud_camp"
+ ]
+}
