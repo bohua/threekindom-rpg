@@ -59,4 +59,23 @@ public sealed class R1RegionTests
         yield return WaitScene("Region_R1");
         Assert.Less(Flat(Player.position, new Vector3(360f, 0, 24f)), 2f, "on the R1 road south of the gate");
     }
+
+    // On steep ground (the abandoned beacon sits in a fold of the hills) the camera tilts up until the hillside no
+    // longer stands between it and the party (user 2026-10-28).
+    [UnityTest]
+    public IEnumerator CameraClearsTheHillsideAtTheBeacon()
+    {
+        GameRun.NewGame(Catalog);
+        SceneManager.LoadScene("Region_R1");
+        yield return WaitScene("Region_R1");
+        var spot = GameObject.Find("Spot 废弃烽燧");
+        Assert.IsNotNull(spot);
+        yield return WalkInto(spot.transform.position + Vector3.up * 0.5f);
+        yield return new WaitForSeconds(4f);
+        var cam = Object.FindFirstObjectByType<FollowCamera>().transform;
+        var to = Player.position + Vector3.up * 0.8f;
+        Debug.Log($"R1 beacon camera pitch {cam.eulerAngles.x:0.0} at {cam.position} player {Player.position}");
+        foreach (var h in Physics.RaycastAll(cam.position, (to - cam.position).normalized, Vector3.Distance(cam.position, to) - 0.5f))
+            Assert.IsFalse(h.collider is MeshCollider && h.collider.name.StartsWith("Terrain"), "hillside between camera and party: " + h.collider.name);
+    }
 }

@@ -117,6 +117,10 @@ for o in houses:
     hm_ = hubs.get('_house')   # a Blender house for the villages without a layout of their own
     if hm_:
         places[-1].update(set=hm_['set'], model=hm_['models'][len([q for q in places if q['kind'] == 'house']) % len(hm_['models'])])
+        # Blender houses stand on their front wall's foot: move the origin from the plot centre to the front.
+        f_ = math.radians(facing(o))
+        places[-1]['x'] = round(x + math.sin(f_) * d / 2, 2)
+        places[-1]['z'] = round(z + math.cos(f_) * d / 2, 2)
 for o in L.get('bridges', []):
     (ax, az), (bx, bz) = o['deck_polyline_xz'][0], o['deck_polyline_xz'][-1]
     x, z = centre(o)

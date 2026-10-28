@@ -50,13 +50,38 @@ namespace Jrpg
                 fov = Mathf.Lerp(fov, tf, k); look = Vector3.Lerp(look, tl, k); sway = Mathf.Lerp(sway, ts, k);
             }
             float swing = sway * Mathf.Sin(Time.time * 0.35f);
-            var rotation = Quaternion.Euler(pitch, yaw + swing, 0f);
+            if (AvoidTerrain) LiftOverTerrain(Target.position + look, yaw + swing);
+            var rotation = Quaternion.Euler(pitch + lift, yaw + swing, 0f);
             Vector3 shake = Vector3.zero;
             if (ShakeSeconds > 0f) { ShakeSeconds -= Time.deltaTime; shake = Random.insideUnitSphere * 0.12f; }
             transform.SetPositionAndRotation(Target.position + look + rotation * new Vector3(0, 0, -distance) + shake, rotation);
             var cam = GetComponent<Camera>();
             if (cam) cam.fieldOfView = fov;
             if (FocusVolume) Focus(FocusVolume, distance);
+        }
+
+        // Open regions (R1 涿蓟, user 2026-10-28): on a steep slope the ground between the party and the camera would fill
+        // the shot, so the camera tilts up over the ridge (quickly) and settles back once the view is clear (slowly).
+        // Only the terrain counts ("Terrain …" mesh colliders); trees and buildings are left to the see-through occluders.
+        public bool AvoidTerrain;
+        float lift;
+
+        void LiftOverTerrain(Vector3 focus, float heading)
+        {
+            float need = 0f;
+            for (float extra = 0f; pitch + extra <= 80f; extra += 4f)
+            {
+                need = extra;
+                var back = Quaternion.Euler(pitch + extra, heading, 0f) * Vector3.back;
+                bool blocked = false;
+                // Cast from the camera's spot toward the party: mesh colliders only stop rays that meet their front face.
+                var from = focus + back * distance;
+                foreach (var h in Physics.RaycastAll(from, -back, distance - 1.5f, ~0, QueryTriggerInteraction.Ignore))
+                    if (h.collider is MeshCollider && h.collider.name.StartsWith("Terrain")) { blocked = true; break; }
+                if (!blocked) break;
+            }
+            float rate = need > lift ? 6f : 1.2f;
+            lift = Mathf.Lerp(lift, need, 1f - Mathf.Exp(-rate * Time.deltaTime));
         }
 
         // Jump straight to the current target's shot (after a teleport or scene load) instead of easing in.

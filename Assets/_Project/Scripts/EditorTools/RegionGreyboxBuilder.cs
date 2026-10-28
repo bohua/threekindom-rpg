@@ -817,6 +817,7 @@ namespace ThreeKingdoms.EditorTools
             follow.Offset = new Vector3(0, 0.8f, 0) + pitch * new Vector3(0, 0, -HD2DSampleBuilder.CameraDistance);
             camGo.transform.position = player.position + follow.Offset;
             follow.UseRig = true;
+            follow.AvoidTerrain = true;
             follow.Pitch = HD2DSampleBuilder.CameraPitch; follow.Distance = HD2DSampleBuilder.CameraDistance; follow.Fov = HD2DSampleBuilder.CameraFov;
             camGo.AddComponent<SeeThroughOccluders>().Target = player;
 
