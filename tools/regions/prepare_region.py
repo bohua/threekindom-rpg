@@ -114,6 +114,9 @@ for o in houses:
     w, d = size(o)
     places.append(dict(id=o['id'], name='民居', kind='house', x=x, z=z, y=float(o.get('ground_height_m') or 0), w=w, d=d,
                        yaw=facing(o) - 180.0, year=0))
+    hm_ = hubs.get('_house')   # a Blender house for the villages without a layout of their own
+    if hm_:
+        places[-1].update(set=hm_['set'], model=hm_['models'][len([q for q in places if q['kind'] == 'house']) % len(hm_['models'])])
 for o in L.get('bridges', []):
     (ax, az), (bx, bz) = o['deck_polyline_xz'][0], o['deck_polyline_xz'][-1]
     x, z = centre(o)
@@ -169,8 +172,192 @@ zone = (L.get('opening_184') or {}).get('polygon_xz') or []
 walls = [dict(dict(id=o['id'], height=6.0, pts=[float(v) for p in o['polyline_xz'] for v in p]), **(hubs.get('_wall') or {}))
          for o in L.get('barriers', []) if o.get('polyline_xz') and not o.get('passable', False)]
 
+scatter = []
+# ---- blended ground (hubs "_ground", R1 user 2026-10-28 "野外精修"): a 2 px/m control map for GroundSplat ----
+# R = dirt (roads, village yards, place plots), G = fields (flat low land in noisy patches), B = river banks,
+# A = hill slope (steep or high ground). Every edge is blurred and broken by noise, so grounds meet raggedly.
+ground = hubs.get('_ground')
+if ground:
+    from PIL import ImageDraw
+    PPM = 2
+    cw, ch = W * PPM + 1, D * PPM + 1
+    rng = np.random.default_rng(11)
+
+    def noise(scale, amp):
+        small = rng.random((max(2, ch // scale), max(2, cw // scale)))
+        return (np.array(Image.fromarray((small * 255).astype(np.uint8)).resize((cw, ch), Image.BICUBIC), np.float64) / 255 - 0.5) * amp
+
+    def canvas():
+        return Image.new('L', (cw, ch), 0)
+
+    def px(x, z):
+        return (x * PPM, (D - z) * PPM)   # image row 0 = north
+
+    def soft(img, blur):
+        return np.array(img.filter(ImageFilter.GaussianBlur(blur * PPM)), np.float64) / 255
+
+    dirt = canvas(); d = ImageDraw.Draw(dirt)
+    for r in roads:
+        q = [px(r['pts'][i], r['pts'][i + 1]) for i in range(0, len(r['pts']), 2)]
+        d.line(q, fill=255, width=int(r['width'] * PPM), joint='curve')
+        for e in (q[0], q[-1]):
+            rr = r['width'] * PPM / 2
+            d.ellipse([e[0] - rr, e[1] - rr, e[0] + rr, e[1] + rr], fill=255)
+    for p in places:
+        if p['kind'] in ('hamlet', 'house', 'explore', 'post_station', 'camp', 'ferry', 'gate'):
+            rx = rz = {'hamlet': 0.55 * min(p['w'], 40) / 2, 'explore': 5, 'gate': 4}.get(p['kind'], min(p['w'], 24) / 2 + 1)
+            if p['kind'] == 'house':
+                rx, rz = p['w'] / 2 + 3, p['d'] / 2 + 3
+            cx, cz = px(p['x'], p['z'])
+            d.ellipse([cx - rx * PPM, cz - rz * PPM, cx + rx * PPM, cz + rz * PPM], fill=255)
+    R = np.clip(soft(dirt, 1.2) * 1.6 + noise(6, 0.5) - 0.15, 0, 1)
+
+    bank = canvas(); d = ImageDraw.Draw(bank)
+    for w in waters:
+        if w.get('line'):
+            q = [px(w['line'][i], w['line'][i + 1]) for i in range(0, len(w['line']), 2)]
+            d.line(q, fill=255, width=int((w['width'] + 14) * PPM), joint='curve')
+            for e in q:
+                rr = (w['width'] + 14) * PPM / 2
+                d.ellipse([e[0] - rr, e[1] - rr, e[0] + rr, e[1] + rr], fill=255)
+        elif w.get('poly'):
+            d.polygon([px(w['poly'][i], w['poly'][i + 1]) for i in range(0, len(w['poly']), 2)], fill=255)
+    B = np.clip(soft(bank, 3) * 1.5 + noise(10, 0.6) - 0.2, 0, 1)
+
+    # Heights at control resolution (row 0 = north).
+    Hc = np.array(Image.fromarray(H[::-1].astype(np.float32), mode='F').resize((cw, ch), Image.BILINEAR), np.float64)
+    gz, gx = np.gradient(Hc, 1.0 / PPM)
+    slope = np.degrees(np.arctan(np.hypot(gx, gz)))
+    def box(a, r):   # separable box blur, twice (≈ Gaussian), r in samples
+        for _ in range(2):
+            for ax in (0, 1):
+                c = np.cumsum(np.pad(a, [(r + 1, r) if i == ax else (0, 0) for i in range(2)], mode='edge'), axis=ax)
+                a = (np.take(c, range(2 * r + 1, c.shape[ax]), axis=ax) - np.take(c, range(0, c.shape[ax] - 2 * r - 1), axis=ax)) / (2 * r + 1)
+        return a
+    slope = box(slope, 3 * PPM)
+    A = np.clip((slope - 14) / 8 + (Hc - 30) / 12 + noise(14, 0.9), 0, 1)
+
+    fields = np.clip(noise(40, 2.2) - 0.1, 0, 1)                         # field patches over about a third of the flat land
+    flat = np.clip(1 - slope / 6, 0, 1) * np.clip(1 - (Hc - 4) / 4, 0, 1)
+    G = np.clip(fields * flat * 1.4 - R - B - A, 0, 1)
+    A = np.clip(A - R * 0.8, 0, 1)
+    # Graded copies of the painted layers (hubs "_ground".grade: {key: [saturation, brightness]}), so a region can calm
+    # a layer that reads too loud under the midday sun without touching the Codex delivery.
+    from PIL import ImageEnhance
+    gdir = os.path.join(out, 'ground')
+    os.makedirs(gdir, exist_ok=True)
+    for k in (ground['base'], ground['r'], ground['g'], ground['b'], ground['a']):
+        im = Image.open(os.path.join(os.path.dirname(src), ground['set'], k + '.png')).convert('RGB')
+        sat, bri = (ground.get('grade') or {}).get(k, [1, 1])
+        im = ImageEnhance.Brightness(ImageEnhance.Color(im).enhance(sat)).enhance(bri)
+        im.save(os.path.join(gdir, k + '.png'))
+    ctrl = np.dstack([R, G, B, A]) * 255
+    Image.fromarray(ctrl.astype(np.uint8), 'RGBA').save(os.path.join(out, 'ground_control.png'))
+
+# ---- vegetation (hubs "_scatter"): 3D trees, reeds and rocks placed by the ground they stand on ----
+scatter = []
+sc = hubs.get('_scatter')
+if sc and ground:
+    rs = np.random.default_rng(23)
+
+    def at(ch_, x, z):
+        u, v = int(round(x * PPM)), int(round((D - z) * PPM))
+        return ch_[min(max(v, 0), ch - 1), min(max(u, 0), cw - 1)]
+
+    blocked = []   # (x, z, radius) kept clear: places, towns
+    for p in places:
+        r = {'town': max(p['w'], p['d']) * 0.62, 'hamlet': p['w'] / 2 + 4, 'house': 6, 'gate': 6, 'bridge': p['w'] / 2 + 2}.get(p['kind'], 9)
+        if not p.get('skip') or p['kind'] in ('town', 'hamlet', 'explore', 'barrier'):
+            blocked.append((p['x'], p['z'], r))
+    wall_pts = [(w['pts'][i], w['pts'][i + 1]) for w in walls for i in range(0, len(w['pts']), 2)]
+
+    def free(x, z, gap=0.0, bank=False):
+        if x < 4 or z < 4 or x > W - 4 or z > D - 4:
+            return False
+        if at(R, x, z) > 0.15 or (at(B, x, z) > 0.85 and not bank):
+            return False
+        if any((x - bx) ** 2 + (z - bz) ** 2 < (br + gap) ** 2 for bx, bz, br in blocked):
+            return False
+        if wall_pts and min(abs(z - wz) for wx, wz in wall_pts if abs(wx - x) < 60) < 8 if any(abs(wx - x) < 60 for wx, wz in wall_pts) else False:
+            return False
+        return True
+
+    def add(model, x, z, s0, s1, set_=None):
+        scatter.append(dict(set=set_ or sc['set'], model=model, x=round(float(x), 2), z=round(float(z), 2),
+                            yaw=round(float(rs.uniform(0, 360)), 1), scale=round(float(rs.uniform(s0, s1)), 2)))
+        blocked.append((x, z, 2.5))
+
+    # Willows and reeds along the river banks.
+    for w in waters:
+        if not w.get('line'):
+            continue
+        (ax, az), (bx, bz) = (w['line'][0], w['line'][1]), (w['line'][-2], w['line'][-1])
+        L_ = math.hypot(bx - ax, bz - az)
+        nx, nz = -(bz - az) / L_, (bx - ax) / L_
+        for t in np.arange(0, L_, 9):
+            for side in (-1, 1):
+                off = w['width'] / 2 + rs.uniform(5, 11)
+                x, z = ax + (bx - ax) * t / L_ + nx * off * side, az + (bz - az) * t / L_ + nz * off * side
+                if rs.random() < 0.7 and free(x, z, bank=True):
+                    add(sc['willow'], x, z, 0.85, 1.15)
+                off = w['width'] / 2 + rs.uniform(0.5, 3)
+                x, z = ax + (bx - ax) * (t + 4) / L_ + nx * off * side, az + (bz - az) * (t + 4) / L_ + nz * off * side
+                if rs.random() < 0.6 and free(x, z, bank=True):
+                    add(sc['reeds'], x, z, 0.8, 1.3)
+    # Poplars in rows along the roads, broken where the road meets places.
+    for r in roads:
+        q = [(r['pts'][i], r['pts'][i + 1]) for i in range(0, len(r['pts']), 2)]
+        dist = 0.0
+        for (x0, z0), (x1, z1) in zip(q, q[1:]):
+            seg = math.hypot(x1 - x0, z1 - z0)
+            if seg < 1e-3:
+                continue
+            nx, nz = -(z1 - z0) / seg, (x1 - x0) / seg
+            for t in np.arange(0, seg, 1.0):
+                dist += 1.0
+                if dist % 14 > 1.0:
+                    continue
+                side = 1 if int(dist / 14) % 2 else -1
+                off = r['width'] / 2 + 3.5
+                x, z = x0 + (x1 - x0) * t / seg + nx * off * side, z0 + (z1 - z0) * t / seg + nz * off * side
+                if rs.random() < 0.6 and free(x, z) and at(A, x, z) < 0.4:
+                    add(sc['poplar'], x, z, 0.85, 1.1)
+    # Pines and granite on the hill slopes; elms, shrubs and wild peach in the open meadow, in loose clumps.
+    for _ in range(9000):
+        x, z = rs.uniform(4, W - 4), rs.uniform(4, D - 4)
+        a_, g_ = at(A, x, z), at(G, x, z)
+        if a_ > 0.45:
+            if rs.random() < 0.10 and free(x, z):
+                add(sc['pine'], x, z, 0.8, 1.25)
+            elif rs.random() < 0.035 and free(x, z):
+                add(sc['rock'], x, z, 0.7, 1.4)
+        elif g_ < 0.2 and a_ < 0.2:
+            n = rs.random()
+            if n < 0.012 and free(x, z, 2):
+                for _k in range(int(rs.integers(1, 4))):
+                    xx, zz = x + rs.normal(0, 4), z + rs.normal(0, 4)
+                    if free(xx, zz):
+                        add(sc['elm'], xx, zz, 0.8, 1.15)
+            elif n < 0.03 and free(x, z):
+                add(sc['shrub'], x, z, 0.8, 1.3)
+    # Mulberry groves round Lousang and the shrine, wild peach near the villages.
+    for name_, model_, count_, set_ in sc.get('groves', []):
+        p = next((p for p in places if p['id'] == name_), None)
+        if not p:
+            continue
+        for _ in range(count_ * 4):
+            if sum(1 for v in scatter if v.get('grove') == name_ + model_) >= count_:
+                break
+            ang, rad = rs.uniform(0, 2 * math.pi), rs.uniform(p['w'] / 2 + 6, p['w'] / 2 + 26)
+            x, z = p['x'] + math.cos(ang) * rad, p['z'] + math.sin(ang) * rad
+            if free(x, z):
+                add(model_, x, z, 0.85, 1.2, set_)
+                scatter[-1]['grove'] = name_ + model_
+    for v in scatter:
+        v.pop('grove', None)
+
 region = dict(id=P, name=name, scene=f'Region_{P}', width=W, height=D, places=places, roads=roads, waters=waters,
-              walls=walls, spots=[dict(name=k, x=float(v[0]), z=float(v[1])) for k, v in (hubs.get('_spots') or {}).items()], spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p])
+              walls=walls, ground=ground or {}, scatter=scatter, spots=[dict(name=k, x=float(v[0]), z=float(v[1])) for k, v in (hubs.get('_spots') or {}).items()], spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p])
 json.dump(region, open(os.path.join(out, 'region.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 with open(os.path.join(out, 'heights.bin'), 'wb') as f:
     f.write(H.astype('<f4').tobytes())
