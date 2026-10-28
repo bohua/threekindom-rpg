@@ -1,7 +1,9 @@
 {
  "_note": "R1 涿蓟. Zhuojun is its own scene (Zhuojun_Town): here only its walls and the south and west gates as ways in. Town (x, z) = R1 (x - 360, z - 72); the town scene reaches 40 m out of its gates, so the way into it from the west is at the peach grove's far edge.",
  "zhuojun": {
-  "gates": "S,W"
+  "gates": "S,W",
+  "set": "zhuojun-blender-b2",
+  "layout": "tools/regions/layouts/zhuojun_r1.json"
  },
  "ji": {
   "gates": "S,E",
@@ -27,7 +29,9 @@
    0,
    0,
    1
-  ]
+  ],
+  "set": "zhuojun-blender-pilot",
+  "model": "south_gate"
  },
  "zhuo_west": {
   "portalScene": "Zhuojun_Town",
@@ -59,5 +63,28 @@
  "lousang": {
   "set": "r1-blender-lousang",
   "layout": "_checks/layout_placements.json"
+ },
+ "juyong": {
+  "set": "r1-blender-juyong",
+  "layout": "_checks/layout_placements.json"
+ },
+ "checkpoint": {
+  "skip": true
+ },
+ "post2": {
+  "skip": true
+ },
+ "post1": {
+  "set": "r1-blender-juyong",
+  "model": "post_station_road"
+ },
+ "_wall": {
+  "set": "r1-blender-juyong",
+  "model": "greatwall_8m",
+  "tower": "greatwall_tower",
+  "skipX": [
+   184,
+   276
+  ]
  }
 }
