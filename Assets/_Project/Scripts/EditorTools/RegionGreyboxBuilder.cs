@@ -48,6 +48,7 @@ namespace ThreeKingdoms.EditorTools
             public float x, z, y, w, d, yaw;
             public int year;
             public string model, set;       // a Blender model for it, when its hub set exists
+            public bool spotBehind;         // arrival spot behind the place (a ferry, whose front is the water)
             public string wallModel;        // walled places: <wallModel>_wall_8m/_4m of the same set, the model as the gate
             public string layout;           // a hub set's own layout (Codex _checks/layout_*.json): every piece where Codex placed it
             public bool skip;               // a sub-place drawn by its hub's layout: label only
@@ -517,7 +518,7 @@ namespace ThreeKingdoms.EditorTools
         {
             var g = new GameObject($"{p.kind} {p.name}").transform;
             g.SetParent(env, false);
-            float y = p.kind == "bridge" ? p.y : H(p.x, p.z);
+            float y = p.kind == "bridge" ? p.y : p.spotBehind ? Mathf.Max(p.y, H(p.x, p.z)) : H(p.x, p.z);
             g.position = new Vector3(p.x, y, p.z);
             g.rotation = Quaternion.Euler(0, p.yaw, 0);
             float w = Mathf.Max(p.w, 4f), d = Mathf.Max(p.d, 4f);
@@ -589,23 +590,24 @@ namespace ThreeKingdoms.EditorTools
                     default:
                         // A low pad the size of the place and a marker post, so the spot reads without blocking it.
                         if (!splat) Box(g, "Pad", new Vector3(0, -0.1f, 0), new Vector3(Mathf.Min(w, 16f), 0.3f, Mathf.Min(d, 16f)), 0.62f, 0f, solid: false);
-                        Box(g, "Post", Vector3.zero, new Vector3(0.4f, 3f, 0.4f), 0.4f);
+                        if (!splat) Box(g, "Post", Vector3.zero, new Vector3(0.4f, 3f, 0.4f), 0.4f);   // painted ground: the label marks it
                         break;
                 }
             Label(labels, p.name, g.position + new Vector3(0, Mathf.Max(8f, d * 0.12f), 0));
-            if (!string.IsNullOrEmpty(p.layout))
+            if (modelled && !p.skip)
             {
-                // A disabled review shot of a modelled hub (-camera "Review <id>"), from the south and above.
+                // A disabled review shot of a modelled place (-camera "Review <id>"), from the south and above.
                 var review = new GameObject("Review " + p.id).AddComponent<UnityEngine.Camera>();
                 review.enabled = false; review.fieldOfView = 30f; review.farClipPlane = 1500f;
-                float back = Mathf.Max(w, d) * 0.95f + 20f;
+                float back = Mathf.Max(w, d) * 0.95f + (string.IsNullOrEmpty(p.layout) ? 12f : 20f);
                 review.transform.position = g.position + new Vector3(0, back * 0.75f, -back);
                 review.transform.LookAt(g.position);
             }
             var spot = new GameObject("Spot " + p.name);
             spot.transform.SetParent(spots, false);
-            // In front of the place (south of it in its own frame), where the party stands on arrival.
-            var front = g.position + g.rotation * new Vector3(0, 0, -(d / 2f + 4f));
+            // In front of the place (south of it in its own frame), where the party stands on arrival; at one end of
+            // a bridge, and behind a place that faces the water.
+            var front = g.position + g.rotation * (p.kind == "bridge" ? new Vector3(w / 2f + 3f, 0, 0) : new Vector3(0, 0, (p.spotBehind ? 1f : -1f) * (d / 2f + 4f)));
             spot.transform.position = new Vector3(front.x, H(front.x, front.z), front.z);
             if (!string.IsNullOrEmpty(p.portalScene))
             {

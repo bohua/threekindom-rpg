@@ -12,7 +12,9 @@
  },
  "camp": {
   "kind": "camp",
-  "year": 191
+  "year": 191,
+  "set": "r1-blender-gongsun-camp",
+  "layout": "_checks/layout_placements.json"
  },
  "mulberry": {
   "kind": "tree",
@@ -90,7 +92,7 @@
  "_ground": {
   "set": "r1-wild-ground",
   "base": "r1_meadow",
-  "r": "r1_dirt_road",
+  "r": "r1_village_earth",
   "g": "r1_farmland",
   "b": "r1_riverbank",
   "a": "r1_hill_slope",
@@ -108,13 +110,13 @@
     0.9,
     1.2
    ],
-   "r1_dirt_road": [
-    0.95,
-    1.12
-   ],
    "r1_riverbank": [
     1,
     1.08
+   ],
+   "r1_village_earth": [
+    0.95,
+    1.12
    ]
   }
  },
@@ -167,5 +169,50 @@
    "lousang_house_thatch",
    "lousang_house_tile"
   ]
+ },
+ "beacon": {
+  "flatten": [
+   11,
+   20
+  ],
+  "set": "r1-blender-wild-places",
+  "model": "r1_beacon_ruin"
+ },
+ "hunter": {
+  "flatten": [
+   9,
+   12
+  ],
+  "set": "r1-blender-wild-places",
+  "model": "r1_hunter_cabin"
+ },
+ "tomb": {
+  "flatten": [
+   10,
+   14
+  ],
+  "set": "r1-blender-wild-places",
+  "model": "r1_han_tomb"
+ },
+ "ferry": {
+  "set": "r1-blender-wild-places",
+  "model": "r1_ferry_landing",
+  "face_water": 4
+ },
+ "wood_bridge": {
+  "set": "r1-blender-wild-places",
+  "model": "r1_wood_bridge"
+ },
+ "exit_0": {
+  "set": "r1-blender-wild-places",
+  "model": "r1_signpost"
+ },
+ "exit_1": {
+  "set": "r1-blender-wild-places",
+  "model": "r1_signpost"
+ },
+ "shrine": {
+  "set": "r1-blender-lousang",
+  "model": "earth_shrine"
  }
 }

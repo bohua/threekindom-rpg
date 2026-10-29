@@ -90,6 +90,26 @@ for o in L.get('locations') or L.get('places') or []:
         p['kind'] = 'hamlet'
     p.update(hubs.get(o['id'], {}))
     places.append(p)
+    if p.get('flatten') and y is not None:
+        # A hub-file override for a spot sitting in a fold of the hills (R1's beacon): a round level pad of the given
+        # radius at its stated height, eased into the surrounding ground over the given ramp.
+        rad, ramp = p['flatten']
+        # Level at the higher of its stated height and the surrounding ground (80th percentile of the disc), so the
+        # pad never sinks into a bowl that hides the party from the camera.
+        ring = [H[zz, xx] for zz in range(int(max(0, z - rad - ramp)), int(min(D, z + rad + ramp)) + 1)
+                for xx in range(int(max(0, x - rad - ramp)), int(min(W, x + rad + ramp)) + 1)
+                if math.hypot(xx - x, zz - z) < rad + ramp]
+        y = max(float(y), float(np.percentile(ring, 80)))
+        p['y'] = round(y, 2)
+        for zz in range(int(max(0, z - rad - ramp)), int(min(D, z + rad + ramp)) + 1):
+            for xx in range(int(max(0, x - rad - ramp)), int(min(W, x + rad + ramp)) + 1):
+                dd = math.hypot(xx - x, zz - z)
+                if dd >= rad + ramp:
+                    continue
+                t = max(0.0, (dd - rad) / ramp)
+                t = t * t * (3 - 2 * t)
+                H[zz, xx] = float(y) * (1 - t) + H[zz, xx] * t
+        continue
     if y is None or k in ('bridge', 'explore', 'battlefield', 'exit') or o.get('type') in ('river_bend', 'siege_earthwork'):
         continue
     r = 8.0
@@ -127,9 +147,11 @@ for o in L.get('bridges', []):
     places.append(dict(id=o['id'], name=o.get('name_zh', '木桥'), kind='bridge', x=x, z=z, y=float(o.get('deck_y_m', 0)),
                        w=float(o.get('length_m', 20)), d=float(o.get('width_m', 4)),
                        yaw=-math.degrees(math.atan2(bz - az, bx - ax)), year=0))
+    places[-1].update(hubs.get(o['id'], {}))
 for i, o in enumerate(L.get('exits', []) if isinstance(L.get('exits'), list) else []):
     places.append(dict(id=o.get('id', f'exit_{i}'), name=o.get('name_zh', '出口'), kind='exit', x=min(max(float(o['x']), 4), W - 4),
                        z=min(max(float(o['z']), 4), D - 4), y=float(o.get('y', 0)), w=8, d=8, yaw=0, year=0))
+    places[-1].update(hubs.get(places[-1]['id'], {}))
 for o in L.get('gates', []):
     if o['id'] in hubs:   # gates the hub file wires up (portals into a town scene)
         g = dict(id=o['id'], name=o.get('name_zh', o['id']), kind='gate', x=float(o['x']), z=float(o['z']), y=float(o.get('y', 0)),
@@ -165,6 +187,33 @@ for i, o in enumerate(L.get('wetland_pools', []) + L.get('lakes', []) + L.get('p
     if len(ps) >= 3:
         waters.append(dict(id=o.get('id', f'pool_{i}'), level=float(o.get('water_surface_m', o.get('level_m', -0.8))),
                            width=0, poly=[v for p in ps for v in p]))
+
+# Hub-file "face_water": turn a place (a ferry landing) so its front faces the nearest river and move it to the bank,
+# its origin this far from the centre line, so the jetty in front reaches over the water.
+for p in places:
+    if not p.get('face_water'):
+        continue
+    best = None
+    for w in waters:
+        ln = w.get('line') or []
+        for i in range(0, len(ln) - 2, 2):
+            ax, az, bx, bz = ln[i], ln[i + 1], ln[i + 2], ln[i + 3]
+            n = max(1, int(math.hypot(bx - ax, bz - az)))
+            for k in range(n + 1):   # sampled every metre, keeping 30 m clear of bridges
+                qx, qz = ax + (bx - ax) * k / n, az + (bz - az) * k / n
+                if any(b['kind'] == 'bridge' and math.hypot(qx - b['x'], qz - b['z']) < 30 for b in places):
+                    continue
+                dd = math.hypot(p['x'] - qx, p['z'] - qz)
+                if best is None or dd < best[0]:
+                    best = (dd, qx, qz, w['width'], w['level'])
+    if best:
+        dd, qx, qz, wid, lvl = best
+        ux, uz = (qx - p['x']) / dd, (qz - p['z']) / dd           # unit vector, place → water
+        off = wid / 2 + float(p['face_water'])
+        p['x'], p['z'] = round(qx - ux * off, 2), round(qz - uz * off, 2)
+        p['yaw'] = round(math.degrees(math.atan2(-ux, -uz)), 1)   # model front (−Z at yaw 0) towards the water
+        p['spotBehind'] = True
+        p['y'] = round(lvl + 0.45, 2)   # the landing stands at least this high, its jetty and boat above the water
 
 ents = L.get('entrances') or L.get('region_entries') or []
 open_ents = [e for e in ents if 'x' in e and str(e.get('status', 'open')) == 'open'] or [e for e in ents if 'x' in e]
@@ -209,7 +258,7 @@ if ground:
             d.ellipse([e[0] - rr, e[1] - rr, e[0] + rr, e[1] + rr], fill=255)
     for p in places:
         if p['kind'] in ('hamlet', 'house', 'explore', 'post_station', 'camp', 'ferry', 'gate'):
-            rx = rz = {'hamlet': 0.55 * min(p['w'], 40) / 2, 'explore': 5, 'gate': 4}.get(p['kind'], min(p['w'], 24) / 2 + 1)
+            rx = rz = {'hamlet': 0.55 * min(p['w'], 40) / 2, 'explore': 5, 'gate': 4, 'camp': p['w'] / 2 + 2}.get(p['kind'], min(p['w'], 24) / 2 + 1)
             if p['kind'] == 'house':
                 rx, rz = p['w'] / 2 + 3, p['d'] / 2 + 3
             cx, cz = px(p['x'], p['z'])
@@ -270,7 +319,7 @@ if sc and ground:
 
     blocked = []   # (x, z, radius) kept clear: places, towns
     for p in places:
-        r = {'town': max(p['w'], p['d']) * 0.62, 'hamlet': p['w'] / 2 + 4, 'house': 6, 'gate': 6, 'bridge': p['w'] / 2 + 2}.get(p['kind'], 9)
+        r = {'town': max(p['w'], p['d']) * 0.62, 'hamlet': p['w'] / 2 + 4, 'house': 6, 'gate': 6, 'bridge': p['w'] / 2 + 2, 'camp': max(p['w'], p['d']) * 0.72}.get(p['kind'], 9)
         if not p.get('skip') or p['kind'] in ('town', 'hamlet', 'explore', 'barrier'):
             blocked.append((p['x'], p['z'], r))
     wall_pts = [(w['pts'][i], w['pts'][i + 1]) for w in walls for i in range(0, len(w['pts']), 2)]
