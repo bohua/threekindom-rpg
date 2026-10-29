@@ -1,0 +1,21 @@
+{
+ "linzi": {
+  "set": "r7-blender-linzi",
+  "layout": "_checks/layout_placements.json"
+ },
+ "_wild": {
+  "set": "r7-blender-wild",
+  "layout": "_checks/r7_wild_placements.json"
+ },
+ "_detail": {
+  "set": "r7-hd-ground",
+  "layout": "_checks/r7_detail_placements.json"
+ },
+ "_dropPads": [
+  "foundation_house",
+  "foundation_village",
+  "foundation_ruin",
+  "foundation_post",
+  "mud_camp"
+ ]
+}

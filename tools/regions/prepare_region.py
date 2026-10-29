@@ -23,6 +23,15 @@ if a.max() <= 255:
     a = a * 257.0
 H = a / 65535.0 * 65.0 - 5.0      # row 0 = north
 H = H[::-1].copy()                  # row 0 = south
+# Codex heightmaps step at river banks and cliff feet; a light blur turns the stairs into slopes (plots are
+# flattened again below, so platforms keep their stated heights).
+def _blur(a, sigma):
+    r = int(sigma * 3)
+    k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma) ** 2); k /= k.sum()
+    p = np.pad(a, r, mode='edge')
+    p = np.apply_along_axis(lambda v: np.convolve(v, k, 'valid'), 1, p)
+    return np.apply_along_axis(lambda v: np.convolve(v, k, 'valid'), 0, p)
+H = _blur(H, 1.3)
 rows, cols = H.shape
 W, D = cols - 1, rows - 1
 
@@ -56,7 +65,7 @@ def size(o):
 
 
 def facing(o):
-    for k in ('facing_degrees', 'facing_deg_clockwise_from_north', 'facing_degrees_from_north', 'facing_deg', 'yaw_degrees'):
+    for k in ('facing_degrees', 'facing_deg_clockwise_from_north', 'orientation_degrees_clockwise_from_north', 'facing_degrees_from_north', 'facing_deg', 'yaw_degrees'):
         if o.get(k) is not None:
             return float(o[k])
     return 180.0
@@ -79,7 +88,7 @@ places = []
 # Houses Codex placed one by one (R1 'structures'): drawn as houses, and their villages as a bare-earth yard only.
 houses = [o for o in L.get('structures', []) if o.get('type') == 'house']
 housed = {o.get('parent_id') for o in houses}
-for o in L.get('locations') or L.get('places') or []:
+for o in (L.get('locations') or L.get('places') or []) + L.get('sites', []):
     x, z = centre(o)
     w, d = size(o)
     k = kind(o.get('type'))
@@ -180,8 +189,13 @@ for o in rivers:
     cl = o.get('centerline') or []
     wid = o.get('width_m') or (sum(q.get('width_m', 12) for q in cl) / len(cl) if cl and isinstance(cl[0], dict) else 12)
     lvl = o.get('water_surface_y_m', o.get('water_surface_m', 0))
+    levels = [float(q['water_surface_m']) for q in cl if isinstance(q, dict) and 'water_surface_m' in q]
+    if levels and len(levels) == len(ps):
+        lvl = sum(levels) / len(levels)
+    else:
+        levels = []
     if len(ps) >= 2:
-        waters.append(dict(id=o['id'], level=float(lvl), width=float(wid), line=[v for p in ps for v in p]))
+        waters.append(dict(id=o['id'], level=float(lvl), width=float(wid), line=[v for p in ps for v in p], levels=levels))
 for i, o in enumerate(L.get('wetland_pools', []) + L.get('lakes', []) + L.get('ponds', [])):
     ps = pts(o, 'outline_xz', 'outline', 'polygon_xz')
     if len(ps) >= 3:
@@ -235,8 +249,17 @@ for p in places:
         p['spotBehind'] = True
         p['y'] = round(lvl + 0.45, 2)   # the landing stands at least this high, its jetty and boat above the water
 
-ents = L.get('entrances') or L.get('region_entries') or []
-open_ents = [e for e in ents if 'x' in e and str(e.get('status', 'open')) == 'open'] or [e for e in ents if 'x' in e]
+# Places the refinement's wild set already models (its placements carry location_id) keep only their labels.
+wild = hubs.get('_wild')
+if wild:
+    wp = os.path.join(os.path.dirname(os.path.normpath(src)), wild['set'], wild['layout'])
+    if os.path.exists(wp):
+        modelled = {q.get('location_id') for q in json.load(open(wp, encoding='utf-8'))['placements'] if q.get('location_id')}
+        for p in places:
+            if p['id'] in modelled and 'set' not in p:
+                p['skip'] = True
+ents = L.get('entrances') or L.get('region_entries') or L.get('region_entrances') or []
+open_ents = [e for e in ents if 'x' in e and (str(e.get('status', 'open')) == 'open' and e.get('open', True))] or [e for e in ents if 'x' in e]
 sx, sz = hubs.get('_spawn') or (xz(open_ents[0]) if open_ents else (W / 2, D / 2))
 sx = min(max(sx, 8), W - 8)
 sz = min(max(sz, 8), D - 8)
@@ -452,7 +475,11 @@ for p in places:
         a += step
 
 region = dict(id=P, name=name, scene=f'Region_{P}', width=W, height=D, places=places, roads=roads, waters=waters,
-              walls=walls, ground=ground or {}, scatter=scatter, spots=[dict(name=k, x=float(v[0]), z=float(v[1])) for k, v in (hubs.get('_spots') or {}).items()], spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p])
+              walls=walls, ground=ground or {}, scatter=scatter, spots=[dict(name=k, x=float(v[0]), z=float(v[1])) for k, v in (hubs.get('_spots') or {}).items()], spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p],
+              wildSet=(hubs.get('_wild') or {}).get('set', ''), wildLayout=(hubs.get('_wild') or {}).get('layout', ''), wildSkip=(hubs.get('_wild') or {}).get('skip', []),
+              detailSet=(hubs.get('_detail') or {}).get('set', ''), detailLayout=(hubs.get('_detail') or {}).get('layout', ''),
+              dropPads=hubs.get('_dropPads', []),
+              wildTint=[f"{k}:{c[0]},{c[1]},{c[2]}" for k, c in ((hubs.get('_wild') or {}).get('tint') or {}).items()])
 json.dump(region, open(os.path.join(out, 'region.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 with open(os.path.join(out, 'heights.bin'), 'wb') as f:
     f.write(H.astype('<f4').tobytes())

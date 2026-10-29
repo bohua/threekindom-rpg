@@ -1,5 +1,42 @@
 {
- "luoyang_ruins": {"set": "r5b-blender-luoyang", "layout": "_checks/layout_placements.json"},
- "south_palace": {"skip": true}, "ancestral_temple": {"skip": true}, "zhenguan_well": {"skip": true},
- "residential_ruins": {"skip": true}, "refugee_shelters": {"skip": true}, "south_gate": {"skip": true}, "east_gate": {"skip": true}
+ "luoyang_ruins": {
+  "set": "r5b-blender-luoyang",
+  "layout": "_checks/layout_placements.json"
+ },
+ "south_palace": {
+  "skip": true
+ },
+ "ancestral_temple": {
+  "skip": true
+ },
+ "zhenguan_well": {
+  "skip": true
+ },
+ "residential_ruins": {
+  "skip": true
+ },
+ "refugee_shelters": {
+  "skip": true
+ },
+ "south_gate": {
+  "skip": true
+ },
+ "east_gate": {
+  "skip": true
+ },
+ "_wild": {
+  "set": "r5b-blender-wild",
+  "layout": "_checks/r5b_wild_placements.json"
+ },
+ "_detail": {
+  "set": "r5b-hd-ground",
+  "layout": "_checks/r5b_detail_placements.json"
+ },
+ "_dropPads": [
+  "foundation_house",
+  "foundation_village",
+  "foundation_ruin",
+  "foundation_post",
+  "mud_camp"
+ ]
 }
