@@ -203,6 +203,122 @@
   {
    "filename": "bridge_rail_hd.png",
    "tile_axes": "x"
+  },
+  {
+   "filename": "beacon_ruin_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "beacon_ruin_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "checkpoint_gate_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "que_pillar_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "que_pillar_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "tomb_mound_slope_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "tomb_mound_top_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "post_station_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "post_station_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "stable_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "stable_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "watchtower_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "watchtower_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "palisade_stakes_hd.png",
+   "tile_axes": "x"
+  },
+  {
+   "filename": "roof_thatch_eave_hd.png",
+   "tile_axes": "x"
+  },
+  {
+   "filename": "house_loess_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "house_loess_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "pingyuan_hall_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "pingyuan_hall_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "town_gate_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "town_wall_loess_hd.png",
+   "tile_axes": "x"
+  },
+  {
+   "filename": "warehouse_front_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "warehouse_side_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "roof_thatch_gold_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "earth_plinth_hd.png",
+   "tile_axes": "x"
+  },
+  {
+   "filename": "drain_channel_wall_hd.png",
+   "tile_axes": "x"
+  },
+  {
+   "filename": "ground_loess_paving_hd.png",
+   "tile_axes": "xy"
+  },
+  {
+   "filename": "plank_bridge_hd.png",
+   "tile_axes": "none"
+  },
+  {
+   "filename": "dock_side_hd.png",
+   "tile_axes": "x"
   }
  ]
 }
