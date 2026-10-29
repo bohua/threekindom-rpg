@@ -19,14 +19,14 @@ MonoBehaviour:
     Level: 14
     FocusEscort: 0
   - General: {fileID: 11400000, guid: 577249990b5ce724393cabd15ded3e0e, type: 2}
-    Level: 13
+    Level: 12
     FocusEscort: 0
   - General: {fileID: 11400000, guid: 577249990b5ce724393cabd15ded3e0e, type: 2}
-    Level: 13
+    Level: 12
     FocusEscort: 0
   Ai: 1
   SkillEveryRounds: 3
-  ExpReward: 190
+  ExpReward: 210
   CopperReward: 220
   Allies: []
   Events: []

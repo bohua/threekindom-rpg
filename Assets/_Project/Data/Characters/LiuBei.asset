@@ -14,13 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
   Id: liu_bei
   DisplayName: "\u5218\u5907"
-  Troop: 2
-  Force: 65
-  Command: 75
-  Intellect: 75
-  ForceGrowth: 1
-  CommandGrowth: 2
-  IntellectGrowth: 2
+  Troop: 0
+  Force: 68
+  Command: 78
+  Intellect: 76
+  Element: 3
+  ForceGrowth: 0
+  CommandGrowth: 0
+  IntellectGrowth: 0
   Skills:
   - Level: 1
     Skill: {fileID: 11400000, guid: da2f1edb792ce7b44ac60205389dd1c2, type: 2}

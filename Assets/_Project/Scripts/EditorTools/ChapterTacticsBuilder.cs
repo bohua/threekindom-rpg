@@ -58,7 +58,7 @@ namespace ThreeKingdoms.EditorTools
             for (int i = 0; i < ids.Length; i++)
             {
                 var game = BingshuTacticsBuilder.CreateScene();
-                game.CharMats = CharKeys.Select(k => AssetDatabase.LoadAssetAtPath<Material>($"{Chars}/{k}/{k}_Pixel.mat")).Where(m => m).ToList();
+                game.CharMats = game.CharMats.Concat(CharKeys.Select(k => AssetDatabase.LoadAssetAtPath<Material>($"{Chars}/{k}/{k}_Pixel.mat")).Where(m => m)).ToList();   // mounted Zhao Yun first
                 game.HdGround = ground;
                 if (ids[i] == "battle_8") game.HdKit = ImportKit(HulaoKitSource, "Assets/_Project/Art/Chapter3/HulaoHD");   // user 2026-10-26: renovate Hulao the Anxi way
                 // Daylight battles take the bright noon grade (user 2026-10-25); the night camp keeps the default HD-2D look.

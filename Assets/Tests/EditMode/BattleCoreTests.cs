@@ -17,10 +17,6 @@ namespace ThreeKingdoms.Tests.EditMode
             new TroopTypeSpec(TroopType.Archer, 0, 0, 8, true),
             new TroopTypeSpec(TroopType.YellowTurban, 20, 0, 6, false),
             new TroopTypeSpec(TroopType.Strategist, 0, 0, 7, false),
-        }, new[]
-        {
-            (TroopType.Cavalry, TroopType.Infantry), (TroopType.Infantry, TroopType.Archer),
-            (TroopType.Archer, TroopType.Cavalry), (TroopType.Cavalry, TroopType.YellowTurban),
         });
 
         public static readonly ItemSpec Ration = new ItemSpec("ration", "军粮", 30);
@@ -88,9 +84,9 @@ namespace ThreeKingdoms.Tests.EditMode
         {
             var s = GddData.Session(GddData.Battle1, new[] { GddData.At(GddData.LiuBei, 1), GddData.At(GddData.GuanYu, 1), GddData.At(GddData.ZhangFei, 1) });
             var liu = P(s, 0).Stats; var guan = P(s, 1).Stats; var zhang = P(s, 2).Stats;
-            Assert.That(new[] { liu.MaxTroops, liu.MaxTech, liu.PhysicalAttack, liu.PhysicalDefense, liu.StrategyAttack, liu.StrategyDefense, liu.Speed }, Is.EqualTo(new[] { 100, 6, 42, 30, 47, 30, 8 }));
-            Assert.That(new[] { guan.MaxTroops, guan.MaxTech, guan.PhysicalAttack, guan.PhysicalDefense, guan.StrategyAttack, guan.StrategyDefense, guan.Speed }, Is.EqualTo(new[] { 110, 6, 55, 31, 40, 25, 10 }));
-            Assert.That(new[] { zhang.MaxTroops, zhang.MaxTech, zhang.PhysicalAttack, zhang.PhysicalDefense, zhang.StrategyAttack, zhang.StrategyDefense, zhang.Speed }, Is.EqualTo(new[] { 130, 6, 57, 35, 32, 20, 6 }));
+            Assert.That(new[] { liu.MaxTroops, liu.MaxTech, liu.PhysicalAttack, liu.PhysicalDefense, liu.StrategyAttack, liu.StrategyDefense, liu.Speed }, Is.EqualTo(new[] { 96, 6, 42, 30, 47, 30, 8 }));   // v1.3: troops 80 + 16 × level
+            Assert.That(new[] { guan.MaxTroops, guan.MaxTech, guan.PhysicalAttack, guan.PhysicalDefense, guan.StrategyAttack, guan.StrategyDefense, guan.Speed }, Is.EqualTo(new[] { 106, 6, 55, 31, 40, 25, 10 }));
+            Assert.That(new[] { zhang.MaxTroops, zhang.MaxTech, zhang.PhysicalAttack, zhang.PhysicalDefense, zhang.StrategyAttack, zhang.StrategyDefense, zhang.Speed }, Is.EqualTo(new[] { 126, 6, 57, 35, 32, 20, 6 }));
         }
 
         [Test]
@@ -98,8 +94,8 @@ namespace ThreeKingdoms.Tests.EditMode
         {
             var s = GddData.Session(GddData.Battle1, new[] { GddData.At(GddData.GuanYu, 1) });
             var cheng = E(s, 0).Stats; var head = E(s, 1).Stats;
-            Assert.That(new[] { cheng.MaxTroops, cheng.MaxTech, cheng.PhysicalAttack, cheng.PhysicalDefense, cheng.StrategyAttack, cheng.StrategyDefense, cheng.Speed }, Is.EqualTo(new[] { 140, 8, 42, 24, 27, 16, 6 }));
-            Assert.That(new[] { head.MaxTroops, head.MaxTech, head.PhysicalAttack, head.PhysicalDefense, head.StrategyAttack, head.StrategyDefense, head.Speed }, Is.EqualTo(new[] { 120, 6, 30, 18, 20, 11, 6 }));
+            Assert.That(new[] { cheng.MaxTroops, cheng.MaxTech, cheng.PhysicalAttack, cheng.PhysicalDefense, cheng.StrategyAttack, cheng.StrategyDefense, cheng.Speed }, Is.EqualTo(new[] { 132, 8, 44, 25, 29, 17, 6 }));   // level 2: attacks +4, defences +2 per level
+            Assert.That(new[] { head.MaxTroops, head.MaxTech, head.PhysicalAttack, head.PhysicalDefense, head.StrategyAttack, head.StrategyDefense, head.Speed }, Is.EqualTo(new[] { 116, 6, 30, 18, 20, 11, 6 }));
         }
 
         // ---------- damage examples ----------
@@ -108,8 +104,8 @@ namespace ThreeKingdoms.Tests.EditMode
         public void ChargeOnYellowTurbanIs102AndGuarded51()
         {
             var config = GddData.Config();
-            Assert.AreEqual(102, BattleRules.Damage(55, 100, 18, 100, 150, advantage: true, guarded: false, config));
-            Assert.AreEqual(51, BattleRules.Damage(55, 100, 18, 100, 150, advantage: true, guarded: true, config));
+            Assert.AreEqual(102, BattleRules.Damage(55, 100, 18, 100, 150, 140, 100, config));
+            Assert.AreEqual(51, BattleRules.Damage(55, 100, 18, 100, 150, 140, 50, config));
         }
 
         [Test]
@@ -120,24 +116,24 @@ namespace ThreeKingdoms.Tests.EditMode
             var hit = log.Single(e => e.Kind == BattleEventKind.Damage);
             Assert.IsTrue(hit.Advantage);
             Assert.IsTrue(hit.Guarded);      // the passive AI defends
-            Assert.AreEqual(51, hit.Amount);
+            Assert.AreEqual(47, hit.Amount);   // (55 × 1.5 − 9) × 1.3 (骑压步) × 0.5
         }
 
         [Test]
         public void FireArrowsUsesStrategyStatsWithoutAdvantage()
         {
             var config = GddData.Config();
-            Assert.AreEqual(54, BattleRules.Damage(53, 100, 28, 100, 130, false, false, config));
+            Assert.AreEqual(54, BattleRules.Damage(53, 100, 28, 100, 130, 100, 100, config));
             var s = GddData.Session(GddData.Single(GddData.ZhangLiang, 4), new[] { GddData.At(GddData.LiuBei, 3) }, ai: new PassiveAi());
-            Assert.AreEqual(53, P(s, 0).Stats.StrategyAttack);
+            Assert.AreEqual(55, P(s, 0).Stats.StrategyAttack);   // 10 + 37 + 4 × 2
         }
 
         [Test]
         public void IntimidateLowersAttackTo40Point8()
         {
             var config = GddData.Config();
-            Assert.AreEqual(21, BattleRules.Damage(51, 80, 38, 100, 100, false, false, config));
-            Assert.AreEqual(32, BattleRules.Damage(51, 100, 38, 100, 100, false, false, config));
+            Assert.AreEqual(21, BattleRules.Damage(51, 80, 38, 100, 100, 100, 100, config));
+            Assert.AreEqual(32, BattleRules.Damage(51, 100, 38, 100, 100, 100, 100, config));
         }
 
         [Test]
@@ -147,24 +143,24 @@ namespace ThreeKingdoms.Tests.EditMode
             var enc = GddData.Single(GddData.ZhangLiang, 3);
             var s = GddData.Session(enc, new[] { GddData.At(GddData.ZhangFei, 3) },
                 ai: new ScriptedAi(v => new[] { BattleCommand.Attack(v.Enemies[0], v.Players[0]) }));
-            Assert.AreEqual(38, P(s, 0).Stats.PhysicalDefense);
-            Assert.AreEqual(51, E(s, 0).Stats.PhysicalAttack);
+            Assert.AreEqual(39, P(s, 0).Stats.PhysicalDefense);
+            Assert.AreEqual(55, E(s, 0).Stats.PhysicalAttack);
             // Same speed 6: Zhang Fei (our side) acts first, so the debuff lands before the hit.
             var r1 = s.PlayRound(new[] { BattleCommand.UseSkill(P(s, 0), GddData.Intimidate) });
-            Assert.AreEqual(21, r1.Single(e => e.Kind == BattleEventKind.Damage && e.Target == P(s, 0)).Amount);
+            Assert.AreEqual(24, r1.Single(e => e.Kind == BattleEventKind.Damage && e.Target == P(s, 0)).Amount);   // 44 − 19.5
             Assert.AreEqual(1, E(s, 0).Modifiers.Single().RemainingTurns);
             var r2 = s.PlayRound(new[] { BattleCommand.Defend(P(s, 0)) });
-            Assert.AreEqual(10, r2.Single(e => e.Kind == BattleEventKind.Damage).Amount);   // floor(21.8 × 0.5)
+            Assert.AreEqual(9, r2.Single(e => e.Kind == BattleEventKind.Damage).Amount);   // floor(24.5 × 0.4): 步兵 defends at −60%
             Assert.IsEmpty(E(s, 0).Modifiers);
             Assert.IsTrue(r2.Any(e => e.Kind == BattleEventKind.ModifierExpired));
             var r3 = s.PlayRound(new[] { BattleCommand.Defend(P(s, 0)) });
-            Assert.AreEqual(16, r3.Single(e => e.Kind == BattleEventKind.Damage).Amount);   // floor(32 × 0.5)
+            Assert.AreEqual(14, r3.Single(e => e.Kind == BattleEventKind.Damage).Amount);   // floor(35.5 × 0.4)
         }
 
         [Test]
         public void DamageIsAtLeastOne()
         {
-            Assert.AreEqual(1, BattleRules.Damage(10, 100, 200, 100, 65, false, true, GddData.Config()));
+            Assert.AreEqual(1, BattleRules.Damage(10, 100, 200, 100, 65, 100, 50, GddData.Config()));
         }
 
         [Test]
@@ -175,17 +171,19 @@ namespace ThreeKingdoms.Tests.EditMode
             Assert.IsFalse(t.HasAdvantage(TroopType.Cavalry, TroopType.Archer));
             Assert.IsTrue(t.HasAdvantage(TroopType.Cavalry, TroopType.YellowTurban));
             Assert.IsFalse(t.HasAdvantage(TroopType.YellowTurban, TroopType.Infantry));
-            foreach (var other in new[] { TroopType.Infantry, TroopType.Cavalry, TroopType.Archer })
-            {
+            foreach (var other in new[] { TroopType.Cavalry, TroopType.Archer })
                 Assert.IsFalse(t.HasAdvantage(other, TroopType.Strategist));
+            foreach (var other in new[] { TroopType.Infantry, TroopType.Cavalry, TroopType.Archer })
                 Assert.IsFalse(t.HasAdvantage(TroopType.Strategist, other));
-            }
+            // BALANCE_MODEL_v1 §3.14: foot troops close in on a strategist (+20), horse → foot is +30
+            Assert.AreEqual(120, t.AdvantagePercent(TroopType.Infantry, TroopType.Strategist));
+            Assert.AreEqual(130, t.AdvantagePercent(TroopType.Cavalry, TroopType.YellowTurban));
         }
 
         [Test]
         public void AdvantageMultiplierComesFromData()
         {
-            Assert.AreEqual(147, BattleRules.Damage(55, 100, 18, 100, 150, true, false, GddData.Config(advantage: 200)));   // 73.5 × 2.0
+            Assert.AreEqual(147, BattleRules.Damage(55, 100, 18, 100, 150, 200, 100, GddData.Config()));   // 73.5 × 2.0: the matchup percent is the caller's
         }
 
         // ---------- order ----------
@@ -269,7 +267,7 @@ namespace ThreeKingdoms.Tests.EditMode
             int before = P(s, 0).Troops;
             var log = s.PlayRound(new[] { BattleCommand.Ration(P(s, 0), P(s, 0)) });
             var used = log.Single(e => e.Kind == BattleEventKind.ItemUsed);
-            Assert.AreEqual(System.Math.Min(39, 130 - before), used.Amount);   // floor(130 × 0.3)
+            Assert.AreEqual(System.Math.Min(37, 126 - before), used.Amount);   // floor(126 × 0.3)
             Assert.AreEqual(0, s.State.Rations);
             Assert.AreEqual(1, s.State.RationsUsed);
         }
@@ -304,10 +302,10 @@ namespace ThreeKingdoms.Tests.EditMode
             var s = GddData.Session(GddData.Battle1, new[] { GddData.At(GddData.LiuBei, 1) });
             s.PlayRound(new[] { BattleCommand.Defend(P(s, 0)) });
             int before = P(s, 0).Troops;
-            Assert.Less(before, 100);
+            Assert.Less(before, 96);
             var log = s.PlayRound(new[] { BattleCommand.UseSkill(P(s, 0), GddData.Regroup, P(s, 0)) });
             var heal = log.Single(e => e.Kind == BattleEventKind.Heal);
-            Assert.AreEqual(System.Math.Min(30, 100 - before), heal.Amount);
+            Assert.AreEqual(System.Math.Min(28, 96 - before), heal.Amount);
             Assert.IsFalse(heal.Advantage);
         }
 
@@ -323,8 +321,8 @@ namespace ThreeKingdoms.Tests.EditMode
             var hits = log.Where(e => e.Kind == BattleEventKind.Damage).ToList();
             int guanAtk = P(s, 0).Stats.PhysicalAttack, zhangAtk = P(s, 1).Stats.PhysicalAttack;
             var config = GddData.Config();
-            Assert.AreEqual(BattleRules.Damage(guanAtk, 100, def, 100, 110, true, true, config), hits[0].Amount);
-            Assert.AreEqual(BattleRules.Damage(zhangAtk, 100, def, 80, 100, false, true, config), hits[1].Amount);
+            Assert.AreEqual(BattleRules.Damage(guanAtk, 100, def, 100, 110, 130, 40, config), hits[0].Amount);   // 骑压步 1.3; 步兵 defends at −60%
+            Assert.AreEqual(BattleRules.Damage(zhangAtk, 100, def, 80, 100, 100, 40, config), hits[1].Amount);
             Assert.AreEqual(1, target.Modifiers.Single().RemainingTurns);
             s.PlayRound(new[] { BattleCommand.UseSkill(P(s, 0), GddData.BreakFormation, target), BattleCommand.Defend(P(s, 1)) });
             var m = target.Modifiers.Single();

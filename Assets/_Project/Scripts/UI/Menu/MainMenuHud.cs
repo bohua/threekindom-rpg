@@ -213,8 +213,9 @@ namespace ThreeKingdoms.UI.Menu
             if (Current != Mode.Root || replaying || Controller == null || Controller.Run == null) return;
             if (paint == null)
             {
-                paint = new MenuPaint(Art, BingshuArt);
-                foreach (var line in Borders)
+                var set = Resources.Load<TravelMenuArtSet>(TravelMenuArtSet.ResourceName);
+                paint = new MenuPaint(set ? Art.Concat(set.Art) : Art, set ? BingshuArt.Concat(set.BingshuArt) : BingshuArt);
+                foreach (var line in set ? Borders.Concat(set.Borders) : Borders)
                 {
                     var p = line.Split(',');
                     if (p.Length == 5) paint.SetBorder(p[0], new Vector4(float.Parse(p[1]), float.Parse(p[2]), float.Parse(p[3]), float.Parse(p[4])));

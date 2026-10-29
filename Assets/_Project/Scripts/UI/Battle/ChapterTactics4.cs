@@ -70,8 +70,9 @@ namespace ThreeKingdoms.UI.Battle
         static Vector2Int At(string[] rows, int x, int row) => new Vector2Int(x, rows.Length - 1 - row);
 
         // Zhao Yun rides as a guest general (REVIEW_V04 R7): his level is the lowest of the brothers', fixed gear.
-        static readonly GeneralSpec ZhaoYun = new GeneralSpec("zhao_yun", "赵云", TroopType.Cavalry, 88, 85, 70, 2, 2, 2);
-        static readonly GeneralSpec GongsunZan = new GeneralSpec("gongsun_zan", "公孙瓒", TroopType.Cavalry, 80, 82, 62);
+        // GENERALS_ROSTER v0.3: fixed attributes; Gongsun Zan leads 白马 horse archers.
+        static readonly GeneralSpec ZhaoYun = new GeneralSpec("zhao_yun", "赵云", TroopType.Cavalry, 93, 86, 74, element: UnitElement.Fire);
+        static readonly GeneralSpec GongsunZan = new GeneralSpec("gongsun_zan", "公孙瓒", TroopType.HorseArcher, 80, 80, 55, element: UnitElement.Fire);
 
         public static TacticsStageDef Build(string id, EncounterSpec encounter, GameRun run, BattleData data)
         {
@@ -87,7 +88,7 @@ namespace ThreeKingdoms.UI.Battle
             }
             TacticsUnitDef Zhao(Vector2Int pos)
             {
-                var s = BattleRules.Compute(ZhaoYun, partyLevel, default, data.Troops, data.Config);
+                var s = BattleRules.Compute(ZhaoYun, partyLevel, ChapterTactics.Stages.GuestGear, data.Troops, data.Config);
                 var u = ChapterTactics.Stages.Unit(ZhaoYun, partyLevel, s, Team.Player, pos);
                 u.Key = "ZhaoYun"; u.Crafts = new[] { "援护", "连击" };
                 return u;
@@ -134,12 +135,12 @@ namespace ThreeKingdoms.UI.Battle
                     var gz = ChapterTactics.Stages.Unit(GongsunZan, 11, BattleRules.Compute(GongsunZan, 11, default, data.Troops, data.Config), Team.Player, At(rows, 2, 8));
                     gz.Ai = true; gz.Escort = true; gz.Move = 0; gz.Key = "GongsunZan"; gz.Hp = gz.Hp * 3 / 2;
                     def.Units.Add(gz);
-                    var spots = new[] { At(rows, 8, 1), At(rows, 5, 2), At(rows, 12, 2), At(rows, 9, 0) };
+                    var spots = new[] { At(rows, 8, 1), At(rows, 5, 2), At(rows, 12, 2), At(rows, 9, 0), At(rows, 6, 0) };
                     for (int i = 0; i < encounter.Enemies.Count; i++)
                     {
                         var u = Foe(encounter.Enemies[i], spots[i]);
                         if (i == 0) { u.Leader = true; u.Floor = 0.45f; }
-                        else { u.Name = "袁军骑" + "甲乙丙"[i - 1]; u.Focus = "公孙瓒"; }
+                        else { u.Name = "袁军骑" + "甲乙丙丁"[i - 1]; u.Focus = "公孙瓒"; }
                         def.Units.Add(u);
                     }
                     def.Objective = "保护公孙瓒，击退文丑（公孙瓒倒下即败）";
@@ -175,7 +176,7 @@ namespace ThreeKingdoms.UI.Battle
                         var u = Foe(encounter.Enemies[i], spots[i]);
                         if (i == 0) { u.Leader = true; u.Floor = 0.45f; }
                         else if (i < 3) u.Name = "先登死士" + "甲乙"[i - 1];
-                        else { u.Name = "强弩" + "甲乙"[i - 3]; u.Move = 0; u.Range = 4; }   // REVIEW_V04 R9: the crossbows hold the high bank
+                        else { u.Name = "强弩" + "甲乙"[i - 3]; u.Move = 0; u.Range = 3; }   // REVIEW_V04 R9: the crossbows hold the high bank (弩 2 + the bank)
                         def.Units.Add(u);
                     }
                     def.Objective = "殿后：把麴义的兵力压到一半以下";

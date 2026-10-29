@@ -15,9 +15,10 @@ MonoBehaviour:
   Id: wen_chou
   DisplayName: "\u6587\u4E11"
   Troop: 1
-  Force: 94
-  Command: 78
-  Intellect: 40
+  Force: 92
+  Command: 72
+  Intellect: 30
+  Element: 1
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

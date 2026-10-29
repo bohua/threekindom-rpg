@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
   Id: xiandeng
   DisplayName: "\u5148\u767B\u6B7B\u58EB"
-  Troop: 0
+  Troop: 5
   Force: 72
   Command: 76
   Intellect: 20
+  Element: 2
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

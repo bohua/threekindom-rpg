@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
   Id: liukou_chief
   DisplayName: "\u6D41\u5BC7\u5934\u76EE"
-  Troop: 0
-  Force: 74
-  Command: 58
-  Intellect: 30
+  Troop: 3
+  Force: 72
+  Command: 55
+  Intellect: 28
+  Element: 1
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

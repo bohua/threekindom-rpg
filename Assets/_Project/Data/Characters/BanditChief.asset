@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
   Id: bandit_chief
   DisplayName: "\u5C71\u8D3C\u5934\u76EE"
-  Troop: 0
-  Force: 72
-  Command: 55
-  Intellect: 30
+  Troop: 3
+  Force: 70
+  Command: 50
+  Intellect: 25
+  Element: 1
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0
