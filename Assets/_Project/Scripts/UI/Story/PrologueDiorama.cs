@@ -77,6 +77,29 @@ namespace ThreeKingdoms.UI.Story
             return new Vector2(p.x, 1f - p.y);
         }
 
+        // The height of the land or the peaks under a point (diorama metres), for flights that must clear the mountains
+        // (TianxiaFlight): the half-metre grid PrologueDioramaBuilder samples, 0 where it is missing.
+        public static float GroundAt(float x, float z)
+        {
+            if (heights == null)
+            {
+                var file = Resources.Load<TextAsset>("Prologue/tianxia_height");
+                if (!file) { heights = new float[0]; return 0f; }
+                var bytes = file.bytes;
+                heightW = BitConverter.ToInt32(bytes, 0); heightD = BitConverter.ToInt32(bytes, 4);
+                heights = new float[heightW * heightD];
+                Buffer.BlockCopy(bytes, 8, heights, 0, heights.Length * 4);
+            }
+            if (heights.Length == 0) return 0f;
+            float fx = Mathf.Clamp(x / 0.5f, 0f, heightW - 1.001f), fz = Mathf.Clamp(z / 0.5f, 0f, heightD - 1.001f);
+            int ix = (int)fx, iz = (int)fz; float u = fx - ix, v = fz - iz;
+            float H(int i, int j) => heights[j * heightW + i];
+            return Mathf.Lerp(Mathf.Lerp(H(ix, iz), H(ix + 1, iz), u), Mathf.Lerp(H(ix, iz + 1), H(ix + 1, iz + 1), u), v);
+        }
+
+        static float[] heights;
+        static int heightW, heightD;
+
         public static Vector3 ToWorld(Vector2 map, float height) => new Vector3(map.x * Width, height, (1f - map.y) * Depth);
 
         // A story layer laid on the ground (null texture or alpha 0 hides it).

@@ -14,6 +14,7 @@ namespace ThreeKingdoms.App
     //   -panel <shop|save|menu>          open that town panel after loading (screenshots of the menus)
     //   -storyAuto                       play the main line by itself (town, oath, gate, battles); implies -battleAuto
     //   -prologueShots <dir>             play the new-game prologue in the town and save a frame per subtitle line
+    //   -marchShots <dir>                (with -stage) save frames of a march flown on the 3D 天下图
     //   -battleAuto [<stop round>]       let BattleAutoPilot issue commands in battle scenes (screenshots, soak runs)
     public static class DevLaunchOptions
     {
@@ -25,7 +26,7 @@ namespace ThreeKingdoms.App
                 ThreeKingdoms.Gameplay.Story.FieldStoryController.DevStep = chapterStep;
             ThreeKingdoms.Gameplay.Story.FieldStoryController.DevTalk = LaunchArgs.Get("-fieldTalk");
             // Screenshot runs keep playing when the window is not in front.
-            if (LaunchArgs.Has("-sceneShots") || LaunchArgs.Has("-chapterShots") || LaunchArgs.Has("-comicShots")) Application.runInBackground = true;
+            if (LaunchArgs.Has("-sceneShots") || LaunchArgs.Has("-chapterShots") || LaunchArgs.Has("-comicShots") || LaunchArgs.Has("-marchShots")) Application.runInBackground = true;
             // -prologueShots <dir>: the town plays the prologue as after 新游戏 and saves a frame per subtitle line.
             if (LaunchArgs.Has("-prologueShots")) { Application.runInBackground = true; ThreeKingdoms.Gameplay.Story.GameRun.PrologueDue = true; }
             string stageId = LaunchArgs.Get("-stage");

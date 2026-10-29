@@ -260,7 +260,7 @@ namespace ThreeKingdoms.UI.Story
             v.style.rotate = new Rotate(Angle.Degrees(6f * Mathf.Sin(t * 5f + seed)));
         }
 
-        static Sprite[] Slice(Texture2D sheet, int n)
+        internal static Sprite[] Slice(Texture2D sheet, int n)
         {
             if (!sheet) return null;
             int fw = sheet.width / n;

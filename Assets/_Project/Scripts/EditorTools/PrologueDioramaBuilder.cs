@@ -53,6 +53,7 @@ namespace ThreeKingdoms.EditorTools
 
                 if (terrain) AddOverlays(root.transform, terrain);
                 WriteRoutes();
+                WriteHeights(root.transform);
 
                 var sun = new GameObject("Diorama Sun").AddComponent<Light>();
                 sun.transform.SetParent(root.transform, false);
@@ -110,6 +111,38 @@ namespace ThreeKingdoms.EditorTools
             }
             File.WriteAllText("Assets/_Project/Resources/Prologue/tianxia_routes.json", "{\"routes\":[" + string.Join(",", outRoutes) + "]}");
             AssetDatabase.ImportAsset("Assets/_Project/Resources/Prologue/tianxia_routes.json");
+        }
+
+        // The top of the land and the peaks on a half-metre grid (Resources/Prologue/tianxia_height.bytes: int width,
+        // int depth, then floats row by row from the south-west), so flights over the map can clear the mountains
+        // without colliders on the shipped meshes (PrologueDiorama.GroundAt).
+        public const float HeightStep = 0.5f;
+        static void WriteHeights(Transform root)
+        {
+            var added = new System.Collections.Generic.List<MeshCollider>();
+            foreach (var f in root.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var t = f.transform;
+                while (t && t != root && t.name != "tianxia_terrain" && t.name != "tianxia_peaks") t = t.parent;
+                if (t && t != root && f.sharedMesh) added.Add(f.gameObject.AddComponent<MeshCollider>());
+            }
+            Physics.SyncTransforms();
+            int w = Mathf.CeilToInt(120f / HeightStep) + 1, d = Mathf.CeilToInt(67.5f / HeightStep) + 1;
+            using (var bw = new BinaryWriter(File.Create("Assets/_Project/Resources/Prologue/tianxia_height.bytes")))
+            {
+                bw.Write(w); bw.Write(d);
+                for (int z = 0; z < d; z++)
+                    for (int x = 0; x < w; x++)
+                    {
+                        float h = 0f;
+                        foreach (var hit in Physics.RaycastAll(new Vector3(x * HeightStep, 80f, z * HeightStep), Vector3.down, 160f))
+                            if (added.Contains(hit.collider as MeshCollider)) h = Mathf.Max(h, hit.point.y);
+                        bw.Write(h);
+                    }
+            }
+            foreach (var c in added) Object.DestroyImmediate(c);
+            AssetDatabase.ImportAsset("Assets/_Project/Resources/Prologue/tianxia_height.bytes");
+            Debug.Log($"Prologue diorama: heights {w}×{d}");
         }
 
         static System.Collections.Generic.List<string> Vectors(string block, string key)

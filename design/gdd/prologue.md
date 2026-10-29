@@ -104,3 +104,12 @@
 ## 10. 3D 青绿山水沙盘（用户 2026-10-28 19:18、19:22）
 
 天下图镜头（第 3–8 镜）改为 3D 沙盘：Codex 效果图 art/prologue-3d-map-concept，Blender 建模 art/prologue-3d-map-blender（120×67.5 米，1 米＝平面舆图 16 像素，地形 UV＝舆图；8K 手绘地形贴图，边缘渐变淡入宣纸与雾，层叠青绿山系、城池、树、雾）。`PrologueDioramaBuilder` 生成 Resources/Prologue/TianxiaDiorama.prefab 与 tianxia_routes.json；`PrologueDiorama` 运行时放在远处用独立相机渲染到贴图，剧情层（黄巾蔓延、朱砂圈、箭头、巨鹿光、传教线、告示）投到地形覆盖层，头像与旗帜按 3D 投影跟随。镜头：俯瞰 → 推近巨鹿 → 升起看蔓延 → 太行南口低飞向洛阳（路线 A）→ 升到洛阳上空看三路箭头 → 俯瞰群雄 → 北上涿郡（路线 C）。缺 prefab 时自动退回平面舆图。
+
+## 11. 天下图：区域标注与行军飞行（用户 2026-10-29）
+
+用户问大地图能否和分块区域地图结合；答复为“天下图↔区域”两级关系，不做一比一无缝缩放（区域场景是几百米的可走地图，比例不同，只保证大方向一致），用户同意。
+
+- 设计：Codex `art/tianxia-regions-ui`（总览 UI 设计图、换区飞行四格分镜、`tianxia_regions.json` 区域多边形与相邻区域路线，map_base 像素坐标）。
+- 实装：`TianxiaFlight`。剧情行军（StagePlayer March）在天下沙盘已构建时改为 3D 飞行：总览显示 R1–R8（所在／目的地青蓝、已开放淡金、未开放灰雾“未开放”、危险朱红斜纹，按 Chapter1Chronicle 的年份开放表）→ 镜头在刘备军后上方沿路线飞（按 `tianxia_height.bytes` 半米高度网格自动抬升避开山峰）→ 目的区域名淡入 → 云雾收拢。沙盘缺失时仍用旧平面章节图。
+- 检查：`-stage <id> -marchShots <dir>` 存飞行各阶段截图。
+- 尚未做：区域场景之间目前没有直接出入口，换区飞行只接剧情行军；以后区域互通时复用同一飞行。
