@@ -188,6 +188,26 @@ for i, o in enumerate(L.get('wetland_pools', []) + L.get('lakes', []) + L.get('p
         waters.append(dict(id=o.get('id', f'pool_{i}'), level=float(o.get('water_surface_m', o.get('level_m', -0.8))),
                            width=0, poly=[v for p in ps for v in p]))
 
+# Hub-file "gate_at" [x, z] (metres from the centre, +z north): roads that end inside a walled place are cut at its
+# edge and brought in straight through that gate, so the road and the gate line up.
+for p in places:
+    if not p.get('gate_at'):
+        continue
+    gx, gz = p['x'] + p['gate_at'][0], p['z'] + p['gate_at'][1]
+    ox, oz = p['gate_at'][0], p['gate_at'][1]
+    n = math.hypot(ox, oz); ox, oz = ox / n, oz / n                 # outward through the gate
+    hw, hd = p['w'] / 2 + 1, p['d'] / 2 + 1
+    for r in roads:
+        q = [(r['pts'][i], r['pts'][i + 1]) for i in range(0, len(r['pts']), 2)]
+        inside = lambda a: abs(a[0] - p['x']) < hw and abs(a[1] - p['z']) < hd
+        if inside(q[0]):
+            q.reverse()
+        if not inside(q[-1]):
+            continue
+        q = [a for a in q if not inside(a) and math.hypot(a[0] - gx, a[1] - gz) > 16]
+        q += [(gx + ox * 10, gz + oz * 10), (gx, gz), (gx - ox * 6, gz - oz * 6)]
+        r['pts'] = [round(v, 3) for a in q for v in a]
+
 # Hub-file "face_water": turn a place (a ferry landing) so its front faces the nearest river and move it to the bank,
 # its origin this far from the centre line, so the jetty in front reaches over the water.
 for p in places:

@@ -14,7 +14,11 @@
   "kind": "camp",
   "year": 191,
   "set": "r1-blender-gongsun-camp",
-  "layout": "_checks/layout_placements.json"
+  "layout": "_checks/layout_placements.json",
+  "gate_at": [
+   0,
+   -23
+  ]
  },
  "mulberry": {
   "kind": "tree",
