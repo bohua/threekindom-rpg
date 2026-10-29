@@ -13,6 +13,9 @@ Shader "ThreeKingdoms/GroundArraySplat"
         _TileMetres ("Metres per tile", Float) = 4
         _Bounds ("Index map bounds (x min, z min, x max, z max)", Vector) = (0, 0, 560, 360)
         _Tint ("Tint", Color) = (1, 1, 1, 1)
+        _RockLayer ("Layer drawn on steep slopes (-1 = none)", Float) = -1
+        _Rock ("Rock share (bake_rock.py, 1 px per metre)", 2D) = "black" {}
+        _OuterLayer ("Layer past the region's edge", Float) = 0
     }
     SubShader
     {
@@ -32,6 +35,7 @@ Shader "ThreeKingdoms/GroundArraySplat"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             TEXTURE2D(_Index); float4 _Index_TexelSize;
+            TEXTURE2D(_Rock); SAMPLER(sampler_Rock);
             TEXTURE2D_ARRAY(_Layers);
             SAMPLER(sampler_point_clamp);
             SAMPLER(sampler_trilinear_repeat);
@@ -40,6 +44,8 @@ Shader "ThreeKingdoms/GroundArraySplat"
                 float _TileMetres;
                 float4 _Bounds;
                 half4 _Tint;
+                float _RockLayer;
+                float _OuterLayer;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
@@ -97,6 +103,28 @@ Shader "ThreeKingdoms/GroundArraySplat"
                 // Large, soft light and dark drifts across the open country (sun-bleached and damp patches).
                 albedo *= 0.9 + 0.2 * (Noise(xz * 0.012 + 7.0) * 0.7 + Noise(xz * 0.05) * 0.3);
                 float3 n = normalize(i.normalWS);
+                // Past the region's edge the clamped index would smear its last row outward: the ground there turns into
+                // the region's common grass over 40 m instead (user 2026-10-30: the edges showed streaks and nothing).
+                float2 outside = max(_Bounds.xy - xz, xz - _Bounds.zw);
+                float beyond = saturate(max(outside.x, outside.y) / 40.0);
+                if (beyond > 0) albedo = lerp(albedo, Layer(uv, _OuterLayer, mixN) * _Tint.rgb * (0.9 + 0.2 * Noise(xz * 0.012 + 7.0)), beyond);
+                // Steep slopes show the region's rock (user 2026-10-30: mountains were one sheet of grass). The share is
+                // baked from the smoothed heightmap with noise, so it fades in over metres, never along a terrace edge;
+                // projected from the side so a cliff face is not one smeared texel.
+                if (_RockLayer >= 0)
+                {
+                    float steep = SAMPLE_TEXTURE2D(_Rock, sampler_Rock, cuv).r;
+                    steep = max(steep, beyond * smoothstep(0.93, 0.7, n.y));
+                    if (steep > 0.003)
+                    {
+                        float3 w = pow(abs(n), 4); w /= max(dot(w, 1), 1e-4);
+                        float3 q = i.positionWS / _TileMetres;
+                        half3 rock = SAMPLE_TEXTURE2D_ARRAY(_Layers, sampler_trilinear_repeat, q.zy, _RockLayer).rgb * w.x
+                                   + SAMPLE_TEXTURE2D_ARRAY(_Layers, sampler_trilinear_repeat, q.xz, _RockLayer).rgb * w.y
+                                   + SAMPLE_TEXTURE2D_ARRAY(_Layers, sampler_trilinear_repeat, q.xy, _RockLayer).rgb * w.z;
+                        albedo = lerp(albedo, rock * _Tint.rgb, steep);
+                    }
+                }
                 Light ml = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 half3 c = albedo * (ml.color * (ml.shadowAttenuation * ml.distanceAttenuation) * saturate(dot(n, ml.direction)) + SampleSH(n));
                 return half4(MixFog(c, i.fog), 1);

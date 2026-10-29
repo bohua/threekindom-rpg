@@ -27,6 +27,8 @@ namespace ThreeKingdoms.App
             ThreeKingdoms.Gameplay.Story.FieldStoryController.DevTalk = LaunchArgs.Get("-fieldTalk");
             // Screenshot runs keep playing when the window is not in front.
             if (LaunchArgs.Has("-sceneShots") || LaunchArgs.Has("-chapterShots") || LaunchArgs.Has("-comicShots") || LaunchArgs.Has("-marchShots")) Application.runInBackground = true;
+            // -freeRoam: Zhuojun's ways out to R1 open and the gate guards stand aside (playtest of the whole map).
+            if (LaunchArgs.Has("-freeRoam")) ThreeKingdoms.Gameplay.RegionPortal.FreeRoam = true;
             // -prologueShots <dir>: the town plays the prologue as after 新游戏 and saves a frame per subtitle line.
             if (LaunchArgs.Has("-prologueShots")) { Application.runInBackground = true; ThreeKingdoms.Gameplay.Story.GameRun.PrologueDue = true; }
             string stageId = LaunchArgs.Get("-stage");
