@@ -343,7 +343,15 @@ namespace Prototype.BingshuTactics
                         r = new[] { W2(x0 + iW, z0 + iS), W2(x0 + iW, z1 - iN), W2(x1 - iE, z1 - iN), W2(x1 - iE, z0 + iS) };
                     }
                     var topMat = groundT == Terrain.River ? waterMat : zTop ? zTop : TopMat(groundT);
-                    if (UsesBlend(groundT))   // 0.2：整张融合地面，格与格之间没有贴图切口
+                    var kTop = KitTop(groundT);
+                    if (kTop)   // 虎牢关高清套件：墙道与桥面按世界坐标连续铺
+                    {
+                        float km = KitTopMeters(groundT);
+                        Vector2 K2(float wx, float wz) => new Vector2(wx / km, wz / km);
+                        topMat = kTop;
+                        r = new[] { K2(x0 + iW, z0 + iS), K2(x0 + iW, z1 - iN), K2(x1 - iE, z1 - iN), K2(x1 - iE, z0 + iS) };
+                    }
+                    else if (UsesBlend(groundT))   // 0.2：整张融合地面，格与格之间没有贴图切口
                     {
                         topMat = blendMat;
                         r = new[] { BlendUV(x0 + iW, z0 + iS), BlendUV(x0 + iW, z1 - iN), BlendUV(x1 - iE, z1 - iN), BlendUV(x1 - iE, z0 + iS) };
@@ -392,6 +400,7 @@ namespace Prototype.BingshuTactics
                 var at = a + Vector3.up * y + inward * topIn; var bt = b + Vector3.up * y + inward * topIn;
                 var ab = a + Vector3.up * yb + inward * botIn; var bb = b + Vector3.up * yb + inward * botIn;
                 float v1 = seg / HS;
+                if (KitSide(p, d, a, b, ab, at, bt, bb, yb, y, nbWater)) { y = yb; layer++; continue; }
                 var zWall = IsWallish(p) ? ZMat("citywall_face") : null;
                 var zSide = zWall ? null : ZMat(s == Side.WetBank ? "side_river_bank" : s == Side.Dirt || s == Side.GrassLip ? "side_earth_cliff" : null);
                 if (zSide)
@@ -430,6 +439,7 @@ namespace Prototype.BingshuTactics
                 for (int y = 0; y < H; y++)
                 {
                     var p = new Vector2Int(x, y); var t = grid.TerrainAt(p); var c = Tile(p);
+                    if (KitProp(p, t, c)) continue;
                     switch (t)
                     {
                         case Terrain.JuMa: JuMa(c); break;
@@ -456,6 +466,7 @@ namespace Prototype.BingshuTactics
                 Flag(Tile(new Vector2Int(2, 10)) + new Vector3(-0.4f, 0, 0.4f));
                 Flag(Tile(new Vector2Int(11, 10)) + new Vector3(0.4f, 0, 0.4f));
             }
+            KitLandmarks();
             BuildDetails();
             Scenery();
             FlushMeshes("Props");
@@ -702,6 +713,7 @@ namespace Prototype.BingshuTactics
                     var c = new Vector3((x + 0.5f) * T, Border, (y + 0.5f) * T);
                     if (y >= H && stage == 1) continue;   // 关墙背后留空
                     if (h > 0.72f) Tree(c, (int)(h * 100) % 3);
+                    else if (h < 0.12f && HulaoKit) KitBillboard(h < 0.06f ? "rock_hulao_a" : "rock_hulao_b", c, 0.6f);
                     else if (h < 0.12f) { if (!Billboard(h < 0.06f ? "sprite_rock_outcrop_b" : "sprite_rock_small", c)) RockMesh(B(Stone), c, 0.35f + h, x * 13 + y); }
                     else if (h < 0.2f && y < H) Billboard(stage == 1 && h < 0.16f ? "sprite_stone_wall_low" : "sprite_fence_wood", c);   // 外圈田埂矮石墙与木栅，只作远景
                 }
@@ -716,6 +728,7 @@ namespace Prototype.BingshuTactics
         // 树：六棱柱树干＋与人物同角度的树冠公告板
         void Tree(Vector3 c, int kind, float scale = 1f)
         {
+            if (HulaoKit && KitBillboard(kind == 2 ? "shrub_hulao" : "pine_hulao", c, scale * (kind == 2 ? 1.2f : 1f))) return;
             if (Billboard(kind == 0 ? "prop_tree_cypress" : kind == 1 ? "prop_tree_elm" : "prop_tree_willow", c, scale)) return;   // 涿郡整树精灵
             var trunk = B(Wood);
             float th = kind == 0 ? 0.9f : 0.7f;
