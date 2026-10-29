@@ -20,6 +20,7 @@ namespace ThreeKingdoms.EditorTools
         const string PrefabPath = "Assets/_Project/Resources/Prologue/TianxiaDiorama.prefab";
         public const int Layer = 30;   // the diorama renders to its own camera only
         static readonly string[] Models = { "tianxia_terrain", "tianxia_water", "tianxia_peaks", "tianxia_cities", "tianxia_trees", "tianxia_mist" };
+        static readonly (string model, string set)[] Refinements = { ("tianxia_trees", "prologue-3d-map-trees-v3"), ("tianxia_cities", "prologue-3d-map-cities-v3"), ("tianxia_peaks", "prologue-3d-map-peaks-v3") };
         // Overlay order, bottom to top; PrologueDiorama finds them by these names.
         public static readonly string[] Overlays = { "map_spread", "spread", "map_julu", "map_recruit", "arrows", "ring" };
 
@@ -27,13 +28,18 @@ namespace ThreeKingdoms.EditorTools
         public static void Build()
         {
             if (!BlenderModels.Import(Set, 8192)) { Debug.LogError("Prologue diorama: art/" + Set + " not delivered."); return; }
+            // Finer passes of single models (user 2026-10-29: "这个大地图在游戏中会一直使用和出现，务必做得最精良") replace
+            // the base set's model of the same name once delivered.
+            var sources = new System.Collections.Generic.Dictionary<string, string>();
+            foreach (var (model, set) in Refinements)
+                if (BlenderModels.Import(set, 4096)) sources[model] = set;
             var root = new GameObject("TianxiaDiorama");
             try
             {
                 Transform terrain = null;
                 foreach (var model in Models)
                 {
-                    var t = BlenderModels.Place(Set, root.transform, model, model, Vector3.zero);
+                    var t = BlenderModels.Place(sources.TryGetValue(model, out var refined) ? refined : Set, root.transform, model, model, Vector3.zero);
                     if (!t) { Debug.LogWarning("Prologue diorama: missing " + model); continue; }
                     foreach (var o in t.GetComponentsInChildren<Occluder>(true)) Object.DestroyImmediate(o);
                     foreach (var r in t.GetComponentsInChildren<MeshRenderer>(true))
