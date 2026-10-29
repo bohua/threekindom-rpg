@@ -30,3 +30,7 @@ docs/consistency-failures.md
 # Opening film copied from the art delivery at build time (63 MB; CinematicsArtImporter)
 /Assets/StreamingAssets/
 /Assets/StreamingAssets.meta
+
+# Python caches (tools/music-inbox)
+__pycache__/
+.pytest_cache/
