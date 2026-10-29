@@ -53,6 +53,17 @@ namespace ThreeKingdoms.UI.Story
             arrows.Order = PathOrder(arrows.Source, paths);
             W = 960; H = 540;
 
+            armyPaths = paths;
+            marchFrames = Slice(Load("han_army_march"), 8);
+            dustFrames = Slice(Load("han_army_dust"), 6);
+            for (int i = 0; i < Generals.Length && i < paths.Count; i++)
+            {
+                var pin = GeneralPin(mapInner, Generals[i]);
+                // 皇甫嵩 and 朱儁 meet at 颍川: 朱儁 (the southern road) carries his medal beside his column.
+                if (i == 2) { pin.style.marginLeft = 50; pin.style.marginTop = -120; }
+                armies.Add((Mark(mapInner, paths[i][0], 120, 96, false), Mark(mapInner, paths[i][0], 96, 72, false), pin));
+            }
+
             bannerFrames = Slice(Load("banner_wave"), BannerFrames);
             fireFrames = Slice(Load("fire_loop"), FireFrames);
             var spots = Spots(spread, 16);
@@ -70,6 +81,7 @@ namespace ThreeKingdoms.UI.Story
             spread.Draw(0f, 0f, Paint.Spread); ring.Draw(0f, 0f, Paint.Plain); arrows.Draw(0f, 0f, Paint.Plain);
             foreach (var (v, _, _) in banners) v.style.display = DisplayStyle.None;
             foreach (var (v, _, _) in fires) v.style.display = DisplayStyle.None;
+            Armies(0f, 0f, 0f);
         }
 
         // p 0..1: how far the rising has spread; t: seconds, for flicker and waving.
@@ -105,6 +117,96 @@ namespace ThreeKingdoms.UI.Story
 
         public void Ring(float p, float t) => ring.Draw(p, t, Paint.Plain);
         public void Arrows(float p, float t) => arrows.Draw(p, t, Paint.Plain);
+
+        // ---------- the three imperial armies (user 2026-10-29: "把皇甫嵩等三路兵马的效果以及武将头像也做了") ----------
+
+        // Along the arrows' centre lines, in march_arrows.json order: 卢植 to 广宗, 皇甫嵩 and 朱儁 to 颍川.
+        static readonly (string id, string name, string title)[] Generals =
+        {
+            ("lu_zhi", "卢植", "北中郎将"), ("huangfu_song", "皇甫嵩", "左中郎将"), ("zhu_jun", "朱儁", "右中郎将"),
+        };
+
+        List<Vector2[]> armyPaths;
+        Sprite[] marchFrames, dustFrames;
+        readonly List<(VisualElement troop, VisualElement dust, VisualElement pin)> armies = new List<(VisualElement, VisualElement, VisualElement)>();
+
+        // p 0..1: how far along its road each army has marched (the arrows draw ahead of them); a: their opacity.
+        public void Armies(float p, float t, float a)
+        {
+            int frame = (int)(t * FrameRate);
+            for (int i = 0; i < armies.Count; i++)
+            {
+                var (troop, dust, pin) = armies[i];
+                // The three set out a little apart.
+                float k = Mathf.Clamp01((p - i * 0.06f) / (1f - 0.12f));
+                var (at, heading) = PointAlong(armyPaths[i], Mathf.SmoothStep(0f, 1f, k));
+                bool shown = a > 0.001f && p > i * 0.06f;
+                foreach (var v in new[] { troop, dust, pin })
+                {
+                    v.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
+                    if (!shown) continue;
+                    if (!Follow(v, at)) v.style.display = DisplayStyle.None;
+                    v.style.opacity = a;
+                }
+                // All three leave 洛阳 from one gate: a medal shows only once its column is on its own road.
+                pin.style.opacity = a * Mathf.Clamp01((k - 0.1f) / 0.1f);
+                if (!shown) continue;
+                bool marching = k < 0.999f;
+                // The column faces the way it goes (the strip walks to the right).
+                troop.style.scale = new Scale(new Vector3(heading.x < 0f ? -1f : 1f, 1f, 1f));
+                SetFrame(troop, marchFrames, marching ? frame + i * 3 : 0, t, i);
+                dust.style.display = marching && dust.style.display == DisplayStyle.Flex ? DisplayStyle.Flex : DisplayStyle.None;
+                dust.style.translate = new Translate(heading.x < 0f ? 30f : -30f, 6f);
+                SetFrame(dust, dustFrames, frame + i * 2, t, i);
+            }
+        }
+
+        static (Vector2 at, Vector2 heading) PointAlong(Vector2[] path, float k)
+        {
+            float total = 0f;
+            for (int i = 1; i < path.Length; i++) total += Vector2.Distance(path[i - 1], path[i]);
+            float want = k * total, run = 0f;
+            for (int i = 1; i < path.Length; i++)
+            {
+                float len = Vector2.Distance(path[i - 1], path[i]);
+                if (run + len >= want || i == path.Length - 1)
+                {
+                    float u = len > 0f ? Mathf.Clamp01((want - run) / len) : 1f;
+                    return (Vector2.Lerp(path[i - 1], path[i], u), path[i] - path[i - 1]);
+                }
+                run += len;
+            }
+            return (path[path.Length - 1], Vector2.right);
+        }
+
+        // A general's head medal (Codex art/prologue-three-armies) with name and office, riding above his column.
+        static VisualElement GeneralPin(VisualElement parent, (string id, string name, string title) g)
+        {
+            var v = new VisualElement { pickingMode = PickingMode.Ignore };
+            v.style.position = Position.Absolute;
+            v.style.width = 150; v.style.marginLeft = -75; v.style.marginTop = -190;
+            v.style.alignItems = Align.Center;
+            var face = new VisualElement { pickingMode = PickingMode.Ignore };
+            face.style.width = 92; face.style.height = 92;
+            var tex = Load("tag_" + g.id);
+            if (tex) face.style.backgroundImage = tex;
+            else face.style.backgroundColor = new Color(0.62f, 0.16f, 0.12f);
+            v.Add(face);
+            var plate = new VisualElement { pickingMode = PickingMode.Ignore };
+            plate.style.backgroundColor = new Color(0.06f, 0.11f, 0.19f, 0.88f);
+            plate.style.borderLeftColor = plate.style.borderRightColor = plate.style.borderTopColor = plate.style.borderBottomColor = new Color(0.78f, 0.2f, 0.12f);
+            plate.style.borderLeftWidth = plate.style.borderRightWidth = plate.style.borderTopWidth = plate.style.borderBottomWidth = 1f;
+            plate.style.paddingLeft = plate.style.paddingRight = 10; plate.style.paddingTop = 2; plate.style.paddingBottom = 4;
+            plate.style.marginTop = 3; plate.style.alignItems = Align.Center;
+            var name = new Label(g.name) { pickingMode = PickingMode.Ignore };
+            name.style.fontSize = 22; name.style.color = new Color(0.96f, 0.95f, 0.91f);
+            var title = new Label(g.title) { pickingMode = PickingMode.Ignore };
+            title.style.fontSize = 15; title.style.color = new Color(0.71f, 0.78f, 0.84f);
+            plate.Add(name); plate.Add(title);
+            v.Add(plate);
+            parent.Add(v);
+            return v;
+        }
 
         // On the 3D map: hands the drawn layers to the diorama's ground (call after the frame's Spread / Ring / Arrows).
         public void Sync()

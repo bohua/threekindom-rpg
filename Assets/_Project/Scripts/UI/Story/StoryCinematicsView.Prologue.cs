@@ -228,13 +228,17 @@ namespace ThreeKingdoms.UI.Story
                     mapFx.Spread(1.2f, t); mapFx.Ring(1f, t);
                     // On the 3D map the arrows wait until the camera has flown out of the pass and risen over Luo Yang.
                     float arrowsFrom = diorama != null ? length * 0.5f : 0.6f;
-                    mapFx.Arrows(Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - arrowsFrom) / 3.2f)), t);
+                    float march = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - arrowsFrom) / 3.2f));
+                    mapFx.Arrows(march, t);
+                    // The three armies march behind the drawing arrows, their generals riding above (user 2026-10-29).
+                    mapFx.Armies(Mathf.Clamp01((t - arrowsFrom) / Mathf.Max(3.6f, length - arrowsFrom - 0.4f)), t, 1f);
                     Layer("map_recruit", line >= 1 ? Mathf.Clamp01(lineT / 1.5f) : 0f);
                     break;
                 case 6:
                     MapOnly();
                     Layer("map_julu", 1f); Layer("map_spread", 0.5f);
                     mapFx.Spread(1.2f, t); mapFx.Ring(1f, t); mapFx.Arrows(1f, t);
+                    mapFx.Armies(1f, t, 1f - Mathf.Clamp01(t / 0.8f));
                     // The armies and notices step back while the pins speak.
                     float back = 1f - 0.55f * Mathf.Clamp01(t / 1.2f);
                     mapFx.SetOpacity(back, back, back);

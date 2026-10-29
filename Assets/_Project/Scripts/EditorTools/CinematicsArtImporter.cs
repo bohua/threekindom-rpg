@@ -79,7 +79,7 @@ namespace ThreeKingdoms.EditorTools
         // The prologue 天下大势 (design/gdd/prologue.md): Codex art/prologue-art into Resources/Prologue, where the
         // player reads it by name. Scrolls are 3840 wide; the map layers keep their alpha. Missing files are skipped.
         public const string PrologueDir = "Assets/_Project/Resources/Prologue";
-        static readonly string[] PrologueSources = { @"art\prologue-art", @"art\prologue-map-fx" };
+        static readonly string[] PrologueSources = { @"art\prologue-art", @"art\prologue-map-fx", @"art\prologue-three-armies" };
         // Layers the map animation reads pixel by pixel (PrologueMapFx).
         static readonly string[] ReadableLayers = { "map_states.png", "cinnabar_circle.png", "march_arrows.png" };
 
