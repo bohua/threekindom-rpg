@@ -12,7 +12,13 @@
  },
  "camp": {
   "kind": "camp",
-  "year": 191
+  "year": 191,
+  "set": "r1-blender-gongsun-camp",
+  "layout": "_checks/layout_placements.json",
+  "gate_at": [
+   0,
+   -23
+  ]
  },
  "mulberry": {
   "kind": "tree",
@@ -86,5 +92,140 @@
    184,
    276
   ]
+ },
+ "_ground": {
+  "set": "r1-wild-ground",
+  "base": "r1_meadow",
+  "r": "r1_village_earth",
+  "g": "r1_farmland",
+  "b": "r1_riverbank",
+  "a": "r1_hill_slope",
+  "tile": 12,
+  "grade": {
+   "r1_meadow": [
+    0.85,
+    1.32
+   ],
+   "r1_farmland": [
+    0.85,
+    1.3
+   ],
+   "r1_hill_slope": [
+    0.9,
+    1.2
+   ],
+   "r1_riverbank": [
+    1,
+    1.08
+   ],
+   "r1_village_earth": [
+    0.95,
+    1.12
+   ]
+  }
+ },
+ "_scatter": {
+  "set": "r1-blender-trees",
+  "willow": "r1_willow",
+  "reeds": "r1_reeds",
+  "poplar": "r1_poplar",
+  "pine": "r1_pine",
+  "rock": "r1_rock_granite",
+  "elm": "r1_elm",
+  "shrub": "r1_shrub",
+  "groves": [
+   [
+    "lousang",
+    "mulberry_tree",
+    14,
+    "r1-blender-lousang"
+   ],
+   [
+    "shrine",
+    "mulberry_tree",
+    10,
+    "r1-blender-lousang"
+   ],
+   [
+    "east_village",
+    "r1_peach_wild",
+    6,
+    null
+   ],
+   [
+    "willow_village",
+    "r1_elm",
+    5,
+    null
+   ],
+   [
+    "peach",
+    "r1_peach_wild",
+    8,
+    null
+   ]
+  ]
+ },
+ "_house": {
+  "set": "r1-blender-lousang",
+  "models": [
+   "lousang_house_thatch",
+   "lousang_house_thatch",
+   "lousang_house_tile"
+  ]
+ },
+ "beacon": {
+  "flatten": [
+   11,
+   20
+  ],
+  "set": "r1-blender-beacon-v2",
+  "model": "r1_beacon_ruin"
+ },
+ "hunter": {
+  "flatten": [
+   9,
+   12
+  ],
+  "set": "r1-blender-wild-places",
+  "model": "r1_hunter_cabin"
+ },
+ "tomb": {
+  "flatten": [
+   10,
+   14
+  ],
+  "set": "r1-blender-wild-places",
+  "model": "r1_han_tomb"
+ },
+ "ferry": {
+  "set": "r1-blender-wild-places",
+  "model": "r1_ferry_landing",
+  "face_water": 4
+ },
+ "wood_bridge": {
+  "set": "r1-blender-wild-places",
+  "model": "r1_wood_bridge"
+ },
+ "exit_0": {
+  "set": "r1-blender-wild-places",
+  "model": "r1_signpost"
+ },
+ "exit_1": {
+  "set": "r1-blender-wild-places",
+  "model": "r1_signpost"
+ },
+ "shrine": {
+  "set": "r1-blender-lousang",
+  "model": "earth_shrine"
+ },
+ "peach": {
+  "fence": {
+   "set": "r1-blender-wild-places",
+   "model": "r1_peach_grove_fence",
+   "radius": 21,
+   "from": 95,
+   "to": 265
+  }
  }
 }
