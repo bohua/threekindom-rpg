@@ -80,6 +80,8 @@ namespace ThreeKingdoms.Gameplay.Story
                 if (OathPetals) OathPetals.SetActive(true);
                 if (OathShot) OathShot.gameObject.SetActive(true);
                 if (Camera && GroveFocus) { Camera.Target = GroveFocus; Camera.Snap(); }
+                var seeThrough = Camera ? Camera.GetComponent<SeeThroughOccluders>() : null;
+                if (seeThrough) { if (GuanYu) seeThrough.AlsoVisible.Add(GuanYu); if (ZhangFei) seeThrough.AlsoVisible.Add(ZhangFei); }
                 Letterbox = true;
                 StoryMusic.Play(StoryMusic.OathCue);
                 yield return FadeTo(0f);
@@ -120,6 +122,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 if (ZhangFei) ZhangFei.gameObject.SetActive(false);
                 if (OathAltar) OathAltar.SetActive(false);
                 if (OathPetals) OathPetals.SetActive(false);
+                if (Camera && Camera.TryGetComponent<SeeThroughOccluders>(out var see)) see.AlsoVisible.Clear();
                 if (OathShot) { OathShot.Distance = shotDistance; OathShot.gameObject.SetActive(false); }
                 Place(Player.transform, OathEndSpot);
                 if (Camera) { Camera.Target = Player.transform; Camera.Snap(); }

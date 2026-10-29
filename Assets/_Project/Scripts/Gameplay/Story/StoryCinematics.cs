@@ -13,8 +13,9 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public interface IView
         {
-            // Bullet time: freeze, darken, unroll the scroll, type the story, stamp 完成, wait for confirm.
-            IEnumerator PlayScroll(string id);
+            // Bullet time: freeze, darken, unroll the scroll, type the story, stamp 完成, wait for confirm; a first
+            // unlock also shows the achievement line.
+            IEnumerator PlayScroll(string id, bool firstUnlock);
             // The opening film (opening-assembled-20261021-v1); skippable; ends at once when the file is missing.
             IEnumerator PlayOpening();
             // The prologue 天下大势 (design/gdd/prologue.md): nine shots over scrolls, the world map and the hero cards;
@@ -37,7 +38,9 @@ namespace ThreeKingdoms.Gameplay.Story
         public static IEnumerator Scroll(string id)
         {
             LastScroll = id;
-            if (View != null) yield return View.PlayScroll(id);
+            // Recorded before it plays, so skipping or closing the scroll still keeps the achievement in this play-through.
+            bool first = GameRun.Current?.Chapter2.UnlockAchievement(id) ?? false;
+            if (View != null) yield return View.PlayScroll(id, first);
         }
 
         public static IEnumerator Opening()
@@ -132,6 +135,20 @@ namespace ThreeKingdoms.Gameplay.Story
             // Unscaled: the scroll freezes time while its music plays.
             music.ignoreListenerPause = sfx.ignoreListenerPause = true;
             go.AddComponent<Fader>();
+            KeepListener();
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += (_, __) => KeepListener();
+        }
+
+        // The town and story scenes have no AudioListener, so nothing was heard (user 2026-10-26: "还是没有任何音乐和
+        // 音效"). The music object carries one, switched on only while no other listener (the battle cameras) is around.
+        static void KeepListener()
+        {
+            if (!music) return;
+            var own = music.GetComponent<AudioListener>();
+            if (!own) own = music.gameObject.AddComponent<AudioListener>();
+            bool other = false;
+            foreach (var l in Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None)) if (l != own && l.isActiveAndEnabled) other = true;
+            own.enabled = !other;
         }
 
         sealed class Fader : MonoBehaviour

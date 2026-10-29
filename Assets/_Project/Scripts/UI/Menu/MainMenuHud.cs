@@ -27,7 +27,7 @@ namespace ThreeKingdoms.UI.Menu
         [Tooltip("Nine-slice borders of the menu's own slices (name,left,right,top,bottom), from their manifest")] public string[] Borders = Array.Empty<string>();
 
         public enum Mode { Closed, Root }
-        public enum Tab { Items, Equip, Skills, Bingshu, Generals, Chronicle, System }
+        public enum Tab { Items, Equip, Skills, Bingshu, Generals, Chronicle, Achievements, System }
 
         public Mode Current { get; private set; } = Mode.Closed;
         public Tab CurrentTab { get; private set; }
@@ -74,6 +74,7 @@ namespace ThreeKingdoms.UI.Menu
             itemIndex = slotIndex = candidateIndex = skillIndex = 0;
             if (tab == Tab.Bingshu) { plateSlot = 0; bingshuFocus = 0; }
             if (tab == Tab.Chronicle) sourceIndex = 0;
+            if (tab == Tab.Achievements) { achIndex = 0; achScroll = 0; }
         }
 
         public void NextTab(int delta)
@@ -107,7 +108,7 @@ namespace ThreeKingdoms.UI.Menu
         public void Confirm()
         {
             if (Current != Mode.Root) return;
-            if (column == 0 && CurrentTab != Tab.Generals && CurrentTab != Tab.System && CurrentTab != Tab.Bingshu && CurrentTab != Tab.Chronicle) { column = 1; return; }
+            if (column == 0 && CurrentTab != Tab.Generals && CurrentTab != Tab.System && CurrentTab != Tab.Bingshu && CurrentTab != Tab.Chronicle && CurrentTab != Tab.Achievements) { column = 1; return; }
             switch (CurrentTab)
             {
                 case Tab.Items: ConfirmItem(); break;
@@ -116,6 +117,7 @@ namespace ThreeKingdoms.UI.Menu
                 case Tab.Bingshu: ConfirmBingshu(); break;
                 case Tab.Generals: Show(Tab.Equip); break;
                 case Tab.Chronicle: ConfirmChronicle(); break;
+                case Tab.Achievements: ConfirmAchievement(); break;
                 case Tab.System: ConfirmSystem(); break;
             }
         }
@@ -129,6 +131,7 @@ namespace ThreeKingdoms.UI.Menu
                 case Tab.System: MoveSystem(dx, dy); return;
                 case Tab.Bingshu: MoveBingshu(dx, dy); return;
                 case Tab.Chronicle: MoveChronicle(dy); return;
+                case Tab.Achievements: MoveAchievements(dx, dy); return;
             }
             if (dx != 0)
             {
@@ -157,7 +160,7 @@ namespace ThreeKingdoms.UI.Menu
 
         void Update()
         {
-            if (Current != Mode.Root || Time.frameCount <= openedFrame) return;
+            if (Current != Mode.Root || replaying || Time.frameCount <= openedFrame) return;
             var kb = Keyboard.current; var pad = Gamepad.current;
             if (pad != null && (pad.leftStick.ReadValue().sqrMagnitude > 0.25f || pad.dpad.ReadValue() != Vector2.zero
                                 || pad.buttonSouth.wasPressedThisFrame || pad.buttonEast.wasPressedThisFrame || pad.leftShoulder.wasPressedThisFrame || pad.rightShoulder.wasPressedThisFrame)) padMode = true;
@@ -207,7 +210,7 @@ namespace ThreeKingdoms.UI.Menu
 
         void OnGUI()
         {
-            if (Current != Mode.Root || Controller == null || Controller.Run == null) return;
+            if (Current != Mode.Root || replaying || Controller == null || Controller.Run == null) return;
             if (paint == null)
             {
                 paint = new MenuPaint(Art, BingshuArt);
@@ -230,12 +233,13 @@ namespace ThreeKingdoms.UI.Menu
                 case Tab.Bingshu: DrawBingshu(); break;
                 case Tab.Generals: DrawParty(); DrawGeneral(); break;
                 case Tab.Chronicle: DrawChronicle(); break;
+                case Tab.Achievements: DrawAchievements(); break;
                 case Tab.System: DrawSystem(); break;
             }
             DrawHints();
         }
 
-        static readonly string[] TabNames = { "物品", "装备", "技能", "兵书", "武将", "史事", "系统" };
+        static readonly string[] TabNames = { "物品", "装备", "技能", "兵书", "武将", "史事", "成就", "系统" };
         public static string TabName(Tab t) => TabNames[(int)t];
 
         Color SilverA(float a) => new Color(MenuPaint.Silver.r, MenuPaint.Silver.g, MenuPaint.Silver.b, a);
@@ -263,7 +267,7 @@ namespace ThreeKingdoms.UI.Menu
             for (int i = 0; i < TabNames.Length; i++)
             {
                 bool sel = (int)CurrentTab == i;
-                var r = p.R(470 + i * 168, 89, 160, 51);
+                var r = p.R(470 + i * 146, 89, 140, 51);   // eight tabs since 史事 and 成就
                 p.Frame(r, sel ? "tab_selected" : "tab", sel ? MenuPaint.Cyan : (Color?)null, sel ? new Color(MenuPaint.SelectBg.r, MenuPaint.SelectBg.g, MenuPaint.SelectBg.b, 0.92f) : (Color?)null);
                 GUI.Label(r, TabNames[i], p.St(28, sel ? Color.white : MenuPaint.Ivory, TextAnchor.MiddleCenter, true));
                 int idx = i;
@@ -298,6 +302,7 @@ namespace ThreeKingdoms.UI.Menu
                 case Tab.Equip: yield return ("A", "Enter", picking && Candidates().ElementAtOrDefault(candidateIndex).worn ? "卸下" : "装备"); break;
                 case Tab.Skills: yield return ("A", "Enter", "使用"); break;
                 case Tab.Generals: yield return ("A", "Enter", "查看装备"); yield return ("Y", "Tab", "查看技能"); break;
+                case Tab.Achievements: yield return ("A", "Enter", "重看画卷"); break;
                 case Tab.Bingshu: yield return ("A", "Enter", "镶嵌兵书"); yield return ("X", "C", "卸下"); yield return ("Y", "Tab", "切换列表"); break;
                 case Tab.Chronicle: yield return ("A", "Enter", "重看序章"); yield return ("Y", "Tab", "旁白文体"); break;
                 default: yield return ("A", "Enter", "确认"); break;
