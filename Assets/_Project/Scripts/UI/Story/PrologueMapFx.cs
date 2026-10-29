@@ -13,7 +13,9 @@ namespace ThreeKingdoms.UI.Story
     // per-pixel "when does this pixel arrive" map built once; missing art falls back to plain shapes.
     public sealed class PrologueMapFx
     {
-        const int W = 960, H = 540;               // working resolution of the drawn layers (half the 1920×1080 map)
+        // Working resolution of the layer being built: the held land at half the 1920×1080 map (a soft fill), the ring and
+        // the arrows at full size so they stay crisp when the 3D camera flies low over them (user 2026-10-28).
+        static int W = 960, H = 540;
         const int BannerFrames = 8, FireFrames = 8;
         const float FrameRate = 10f;
 
@@ -37,6 +39,7 @@ namespace ThreeKingdoms.UI.Story
             spread = new Reveal(mapInner, states ? Sample(states) : Blob(anchor("julu"), 0.33f));
             spread.Order = SpreadOrder(spread.Source, anchor("julu"));
 
+            W = 1920; H = 1080;
             var ringArt = Load("cinnabar_circle");
             var c = anchor("luoyang");
             ring = new Reveal(mapInner, ringArt ? Sample(ringArt) : RingStroke(c, 75f / 1920f, 7));
@@ -48,6 +51,7 @@ namespace ThreeKingdoms.UI.Story
             if (paths.Count == 0) paths = DefaultArrows();
             arrows = new Reveal(mapInner, arrowArt ? Sample(arrowArt) : ArrowStrokes(paths));
             arrows.Order = PathOrder(arrows.Source, paths);
+            W = 960; H = 540;
 
             bannerFrames = Slice(Load("banner_wave"), BannerFrames);
             fireFrames = Slice(Load("fire_loop"), FireFrames);

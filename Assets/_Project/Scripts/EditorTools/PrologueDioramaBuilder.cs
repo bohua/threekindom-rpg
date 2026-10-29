@@ -14,7 +14,9 @@ namespace ThreeKingdoms.EditorTools
     // story layers (the spreading rising, the cinnabar ring, the arrows, the glow, the notices) lie on the ground.
     public static class PrologueDioramaBuilder
     {
-        public const string Set = "prologue-3d-map-blender";
+        // The refined second pass (art/prologue-3d-map-blender-v2) once delivered, else the first.
+        public static readonly string Set = Directory.Exists(@"D:\BuildArtifacts\Codex\hd2d-jrpg\art\prologue-3d-map-blender-v2")
+            ? "prologue-3d-map-blender-v2" : "prologue-3d-map-blender";
         const string PrefabPath = "Assets/_Project/Resources/Prologue/TianxiaDiorama.prefab";
         public const int Layer = 30;   // the diorama renders to its own camera only
         static readonly string[] Models = { "tianxia_terrain", "tianxia_water", "tianxia_peaks", "tianxia_cities", "tianxia_trees", "tianxia_mist" };
