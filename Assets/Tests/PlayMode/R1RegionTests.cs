@@ -78,4 +78,21 @@ public sealed class R1RegionTests
         foreach (var h in Physics.RaycastAll(cam.position, (to - cam.position).normalized, Vector3.Distance(cam.position, to) - 0.5f))
             Assert.IsFalse(h.collider is MeshCollider && h.collider.name.StartsWith("Terrain"), "hillside between camera and party: " + h.collider.name);
     }
+    // Rivers are not walkable (user 2026-10-29): from the bank of the Juma, pushing straight at the river stops at
+    // its edge.
+    [UnityTest]
+    public IEnumerator PartyCannotWalkIntoTheRiver()
+    {
+        GameRun.NewGame(Catalog);
+        SceneManager.LoadScene("Region_R1");
+        yield return WaitScene("Region_R1");
+        var mid = new Vector3(106f, 0, 61.5f);
+        var inward = -new Vector3(0.762f, 0, 0.647f);
+        var bank = mid - inward * 16f;
+        Assert.IsTrue(Physics.Raycast(bank + Vector3.up * 80f, Vector3.down, out var hit, 200f));
+        yield return WalkInto(hit.point + Vector3.up * 0.3f);
+        var cc = Player.GetComponent<CharacterController>();
+        for (int i = 0; i < 120; i++) { cc.Move(inward * 0.25f + Vector3.down * 0.2f); yield return null; }
+        Assert.Greater(Flat(Player.position, mid), 5f, "walked into the river: " + Player.position);
+    }
 }

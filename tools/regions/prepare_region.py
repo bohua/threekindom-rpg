@@ -324,7 +324,12 @@ if ground:
         sat, bri = (ground.get('grade') or {}).get(k, [1, 1])
         im = ImageEnhance.Brightness(ImageEnhance.Color(im).enhance(sat)).enhance(bri)
         im.save(os.path.join(gdir, k + '.png'))
-    ctrl = np.dstack([R, G, B, A]) * 255
+    # Fade every layer to the plain meadow over the last 12 m, so the region meets its outer skirt of meadow cleanly.
+    fy = np.minimum(np.arange(ch), np.arange(ch)[::-1]) / (12.0 * PPM)
+    fx = np.minimum(np.arange(cw), np.arange(cw)[::-1]) / (12.0 * PPM)
+    edge = np.clip(np.minimum.outer(fy, fx), 0, 1)
+    edge = edge * edge * (3 - 2 * edge)
+    ctrl = np.dstack([R * edge, G * edge, B * edge, A * edge]) * 255
     Image.fromarray(ctrl.astype(np.uint8), 'RGBA').save(os.path.join(out, 'ground_control.png'))
 
 # ---- vegetation (hubs "_scatter"): 3D trees, reeds and rocks placed by the ground they stand on ----
@@ -428,6 +433,23 @@ if sc and ground:
                 scatter[-1]['grove'] = name_ + model_
     for v in scatter:
         v.pop('grove', None)
+
+# Hub-file "fence": {set, model, radius, from, to} — a fence of short runs on an arc round a place (degrees, 0 = east,
+# counter-clockwise), each run along the arc, left open where a road comes through.
+for p in places:
+    fc = p.get('fence')
+    if not fc:
+        continue
+    rad, seg = float(fc['radius']), float(fc.get('length', 6))
+    step = math.degrees(seg / rad)
+    a = float(fc['from'])
+    while a + step <= float(fc['to']) + 0.01:
+        mid = math.radians(a + step / 2)
+        x, z = p['x'] + math.cos(mid) * rad, p['z'] + math.sin(mid) * rad
+        if not any(math.hypot(r['pts'][i] - x, r['pts'][i + 1] - z) < r['width'] / 2 + 3 for r in roads for i in range(0, len(r['pts']), 2)):
+            scatter.append(dict(set=fc['set'], model=fc['model'], x=round(x, 2), z=round(z, 2),
+                                yaw=round(-(math.degrees(mid) + 90), 1), scale=1.0))
+        a += step
 
 region = dict(id=P, name=name, scene=f'Region_{P}', width=W, height=D, places=places, roads=roads, waters=waters,
               walls=walls, ground=ground or {}, scatter=scatter, spots=[dict(name=k, x=float(v[0]), z=float(v[1])) for k, v in (hubs.get('_spots') or {}).items()], spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p])

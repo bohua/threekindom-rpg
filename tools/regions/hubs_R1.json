@@ -218,5 +218,14 @@
  "shrine": {
   "set": "r1-blender-lousang",
   "model": "earth_shrine"
+ },
+ "peach": {
+  "fence": {
+   "set": "r1-blender-wild-places",
+   "model": "r1_peach_grove_fence",
+   "radius": 21,
+   "from": 95,
+   "to": 265
+  }
  }
 }

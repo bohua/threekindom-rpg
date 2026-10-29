@@ -299,14 +299,46 @@ namespace ThreeKingdoms.EditorTools
                     r.shadowCastingMode = ShadowCastingMode.On;
                     go.AddComponent<MeshCollider>().sharedMesh = mesh;
                 }
-            // A skirt of the same ground a long way out, so the region's edge is not a cliff into the void.
-            var skirt = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            Object.DestroyImmediate(skirt.GetComponent<Collider>());
-            skirt.name = "Outer ground";
-            skirt.transform.SetParent(g, false);
-            skirt.transform.position = new Vector3(data.width / 2f, -6f, data.height / 2f);   // below every river bed
-            skirt.transform.localScale = new Vector3(data.width / 10f * 4f, 1, data.height / 10f * 4f);
-            skirt.GetComponent<MeshRenderer>().sharedMaterial = Mat("outer ground", new Color(0.56f, 0.62f, 0.44f));
+            // A skirt of the same ground 320 m out, at the border's own heights and in the same material, so the
+            // region's edge reads as more of the land rather than a flat pale plane (not walkable: the edge walls stop
+            // the party first).
+            {
+                const float S = 8f, M = 320f;
+                int n = Mathf.CeilToInt((W + 2 * M) / S), m = Mathf.CeilToInt((Hh + 2 * M) / S);
+                var verts = new List<Vector3>();
+                var tris = new List<int>();
+                for (int iz = 0; iz < m; iz++)
+                    for (int ix = 0; ix < n; ix++)
+                    {
+                        float x0 = -M + ix * S, z0 = -M + iz * S, x1 = x0 + S, z1 = z0 + S;
+                        if (x0 >= 0 && x1 <= W && z0 >= 0 && z1 <= Hh) continue;   // the terrain itself
+                        int b = verts.Count;
+                        foreach (var (x, z) in new[] { (x0, z0), (x1, z0), (x0, z1), (x1, z1) })
+                        {
+                            bool outside = x < 0 || x > W || z < 0 || z > Hh;
+                            verts.Add(new Vector3(x, H(x, z) - (outside ? 0.05f : 0.3f), z));
+                        }
+                        tris.AddRange(new[] { b, b + 2, b + 1, b + 1, b + 2, b + 3 });
+                    }
+                var mesh = new Mesh { name = "Outer ground", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                mesh.SetVertices(verts); mesh.SetTriangles(tris, 0);
+                mesh.RecalculateNormals(); mesh.RecalculateBounds();
+                AssetDatabase.AddObjectToAsset(mesh, meshes);
+                var go = new GameObject("Outer ground");
+                go.transform.SetParent(g, false);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var outer = mat;
+                if (splat)
+                {
+                    // Plain meadow outside: the control map clamped at the border would smear its last row outward.
+                    outer = new Material(mat) { name = "outer ground" };
+                    outer.SetTexture("_Control", null);   // the shader default is black: base layer only
+                    string op = $"{matDir}/outer ground.mat";
+                    if (AssetDatabase.LoadAssetAtPath<Material>(op)) AssetDatabase.DeleteAsset(op);
+                    AssetDatabase.CreateAsset(outer, op);
+                }
+                go.AddComponent<MeshRenderer>().sharedMaterial = outer;
+            }
         }
 
         // ---------- water, roads ----------
@@ -320,6 +352,33 @@ namespace ThreeKingdoms.EditorTools
             {
                 if (w.poly.Length >= 6) PolyMesh(g, w.id, Pts(w.poly), w.level, mat);
                 else if (w.line.Length >= 4) Ribbon(g, w.id, Pts(w.line), w.width, mat, _ => w.level, 0f, false);
+            }
+            // Rivers are not walkable: an invisible wall down each river in 2 m pieces, left open under bridges and at
+            // landings that face the water (their jetties stand over it).
+            var walls = new GameObject("River walls").transform;
+            walls.SetParent(g, false);
+            foreach (var w in data.waters)
+            {
+                if (w.line.Length < 4) continue;
+                var pts = Pts(w.line);
+                for (int i = 0; i + 1 < pts.Count; i++)
+                {
+                    Vector3 a = pts[i], b = pts[i + 1];
+                    float len = Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z));
+                    var dir = new Vector3(b.x - a.x, 0, b.z - a.z) / Mathf.Max(len, 0.01f);
+                    for (float t = 0; t < len; t += 2f)
+                    {
+                        var c = a + dir * Mathf.Min(t + 1f, len);
+                        if (data.places.Any(p => (p.kind == "bridge" && Vector2.Distance(new Vector2(p.x, p.z), new Vector2(c.x, c.z)) < p.w / 2f + 2f)
+                                              || (p.spotBehind && Vector2.Distance(new Vector2(p.x, p.z), new Vector2(c.x, c.z)) < p.w / 2f + w.width / 2f + 2f)))
+                            continue;
+                        var go = new GameObject($"River wall {w.id} {t:0}");
+                        go.transform.SetParent(walls, false);
+                        go.transform.position = new Vector3(c.x, w.level + 1f, c.z);
+                        go.transform.rotation = Quaternion.LookRotation(dir);
+                        go.AddComponent<BoxCollider>().size = new Vector3(Mathf.Max(2f, w.width - 3f), 8f, 2.2f);
+                    }
+                }
             }
         }
 
