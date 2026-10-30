@@ -84,6 +84,10 @@ namespace Prototype.BingshuTactics
         public static bool ZoomAndSlow { get => PlayerPrefs.GetInt(ZoomKey, 1) == 1; set => PlayerPrefs.SetInt(ZoomKey, value ? 1 : 0); }
         public static bool GridRipple { get => PlayerPrefs.GetInt(RippleKey, 1) == 1; set => PlayerPrefs.SetInt(RippleKey, value ? 1 : 0); }
 
+        // 技能特写：0 关／1 首次完整（之后简短）／2 每次完整
+        public const string CutinKey = "settings.hitfeel.cutin";
+        public static int Cutin { get => PlayerPrefs.GetInt(CutinKey, 1); set => PlayerPrefs.SetInt(CutinKey, Mathf.Clamp(value, 0, 2)); }
+
         public static float ShakeScale => Shake == 0 ? 0f : Shake == 1 ? 0.5f : 1f;
 
         // 总开关：关＝改动前的旧反馈（闪白 70 ms、击退 0.15 m、停 70 ms、下沉消失）。测试用它做开／关对比。
