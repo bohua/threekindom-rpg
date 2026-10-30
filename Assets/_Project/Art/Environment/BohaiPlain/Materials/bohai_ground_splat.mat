@@ -55,5 +55,6 @@ Material:
     - _TileMetres: 12
     m_Colors:
     - _Bounds: {r: -560, g: -330, b: 560, a: 340}
+    - _Tint: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
