@@ -55,6 +55,20 @@ namespace ThreeKingdoms.EditorTools
             }
         }
 
+        // Only Gongsun Zan's garrison (-executeMethod …ChapterFieldBuilder.BuildGongsunFromCommandLine), leaving the other
+        // chapter scenes as they are (Lu Zhi's camp is a Blender scene of the region thread now).
+        public static void BuildGongsunFromCommandLine()
+        {
+            try
+            {
+                ImportChapter3Art();
+                BuildGongsun();
+                AssetDatabase.SaveAssets();
+                EditorApplication.Exit(0);
+            }
+            catch (System.Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
+        }
+
         static void BuildChapter3()
         {
             BuildGongsun();
@@ -179,6 +193,17 @@ namespace ThreeKingdoms.EditorTools
                 Person(p, "gs_soldier_b 士卒", Folk("C09"), new Vector3(3.6f, 0, 2f)),
                 Person(p, "gs_guard 南门守卒", Folk("C09"), new Vector3(-2.8f, 0, -20.4f)),
             };
+            // 田豫点兵 (npc-sidequests sq.lb1.r1.tian_yu_roll): four squads on the drill ground, each with its head; the
+            // missing man lies sick behind the hay at the stable, shown once the third squad reports him gone.
+            for (int i = 0; i < 4; i++)
+            {
+                var at = new Vector3(-24f + i * 4.2f, 0, 6.4f);
+                people.Add(Person(p, $"roll_head_{i + 1} 第{"一二三四"[i]}队队头", Folk("C09"), at));
+                for (int k = 0; k < 3; k++) Person(p, $"Squad {i + 1}.{k}", Folk("C09"), at + new Vector3(-1.2f + k * 1.2f, 0, 1.6f), 1);
+            }
+            var sickFlag = new GameObject("roll_h3 (the sick soldier)").transform;
+            sickFlag.SetParent(p, false);
+            people.Add(Person(sickFlag, "roll_sick 病兵", Resident("N02"), new Vector3(29.4f, 0, 12.4f), 7));
             Person(p, "Gate guard E", Folk("C09"), new Vector3(2.8f, 0, -20.4f));
             Person(p, "Hall guard W", Folk("D02"), new Vector3(-3.4f, 0, 15.2f));
             Person(p, "Hall guard E", Folk("D02"), new Vector3(3.4f, 0, 15.2f));
@@ -186,6 +211,7 @@ namespace ThreeKingdoms.EditorTools
             c.Location = FieldStoryController.Place.Gongsun;
             c.People = people.ToArray();
             c.Spots = new[] { Spot(f, "bell 草料堆", new Vector3(27f, 0, 10.6f)) };
+            c.FlagObjects = new[] { sickFlag };
             c.ArrivalSpot = Spot(f, "Arrival (inside the gate)", new Vector3(0, 0, -19f));
             c.ReturnSpot = Spot(f, "Return (drill ground)", new Vector3(-14f, 0, 0f));
             Huds(c);

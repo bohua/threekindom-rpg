@@ -95,7 +95,9 @@ namespace ThreeKingdoms.Gameplay.Story
             {
                 "gongsun_zan" => Gongsun(c) && ch.Has(ChapterScripts3.GongsunGreeted),
                 "baima_rider" => ch.DrillOpen,
-                "tian_yu" => Gongsun(c) && !ch.Has(ChapterState.TianYu),
+                "tian_yu" => Gongsun(c) && !ch.Has(ChapterState.TianYu) && (!ch.Has(RollStarted) || ch.Has(RollFound)),
+                "roll_head_1" or "roll_head_2" or "roll_head_3" or "roll_head_4" => Gongsun(c) && ch.Has(RollStarted) && !ch.Has("roll_h" + id[id.Length - 1]),
+                "roll_sick" => Gongsun(c) && ch.Has("roll_h3") && !ch.Has(RollFound),
                 "yuan_shao" => !ch.Has(ChapterScripts3.Wenjiu),
                 "sz_soldier_a" => !ch.Has(ChapterScripts3.RationsShared),
                 "sz_gs_soldier" => ch.Has(ChapterScripts3.Wenjiu),
@@ -108,6 +110,7 @@ namespace ThreeKingdoms.Gameplay.Story
             var ch = c.Run.Chapter2;
             if (Gongsun(c))
                 return !ch.Has(ChapterScripts3.GongsunGreeted) ? "目标：拜见公孙瓒"
+                    : ch.Has(RollStarted) && !ch.Has(ChapterState.TianYu) ? (ch.Has(RollFound) ? "目标：回校场告诉田豫" : ch.Has("roll_h3") ? "目标：去马厩找第三队少的那个人" : "目标：陪田豫到校场，挨个问四队的队头")
                     : ch.DrillOpen ? "目标：营中整备（可到校场与白马义从演武），准备好后向公孙瓒请命南下" : "目标：营中整备，准备好后向公孙瓒请命南下";
             return ch.Has(ChapterScripts3.Wenjiu) ? "目标：整备后到辕门边公孙瓒营，随军出战虎牢关" : "目标：到会盟坛前拜见盟主袁绍";
         }
@@ -127,6 +130,8 @@ namespace ThreeKingdoms.Gameplay.Story
                 case "groom": return new[] { L("groom", "gs.groom") };
                 case "jian_yong": return new[] { L("jian_yong", "gs.jianyong") };
                 case "tian_yu": return TianYu(c);
+                case "roll_head_1": case "roll_head_2": case "roll_head_3": case "roll_head_4": return RollHead(c, id[id.Length - 1] - '0');
+                case "roll_sick": return RollSick(c);
                 case "gs_soldier_a": return new[] { L("gs_soldier_a", "gs.soldier_a") };
                 case "gs_soldier_b": return new[] { L("gs_soldier_b", "gs.soldier_b") };
                 case "gs_guard": return new[] { L("gs_guard", "gs.guard") };
@@ -170,9 +175,10 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             var ch = c.Run.Chapter2;
             yield return L("gongsun_zan", ch.Has(ChapterState.Drill) ? "gs.zan.after_drill" : "gs.zan.talk");
+            // 田豫点兵 is a must before the call to arms (npc-sidequests sq.lb1.r1.tian_yu_roll).
+            if (!ch.Has(ChapterState.TianYu)) { yield return L("gongsun_zan", "gs.zan.roll_first"); yield break; }
             var left = new List<string>();
             if (ch.DrillOpen) left.Add("校场演武");
-            if (!ch.Has(ChapterState.TianYu)) left.Add("与田豫交谈");
             string ask = "raw:随公孙瓒南下会盟。离开后不能返回" + (left.Count > 0 ? "（尚未完成：" + string.Join("、", left) + "）" : "") + "。确定出发吗？";
             yield return Choice("system", ask, "gs_leave_", new[] { "gs.leave.yes", "gs.leave.no" },
                 new[]
@@ -195,14 +201,51 @@ namespace ThreeKingdoms.Gameplay.Story
                 new[] { L("baima_rider", "gs.drill.later") });
         }
 
+        // 田豫点兵 (npc-sidequests R1_R2 sq.lb1.r1.tian_yu_roll, core layer; lines dlg.lb1.tian_yu.N4.* and
+        // dlg.lb1.tian_yu_roll.*): Tian Yu offers to count the men; Liu Bei walks him round the four squads on the drill
+        // ground; the third is a man short ("ran off"), Tian Yu will not write "fled" before he has seen him, and he is found
+        // sick behind the hay. Tian Yu writes "sick" before the squad; done, he joins (the existing TianYu flag).
+        public const string RollStarted = "roll_started", RollFound = "roll_found";
+
         static IEnumerable<StageStep> TianYu(FieldStoryController c)
         {
             var ch = c.Run.Chapter2;
             if (ch.Has(ChapterState.TianYu)) { yield return L("tian_yu", "gs.tianyu.after"); yield break; }
-            foreach (var s in Lines("tian_yu", "gs.tianyu.1", "liu_bei", "gs.tianyu.2", "tian_yu", "gs.tianyu.3", "liu_bei", "gs.tianyu.4", "tian_yu", "gs.tianyu.5"))
+            if (!ch.Has(RollStarted))
+            {
+                foreach (var s in Lines("tian_yu", "gs.tianyu.1", "zhang_fei", "gs.tianyu.zf", "tian_yu", "gs.tianyu.2"))
+                    yield return s;
+                yield return Flag(RollStarted);
+                yield break;
+            }
+            if (!ch.Has(RollFound)) { yield return L("tian_yu", "gs.roll.wait"); yield break; }
+            foreach (var s in Lines("tian_yu", "gs.roll.s4", "tian_yu", "gs.roll.s5"))
                 yield return s;
             yield return Flag(ChapterState.TianYu);
-            yield return Remember("tian_yu", "tianyu_met", "seen", "mem.tianyu_met");
+            yield return Remember("tian_yu", "first_roll", "fair", "mem.tianyu_roll");
+        }
+
+        static IEnumerable<StageStep> RollHead(FieldStoryController c, int n)
+        {
+            var ch = c.Run.Chapter2;
+            if (!ch.Has(RollStarted)) { yield return L("roll_head", "gs.roll.idle"); yield break; }
+            if (n == 3)
+            {
+                yield return L("roll_head", "gs.roll.s2.1");
+                yield return L("tian_yu", "gs.roll.s2.2");
+            }
+            else yield return L("roll_head", "gs.roll.head" + n);
+            yield return Flag("roll_h" + n);
+            yield return Call(c.RefreshFlags);
+        }
+
+        static IEnumerable<StageStep> RollSick(FieldStoryController c)
+        {
+            var ch = c.Run.Chapter2;
+            if (ch.Has(RollFound)) { yield return L("roll_sick", "gs.roll.sick.after"); yield break; }
+            foreach (var s in Lines("roll_sick", "gs.roll.s3.1", "liu_bei", "gs.roll.s3.lb"))
+                yield return s;
+            yield return Flag(RollFound);
         }
 
         // R15: the soldiers short of grain; Liu Bei shares his own (a ration or 20 copper), reputation +1.
