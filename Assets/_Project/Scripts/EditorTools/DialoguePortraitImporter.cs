@@ -63,7 +63,19 @@ namespace ThreeKingdoms.EditorTools
             ("cao_ren", V05, "CAO_REN_PORTRAIT", true, false, 0.6f, 0.5f),
             ("cao_bao", V05, "CAO_BAO_PORTRAIT", true, false, 0.6f, 0.5f),
             ("tao_qian", @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\tao-qian-portrait", "TAO_QIAN_MAIN_PORTRAIT", true, false, 0.6f, 0.5f),
+            // Chapter one's side quests (Codex art/ch1-npc-portraits after art/ch1-npc-concept).
+            ("gu_sou", Ch1, "GU_SOU_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("a_he", Ch1, "A_HE_PORTRAIT", true, false, 0.62f, 0.5f),
+            ("a_he_tow", Ch1, "A_HE_PORTRAIT", true, false, 0.62f, 0.5f),
+            ("zhang_shiping", Ch1, "ZHANG_SHIPING_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("lu_yu", Ch1, "LU_YU_PORTRAIT", true, false, 0.62f, 0.5f),
+            ("ying_shao", Ch1, "YING_SHAO_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("zheng_xuan", Ch1, "ZHENG_XUAN_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("dian_wei", Ch1, "DIAN_WEI_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("hua_tuo", Ch1, "HUA_TUO_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("zhang_liao", Ch1, "ZHANG_LIAO_PORTRAIT", true, false, 0.6f, 0.5f),
         };
+        const string Ch1 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\ch1-npc-portraits";
         const string V05 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v05-portraits";
         const string V04 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v04-portraits";
         const string V03 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v03-portraits";

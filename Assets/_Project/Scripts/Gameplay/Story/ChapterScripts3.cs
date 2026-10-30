@@ -170,6 +170,7 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return L("narrator", "d9.4");
             yield return EndChronicle();
             yield return Fade(1f);
+            foreach (var s in SideQuests.StageExtras("after_bianshui", GameRun.Current?.Chapter2 ?? new ChapterState())) yield return s;
 
             yield return Card("card.ruins");
             yield return Background("luoyang_ruins");

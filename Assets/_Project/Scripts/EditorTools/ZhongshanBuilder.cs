@@ -1727,7 +1727,7 @@ namespace ThreeKingdoms.EditorTools
             _ => "道路",
         };
 
-        static MountRider AddRider(GameObject character, string key)
+        internal static MountRider AddRider(GameObject character, string key)
         {
             var rider = character.AddComponent<MountRider>();
             var walkAnimator = character.GetComponentInChildren<SpriteFrameAnimator>();

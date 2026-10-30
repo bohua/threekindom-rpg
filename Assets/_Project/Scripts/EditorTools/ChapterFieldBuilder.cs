@@ -509,6 +509,9 @@ namespace ThreeKingdoms.EditorTools
 
         // ---------- Lu Zhi's camp (S1, about 60 × 40 m; the south gate at z −20, the command tent at z 12) ----------
 
+        const string CampSet = "r3-blender-luzhi-camp";
+        static bool campModels;
+
         static void BuildCamp()
         {
             dir = $"{ArtRoot}/Camp";
@@ -524,44 +527,85 @@ namespace ThreeKingdoms.EditorTools
 
             Ground(env, "Grass outside", "ground_camp_grass", grass, -70, 70, -60, 60, -0.02f);
             Ground(env, "Camp ground", "ground_camp_dirt_a", dirt, -30, 30, -20, 20);
-            Ground(env, "Main road", "ground_camp_ruts", new Color(0.72f, 0.62f, 0.46f), -2.5f, 2.5f, -24, 4, 0.01f);
-            Ground(env, "Command square", "ground_camp_dirt_b", new Color(0.82f, 0.72f, 0.54f), -6, 6, 0, 11, 0.012f);
+            // The road and the command square used to be two hard rectangles of another dirt on the camp ground (user
+            // 2026-10-28: every ground change needs a transition); with the Blender camp the camp dirt alone carries them.
+            if (!Directory.Exists(Path.Combine(Art, CampSet)))
+            {
+                Ground(env, "Main road", "ground_camp_ruts", new Color(0.72f, 0.62f, 0.46f), -2.5f, 2.5f, -24, 4, 0.01f);
+                Ground(env, "Command square", "ground_camp_dirt_b", new Color(0.82f, 0.72f, 0.54f), -6, 6, 0, 11, 0.012f);
+            }
+
+            // Codex Blender models (user 2026-10-27: hubs are modelled, art/r3-blender-luzhi-camp); without the set, the
+            // painted billboards as before.
+            campModels = BlenderModels.Import(CampSet);
+            // The ivory canvas burns out under the camp's sun; take it down to the concept's warm off-white.
+            BlenderModels.Tint(CampSet, "canvas_ivory", new Color(0.80f, 0.77f, 0.70f));
+            Transform M(string model, string name, float x, float z, float yaw = 0f) =>
+                campModels ? BlenderModels.Place(CampSet, env, model, name, new Vector3(x, 0, z), yaw) : null;
+            void Fence(string name, Vector3 a, Vector3 b)
+            {
+                if (!campModels) { Strip(env, name, "palisade_segment", a, b, 2.5f, wood); return; }
+                float len = Vector3.Distance(a, b), yaw = Mathf.Atan2(b.x - a.x, b.z - a.z) * Mathf.Rad2Deg - 90f;
+                int n8 = Mathf.FloorToInt(len / 8f);
+                float rem = len - n8 * 8f;
+                var pieces = Enumerable.Repeat(8f, n8).ToList();
+                if (rem > 2f) pieces.Add(rem); else if (n8 > 0) for (int i = 0; i < n8; i++) pieces[i] = len / n8; else pieces.Add(len);
+                float at = 0f;
+                foreach (float piece in pieces)
+                {
+                    bool small = piece < 6f;
+                    var t = M(small ? "camp_palisade_4m" : "camp_palisade_8m", name, 0, 0, yaw);
+                    t.localPosition = Vector3.Lerp(a, b, (at + piece / 2f) / len);
+                    t.localScale = new Vector3(piece / (small ? 4f : 8f), 1f, 1f);
+                    at += piece;
+                }
+            }
 
             // Palisade all round with the gate in the south; abatis outside; two watchtowers at the gate.
-            Strip(env, "Palisade S-W", "palisade_segment", new Vector3(-30, 0, -20), new Vector3(-3, 0, -20), 2.5f, wood);
-            Strip(env, "Palisade S-E", "palisade_segment", new Vector3(3, 0, -20), new Vector3(30, 0, -20), 2.5f, wood);
-            Strip(env, "Palisade W", "palisade_segment", new Vector3(-30, 0, -20), new Vector3(-30, 0, 20), 2.5f, wood);
-            Strip(env, "Palisade E", "palisade_segment", new Vector3(30, 0, -20), new Vector3(30, 0, 20), 2.5f, wood);
-            Strip(env, "Palisade N", "palisade_segment", new Vector3(-30, 0, 20), new Vector3(30, 0, 20), 2.5f, wood);
-            Billboard(env, "Gate frame", "palisade_gate", 0, -20.2f, new Vector3(6f, 4f, 0.4f), wood);
-            Billboard(env, "Watchtower W", "watchtower", -4.6f, -20.6f, new Vector3(3f, 8f, 3f), wood, solid: true);
-            Billboard(env, "Watchtower E", "watchtower", 4.6f, -20.6f, new Vector3(3f, 8f, 3f), wood, solid: true);
+            float gateHalf = campModels ? 6.2f : 3f;
+            Fence("Palisade S-W", new Vector3(-30, 0, -20), new Vector3(-gateHalf, 0, -20));
+            Fence("Palisade S-E", new Vector3(gateHalf, 0, -20), new Vector3(30, 0, -20));
+            Fence("Palisade W", new Vector3(-30, 0, -20), new Vector3(-30, 0, 20));
+            Fence("Palisade E", new Vector3(30, 0, -20), new Vector3(30, 0, 20));
+            Fence("Palisade N", new Vector3(-30, 0, 20), new Vector3(30, 0, 20));
+            if (!M("camp_gate", "Gate", 0, -20f)) Billboard(env, "Gate frame", "palisade_gate", 0, -20.2f, new Vector3(6f, 4f, 0.4f), wood);
+            if (!M("camp_watchtower", "Watchtower W", -4.6f, -20.6f)) Billboard(env, "Watchtower W", "watchtower", -4.6f, -20.6f, new Vector3(3f, 8f, 3f), wood, solid: true);
+            if (!M("camp_watchtower", "Watchtower E", 4.6f, -20.6f)) Billboard(env, "Watchtower E", "watchtower", 4.6f, -20.6f, new Vector3(3f, 8f, 3f), wood, solid: true);
             for (int i = 0; i < 6; i++)
             {
                 Billboard(env, "Abatis W" + i, "luzhai_abatis", -26 + i * 4f, -21.6f, new Vector3(3.6f, 1.2f, 0.6f), wood);
                 Billboard(env, "Abatis E" + i, "luzhai_abatis", 7 + i * 4f, -21.6f, new Vector3(3.6f, 1.2f, 0.6f), wood);
             }
 
-            // The command tent with its open square (≥ 8 × 10 m), the 盧 banner and the great standard.
-            Billboard(env, "Command tent", "tent_han_command", 0, 13.5f, new Vector3(13f, 8f, 7f), canvas, solid: true);
-            Billboard(env, "Banner 盧", "banner_lu_general", -7.5f, 11.5f, new Vector3(0.6f, 5f, 0.3f), red);
-            Billboard(env, "Great standard", "banner_dadu_red", 7.5f, 11.5f, new Vector3(0.8f, 6f, 0.3f), red);
+            // The command tent with its open square (≥ 8 × 10 m), the 盧 banners (the model carries its own) and the great standard.
+            if (!M("camp_command_tent", "Command tent", 0, 11.6f))
+            {
+                Billboard(env, "Command tent", "tent_han_command", 0, 13.5f, new Vector3(13f, 8f, 7f), canvas, solid: true);
+                Billboard(env, "Banner 盧", "banner_lu_general", -7.5f, 11.5f, new Vector3(0.6f, 5f, 0.3f), red);
+            }
+            Billboard(env, "Great standard", "banner_dadu_red", 8.5f, 11.5f, new Vector3(0.8f, 6f, 0.3f), red);
             // Rows of tents on both sides of the main road.
             float[] rows = { -14f, -7f };
             foreach (float z in rows)
                 foreach (float x in new[] { -24f, -17f, 17f, 24f })
-                    Billboard(env, $"Tent {x},{z}", "tent_han_small", x, z, new Vector3(5f, 3.5f, 4f), canvas, solid: true);
+                    if (!M("camp_tent_small", $"Tent {x},{z}", x, z - 1.5f)) Billboard(env, $"Tent {x},{z}", "tent_han_small", x, z, new Vector3(5f, 3.5f, 4f), canvas, solid: true);
             foreach (float x in new[] { -8f, 8f })
-                Billboard(env, $"Tent road {x}", "tent_han_small", x, -14f, new Vector3(5f, 3.5f, 4f), canvas, solid: true);
+                if (!M("camp_tent_small", $"Tent road {x}", x, -15.5f)) Billboard(env, $"Tent road {x}", "tent_han_small", x, -14f, new Vector3(5f, 3.5f, 4f), canvas, solid: true);
             // Supply tent (east) and the wounded (west), each with 6 m clear before the door.
-            Billboard(env, "Supply tent", "tent_han_supply", 12f, 1f, new Vector3(7f, 4f, 5f), canvas, solid: true);
+            if (!M("camp_tent_large", "Supply tent", 12f, 0.6f)) Billboard(env, "Supply tent", "tent_han_supply", 12f, 1f, new Vector3(7f, 4f, 5f), canvas, solid: true);
             Billboard(env, "Grain sacks", "grain_sacks", 15.4f, -1f, new Vector3(2f, 1.5f, 1.5f), new Color(0.80f, 0.72f, 0.52f), solid: true);
             Billboard(env, "Arrow bundles", "arrow_bundles", 8.6f, -0.6f, new Vector3(1.5f, 1.5f, 1f), wood);
-            Billboard(env, "Wounded tent", "tent_han_wounded", -12f, 1f, new Vector3(7f, 4f, 5f), canvas, solid: true);
+            if (!M("camp_tent_large", "Wounded tent", -12f, 0.6f)) Billboard(env, "Wounded tent", "tent_han_wounded", -12f, 1f, new Vector3(7f, 4f, 5f), canvas, solid: true);
             Billboard(env, "Straw mat A", "straw_mat", -10.8f, -2.4f, new Vector3(2f, 0.2f, 1f), new Color(0.80f, 0.70f, 0.44f));
             Billboard(env, "Straw mat B", "straw_mat", -13.4f, -2.4f, new Vector3(2f, 0.2f, 1f), new Color(0.80f, 0.70f, 0.44f));
             // Stable (north-east) and training ground (north-west).
-            Billboard(env, "Stable", "stable_shed", 19f, 14f, new Vector3(10f, 5f, 5f), wood, solid: true);
+            // The models' flat earth aprons are a lighter patch with a hard edge on the camp dirt (user 2026-10-28: "军营帐篷到
+            // 旁边的土地……颜色明显就是一个断层"): the camp ground is earth already, so they go.
+            if (campModels)
+                foreach (var r in env.GetComponentsInChildren<MeshRenderer>(true))
+                    if (r && r.bounds.size.y < 0.35f && r.sharedMaterials.Length > 0 && r.sharedMaterials.All(m => m && m.name.StartsWith("mud_camp")))
+                        Object.DestroyImmediate(r.gameObject);
+            if (!M("camp_stable", "Stable", 19f, 12f)) Billboard(env, "Stable", "stable_shed", 19f, 14f, new Vector3(10f, 5f, 5f), wood, solid: true);
             Billboard(env, "Horse", "horse_brown", 17.4f, 12.6f, new Vector3(2.5f, 2f, 0.8f), new Color(0.48f, 0.30f, 0.18f));
             Billboard(env, "Trough", "horse_trough", 21f, 12.2f, new Vector3(3f, 1f, 1f), wood);
             Billboard(env, "Hay", "grain_sacks", 23.4f, 14.6f, new Vector3(2f, 1.6f, 1.6f), new Color(0.86f, 0.76f, 0.40f), solid: true);
@@ -590,12 +634,23 @@ namespace ThreeKingdoms.EditorTools
             };
             for (int i = 0; i < 3; i++)
                 Person(p, "Han soldier " + i, Folk("C09"), new Vector3(-6f + i * 6f, 0, -10f + (i % 2) * 2f));
+            people.AddRange(SidePeople(FieldStoryController.Place.Camp, p));
             var c = f.Controller;
             c.Location = FieldStoryController.Place.Camp;
             c.People = people.ToArray();
             c.Spots = new[] { Spot(f, "quiver 草堆", new Vector3(23.4f, 0, 13.2f)) };
             c.ArrivalSpot = Spot(f, "Arrival (inside the gate)", new Vector3(0, 0, -17f));
             c.ReturnSpot = c.ArrivalSpot;
+            // Out through the gate into the R3 巨鹿 region (the Guangzong country round the camp) while the camp is free to
+            // walk; back in through its gate arrives inside it (RegionGreyboxBuilder, tools/regions/hubs_R3.json).
+            var gateOut = new GameObject("Portal to the Julu region").AddComponent<RegionPortal>();
+            gateOut.transform.SetParent(env, false);
+            gateOut.transform.position = new Vector3(0, 0, -25f);
+            gateOut.Size = new Vector2(8f, 3f);
+            gateOut.TargetScene = "Region_R3";
+            gateOut.ArrivalSpot = "Arrival outside Lu Zhi camp gate";
+            gateOut.Facing = Vector3.back;
+            gateOut.Steps = new[] { (int)ChapterStep.Camp };
             Huds(c);
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), CampPath);
         }
@@ -705,6 +760,7 @@ namespace ThreeKingdoms.EditorTools
             bound.gameObject.SetActive(false);
             var ox = Billboard(p, "ox 黄牛", "PROP_OX_WALK_STRIP", 0, -1.2f, new Vector3(1.8f, 1.3f, 0.8f), new Color(0.62f, 0.42f, 0.22f), frames: 4);
             people.Add(ox);
+            people.AddRange(SidePeople(FieldStoryController.Place.Anxi, p));
             var c = f.Controller;
             c.Location = FieldStoryController.Place.Anxi;
             c.People = people.ToArray();

@@ -172,6 +172,7 @@ namespace ThreeKingdoms.Gameplay.Story
             string speaker = id;
             yield return (speaker, $"echo.{id}.{v}");
             yield return (speaker, $"echo.{id}.{v}.2");
+            foreach (var extra in SideQuestsR8.EchoExtras(ch, id)) yield return extra;
         }
     }
 }

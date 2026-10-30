@@ -21,7 +21,7 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             var ch = c.Run.Chapter2;
             if (ch.Step == ChapterStep.Pingyuan && !ch.Has(ChapterScripts4.PingyuanGreeted)) return Arrival();
-            if (ch.Step == ChapterStep.Zhending && !ch.Has(ChapterScripts4.Assassin)) return AssassinScene(c);
+            if (ch.Step == ChapterStep.Zhending && !ch.Has(ChapterScripts4.Assassin)) return new[] { Autosave(RegionLocation), L("system", "sq.r4.n6.goal") };
             if (ch.Step == ChapterStep.Beihai)   // 0.5: Taishi Ci (F1); after choice ⑧B he waits at the south gate
                 return ch.Has(ChapterScripts5.TaishiArrived) ? new[] { Autosave(RegionLocation), Show("taishi_ci", -57f, -190f, "back") } : TaishiArrival();
             if (ch.Step == ChapterStep.Pingyuan || ch.Step == ChapterStep.PingyuanSafe || ch.Step == ChapterStep.Zhending)
@@ -48,7 +48,7 @@ namespace ThreeKingdoms.Gameplay.Story
         }
 
         // E9 平原相与刺客刘平（史实·先主传；“待客甚厚”裴注引《魏书》）; choice ⑦; Zhang Fei held back (R12).
-        static IEnumerable<StageStep> AssassinScene(FieldStoryController c)
+        public static IEnumerable<StageStep> Assassin(FieldStoryController c)
         {
             yield return Autosave(RegionLocation);
             yield return Show("liu_bei", -60f, -150f, "front");
@@ -84,8 +84,8 @@ namespace ThreeKingdoms.Gameplay.Story
                 new[]
                 {
                     L("liu_bei", "f1.a.1"), L("taishi_ci", "f1.a.2"), Remember("taishi_ci", "taishici_plea", "A_now", "mem.taishici.A"),
-                    Flag(ChapterScripts5.TaishiArrived), Fade(1f), Load(GameRun.StageScene, ChapterScripts5.ToDuchang),
-                },
+                    Flag(ChapterScripts5.TaishiArrived),
+                }.Concat(SideQuestsR4.FarewellSteps(GameRun.Current.Chapter2)).Concat(new[] { Fade(1f), Load(GameRun.StageScene, ChapterScripts5.ToDuchang) }).ToArray(),
                 new[]
                 {
                     L("liu_bei", "f1.b.1"), L("taishi_ci", "f1.b.2"), Remember("taishi_ci", "taishici_plea", "B_asked", "mem.taishici.B"),
@@ -138,6 +138,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 ChapterStep.Pingyuan => "目标：流寇犯境——到南门找驿卒，出城迎击",
                 ChapterStep.PingyuanSafe => "目标：整顿平原，准备好后到南门外平原津渡河北上",
                 ChapterStep.Beihai => "目标：北海告急——整备后到南门找太史慈，同赴都昌",
+                ChapterStep.Zhending => "目标：界桥之后回到平原——四处走走，准备好后到县衙前找县吏，回相府见客",
                 _ => "目标：回县衙",
             };
         }
@@ -208,7 +209,7 @@ namespace ThreeKingdoms.Gameplay.Story
                     {
                         L("taishi_ci", "f1.gate"),
                         Choice("system", "f1.gate.ask", "pyb_", new[] { "f1.gate.yes", "gs.leave.no" },
-                            new[] { Fade(1f), Load(GameRun.StageScene, ChapterScripts5.ToDuchang) }, new StageStep[0]),
+                            SideQuestsR4.FarewellSteps(ch).Concat(new[] { Fade(1f), Load(GameRun.StageScene, ChapterScripts5.ToDuchang) }).ToArray(), new StageStep[0]),
                     };
                 case "py_merchant": return new[] { L("py_merchant", "py.merchant"), Call(() => c.pendingPanel = TownStoryController.ShopPanel) };
                 case "py_man": case "py_woman": case "py_child":
