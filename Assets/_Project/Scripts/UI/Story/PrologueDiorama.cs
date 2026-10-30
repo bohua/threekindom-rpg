@@ -27,10 +27,26 @@ namespace ThreeKingdoms.UI.Story
 
         public Texture Image => target;
 
+        // Starts reading the map in the background (a story stage, before its march), so the march does not stall on it
+        // (about a second in a Windows build, measured 2026-10-30).
+        static ResourceRequest preload;
+        public static void Preload()
+        {
+            if (preload == null) preload = Resources.LoadAsync<GameObject>("Prologue/TianxiaDiorama");
+        }
+
+        // Lets the map's textures go with the scene that read it ahead.
+        public static void ReleasePreload() => preload = null;
+
         public static PrologueDiorama TryCreate()
         {
-            var prefab = Resources.Load<GameObject>("Prologue/TianxiaDiorama");
-            return prefab ? new PrologueDiorama(prefab) : null;
+            // Timed and measured in the log: the map is reused across the game (user 2026-10-29), so its load stays visible.
+            long before = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            var prefab = preload != null && preload.isDone ? preload.asset as GameObject : Resources.Load<GameObject>("Prologue/TianxiaDiorama");
+            var map = prefab ? new PrologueDiorama(prefab) : null;
+            Debug.Log($"TIANXIA_LOAD {watch.ElapsedMilliseconds} ms, +{(UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() - before) / (1024 * 1024)} MB allocated, textures {UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver() / (1024 * 1024)} MB on the graphics driver");
+            return map;
         }
 
         PrologueDiorama(GameObject prefab)

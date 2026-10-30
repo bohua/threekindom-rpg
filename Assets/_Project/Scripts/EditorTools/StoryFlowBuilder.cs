@@ -259,6 +259,7 @@ namespace ThreeKingdoms.EditorTools
             Object.DestroyImmediate(zou.GetComponent<Collider>());
             zou.SetActive(false);
             c.ZouJing = zou.transform;
+            ZhuojunSideFolk.AddTo(c);   // chapter 1 side-quest people with their own sprites (npc-sidequests R1)
             // The second batch of townsfolk (user 2026-10-22) and the four who do more than talk.
             c.Ambient = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
                 .Where(t => t.parent && t.parent.name == "Townsfolk").OrderBy(t => t.name).ToArray();

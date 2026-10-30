@@ -483,7 +483,8 @@ namespace ThreeKingdoms.UI.Story
 
 
             proScene = Layer(proRoot);
-            var scene = Art("zhuojun_notice");
+            // The last shot: Lousang's great mulberry (user 2026-10-30, the game then opens there), else the old notice board.
+            var scene = Art("lousang_mulberry") ?? Art("zhuojun_notice");
             if (scene) proScene.style.backgroundImage = scene;
             else proScene.style.backgroundColor = new Color(0.55f, 0.6f, 0.62f);
             proScene.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(60));

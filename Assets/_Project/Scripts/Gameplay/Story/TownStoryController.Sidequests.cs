@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using ThreeKingdoms.Core.Story;
 using UnityEngine;
 
@@ -15,13 +16,20 @@ namespace ThreeKingdoms.Gameplay.Story
     //     Lu Yu at the family's gate between the granary and the west gate, his widowed sister-in-law at the stove. Liu Bei
     //     may give three rations (memory lu_yu.rice=given), and, if he carries the stone-classic copy from Luoyang's
     //     ruins (R5b, flag lb1.L4.rubbing_got), leave it with Lu Yu or keep it (lu_yu.rubbing=gave_rubbing|kept_rubbing).
-    // They stand in for the new Q sprites (Codex art/ch1-npc-sprites) as copies of townsfolk until those arrive.
+    // Each is a copy of a hidden template with its own Q sprite (SideFolk, ZhuojunSideFolk; Codex art/ch1-npc-sprites),
+    // or of a townsperson when the scene has no template yet.
     public sealed partial class TownStoryController
     {
         public const string ZhuoGift = "lb1.L5.zhuo_gift", ZhuoWeapons = "lb1.L5.zhuo_weapons", GuSouHeard = "lb1.L1.gu_sou_1";
         public const string LuMen = "lb1.L4.zhuo", LuMenHeard = "lb1.L4.zhuo_heard", RubbingGot = "lb1.L4.rubbing_got", LuzhiSlip = "lb1.L4.luzhi_slip";
 
+        [Tooltip("Hidden templates of the side-quest people with their own sprites, named \"<id> <label>\" (ZhuojunSideFolk)")]
+        public Transform[] SideFolk = new Transform[0];
+
         Transform zhangShiping, suShuang, guSou, luYu, luSao;
+
+        // The template for an id, or the townsperson to copy in its place.
+        Transform Like(string id, Transform fallback) => SideFolk.FirstOrDefault(t => t && t.name.StartsWith(id + " ")) ?? fallback;
         bool hintedSmith;
 
         bool InZhuojunYears => Run.Chapter2.Step <= ChapterStep.ZhuojunFree;
@@ -32,8 +40,8 @@ namespace ThreeKingdoms.Gameplay.Story
             if (node >= 6 && node <= 7)
             {
                 // Between the granary (08) and the west gate (12), the doorway clear in front (open-space rule).
-                luYu = StandIn(Resident("N10") ?? Resident("N09"), "lu_yu 卢毓", new Vector3(-40f, 0, 6f));
-                luSao = StandIn(Resident("N08"), "lu_sao 卢家长嫂", new Vector3(-42.5f, 0, 8f));
+                luYu = StandIn(Like("lu_yu", Resident("N10") ?? Resident("N09")), "lu_yu 卢毓", new Vector3(-40f, 0, 6f));
+                luSao = StandIn(Like("lu_sao", Resident("N08")), "lu_sao 卢家长嫂", new Vector3(-42.5f, 0, 8f));
                 if (!Run.Chapter2.Has(LuMenHeard)) StartCoroutine(Hold(LuMenNews()));
             }
             if (!InZhuojunYears) return;
@@ -41,11 +49,11 @@ namespace ThreeKingdoms.Gameplay.Story
             var courier = Resident("N07");
             if (story.BattlesDone >= 1 && courier)
             {
-                zhangShiping = StandIn(Resident("N11"), "zhang_shiping 张世平", courier.position + new Vector3(2.6f, 0, 1.4f));
-                suShuang = StandIn(Resident("N20") ?? Resident("N11"), "su_shuang 苏双", courier.position + new Vector3(4.2f, 0, 0.6f));
+                zhangShiping = StandIn(Like("zhang_shiping", Resident("N11")), "zhang_shiping 张世平", courier.position + new Vector3(2.6f, 0, 1.4f));
+                suShuang = StandIn(Like("su_shuang", Resident("N20") ?? Resident("N11")), "su_shuang 苏双", courier.position + new Vector3(4.2f, 0, 0.6f));
             }
             if (story.BattlesDone >= StoryState.BattleCount && Innkeeper)
-                guSou = StandIn(Resident("N09"), "gu_sou 鼓叟", Innkeeper.position + new Vector3(2.4f, 0, -0.4f));
+                guSou = StandIn(Like("gu_sou", Resident("N09")), "gu_sou 鼓叟", Innkeeper.position + new Vector3(2.4f, 0, -0.4f));
         }
 
         // A copy of a townsperson standing still at the spot, renamed for the prompt.
