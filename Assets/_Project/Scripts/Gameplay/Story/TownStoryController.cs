@@ -176,6 +176,7 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             Run = GameRun.Current ?? GameRun.NewGame(Catalog);
             var story = Run.Story;
+            bool firstArrival = Run.NextArrival == GameRun.Arrival.NewGame;
             Place(Player.transform, Run.NextArrival switch
             {
                 GameRun.Arrival.ReturnFromBattle => ReturnSpot,
@@ -197,6 +198,8 @@ namespace ThreeKingdoms.Gameplay.Story
             ShowZouJing();
             if (story.Phase == StoryPhase.Oath) StartCoroutine(PlayOath());
             else if (Run.Chapter2.Step == ChapterStep.ZouJingOrders) StartCoroutine(PlayZouJingOrders());   // 0.2 C1
+            else if (firstArrival && PlayArrivalIntro && story.Phase == StoryPhase.FindCompanions && !story.ZhangFeiJoined)
+                StartCoroutine(PlayArrival());   // the first look at Zhuojun (user 2026-10-26)
             Changed?.Invoke();
         }
 

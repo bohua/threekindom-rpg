@@ -55,9 +55,10 @@ public sealed class ZhuojunTownTests
         yield return null;
         foreach (var r in Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
         {
-            var tex = r.sharedMaterial ? r.sharedMaterial.GetTexture("_BaseMap") : null;
+            var tex = r.sharedMaterial && r.sharedMaterial.HasProperty("_BaseMap") ? r.sharedMaterial.GetTexture("_BaseMap") : null;   // the blended ground has its own layers
             if (tex == null || r.name == "Pixel sprite") continue;
-            Assert.AreEqual(FilterMode.Point, tex.filterMode, r.name + " " + tex.name);
+            // Pixel textures stay point-filtered; the HD renovation's painted textures (2026-10-26) are mipmapped instead.
+            Assert.IsTrue(tex.filterMode == FilterMode.Point || tex.mipmapCount > 1, r.name + " " + tex.name + " " + tex.filterMode);
         }
         var smithy = GameObject.Find("02 Weapons shop").transform.Find("Front").GetComponent<MeshRenderer>().sharedMaterial;
         Assert.IsTrue(smithy.IsKeywordEnabled("_EMISSION"), "forge glow kept (RealtimeEmissive)");
@@ -114,17 +115,25 @@ public sealed class ZhuojunTownTests
         yield return Stand(new Vector3(0, 0, 12.5f));
         Assert.AreEqual("Commandery steps", follow.ActiveZone.name);
         Assert.AreEqual(17f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "low angle up at the hall");
-        float stepsDistance = Vector3.Distance(follow.transform.position, mover.transform.position);
 
         yield return Stand(new Vector3(0, 0, -15f));
-        Assert.AreEqual("Main axis and square", follow.ActiveZone.name);
-        Assert.AreEqual(32f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "high over the square");
-        Assert.Greater(Vector3.Distance(follow.transform.position, mover.transform.position), stepsDistance + 8f, "pulled back");
+        yield return new WaitForSeconds(4f);   // the axis eases in slowly
+        Assert.AreEqual("Main axis", follow.ActiveZone.name);
+        Assert.AreEqual(11f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "low along the main axis, entering the town (user 2026-10-26)");
 
         yield return Stand(new Vector3(30f, 0, -8f));
         Assert.AreEqual(12f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.y), 1f, "turned toward the smithy street");
         var toPlayer = (mover.transform.position + Vector3.up - follow.transform.position).normalized;
         Assert.Greater(Vector3.Dot(follow.transform.forward, toPlayer), 0.99f, "the player stays in the middle of the shot");
+
+        // On the market square the camera sinks slowly until the hills show over the commandery (user 2026-10-26).
+        cc.enabled = false; mover.transform.position = new Vector3(0, 0, 2f); cc.enabled = true;
+        yield return new WaitForSeconds(1f);
+        float midway = Mathf.DeltaAngle(0, follow.transform.eulerAngles.x);
+        Assert.Greater(midway, 12f, "it lowers gradually, not at once");
+        yield return new WaitForSeconds(6f);
+        Assert.AreEqual("Market square (low, the hills behind)", follow.ActiveZone.name);
+        Assert.AreEqual(8f, Mathf.DeltaAngle(0, follow.transform.eulerAngles.x), 1f, "low over the square");
     }
 
     // Speed doubled (user 2026-10-20) and walking plays the drawn 4-frame cycle for the facing direction.

@@ -18,6 +18,7 @@ namespace Jrpg
         [Tooltip("Where on the player the camera looks, in metres (y = up).")] public Vector3 LookOffset = new Vector3(0, 0.8f, 0);
         [Tooltip("Slow side-to-side swing of the yaw, degrees (0 = still).")] public float Sway;
         [Tooltip("Higher wins where zones overlap.")] public int Priority;
+        [Tooltip("Seconds to ease into (and back out of) this shot; 0 = the camera's own pace.")] public float BlendSeconds;
 
         void OnEnable() => All.Add(this);
         void OnDisable() => All.Remove(this);
