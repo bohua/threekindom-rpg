@@ -435,7 +435,7 @@ namespace Prototype.BingshuTactics
                 Troop.Infantry => new[] { "步兵", "重步兵", "近卫兵" }, Troop.Spearman => new[] { "枪兵", "长枪兵", "虎卫" },
                 Troop.Cavalry => new[] { "骑兵", "突骑", "铁骑" }, Troop.Archer => new[] { "弓兵", "强弓兵", "神射手" },
                 Troop.Strategist => new[] { "军师", "谋士", "军师祭酒" }, Troop.Rebel => new[] { "贼众", "渠帅", "义军" },
-                Troop.Crossbow => new[] { "弩兵" }, Troop.HorseArcher => new[] { "弓骑" }, Troop.Swordswoman => new[] { "剑姬" },
+                Troop.Crossbow => new[] { "弩兵", "强弩兵", "神弩手" }, Troop.HorseArcher => new[] { "弓骑", "骁骑", "飞骑" }, Troop.Swordswoman => new[] { "剑姬" },
                 Troop.Dancer => new[] { "舞姬" }, Troop.Shaman => new[] { "妖术师", "幻术师", "大方士" }, Troop.Geomancer => new[] { "风水师", "堪舆师", "太卜" }, Troop.Pirate => new[] { "水贼" },
                 Troop.Barbarian => new[] { "蛮兵" }, _ => new[] { "象兵" },
             };
