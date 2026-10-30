@@ -29,7 +29,7 @@ namespace Prototype.BingshuTactics
         readonly Dictionary<Unit, int> turnCount = new Dictionary<Unit, int>();
         const float RefH = 720f;
 
-        enum Mode { Deploy, Circuit, Idle, Menu, SkillList, TargetMove, TargetAttack, TargetSkill, Busy, Victory, Defeat, Duel }
+        enum Mode { Select, Deploy, Circuit, Idle, Menu, SkillList, TargetMove, TargetAttack, TargetSkill, Busy, Victory, Defeat, Duel }
         Mode mode = Mode.Deploy;
 
         Grid grid;
@@ -75,6 +75,7 @@ namespace Prototype.BingshuTactics
             font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "Microsoft YaHei UI", "SimHei", "SimSun", "DengXian" }, 18);
             white = Texture2D.whiteTexture;
             Log("布阵：点选我方武将，再点蓝色格子调整站位。可先打开「兵书回路」配书。");
+            if (IsChapter && !Chapter.AutoPlay) EnterSelect();   // 出阵选将（用户 2026-10-30）
             if (IsChapter && Chapter.AutoPlay) { autoPlay = true; mode = Mode.Busy; StartCoroutine(BattleLoop()); }
             var args = System.Environment.GetCommandLineArgs();
             int i = System.Array.IndexOf(args, "-poc-shots");
@@ -525,6 +526,7 @@ namespace Prototype.BingshuTactics
             bool lb = Pressed(Kb?.qKey, Pad?.leftShoulder), rb = Pressed(Kb?.eKey, Pad?.rightShoulder);
             if (pulse != Vector2Int.zero || ok || cancel) padMode = true;
 
+            if (mode == Mode.Select) { SelectInput(pulse, ok, cancel, lb, rb); return; }
             if (mode == Mode.Circuit) { CircuitInput(pulse, ok, cancel, lb, rb); return; }
             if (mode == Mode.Duel) { DuelInput(pulse, ok); return; }
             if (lb) yawTarget -= 90f;
@@ -1191,6 +1193,7 @@ namespace Prototype.BingshuTactics
             mouseScreen = new Vector2(e.mousePosition.x, Screen.height - e.mousePosition.y);
             GUI.matrix = Matrix4x4.Scale(new Vector3(S, S, 1));
             float sw = Screen.width / S;
+            if (mode == Mode.Select) { DrawSelect(sw); return; }
 
             DrawWorldLabels();
             DrawAtBarV();
