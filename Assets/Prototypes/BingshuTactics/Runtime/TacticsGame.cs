@@ -75,10 +75,12 @@ namespace Prototype.BingshuTactics
             font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "Microsoft YaHei UI", "SimHei", "SimSun", "DengXian" }, 18);
             white = Texture2D.whiteTexture;
             Log("布阵：点选我方武将，再点蓝色格子调整站位。可先打开「兵书回路」配书。");
+            if (IsChapter && SeedOverride.HasValue) Chapter.Seed = SeedOverride.Value;
             if (IsChapter && Chapter.AutoPlay) { autoPlay = true; mode = Mode.Busy; StartCoroutine(BattleLoop()); }
             var args = System.Environment.GetCommandLineArgs();
             int i = System.Array.IndexOf(args, "-poc-shots");
             if (i >= 0 && i + 1 < args.Length) StartCoroutine(AutoShots(args[i + 1]));
+            StartCoroutine(HitFeelCapture());
         }
 
         // 自检：命令行 -poc-shots <目录>，自动截图各界面，再由 AI 代打到分出胜负后退出
@@ -421,12 +423,17 @@ namespace Prototype.BingshuTactics
         void Log(string s)
         {
             log = s;
-            if (Chapter != null && Chapter.AutoPlay && Application.isBatchMode) Debug.Log($"TACTICS r{Rounds} {s} | " + string.Join(" ", units.Where(u => u.Alive).Select(u => $"{u.Name}:{u.Hp}")));   // tests: the AI play-through in the log
+            if (Chapter == null || !Chapter.AutoPlay) return;
+            string line = $"TACTICS r{Rounds} {s} | " + string.Join(" ", units.Where(u => u.Alive).Select(u => $"{u.Name}:{u.Hp}"));
+            if (Application.isBatchMode) Debug.Log(line);   // tests: the AI play-through in the log
+            BattleLogged?.Invoke(line);
         }
 
         // ---------------- 每帧 ----------------
         void Update()
         {
+            TickFxClock();   // 打击感：本帧表现时间（顿帧、慢放）
+            HitFeelDebugKeys();
             UpdateCameraYaw();
             UpdateCamera();   // 跟随、自由查看、对准人物、单挑拉近（TacticsGame.Camera.cs）
 
@@ -437,12 +444,12 @@ namespace Prototype.BingshuTactics
 
             for (int i = popups.Count - 1; i >= 0; i--)
             {
-                var p = popups[i]; p.t += Time.deltaTime; popups[i] = p;
+                var p = popups[i]; p.t += fxDt; popups[i] = p;
                 if (p.t > 1.2f) popups.RemoveAt(i);
             }
             for (int i = flashes.Count - 1; i >= 0; i--)
             {
-                var f = flashes[i]; f.t += Time.deltaTime; flashes[i] = f;
+                var f = flashes[i]; f.t += fxDt; flashes[i] = f;
                 if (f.t > 0.6f) flashes.RemoveAt(i);
             }
 
@@ -717,6 +724,7 @@ namespace Prototype.BingshuTactics
             while (true)
             {
                 var u = AtClock.Next(units);
+                OpenSlot();   // 打击感：一次行动一个峰值槽
                 now = u.At; active = u; u.Defending = false; moved = false; u.Charged = false;
                 u.Ep = Mathf.Min(u.MaxEp, u.Ep + TroopTraits.EpRegen(u.Int));   // 主稿 §3.4：每次轮到自己回 ⌊智÷20⌋ 策力
                 if (IsChapter)
@@ -725,7 +733,7 @@ namespace Prototype.BingshuTactics
                     if (mode == Mode.Victory || mode == Mode.Defeat) yield break;
                     if (!u.Alive) continue;
                 }
-                yield return new WaitForSeconds(0.25f);
+                yield return FxWait(0.25f);
 
                 if (ChaosHoldsTurn(u))
                 {
@@ -760,6 +768,7 @@ namespace Prototype.BingshuTactics
                 if (u.Troop == Troop.Dancer)   // 舞姬：每次行动为半径 2 友军回 3 气势
                     foreach (var f in Friends(u).Where(f => f != u && Grid.Dist(f.Pos, u.Pos) <= 2)) GainCp(f, 3);
                 u.TickStatuses();
+                CloseSlot();
                 mode = Mode.Busy; turns++;
 
                 if (IsChapter)
@@ -797,7 +806,8 @@ namespace Prototype.BingshuTactics
 
         void Hit(Unit a, Unit t, int dmg, HitKind kind = HitKind.Attack)
         {
-            HitFx(a, t);
+            var ev = MakeHitEvent(a, t, kind);   // 打击感事件层：只读倍率与状态，不改结果
+            if (!HitFeelSettings.Enabled) HitFx(a, t);
             // 中流砥柱：相邻友军所受伤害的一半由立柱者承受
             var pillar = units.FirstOrDefault(g => g.Alive && g != t && g.Team == t.Team && Grid.Dist(g.Pos, t.Pos) <= 1 && g.Statuses.Any(s => s.Name == "砥柱"));
             if (pillar != null && dmg > 1)
@@ -806,8 +816,10 @@ namespace Prototype.BingshuTactics
                 pillar.Hp = Mathf.Max(0, pillar.Hp - Floored(pillar, share));
                 popups.Add((views[pillar].position + Vector3.up * (1.8f * HeadK), share.ToString(), new Color(0.95f, 0.8f, 0.5f), 0f));
             }
+            int unfloored = dmg;
             dmg = Floored(t, dmg);   // 0.3：不可击败的首领
             t.Hp = Mathf.Max(0, t.Hp - dmg);
+            RecordHit(ev, a, t, dmg, dmg < unfloored);
             int gain = 5 + a.Wu / 10;
             if (kind == HitKind.Attack) GainCp(a, gain);
             else if (kind == HitKind.Technique) GainCp(a, gain / 2);
@@ -885,7 +897,9 @@ namespace Prototype.BingshuTactics
                 {
                     case Effect.Damage:
                     case Effect.Debuff when s.Power > 0:
+                        hitSkill = s;
                         Hit(u, t, Combat.Damage(u, t, s.Power * mul, s.UsesMight, s.Element, HMul(u, t), InCamp(t), s.IsStrategy), s.IsStrategy ? HitKind.Strategy : HitKind.Technique);
+                        hitSkill = null;
                         if (s.AtDelay > 0 && t.Alive)
                         {
                             if (s.IsStrategy) Interrupt(t);   // 水系推迟也打断咏唱
@@ -910,7 +924,7 @@ namespace Prototype.BingshuTactics
                         break;
                 }
             }
-            yield return new WaitForSeconds(0.55f);
+            yield return FxWait(0.55f);
         }
 
         IEnumerator ExecuteCast(Unit u)
@@ -937,7 +951,7 @@ namespace Prototype.BingshuTactics
         // ---------------- 敌方 AI（固定规则） ----------------
         IEnumerator EnemyTurn(Unit u)
         {
-            yield return new WaitForSeconds(0.2f);
+            yield return FxWait(0.2f);
             turnCount[u] = turnCount.TryGetValue(u, out int tc) ? tc + 1 : 1;
             if (u.Name == "吕布")
             {
@@ -997,7 +1011,7 @@ namespace Prototype.BingshuTactics
                 // 武将优先武技与普攻，策略只给文官或够不着时用（主稿 T2）
                 bool strategist = u.Int >= 75 || u.Troop == Troop.Strategist || u.Troop == Troop.Shaman;
                 bool engaged = u.Team == Team.Player && Foes(u).Any(f => Grid.Dist(f.Pos, u.Pos) <= 1);   // 代打：被贴身时不站着咏唱
-                if (t != null && !engaged && (strategist || AttackableTargets(u, u.AtkRange).Count == 0) && Random.value < 0.6f) { BeginCast(u, single, singleLit.PowerMul, t.Pos, singleLit.CastCut); yield break; }
+                if (t != null && !engaged && (strategist || AttackableTargets(u, u.AtkRange).Count == 0) && BattleRng.NextDouble() < 0.6) { BeginCast(u, single, singleLit.PowerMul, t.Pos, singleLit.CastCut); yield break; }
             }
 
             // 电脑代打的我方：气势够就放伤害武技／绝学（横扫要两人以上在身边）
@@ -1172,6 +1186,7 @@ namespace Prototype.BingshuTactics
             if (mode == Mode.TargetSkill || mode == Mode.TargetAttack || mode == Mode.TargetMove) DrawHoverInfo(sw);
             if (mode == Mode.Idle || mode == Mode.Busy || mode == Mode.Deploy) DrawHoverInfo(sw);
             if (IsChapter) DrawChapterOverlay(sw);
+            DrawHitFeelDebug();
             if (mode == Mode.Victory || mode == Mode.Defeat)
                 GUI.Label(new Rect(0, 280, sw, 60), mode == Mode.Victory ? "胜 利" : "败 退", new GUIStyle(big) { alignment = TextAnchor.MiddleCenter, fontSize = 48 });
 

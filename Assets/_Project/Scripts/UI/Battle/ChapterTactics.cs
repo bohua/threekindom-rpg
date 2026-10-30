@@ -56,7 +56,8 @@ namespace ThreeKingdoms.UI.Battle
                     if (e.Texture && !string.IsNullOrEmpty(name) && !def.Portraits.ContainsKey(name))
                         def.Portraits[name] = new TacticsPortrait { Texture = e.Texture, Crop = e.Crop, Axis = e.Axis, Flip = e.Flip };
                 }
-            def.AutoPlay = AutoPlay || System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-chapterShots") >= 0;
+            var launch = System.Environment.GetCommandLineArgs();
+            def.AutoPlay = AutoPlay || System.Array.IndexOf(launch, "-chapterShots") >= 0 || System.Array.IndexOf(launch, "-hitfeelCapture") >= 0;   // hit-feel recordings too
             def.Finished = OnFinished;
             TacticsGame.Chapter = def;
             if (!Run.IsDevelopment && Run.NextBattleId == EncounterId)

@@ -84,8 +84,9 @@ namespace Prototype.BingshuTactics
             float z = Mathf.SmoothStep(0, 1, camZoom);
             var look = Vector3.Lerp(camTarget, duelLook, z);
             float dist = CamDistance * zoomLevel * (1f - 0.4f * z);
-            cam.transform.SetPositionAndRotation(look - rot * Vector3.forward * dist, rot);
-            UpdateFocus(dist);
+            var shake = HitCamOffset(dist, out float distK, out var lookShift);   // 打击感：方向性震屏、破将推近
+            cam.transform.SetPositionAndRotation(look + lookShift - rot * Vector3.forward * dist * distK + shake, rot);
+            UpdateFocus(dist * distK);
         }
 
         // ---------------- 小地图 ----------------

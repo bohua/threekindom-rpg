@@ -91,9 +91,9 @@ namespace Prototype.BingshuTactics
             for (duel.Round = 1; duel.Round <= DuelRules.Rounds && duel.HpH > 0 && duel.HpL > 0; duel.Round++)
             {
                 // 吕布先定招，再露出破绽提示（七成准）；不连用两次绝招
-                var lubuMove = (DuelMove)Random.Range(0, 3);
+                var lubuMove = (DuelMove)BattleRng.Next(0, 3);
                 if (lubuMove == DuelMove.Special && duel.LastLuBu == DuelMove.Special) lubuMove = DuelMove.Attack;
-                var tell = Random.value < 0.7f ? lubuMove : (DuelMove)(((int)lubuMove + Random.Range(1, 3)) % 3);
+                var tell = BattleRng.NextDouble() < 0.7 ? lubuMove : (DuelMove)(((int)lubuMove + BattleRng.Next(1, 3)) % 3);
                 duel.Tell = TellOf(tell);
                 duel.Speaker = ""; duel.Line = $"第 {duel.Round} 回合　{duel.Tell}";
                 // 玩家出招
@@ -114,7 +114,8 @@ namespace Prototype.BingshuTactics
                 duel.LastLuBu = lubuMove;
 
                 var (toH, toL, key) = DuelRules.Resolve(heroMove, lubuMove, hero.Wu, lubu.Wu);
-                yield return DuelExchange(hero, lubu, heroMove, lubuMove, toH, toL);
+                bool last = duel.Round == DuelRules.Rounds || duel.HpH - toH <= 0 || duel.HpL - toL <= 0;
+                yield return DuelExchange(hero, lubu, heroMove, lubuMove, toH, toL, last);
                 duel.HpH = Mathf.Max(0, duel.HpH - toH); duel.HpL = Mathf.Max(0, duel.HpL - toL);
                 string text = key switch
                 {
@@ -173,22 +174,22 @@ namespace Prototype.BingshuTactics
         }
 
         // 一次交锋的动作：双方按出招踏步、架挡后撤、绝招先蓄力；伤害数字与闪白
-        IEnumerator DuelExchange(Unit hero, Unit lubu, DuelMove hm, DuelMove lm, int toH, int toL)
+        IEnumerator DuelExchange(Unit hero, Unit lubu, DuelMove hm, DuelMove lm, int toH, int toL, bool last = false)
         {
             SetDuelPose(hero, hm, 0); SetDuelPose(lubu, lm, 0);
             if (hm == DuelMove.Special || lm == DuelMove.Special)
             {
                 if (hm == DuelMove.Special) popups.Add((views[hero].position + Vector3.up * (2.6f * HeadK), "绝招！", new Color(1f, 0.85f, 0.3f), 0f));
                 if (lm == DuelMove.Special) popups.Add((views[lubu].position + Vector3.up * (2.6f * HeadK), "绝招！", new Color(1f, 0.4f, 0.3f), 0f));
-                yield return new WaitForSeconds(0.35f);
+                yield return FxWait(0.35f);
             }
             SetDuelPose(hero, hm, 1); SetDuelPose(lubu, lm, 1);
             var a = StartCoroutine(hm == DuelMove.Guard ? Brace(hero, lubu) : Lunge(hero, lubu.Pos));
             yield return lm == DuelMove.Guard ? Brace(lubu, hero) : Lunge(lubu, hero.Pos);
-            if (toL > 0) { HitFx(hero, lubu); popups.Add((views[lubu].position + Vector3.up * (1.9f * HeadK), toL.ToString(), new Color(1f, 0.95f, 0.8f), 0f)); SetDuelPose(lubu, lm, 2); }
-            if (toH > 0) { HitFx(lubu, hero); popups.Add((views[hero].position + Vector3.up * (1.9f * HeadK), toH.ToString(), new Color(1f, 0.95f, 0.8f), 0f)); SetDuelPose(hero, hm, 2); }
+            if (toL > 0) { DuelHit(hero, lubu, toL, last && toL >= toH); popups.Add((views[lubu].position + Vector3.up * (1.9f * HeadK), toL.ToString(), new Color(1f, 0.95f, 0.8f), 0f)); SetDuelPose(lubu, lm, 2); }
+            if (toH > 0) { DuelHit(lubu, hero, toH, last && toH > toL); popups.Add((views[hero].position + Vector3.up * (1.9f * HeadK), toH.ToString(), new Color(1f, 0.95f, 0.8f), 0f)); SetDuelPose(hero, hm, 2); }
             if (toH == 0 && toL == 0) popups.Add(((views[hero].position + views[lubu].position) / 2 + Vector3.up * (2.2f * HeadK), "叮！", Color.white, 0f));
-            yield return new WaitForSeconds(0.45f);
+            yield return FxWait(0.45f);
             ClearDuelPose(hero); ClearDuelPose(lubu);
         }
 
@@ -198,7 +199,7 @@ namespace Prototype.BingshuTactics
             var rig = rigs[u];
             var dir = Tile(u.Pos) - Tile(foe.Pos); dir.y = 0; dir = dir.normalized * 0.18f;
             rig.StepHold = 0.35f;
-            for (float t = 0; t < 0.15f; t += Time.deltaTime) { rig.Step = Vector3.Lerp(Vector3.zero, dir, t / 0.15f); yield return null; }
+            for (float t = 0; t < 0.15f; t += fxDt) { rig.Step = Vector3.Lerp(Vector3.zero, dir, t / 0.15f); yield return null; }
         }
 
         // 单挑姿势：phase 0 起手／蓄力，1 出招，2 受击

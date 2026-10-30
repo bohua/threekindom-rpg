@@ -26,6 +26,10 @@ namespace Prototype.BingshuTactics
             public float FlashT; public Vector3 Knock; public float KnockT;
             public Vector3 Step; public float StepHold; public float Jump; public float DeadT;
             public Texture BaseTex, DuelTex; public int DuelCol = -1;   // 单挑动作帧：10 列×2 行（左下、左上）
+            // 打击感（TacticsGame.HitFeel.cs）：闪白与二闪、击退停顿、挤压拉伸、出手预备与命中帧、转身溃退
+            public float FlashBright, Flash2Delay, Flash2T; public bool Flash2Gold, FlashGoldNow;
+            public float KnockHold, SquashT, SquashDur, WindupT, StrikeT; public int SquashPx;
+            public bool Retreating; public float RetreatT; public Vector3 RetreatDir;
         }
 
         // 用户 2026-10-24：人物太大、显得臃肿，缩小到一半；头顶血条、飘字等高度随之乘 HeadK
@@ -40,7 +44,8 @@ namespace Prototype.BingshuTactics
         void InitRig(Unit u, Transform root, Renderer r, float scale, Color? tint)
         {
             var tex = r.sharedMaterial.GetTexture("_BaseMap");
-            var rig = new Rig { Root = root, Quad = r.transform, R = r, Tint = tint ?? Color.white, BreathPhase = Random.value * 10f };
+            var rig = new Rig { Root = root, Quad = r.transform, R = r, Tint = tint ?? Color.white, BreathPhase = (float)fxRng.NextDouble() * 10f };
+            r.sharedMaterial = FlashMaterial(r.sharedMaterial);   // 每人一份打开自发光的材质，闪白插值到白
             if (tex && tex.width * 5 == tex.height * 10 && tex.width >= 640) { rig.Kind = SheetKind.Eight; rig.Cols = 10; rig.Rows = 5; }
             else
             {
@@ -121,33 +126,40 @@ namespace Prototype.BingshuTactics
 
         void UpdateRigs()
         {
-            float dt = Time.time < hitStop ? 0f : Time.deltaTime;   // 命中停顿
+            bool feel = HitFeelSettings.Enabled;
+            float dt = feel ? fxDt : Time.time < hitStop ? 0f : Time.deltaTime;   // 新：统一表现时钟（顿帧、慢放）；旧：命中只停人物动画
+            var profile = HitFeelProfile.Current;
             var camRot = cam.transform.rotation; var up = cam.transform.up;
             foreach (var kv in rigs)
             {
                 var u = kv.Key; var rig = kv.Value;
                 rig.AnimT += dt;
-                if (!u.Alive)
+                var retreat = Vector3.zero;
+                if (!u.Alive && (!feel || rig.DeadT >= 9f))   // 旧：下沉消失；换下后备（DeadT 9）直接隐去
                 {
                     rig.DeadT += Time.deltaTime;
                     rig.R.enabled = rig.DeadT < 0.5f; rig.Shadow.gameObject.SetActive(false);
                 }
+                else if (!u.Alive) retreat = RetreatOffset(u, rig, dt, profile);
+                else rig.Retreating = false;
                 if (u.Alive && rig.Anim != Anim.Walk) rig.Anim = u.PendingCast != null ? Anim.Cast : (rig.StepHold > 0 ? Anim.Attack : Anim.Idle);
 
                 // 踏前后的回位与击退衰减
                 if (rig.StepHold > 0) rig.StepHold -= dt; else rig.Step = Vector3.MoveTowards(rig.Step, Vector3.zero, dt * 2f);
                 if (rig.KnockT > 0) { rig.KnockT -= dt; if (rig.KnockT <= 0) rig.Knock = Vector3.zero; }
+                var scale = feel ? Deform(rig, dt, profile) : Vector2.one;
                 var knock = rig.KnockT > 0 ? rig.Knock * Mathf.Clamp01(rig.KnockT / 0.2f) : Vector3.zero;
 
                 // 呼吸：每 0.8 s 起伏 1 像素；读条时更快
                 float period = rig.Anim == Anim.Cast ? 0.4f : 0.8f;
                 float bob = rig.Anim == Anim.Walk ? 0f : (Mathf.Repeat(Time.time + rig.BreathPhase, period) < period / 2 ? 1f / 30f : 0f);
-                float sink = u.Alive ? 0f : rig.DeadT * 0.6f;
+                float sink = u.Alive || feel ? 0f : rig.DeadT * 0.6f;
 
                 rig.Quad.rotation = camRot;
-                rig.Quad.position = rig.Root.position + rig.Step + knock + Vector3.up * (rig.Jump + bob - sink)
-                                  + up * (rig.Size / 2f + rig.PivotLift) * 0.98f;
-                rig.Shadow.position = new Vector3(rig.Root.position.x + rig.Step.x, rig.Root.position.y - rig.Jump * 0f + 0.03f, rig.Root.position.z + rig.Step.z);
+                rig.Quad.localScale = new Vector3(rig.Size * scale.x, rig.Size * scale.y, 1f);
+                rig.Quad.position = rig.Root.position + rig.Step + knock + retreat + Vector3.up * (rig.Jump + bob - sink)
+                                  + up * (rig.Size / 2f + rig.PivotLift) * 0.98f * scale.y;   // 形变以脚底为锚点
+                rig.Shadow.position = new Vector3(rig.Root.position.x + rig.Step.x + retreat.x, rig.Root.position.y - rig.Jump * 0f + 0.03f, rig.Root.position.z + rig.Step.z + retreat.z);
                 float shrink = 1f / (1f + rig.Jump * 2f);
                 rig.Shadow.localScale = new Vector3(T * 0.5f * shrink, T * 0.3f * shrink, 1);
 
@@ -165,10 +177,17 @@ namespace Prototype.BingshuTactics
                     if (rig.BaseTex) block.SetTexture("_BaseMap", rig.BaseTex);
                     block.SetVector("_BaseMap_ST", FrameST(rig));
                 }
-                // 受击闪白：把底色推亮
-                var tint = rig.Tint;
-                if (rig.FlashT > 0) { rig.FlashT -= Time.deltaTime; tint = new Color(4f, 4f, 4f, 1f); }
+                var tint = rig.Tint; var glow = Color.black;
+                if (feel)
+                {
+                    // 闪白：底色压暗、自发光推到白（或破将二闪的金色）＝插值到白
+                    var (f, c) = TickFlash(rig, dt);
+                    if (f > 0f) { tint = new Color(tint.r * (1f - f), tint.g * (1f - f), tint.b * (1f - f), tint.a); glow = c * f; }
+                }
+                // 旧：把底色推亮约 70 ms
+                else if (rig.FlashT > 0) { rig.FlashT -= Time.deltaTime; tint = new Color(4f, 4f, 4f, 1f); }
                 block.SetColor("_BaseColor", tint);
+                block.SetColor("_EmissionColor", glow);
                 rig.R.SetPropertyBlock(block);
             }
         }
@@ -183,7 +202,7 @@ namespace Prototype.BingshuTactics
             float e = Mathf.Min(ease / dur, 0.5f);
             float vmax = 1f / (1f - e);   // 梯形速度曲线的峰值（归一化）
             rig.Anim = Anim.Walk;
-            for (float t = 0; ; t += Time.deltaTime)
+            for (float t = 0; ; t += fxDt)
             {
                 float x = Mathf.Clamp01(t / dur);
                 float s = x < e ? vmax * x * x / (2 * e) : x > 1 - e ? 1 - vmax * (1 - x) * (1 - x) / (2 * e) : vmax * (x - e / 2);
@@ -212,12 +231,14 @@ namespace Prototype.BingshuTactics
             Face(u, dir);
             var to = dir.sqrMagnitude > 1e-4f ? dir.normalized * 0.3f : Vector3.zero;
             rig.StepHold = 0.25f;
-            yield return new WaitForSeconds(0.12f);   // 预备
-            for (float t = 0; t < 0.1f; t += Time.deltaTime) { rig.Step = Vector3.Lerp(Vector3.zero, to, t / 0.1f); yield return null; }
+            if (HitFeelSettings.Enabled) { rig.WindupT = 0.12f; rig.StrikeT = 0f; }   // 预备拉长 2 源像素
+            yield return FxWait(0.12f);   // 预备
+            for (float t = 0; t < 0.1f; t += fxDt) { rig.Step = Vector3.Lerp(Vector3.zero, to, t / 0.1f); yield return null; }
             rig.Step = to; rig.StepHold = 0.22f;
+            if (HitFeelSettings.Enabled) { rig.WindupT = 0f; rig.StrikeT = 0.05f; }   // 命中帧最扁
         }
 
-        // 命中反馈：受击方闪白约 70 ms，击退 0.15 m 后缓回；双方停顿 70 ms
+        // 旧命中反馈（打击感总开关关闭时用）：受击方闪白约 70 ms，击退 0.15 m 后缓回；双方停顿 70 ms
         void HitFx(Unit a, Unit t)
         {
             if (!rigs.TryGetValue(t, out var rig)) return;

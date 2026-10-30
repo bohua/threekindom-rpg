@@ -446,7 +446,7 @@ namespace Prototype.BingshuTactics
             var l = new GameObject("Fire light").AddComponent<Light>();
             l.transform.SetParent(root, false); l.transform.localPosition = Vector3.up * 0.8f;
             l.type = LightType.Point; l.color = new Color(1f, 0.55f, 0.2f); l.range = 3f; l.intensity = 1f;
-            fires.Add((root, l, Random.value * 10f));
+            fires.Add((root, l, (float)fxRng.NextDouble() * 10f));
             flashes.Add((new List<Vector2Int> { p }, new Color(1f, 0.5f, 0.1f), 0f));
         }
 
