@@ -63,6 +63,20 @@
      }
     ]
    }
+  ],
+  "portalScene": "Camp_Gongsun",
+  "portalArrival": "Arrival (inside the gate)",
+  "portalX": 0,
+  "portalZ": -24,
+  "portalW": 8,
+  "portalD": 3,
+  "portalFacing": [
+   0,
+   0,
+   1
+  ],
+  "portalSteps": [
+   10
   ]
  },
  "mulberry": {

@@ -58,6 +58,7 @@ namespace ThreeKingdoms.EditorTools
             public string portalScene, portalArrival;
             public float portalX, portalZ, portalW, portalD;   // the portal box in the place's frame (default: its south edge, 6 x 2.5 m)
             public float[] portalFacing = new float[0];       // the way the party faces on arrival in the other scene
+            public int[] portalSteps = new int[0];            // chapter steps (ChapterStep) the way is open in; empty = always
             public string gates;                              // walled places: sides with a gate, e.g. "S,W" (default "S")
         }
 
@@ -230,6 +231,7 @@ namespace ThreeKingdoms.EditorTools
             if (!scenes.Any(s => s.path == scenePath)) scenes.Add(new EditorBuildSettingsScene(scenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
+            if (id == "R1") ChapterFieldBuilder.BuildR1Story();   // the side quests' people and controller over the map (npc-sidequests)
             Debug.Log($"REGION_GREYBOX_BUILT {id}");
         }
 
@@ -734,6 +736,7 @@ namespace ThreeKingdoms.EditorTools
                 portal.Size = custom ? new Vector2(p.portalW, p.portalD) : new Vector2(6f, 2.5f);
                 portal.TargetScene = p.portalScene; portal.ArrivalSpot = p.portalArrival;
                 portal.Facing = p.portalFacing.Length >= 3 ? new Vector3(p.portalFacing[0], p.portalFacing[1], p.portalFacing[2]) : Vector3.forward;
+                portal.Steps = p.portalSteps ?? new int[0];
             }
         }
 

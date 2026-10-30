@@ -76,7 +76,8 @@ namespace ThreeKingdoms.Gameplay.Story
             var ch = c.Run.Chapter2;
             switch (id)
             {
-                case "gs_quartermaster": return "raw:[确认] 与军需官交谈（补给／存档）";
+                case "gs_quartermaster": return ch.Has(FieldScriptsR1.HuStarted) && !ch.Has("hu_choice_0") && !ch.Has("hu_choice_1")
+                    ? "raw:[确认] 问军需官扣下的乌桓马" : "raw:[确认] 与军需官交谈（补给／存档）";
                 case "sz_gs_soldier": return "raw:[确认] 与公孙瓒营士卒交谈（存档／出发）";
                 case "sz_merchant": return "raw:[确认] 与随军商贩交谈（买卖）";
                 case "bell": return ch.Has(ChapterScripts3.BellFound) ? null : "raw:[确认] 翻看草料堆";
@@ -98,6 +99,8 @@ namespace ThreeKingdoms.Gameplay.Story
                 "tian_yu" => Gongsun(c) && !ch.Has(ChapterState.TianYu) && (!ch.Has(RollStarted) || ch.Has(RollFound)),
                 "roll_head_1" or "roll_head_2" or "roll_head_3" or "roll_head_4" => Gongsun(c) && ch.Has(RollStarted) && !ch.Has("roll_h" + id[id.Length - 1]),
                 "roll_sick" => Gongsun(c) && ch.Has("roll_h3") && !ch.Has(RollFound),
+                "gs_quartermaster" => Gongsun(c) && ch.Has(FieldScriptsR1.HuStarted) && !ch.Has("hu_choice_0") && !ch.Has("hu_choice_1"),
+                "guan_jing" => Gongsun(c) && ch.Has("hu_choice_0") && !ch.Has(FieldScriptsR1.HuCampRule) && !ch.Has(FieldScriptsR1.HuMarket),
                 "yuan_shao" => !ch.Has(ChapterScripts3.Wenjiu),
                 "sz_soldier_a" => !ch.Has(ChapterScripts3.RationsShared),
                 "sz_gs_soldier" => ch.Has(ChapterScripts3.Wenjiu),
@@ -135,6 +138,9 @@ namespace ThreeKingdoms.Gameplay.Story
                 case "gs_soldier_a": return new[] { L("gs_soldier_a", "gs.soldier_a") };
                 case "gs_soldier_b": return new[] { L("gs_soldier_b", "gs.soldier_b") };
                 case "gs_guard": return new[] { L("gs_guard", "gs.guard") };
+                case "gs_quartermaster" when ch.Has(FieldScriptsR1.HuStarted) && !ch.Has("hu_choice_0") && !ch.Has("hu_choice_1"):
+                    return HuQuarter(c);
+                case "guan_jing": return GuanJing(c);
                 case "gs_quartermaster":
                     return new[]
                     {
@@ -177,6 +183,8 @@ namespace ThreeKingdoms.Gameplay.Story
             yield return L("gongsun_zan", ch.Has(ChapterState.Drill) ? "gs.zan.after_drill" : "gs.zan.talk");
             // 田豫点兵 is a must before the call to arms (npc-sidequests sq.lb1.r1.tian_yu_roll).
             if (!ch.Has(ChapterState.TianYu)) { yield return L("gongsun_zan", "gs.zan.roll_first"); yield break; }
+            // So is 简雍打听 in Ji (sq.lb1.r1.jian_yong_ear): out through the south gate onto the R1 map.
+            if (!ch.Has(FieldScriptsR1.JianYongEar)) { yield return L("gongsun_zan", "gs.zan.ear_first"); yield break; }
             var left = new List<string>();
             if (ch.DrillOpen) left.Add("校场演武");
             string ask = "raw:随公孙瓒南下会盟。离开后不能返回" + (left.Count > 0 ? "（尚未完成：" + string.Join("、", left) + "）" : "") + "。确定出发吗？";
@@ -206,6 +214,37 @@ namespace ThreeKingdoms.Gameplay.Story
         // ground; the third is a man short ("ran off"), Tian Yu will not write "fled" before he has seen him, and he is found
         // sick behind the hay. Tian Yu writes "sick" before the squad; done, he joins (the existing TianYu flag).
         public const string RollStarted = "roll_started", RollFound = "roll_found";
+
+        // 胡市马契 at the garrison (npc-sidequests sq.lb1.r1.hu_market): the quartermaster Zheng holds Kumo's two horses;
+        // Liu Bei takes the camp's way (the chief clerk Guan Jing: stand surety and pay 60 copper for the fodder) or the
+        // province's (Liu Yu's writ, FieldScriptsR1).
+        static IEnumerable<StageStep> HuQuarter(FieldStoryController c)
+        {
+            yield return L("gs_quartermaster", "dlg.lb1.npc.r1.gz.quarter.N4.2");
+            yield return Choice("liu_bei", "dlg.lb1.hu_market.ask", "hu_choice_", new[] { "dlg.lb1.hu_market.opt_camp", "dlg.lb1.hu_market.opt_liu_yu" },
+                new[] { L("system", "dlg.lb1.hu_market.to_guan_jing") },
+                new[] { L("system", "dlg.lb1.hu_market.to_liu_yu") });
+        }
+
+        static IEnumerable<StageStep> GuanJing(FieldStoryController c)
+        {
+            var ch = c.Run.Chapter2;
+            var inv = c.Run.Progress.Inventory;
+            if (ch.Has("hu_choice_0") && !ch.Has(FieldScriptsR1.HuCampRule) && !ch.Has(FieldScriptsR1.HuMarket))
+            {
+                yield return L("guan_jing", "dlg.lb1.hu_market.camp_rule.0");
+                yield return L("guan_jing", "dlg.lb1.hu_market.camp_rule.1");
+                if (inv.Copper < 60) { yield return L("system", "dlg.lb1.hu_market.poor"); yield break; }
+                yield return Call(() => inv.SpendCopper(60));
+                yield return Flag(FieldScriptsR1.HuCampRule);
+                yield return Remember("guan_jing", "paid_for_hu", "yes", "mem.guan_jing_paid_for_hu");
+                yield return L("system", "dlg.lb1.hu_market.horses");
+                yield break;
+            }
+            if (ch.Has(FieldScriptsR1.HuLiuYu)) { yield return L("guan_jing", "dlg.lb1.hu_market.camp_cold"); yield break; }
+            yield return L("guan_jing", ch.Has("guan_jing_met") ? "dlg.lb1.guan_jing.N4.2" : "dlg.lb1.guan_jing.N4.1");
+            yield return Flag("guan_jing_met");
+        }
 
         static IEnumerable<StageStep> TianYu(FieldStoryController c)
         {

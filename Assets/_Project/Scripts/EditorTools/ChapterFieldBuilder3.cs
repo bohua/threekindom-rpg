@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
+using ThreeKingdoms.Core.Story;
+using ThreeKingdoms.Gameplay;
 using ThreeKingdoms.Gameplay.Story;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -189,6 +191,7 @@ namespace ThreeKingdoms.EditorTools
                 Person(p, "jian_yong 简雍", Folk("D03"), new Vector3(-9f, 0, -8f)),
                 Person(p, "groom 马夫", Resident("N12"), new Vector3(16f, 0, 4f)),
                 Person(p, "gs_quartermaster 军需官", Resident("N11"), new Vector3(9f, 0, -6.2f)),
+                Person(p, "guan_jing 关靖", Resident("N03"), new Vector3(4.6f, 0, -7.6f)),   // the chief clerk by the store (胡市马契)
                 Person(p, "gs_soldier_a 士卒", Folk("C09"), new Vector3(-3.6f, 0, -3f)),
                 Person(p, "gs_soldier_b 士卒", Folk("C09"), new Vector3(3.6f, 0, 2f)),
                 Person(p, "gs_guard 南门守卒", Folk("C09"), new Vector3(-2.8f, 0, -20.4f)),
@@ -212,6 +215,16 @@ namespace ThreeKingdoms.EditorTools
             c.People = people.ToArray();
             c.Spots = new[] { Spot(f, "bell 草料堆", new Vector3(27f, 0, 10.6f)) };
             c.FlagObjects = new[] { sickFlag };
+            // Out through the south gate onto the R1 涿蓟 map while the garrison is the party's base (190): Ji, the wild
+            // spots and their people (npc-sidequests R1). Back in through the R1 camp gate arrives inside the gate.
+            var south = new GameObject("Portal to the R1 region").AddComponent<RegionPortal>();
+            south.transform.SetParent(env, false);
+            south.transform.position = new Vector3(0, 0, -28f);
+            south.Size = new Vector2(8f, 3f);
+            south.TargetScene = "Region_R1";
+            south.ArrivalSpot = "Spot 公孙瓒营";
+            south.Facing = Vector3.back;
+            south.Steps = new[] { (int)ChapterStep.Gongsun };
             c.ArrivalSpot = Spot(f, "Arrival (inside the gate)", new Vector3(0, 0, -19f));
             c.ReturnSpot = Spot(f, "Return (drill ground)", new Vector3(-14f, 0, 0f));
             Huds(c);

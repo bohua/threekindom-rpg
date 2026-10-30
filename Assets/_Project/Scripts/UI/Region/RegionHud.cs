@@ -27,7 +27,7 @@ namespace ThreeKingdoms.UI.Region
         Signpost shownSign;
         RegionTalk shownTalk;
         int talkLine;           // index of the line shown; past the end once the talk is over (until the player walks off)
-        float bubbleFade;
+        float bubbleFade, signTop = 30f;
         Label major, coords;
         VisualElement coordPanel;
         LocationZone current;
@@ -74,7 +74,9 @@ namespace ThreeKingdoms.UI.Region
             root.style.flexGrow = 1;
 
             sign = Panel(root);
-            sign.style.position = Position.Absolute; sign.style.left = 36; sign.style.top = 30;
+            // Below the objective box when a story layer runs over the region (R1 side quests, the 0.4 Pingyuan base).
+            signTop = FindFirstObjectByType<ThreeKingdoms.Gameplay.Story.FieldStoryController>() ? 100f : 30f;
+            sign.style.position = Position.Absolute; sign.style.left = 36; sign.style.top = signTop;
             sign.style.flexDirection = FlexDirection.Row; sign.style.alignItems = Align.Center;
             sign.style.paddingLeft = 22; sign.style.paddingRight = 26; sign.style.paddingTop = 10; sign.style.paddingBottom = 10;
             major = Text(sign, "", 30, Ivory);
@@ -281,7 +283,7 @@ namespace ThreeKingdoms.UI.Region
             string text = $"坐标  x {Mathf.RoundToInt(at.x)}  ·  z {Mathf.RoundToInt(at.z)}";
             if (coords.text != text) coords.text = text;
             float signH = sign.resolvedStyle.height;
-            if (!float.IsNaN(signH) && signH > 0f) coordPanel.style.top = 30f + signH + 6f;
+            if (!float.IsNaN(signH) && signH > 0f) coordPanel.style.top = signTop + signH + 6f;
             var kb = UnityEngine.InputSystem.Keyboard.current;
             if (kb != null && kb.mKey.wasPressedThisFrame) ToggleFullMap();
             if (kb != null && kb.escapeKey.wasPressedThisFrame && FullMapOpen) ToggleFullMap(false);
