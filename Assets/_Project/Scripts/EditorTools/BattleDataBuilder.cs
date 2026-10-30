@@ -39,6 +39,7 @@ namespace ThreeKingdoms.EditorTools
                     T(TroopType.Crossbow, 10, 2, 7), T(TroopType.HorseArcher, 0, 0, 10),
                     T(TroopType.Swordswoman, 10, 0, 8), T(TroopType.Dancer, 0, 0, 7), T(TroopType.Shaman, 0, 0, 7),
                     T(TroopType.Pirate, 20, 2, 7), T(TroopType.Barbarian, 35, 3, 6), T(TroopType.Elephant, 40, 5, 6),
+                    T(TroopType.Geomancer, 0, 0, 7),   // 风水师 (user 2026-10-30)
                 };
             });
             var ration = Asset<ItemDefinition>("Items/Ration", i => { i.Id = "ration"; i.DisplayName = "军粮"; i.HealPercent = 30; });
@@ -75,7 +76,7 @@ namespace ThreeKingdoms.EditorTools
             var officer = E(General("yt_officer", "YellowTurbanOfficer", "黄巾将领", TroopType.YellowTurban, 55, 45, 30, 0, 0, 0), UnitElement.Wood);
             var zhangLiang = E(General("zhang_liang", "ZhangLiang", "张梁", TroopType.YellowTurban, 72, 60, 48, 0, 0, 0, (1, enemyCharge)), UnitElement.Earth);
             var zhangBao = E(General("zhang_bao", "ZhangBao", "张宝", TroopType.Shaman, 70, 62, 55, 0, 0, 0, (1, enemySweep)), UnitElement.Earth);
-            var zhangJiao = E(General("zhang_jiao", "ZhangJiao", "张角", TroopType.Strategist, 40, 70, 85, 0, 0, 0, (1, enemyRumour), (1, enemyFire)), UnitElement.Earth);
+            var zhangJiao = E(General("zhang_jiao", "ZhangJiao", "张角", TroopType.Shaman, 40, 70, 85, 0, 0, 0, (1, enemyRumour), (1, enemyFire)), UnitElement.Earth);
 
             var b1 = Encounter("battle_1", "Battle1_ChengYuanzhi", "第一战 · 程远志来犯", EnemyAiKind.HighestTroops, 10, 30, (cheng, 2), (headman, 1), (headman, 1));
             var b2 = Encounter("battle_2", "Battle2_ZhangLiang", "第二战 · 张梁", EnemyAiKind.FacingSlot, 20, 50, (zhangLiang, 3), (officer, 1), (officer, 1), (officer, 1));

@@ -150,6 +150,7 @@ namespace Prototype.BingshuTactics
                 ["结盟"] = Craft("结盟", "射程3内友军单体物防+20% 2回合", Effect.Buff, Area.Single, 3, 0, 0f, 25, turns: 2, amount: 0.2f),
                 ["犒军"] = Craft("犒军", "射程3内友军单体回复25%兵力", Effect.Heal, Area.Single, 3, 0, 0.25f, 20),
                 ["车阵"] = Craft("车阵", "自身周围1格友军受伤-25% 2回合", Effect.Guard, Area.SelfCircle, 0, 1, 0f, 30, turns: 2, amount: 0.25f),
+                ["惑乱"] = Craft("惑乱", "射程3内敌军单体混乱，下次行动原地不动", Effect.Debuff, Area.Single, 3, 0, 0f, 25),   // 妖术师（张宝、张角）
                 ["连射"] = Craft("连射", "射程3单体物理两段合计1.4倍", Effect.Damage, Area.Single, 3, 0, 1.4f, 25, might: true),
             };
             var u = NewUnit(d.Name, d.Key, d.Team, d.Troop, d.School, d.Hp, d.Atk, d.Def, d.Mat, d.Mdef, d.Speed, d.Move, d.Range, d.Ep, pos);

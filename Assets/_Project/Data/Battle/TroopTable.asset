@@ -111,3 +111,10 @@ MonoBehaviour:
     PlayerUsable: 1
     Move: 0
     Range: 0
+  - Type: 14
+    TroopBonus: 0
+    DefenseBonus: 0
+    BaseSpeed: 7
+    PlayerUsable: 1
+    Move: 0
+    Range: 0

@@ -74,8 +74,8 @@ namespace ThreeKingdoms.UI.Battle
         // Xuzhou's civil and military officers (GENERALS_ROSTER v0.3). User 2026-10-30 chose named generals only to fill
         // the larger line-ups: 简雍 rides with Liu Bei from battle 12; Tao Qian attaches 糜竺, 糜芳 and 孙乾 at Xiapi.
         static readonly GeneralSpec JianYong = new GeneralSpec("jian_yong", "简雍", TroopType.Strategist, 35, 50, 80, element: UnitElement.Water);
-        static readonly GeneralSpec SunQian = new GeneralSpec("sun_qian", "孙乾", TroopType.Strategist, 32, 55, 72, element: UnitElement.Water);
-        static readonly GeneralSpec MiZhu = new GeneralSpec("mi_zhu", "糜竺", TroopType.Strategist, 30, 52, 76, element: UnitElement.Metal);
+        static readonly GeneralSpec SunQian = new GeneralSpec("sun_qian", "孙乾", TroopType.Geomancer, 32, 55, 72, element: UnitElement.Water);
+        static readonly GeneralSpec MiZhu = new GeneralSpec("mi_zhu", "糜竺", TroopType.Geomancer, 30, 52, 76, element: UnitElement.Metal);
         static readonly GeneralSpec MiFang = new GeneralSpec("mi_fang", "糜芳", TroopType.Archer, 60, 58, 48, element: UnitElement.Metal);
         static readonly GeneralSpec CaoBao = new GeneralSpec("cao_bao", "曹豹", TroopType.Infantry, 70, 66, 40);
         static readonly GeneralSpec Danyang = new GeneralSpec("danyang", "丹杨兵", TroopType.Infantry, 72, 70, 30);
