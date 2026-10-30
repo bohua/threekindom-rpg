@@ -54,10 +54,18 @@ namespace ThreeKingdoms.Gameplay.Story
             foreach (var t in c.People) if (t) t.gameObject.SetActive(Present(c, FieldStoryController.IdOf(t)));
         });
 
-        public static IEnumerable<StageStep> OnArrive(FieldStoryController c) => new[] { Refresh(c) };
+        // Came by the realm map (RegionTravel, from 191): the arrival autosave and the first-visit card, as in the other
+        // regions; from Gongsun Zan's garrison in 190 the garrison is still the save point.
+        public static IEnumerable<StageStep> OnArrive(FieldStoryController c)
+        {
+            yield return Refresh(c);
+            if (c.Run.Chapter2.Step == ChapterStep.Gongsun) yield break;
+            foreach (var s in FieldScriptsRegions.OnArrive(c)) yield return s;
+        }
 
         public static string Prompt(FieldStoryController c, string id) => id switch
         {
+            FieldScriptsRegions.Courier => FieldScriptsRegions.Prompt(c, id),
             "ls_tree" => Has(c, Lousang) || !(Has(c, LsZijing) && Has(c, LsYuanqi) && Has(c, LsDeran)) ? null : "raw:[确认] 在大桑树下站一会儿",
             _ => "talk:" + id,
         };
@@ -94,6 +102,8 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             switch (id)
             {
+                case FieldScriptsRegions.Courier: return FieldScriptsRegions.Talk(c, id);   // the realm map and saving
+
                 // ---------- Ji ----------
                 case "ji_jian_yong": return JianYongStart(c);
                 case "ji_jian_yong_hall": return JianYongSummary(c);

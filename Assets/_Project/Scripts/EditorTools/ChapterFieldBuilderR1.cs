@@ -58,6 +58,8 @@ namespace ThreeKingdoms.EditorTools
                 At("ji_refugee 许氏", Resident("N21"), 342f, 201f),
                 At("ji_east_gate 通事老达", Resident("N19"), 407f, 222.5f),
                 At("kumo 库莫", Resident("N12"), 407f, 215.5f),
+                // 涿蓟驿 (264, 137): the courier for the realm map (RegionTravel), the arrival spot beside him.
+                At(FieldScriptsRegions.Courier + " 驿卒", Resident("N07"), 257f, 128f),
                 // Lousang (centre 170, 64; Liu Bei's home NE, the tile house NW, the school S, the great mulberry 182, 80)
                 At("ls_mother 刘母", Resident("N08"), 178.5f, 72f),
                 At("ls_zijing 刘子敬", Resident("N09"), 186.5f, 77.5f),
@@ -81,6 +83,7 @@ namespace ThreeKingdoms.EditorTools
             c.Stage.Confirm = ProjectSetup.Action("Interact");
             c.People = list.ToArray();
             c.Spots = new[] { Spot3("ls_tree 大桑树", 182f, 76.5f) };
+            Spot3(RegionTravel.PostArrival, 260f, 131f);
             var start = player ? player.transform.position : Vector3.zero;
             c.ArrivalSpot = Spot3("Arrival (region start)", start.x, start.z);
             c.ReturnSpot = c.ArrivalSpot;

@@ -253,6 +253,8 @@ namespace ThreeKingdoms.UI.Story
             if (key == "side:merchants") return "[确认] 与张世平、苏双交谈";
             if (key == "side:gu_sou") return "[确认] 听鼓叟说书";
             if (key == "side:smith") return "[确认] 与铁匠交谈（取兵器）";
+            if (key == "side:lu_yu") return "[确认] 与卢毓交谈";
+            if (key == "side:lu_sao") return "[确认] 与卢家长嫂交谈";
             if (key == "beggar") return "[确认] 与乞丐交谈";
             if (key == "scholar") return "[确认] 与读书人交谈";
             if (key == "casino") return "[确认] 与地痞交谈（赌大小）";
