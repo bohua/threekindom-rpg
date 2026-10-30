@@ -25,6 +25,8 @@ namespace ThreeKingdoms.UI.Region
 
         VisualElement sign, minorRow, marker, bubble, bubbleRows, fullMap, fullMarker;
         Signpost shownSign;
+        RegionTalk shownTalk;
+        int talkLine;           // index of the line shown; past the end once the talk is over (until the player walks off)
         float bubbleFade;
         Label major, coords;
         VisualElement coordPanel;
@@ -34,8 +36,34 @@ namespace ThreeKingdoms.UI.Region
         public string SignText { get; private set; }
         public string CoordsText => coords?.text;
         public bool FullMapOpen => fullMap != null && fullMap.style.display == DisplayStyle.Flex;
-        // The signpost bubble's lines while one is shown ("↑ 北村 约 120 步"), for tests.
+        // The signpost bubble's lines while one is shown ("↑ 北村 约 120 步"), or the speaker and line of a talk, for tests.
         public System.Collections.Generic.List<string> BubbleLines { get; } = new System.Collections.Generic.List<string>();
+
+        // Turns a shown talk to its next line (confirm), for tests as well as input.
+        public void AdvanceTalk()
+        {
+            if (!shownTalk) return;
+            var script = shownTalk.Script;
+            if (talkLine < script.Count - 1) { talkLine++; ShowTalk(); return; }
+            talkLine = script.Count; BubbleLines.Clear(); bubble.style.display = DisplayStyle.None;
+        }
+
+        void ShowTalk()
+        {
+            bubbleRows.Clear();
+            BubbleLines.Clear();
+            var script = shownTalk.Script;
+            if (talkLine >= script.Count) return;
+            string line = script[talkLine];
+            // A blank speaker is narration (an inspected stele, a mute keeper's gesture): mist-coloured, no name.
+            bool narration = string.IsNullOrEmpty(shownTalk.Speaker);
+            if (!narration) { var who = Text(bubbleRows, shownTalk.Speaker, 20, Cyan); who.style.marginTop = 4; }
+            var l = Text(bubbleRows, line, 22, narration ? Mist : Ivory);
+            l.style.whiteSpace = WhiteSpace.Normal; l.style.marginTop = 4; l.style.marginBottom = 4;
+            var hint = Text(bubbleRows, talkLine < script.Count - 1 ? "▼" : "", 16, Mist);
+            hint.style.alignSelf = Align.FlexEnd;
+            BubbleLines.Add(narration ? line : $"{shownTalk.Speaker}：{line}");
+        }
 
         void OnEnable()
         {
@@ -204,12 +232,29 @@ namespace ThreeKingdoms.UI.Region
 
         void UpdateBubble()
         {
-            var s = Player ? Signpost.Nearest(Player.position) : null;
-            if (s != shownSign) { shownSign = s; if (s) { ShowBubble(s); bubbleFade = 0f; } else BubbleLines.Clear(); }
-            if (!shownSign) { bubble.style.display = DisplayStyle.None; return; }
+            // Someone to talk to wins over a signpost.
+            var t = Player ? RegionTalk.Nearest(Player.position) : null;
+            if (t != shownTalk)
+            {
+                shownTalk = t; talkLine = 0;
+                if (t) { shownSign = null; ShowTalk(); bubbleFade = 0f; } else BubbleLines.Clear();
+            }
+            Transform anchor; float height;
+            if (shownTalk)
+            {
+                if (talkLine >= shownTalk.Script.Count) { bubble.style.display = DisplayStyle.None; return; }
+                anchor = shownTalk.transform; height = shownTalk.BubbleHeight;
+            }
+            else
+            {
+                var s = Player ? Signpost.Nearest(Player.position) : null;
+                if (s != shownSign) { shownSign = s; if (s) { ShowBubble(s); bubbleFade = 0f; } else BubbleLines.Clear(); }
+                if (!shownSign) { bubble.style.display = DisplayStyle.None; return; }
+                anchor = shownSign.transform; height = shownSign.BubbleHeight;
+            }
             var cam = Camera.main;
             if (!cam || bubble.panel == null) return;
-            Vector3 sp = cam.WorldToScreenPoint(shownSign.transform.position + Vector3.up * shownSign.BubbleHeight);
+            Vector3 sp = cam.WorldToScreenPoint(anchor.position + Vector3.up * height);
             if (sp.z <= 0f) { bubble.style.display = DisplayStyle.None; return; }
             bubble.style.display = DisplayStyle.Flex;
             var pos = RuntimePanelUtils.ScreenToPanel(bubble.panel, new Vector2(sp.x, Screen.height - sp.y));
@@ -231,6 +276,7 @@ namespace ThreeKingdoms.UI.Region
             if (zone != current) { current = zone; Show(zone); fade = 0f; }
             if (fade < 1f) { fade = Mathf.Min(1f, fade + Time.unscaledDeltaTime * 4f); sign.style.opacity = fade; }
             UpdateBubble();
+            if (shownTalk && TalkConfirm()) AdvanceTalk();
             var at = Player.position;
             string text = $"坐标  x {Mathf.RoundToInt(at.x)}  ·  z {Mathf.RoundToInt(at.z)}";
             if (coords.text != text) coords.text = text;
@@ -268,6 +314,14 @@ namespace ThreeKingdoms.UI.Region
                 Text(minorRow, parts[i].Trim(), 26, Ivory);
             }
             SignText = $"{major.text} · {minor}";
+        }
+
+        static bool TalkConfirm()
+        {
+            var k = UnityEngine.InputSystem.Keyboard.current;
+            var g = UnityEngine.InputSystem.Gamepad.current;
+            return (k != null && (k.enterKey.wasPressedThisFrame || k.spaceKey.wasPressedThisFrame || k.zKey.wasPressedThisFrame))
+                || (g != null && g.buttonSouth.wasPressedThisFrame);
         }
 
         static VisualElement Panel(VisualElement parent)

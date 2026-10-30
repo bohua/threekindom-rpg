@@ -18,6 +18,51 @@
   "gate_at": [
    0,
    -23
+  ],
+  "talks": [
+   {
+    "name": "放马老牧人老郭",
+    "sprite": "N12",
+    "at": [
+     6,
+     -28
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 1,
+      "speaker": "老郭",
+      "lines": [
+       "这片草场？没人驻。听说公孙家的伯珪在外头做官，养了一群白马。哪天他来了，这草就不够吃了。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.gz.herder.N1.1"
+      ],
+      "until": 3
+     }
+    ]
+   },
+   {
+    "name": "营门哨兵",
+    "sprite": "N01",
+    "at": [
+     5,
+     -26
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "营门哨兵",
+      "lines": [
+       "公孙将军营。报名号，下马步行。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.gz.gate.N4.1"
+      ]
+     }
+    ]
+   }
   ]
  },
  "mulberry": {
@@ -68,21 +113,264 @@
  ],
  "lousang": {
   "set": "r1-blender-lousang",
-  "layout": "_checks/layout_placements.json"
+  "layout": "_checks/layout_placements.json",
+  "talks": [
+   {
+    "name": "楼桑村童",
+    "sprite": "N23",
+    "at": [
+     14,
+     10
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "楼桑村童",
+      "lines": [
+       "我要乘羽葆盖车！",
+       "你乘个屁，你连驴都没骑过！"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.ls.kids.N4.1",
+       "dlg.lb1.npc.r1.ls.kids.N4.2"
+      ]
+     },
+     {
+      "from": 5,
+      "speaker": "楼桑村童",
+      "lines": [
+       "刘家大郎回来了！他真骑马了！"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.ls.kids.N5"
+      ]
+     },
+     {
+      "from": 7,
+      "speaker": "楼桑村童",
+      "lines": [
+       "大人说，桑树底下不许乱说话。为什么？"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.ls.kids.N7"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "juyong": {
   "set": "r1-blender-juyong",
-  "layout": "_checks/layout_placements.json"
+  "layout": "_checks/layout_placements.json",
+  "talks": [
+   {
+    "name": "关门",
+    "sprite": null,
+    "at": [
+     0,
+     -7
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 1,
+      "speaker": "",
+      "lines": [
+       "关门紧闭。城楼上的戍卒朝你摇头。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.juyong.gate.1"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "checkpoint": {
-  "skip": true
+  "skip": true,
+  "talks": [
+   {
+    "name": "杜关吏",
+    "sprite": "N03",
+    "at": [
+     0,
+     -3
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "杜关吏",
+      "lines": [
+       "站住。居庸关以北是上谷，关外乌桓、鲜卑游骑出没，边塞戒严。",
+       "没有州里的出塞文书，谁也不放。刘使君发的文书，我这儿一年也见不到几张。",
+       "你问关外？草长起来的时候，马蹄声能传十里。听见了，就得点烽火。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.juyong.official.N4.1",
+       "dlg.lb1.npc.r1.juyong.official.N4.2",
+       "dlg.lb1.npc.r1.juyong.official.N4.3"
+      ]
+     },
+     {
+      "from": 6,
+      "speaker": "杜关吏",
+      "lines": [
+       "卢尚书在上谷过世，他家里人想出关收殓，我也没放。……令就是令。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.juyong.official.N6.1"
+      ]
+     },
+     {
+      "from": 7,
+      "speaker": "杜关吏",
+      "lines": [
+       "州里换了主人，出塞令还是那道令。关，不会为谁开。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.juyong.official.N7.1"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "post2": {
-  "skip": true
+  "skip": true,
+  "talks": [
+   {
+    "name": "关前驿驿卒",
+    "sprite": "N07",
+    "at": [
+     0,
+     -8
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "关前驿驿卒",
+      "lines": [
+       "往关上去的信，十封有九封退回来。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.gq.station.N4"
+      ]
+     },
+     {
+      "from": 5,
+      "speaker": "关前驿驿卒",
+      "lines": [
+       "卢尚书家里人来问过路，我只能说过不去。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.gq.station.N5"
+      ]
+     },
+     {
+      "from": 7,
+      "speaker": "关前驿驿卒",
+      "lines": [
+       "这驿站，就剩我一个了。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.gq.station.N7"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "post1": {
   "set": "r1-blender-juyong",
-  "model": "post_station_road"
+  "model": "post_station_road",
+  "talks": [
+   {
+    "name": "孟驿丞",
+    "sprite": "N28",
+    "at": [
+     0,
+     -14
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "孟驿丞",
+      "lines": [
+       "往北蓟城，往南涿县，往西就是关了——关那边，您过不去。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.zj.station.N4.1"
+      ]
+     },
+     {
+      "from": 7,
+      "speaker": "孟驿丞",
+      "lines": [
+       "蓟城那边乱了几天。驿马给公孙将军征走一半，您要用马，得等。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.zj.station.N7.1"
+      ]
+     }
+    ]
+   },
+   {
+    "name": "卖浆吴婆",
+    "sprite": "N26",
+    "at": [
+     12,
+     -16
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "卖浆吴婆",
+      "lines": [
+       "喝碗浆再走。往西那条别去了，关上不放人。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.signpost.wu.N4.1"
+      ]
+     },
+     {
+      "from": 7,
+      "speaker": "卖浆吴婆",
+      "lines": [
+       "这几天往北跑的都是州里的人，往南跑的也是。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.signpost.wu.N7.1"
+      ]
+     }
+    ]
+   },
+   {
+    "name": "路口路标",
+    "sprite": null,
+    "at": [
+     15,
+     -12
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 1,
+      "speaker": "",
+      "lines": [
+       "北至蓟　南至涿　西至居庸关　东南往广阳　西南往易"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.signpost.read"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "_wall": {
   "set": "r1-blender-juyong",
@@ -164,7 +452,17 @@
     8,
     null
    ]
-  ]
+  ],
+  "crags": {
+   "set": "r1-blender-yanshan",
+   "models": [
+    "r1_crag_a",
+    "r1_crag_b",
+    "r1_crag_c",
+    "r1_cliff_8m"
+   ],
+   "count": 70
+  }
  },
  "_house": {
   "set": "r1-blender-lousang",
@@ -180,7 +478,54 @@
    20
   ],
   "set": "r1-blender-beacon-v2",
-  "model": "r1_beacon_ruin"
+  "model": "r1_beacon_ruin",
+  "talks": [
+   {
+    "name": "郝老卒",
+    "sprite": "N01",
+    "at": [
+     0,
+     -7
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "郝老卒",
+      "lines": [
+       "老卒郝某，奉令守烽燧，十二年。烽燧废了三年，没人来换岗，老卒不敢走。",
+       "烽燧不点，是好事。可烽燧不点，就没人记得上面还有人。"
+      ],
+      "keys": [
+       "dlg.lb1.beacon.s1.0",
+       "dlg.lb1.beacon.s1.1"
+      ],
+      "until": 5
+     }
+    ]
+   },
+   {
+    "name": "冷灰与竹签",
+    "sprite": null,
+    "at": [
+     2,
+     -6
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 6,
+      "speaker": "",
+      "lines": [
+       "灰是冷的。竹签上刻着十二道，最后一道刻得很浅。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.beacon.empty.1"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "hunter": {
   "flatten": [
@@ -188,7 +533,61 @@
    12
   ],
   "set": "r1-blender-wild-places",
-  "model": "r1_hunter_cabin"
+  "model": "r1_hunter_cabin",
+  "talks": [
+   {
+    "name": "猎户石大",
+    "sprite": "N27",
+    "at": [
+     -4,
+     -8
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "猎户石大",
+      "lines": [
+       "皮子要不要？狐皮、獾皮。山上的马蹄印，有钉掌的是汉马，没钉的是胡马。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.hunt.shi.N4.1"
+      ]
+     },
+     {
+      "from": 6,
+      "speaker": "猎户石大",
+      "lines": [
+       "白马营的人来山里找走散的马。找回三匹，两匹带着箭。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.hunt.shi.N6.1"
+      ]
+     }
+    ]
+   },
+   {
+    "name": "狐皮",
+    "sprite": null,
+    "at": [
+     -5,
+     -3
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "",
+      "lines": [
+       "门口挂着一张狐皮。石大今年打的第三张。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.hunt.pelt"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "tomb": {
   "flatten": [
@@ -196,28 +595,268 @@
    14
   ],
   "set": "r1-blender-wild-places",
-  "model": "r1_han_tomb"
+  "model": "r1_han_tomb",
+  "talks": [
+   {
+    "name": "守墓人哑叔",
+    "sprite": "N30",
+    "at": [
+     5,
+     -8
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "",
+      "lines": [
+       "他指指古墓，又指指天，意思是：比汉还老。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.tomb.keeper.N4"
+      ]
+     },
+     {
+      "from": 5,
+      "speaker": "",
+      "lines": [
+       "他在古墓前扫出一块空地，不知要给谁。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.tomb.keeper.N5"
+      ]
+     },
+     {
+      "from": 7,
+      "speaker": "",
+      "lines": [
+       "他指向古墓东侧一座新坟，坟前插着一块没有字的木牌。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.tomb.keeper.N7"
+      ]
+     }
+    ]
+   },
+   {
+    "name": "古碑",
+    "sprite": null,
+    "at": [
+     0,
+     -4.5
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "",
+      "lines": [
+       "碑字磨平了，只剩一个“燕”字。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.tomb.stele.1"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "ferry": {
   "set": "r1-blender-wild-places",
   "model": "r1_ferry_landing",
-  "face_water": 4
+  "face_water": 4,
+  "talks": [
+   {
+    "name": "渡翁易老",
+    "sprite": "N09",
+    "at": [
+     4,
+     7
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "渡翁易老",
+      "lines": [
+       "荆卿走的就是这条水。燕地的人送人，不说“早回”，只唱这一句。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.ferry.yi.N4.1"
+      ]
+     },
+     {
+      "from": 6,
+      "speaker": "渡翁易老",
+      "lines": [
+       "这几年往南渡的都是兵，往北渡的都是伤兵。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.ferry.yi.N6.1"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "wood_bridge": {
   "set": "r1-blender-wild-places",
-  "model": "r1_wood_bridge"
+  "model": "r1_wood_bridge",
+  "talks": [
+   {
+    "name": "胡篾匠",
+    "sprite": "N25",
+    "at": [
+     25,
+     3
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "胡篾匠",
+      "lines": [
+       "这桥是柳湾和东陌两村合钱修的。过桥不要钱，帮着扛一捆苇子就行。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.bridge.hu.N4.1"
+      ]
+     },
+     {
+      "from": 6,
+      "speaker": "胡篾匠",
+      "lines": [
+       "桥上过兵，桥板压断了两块。村里出人修的，官里不管。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.bridge.hu.N6.1"
+      ]
+     }
+    ]
+   },
+   {
+    "name": "割苇少年",
+    "sprite": "N22",
+    "at": [
+     27,
+     -5
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "割苇少年",
+      "lines": [
+       "别踩那边的黑泥！湿土陷脚，陷进去鞋就没了！"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.river.kids.N4"
+      ]
+     },
+     {
+      "from": 5,
+      "speaker": "割苇少年",
+      "lines": [
+       "沙滩上的苇子最直，织席最好。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.river.kids.N5"
+      ]
+     },
+     {
+      "from": 7,
+      "speaker": "割苇少年",
+      "lines": [
+       "我哥当兵去了，苇子我一个人割。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.river.kids.N7"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "exit_0": {
   "set": "r1-blender-wild-places",
-  "model": "r1_signpost"
+  "model": "r1_signpost",
+  "talks": [
+   {
+    "name": "路牌",
+    "sprite": null,
+    "at": [
+     0,
+     -2
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 1,
+      "speaker": "",
+      "lines": [
+       "往广阳。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.edge.guangyang"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "exit_1": {
   "set": "r1-blender-wild-places",
-  "model": "r1_signpost"
+  "model": "r1_signpost",
+  "talks": [
+   {
+    "name": "路牌",
+    "sprite": null,
+    "at": [
+     0,
+     -2
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 1,
+      "speaker": "",
+      "lines": [
+       "往易县。前面是冀州地界。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.edge.yi"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "shrine": {
   "set": "r1-blender-lousang",
-  "model": "earth_shrine"
+  "model": "earth_shrine",
+  "talks": [
+   {
+    "name": "桑婆",
+    "sprite": "N08",
+    "at": [
+     3,
+     -6
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "桑婆",
+      "lines": [
+       "这树的叶子，养活了半村的蚕。贵人不贵人老身不懂，蚕是真吃饱了。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.ls.shrine.caifeng.1"
+      ]
+     }
+    ]
+   }
+  ]
  },
  "peach": {
   "fence": {
@@ -227,5 +866,91 @@
    "from": 95,
    "to": 265
   }
- }
+ },
+ "willow_village": {
+  "talks": [
+   {
+    "name": "柳湾村村正",
+    "sprite": "N09",
+    "at": [
+     0,
+     -12
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "柳湾村村正",
+      "lines": [
+       "柳湾二十户，户户割苇织席。苇子好不好，看拒马河的水。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.lw.headman.N4"
+      ]
+     },
+     {
+      "from": 5,
+      "speaker": "柳湾村村正",
+      "lines": [
+       "去年水大，沙滩淹了一半。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.lw.headman.N5"
+      ]
+     },
+     {
+      "from": 7,
+      "speaker": "柳湾村村正",
+      "lines": [
+       "征了三个后生去当兵。葛翁的孙女现在顶一个劳力。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.lw.headman.N7"
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "east_village": {
+  "talks": [
+   {
+    "name": "郝家孙儿",
+    "sprite": "N10",
+    "at": [
+     0,
+     -11
+    ],
+    "frame": 0,
+    "entries": [
+     {
+      "from": 4,
+      "speaker": "郝家孙儿",
+      "lines": [
+       "我爷爷在山上守烽火，我没见过他。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.dm.grandson.N4"
+      ]
+     },
+     {
+      "from": 7,
+      "speaker": "郝家孙儿",
+      "lines": [
+       "爷爷说，烽火不点是好事。"
+      ],
+      "keys": [
+       "dlg.lb1.npc.r1.dm.grandson.N7"
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "_backdrop": [
+  {
+   "set": "r1-blender-yanshan",
+   "model": "r1_yan_backdrop"
+  }
+ ]
 }
