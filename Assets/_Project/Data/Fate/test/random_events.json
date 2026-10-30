@@ -1,0 +1,14 @@
+[
+  {
+    "id": "re.t_plague",
+    "stages": [
+      "tv.N3"
+    ],
+    "causesDeviation": true,
+    "memory": {
+      "key": "r.re.t_plague",
+      "importance": 3,
+      "templateId": "mem.r.t_plague"
+    }
+  }
+]

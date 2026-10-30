@@ -1,0 +1,44 @@
+{
+  "posts": [
+    {
+      "id": "t_post_a",
+      "city": "t_city",
+      "unique": true,
+      "historical": {
+        "tv.N1": "t_doomed",
+        "tv.N3": "t_heir"
+      }
+    }
+  ],
+  "cities": [
+    {
+      "id": "t_city",
+      "region": "r_north",
+      "garrisonCap": 2
+    },
+    {
+      "id": "t_town",
+      "region": "r_south",
+      "garrisonCap": 0
+    },
+    {
+      "id": "t_camp",
+      "region": "r_north",
+      "garrisonCap": 0
+    },
+    {
+      "id": "t_village",
+      "region": "r_south",
+      "garrisonCap": 0
+    }
+  ],
+  "factionFloors": [
+    {
+      "faction": "t_house",
+      "until": "tv.N2",
+      "mustKeep": [
+        "t_loyal"
+      ]
+    }
+  ]
+}
