@@ -115,6 +115,73 @@ namespace Prototype.BingshuTactics
         }
 
         // ---------- 绘制 ----------
+        // ---------- 切图（Codex art/deploy-select-slices，1920×1080 基准；本界面按 720 高绘制，边距缩 2/3） ----------
+        readonly Dictionary<string, Texture2D> selTex = new Dictionary<string, Texture2D>();
+        Texture2D STex(string name)
+        {
+            if (!selTex.TryGetValue(name, out var t)) selTex[name] = t = Resources.Load<Texture2D>("DeploySelect/" + name);
+            return t;
+        }
+
+        // 九宫格：四角按原尺寸的 2/3 绘制，边与中心拉伸
+        bool Nine(Rect r, string name, int border, float alpha = 1f)
+        {
+            var t = STex(name);
+            if (!t) return false;
+            float b = border * (RefH / 1080f), bu = border / (float)t.width, bv = border / (float)t.height;
+            b = Mathf.Min(b, r.width / 2f, r.height / 2f);
+            var o = GUI.color; GUI.color = new Color(1, 1, 1, alpha);
+            float[] xs = { r.x, r.x + b, r.xMax - b, r.xMax }, ys = { r.y, r.y + b, r.yMax - b, r.yMax };
+            float[] us = { 0, bu, 1 - bu, 1 }, vs = { 1, 1 - bv, bv, 0 };
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                {
+                    var dst = new Rect(xs[i], ys[j], xs[i + 1] - xs[i], ys[j + 1] - ys[j]);
+                    if (dst.width <= 0 || dst.height <= 0) continue;
+                    GUI.DrawTextureWithTexCoords(dst, t, new Rect(us[i], vs[j + 1], us[i + 1] - us[i], vs[j] - vs[j + 1]));
+                }
+            GUI.color = o;
+            return true;
+        }
+
+        bool Img(Rect r, string name, float alpha = 1f)
+        {
+            var t = STex(name);
+            if (!t) return false;
+            var o = GUI.color; GUI.color = new Color(alpha, alpha, alpha, o.a);
+            GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
+            GUI.color = o;
+            return true;
+        }
+
+        void SkinBar(Rect r, float v, string fill)
+        {
+            if (!Img(r, "ui/bar_track")) Rect(r, SelGroove);
+            var f = new Rect(r.x, r.y, r.width * Mathf.Clamp01(v), r.height);
+            var t = STex(fill);
+            if (t) GUI.DrawTextureWithTexCoords(f, t, new Rect(0, 0, Mathf.Clamp01(v), 1));
+        }
+
+        static readonly Dictionary<string, string> BustKeys = new Dictionary<string, string>
+        {
+            ["刘备"] = "LIU_BEI", ["关羽"] = "GUAN_YU", ["张飞"] = "ZHANG_FEI", ["赵云"] = "ZHAO_YUN", ["太史慈"] = "TAISHI_CI",
+            ["简雍"] = "JIAN_YONG", ["孙乾"] = "SUN_QIAN", ["糜竺"] = "MI_ZHU", ["糜芳"] = "MI_FANG",
+        };
+
+        // 统一构图的卡片头像（双眼在 32% 高处）；按目标框比例裁两侧
+        bool CardBust(Rect r, Unit u, float shade)
+        {
+            if (!BustKeys.TryGetValue(u.Name, out var key)) return false;
+            var t = STex("busts/" + key + "_CARD");
+            if (!t) return false;
+            float aspect = r.width / r.height, src = t.width / (float)t.height;
+            var uv = aspect < src ? new Rect((1 - aspect / src) / 2f, 0, aspect / src, 1) : new Rect(0, 0, 1, 1);
+            var o = GUI.color; GUI.color = new Color(shade, shade, shade, 1f);
+            GUI.DrawTextureWithTexCoords(r, t, uv);
+            GUI.color = o;
+            return true;
+        }
+
         void SelBox(Rect r, Color fill, Color edge, float w = 1.2f)
         {
             Rect(r, fill);
@@ -156,6 +223,8 @@ namespace Prototype.BingshuTactics
         void DrawSelect(float sw)
         {
             Rect(new Rect(0, 0, sw, RefH), SelBase);
+            if (STex("ui/bg_deploy")) GUI.DrawTexture(new Rect(0, 0, sw, RefH), STex("ui/bg_deploy"), ScaleMode.ScaleAndCrop);
+            Img(new Rect(0, 82, sw, 4), "ui/header_rule");
             // 页眉
             GUI.Label(new Rect(24, 12, 220, 40), "出阵选将", St(30, Ivory, TextAnchor.MiddleLeft, true));
             GUI.Label(new Rect(26, 50, 260, 20), "战前整备 / 选择武将 → 调整布阵", St(13, SelMist, TextAnchor.MiddleLeft));
@@ -164,7 +233,7 @@ namespace Prototype.BingshuTactics
             GUI.Label(new Rect(268, 40, 600, 20), Chapter?.Where ?? "", St(15, SelMist, TextAnchor.MiddleLeft));
             GUI.Label(new Rect(268, 58, 700, 20), "◆ 胜利条件：" + (Chapter?.Objective ?? ""), St(14, Ivory, TextAnchor.MiddleLeft));
             var cnt = new Rect(sw - 270, 10, 250, 64);
-            SelBox(cnt, SelPanel, SelSilver);
+            if (!Img(cnt, "ui/count_plate")) SelBox(cnt, SelPanel, SelSilver);
             GUI.Label(new Rect(cnt.x + 16, cnt.y + 6, 80, 30), "上阵", St(20, Ivory, TextAnchor.MiddleLeft, true));
             GUI.Label(new Rect(cnt.x + 100, cnt.y + 2, 134, 40), $"{Fielded.Count()} / {DeployCap}", St(32, SelGold, TextAnchor.MiddleRight, true));
             int req = selectRoster.Count(IsRequired), reqIn = selectRoster.Count(u => IsRequired(u) && !u.Benched);
@@ -172,7 +241,7 @@ namespace Prototype.BingshuTactics
 
             // 左：可用武将
             var left = new Rect(20, 86, sw * 0.68f - 30, RefH - 86 - 70);
-            SelBox(left, SelPanel, SelSilver);
+            if (!Nine(left, "ui/panel_frame_9slice", 48)) SelBox(left, SelPanel, SelSilver);
             GUI.Label(new Rect(left.x + 14, left.y + 6, 200, 28), "可用武将", St(20, Ivory, TextAnchor.MiddleLeft, true));
             GUI.Label(new Rect(left.xMax - 300, left.y + 6, 286, 28), $"可上阵 {DeployCap} 人 · 后备 {selectRoster.Count(u => u.Benched)} 人", St(14, SelMist, TextAnchor.MiddleRight));
             string[] tabs = { "全部", "步", "骑", "弓", "军师" };
@@ -181,7 +250,7 @@ namespace Prototype.BingshuTactics
                 int n = i == 0 ? selectRoster.Count : selectRoster.Count(u => (int)TroopTraits.ClassOf(u.Troop) == i - 1);
                 var tr = new Rect(left.x + 14 + i * 92, left.y + 38, 86, 26);
                 bool on = i == selTab;
-                SelBox(tr, on ? SelSelBg : SelGroove, on ? SelCyan : SelSilver * 0.8f);
+                if (!Nine(tr, on ? "ui/tab_selected" : "ui/tab", 20)) SelBox(tr, on ? SelSelBg : SelGroove, on ? SelCyan : SelSilver * 0.8f);
                 if (GUI.Button(tr, GUIContent.none, GUIStyle.none)) { selTab = i; selCursor = 0; }
                 GUI.Label(tr, $"{tabs[i]} {n}", St(15, on ? Ivory : SelMist, TextAnchor.MiddleCenter));
             }
@@ -214,11 +283,11 @@ namespace Prototype.BingshuTactics
             GUI.Label(new Rect(24, bar.y + 4, sw - 520, 26), state, St(16, selMessage != null || block != null ? SelGold : Ivory, TextAnchor.MiddleLeft, true));
             GUI.Label(new Rect(24, bar.y + 32, sw - 520, 22), "A/Enter 上阵/下阵　LB/RB·Q/E 切换页签　X/G 自动编成　Start/F 出阵　方向键 选择", St(13, SelMist, TextAnchor.MiddleLeft));
             var auto = new Rect(sw - 420, bar.y + 10, 180, 42);
-            SelBox(auto, SelPanel, SelSilver);
+            if (!Nine(auto, "ui/button", 20)) SelBox(auto, SelPanel, SelSilver);
             GUI.Label(auto, "自动编成", St(19, Ivory, TextAnchor.MiddleCenter, true));
             if (GUI.Button(auto, GUIContent.none, GUIStyle.none)) AutoFill();
             var go = new Rect(sw - 228, bar.y + 10, 208, 42);
-            SelBox(go, block == null ? SelSelBg : SelGroove, block == null ? SelCyan : SelSilver * 0.6f, 1.6f);
+            if (!Nine(go, block == null ? "ui/button_primary" : "ui/button_disabled", 20)) SelBox(go, block == null ? SelSelBg : SelGroove, block == null ? SelCyan : SelSilver * 0.6f, 1.6f);
             GUI.Label(go, "出阵 ›", St(21, block == null ? Ivory : SelMist, TextAnchor.MiddleCenter, true));
             if (GUI.Button(go, GUIContent.none, GUIStyle.none)) ConfirmSelect();
         }
@@ -226,43 +295,49 @@ namespace Prototype.BingshuTactics
         void DrawSelectCard(Rect r, Unit u, bool cursor)
         {
             bool on = !u.Benched, req = IsRequired(u);
-            SelBox(r, on ? SelSelBg : SelGroove, cursor ? SelCyan : on ? SelRed : SelSilver * 0.7f, cursor || on ? 2f : 1.2f);
+            bool skinned = Nine(r, cursor ? "ui/card_cursor_9slice" : on ? "ui/card_deployed_9slice" : "ui/card_normal_9slice", 40);
+            if (!skinned) SelBox(r, on ? SelSelBg : SelGroove, cursor ? SelCyan : on ? SelRed : SelSilver * 0.7f, cursor || on ? 2f : 1.2f);
             var bust = new Rect(r.x + 3, r.y + 3, Mathf.Round(r.height * 0.68f), r.height - 6);
-            DrawBust(bust, u);
+            if (!CardBust(bust, u, 1f)) DrawBust(bust, u);
             // 上阵：红色“阵”旗（用户 2026-10-30）；必上：锁签
             if (on)
             {
-                var flag = new Rect(bust.x + 4, bust.y + 2, 22, 26);
-                Rect(flag, SelRed);
-                GUI.Label(flag, "阵", St(14, Ivory, TextAnchor.MiddleCenter, true));
+                var flag = new Rect(bust.x + 3, bust.y + 2, 22, 25);
+                if (!Img(flag, "ui/mark_deployed")) { Rect(flag, SelRed); GUI.Label(flag, "阵", St(14, Ivory, TextAnchor.MiddleCenter, true)); }
             }
             if (req)
             {
-                var lk = new Rect(bust.x, bust.yMax - 22, bust.width, 22);
-                Rect(lk, new Color(0.04f, 0.06f, 0.1f, 0.82f));
-                GUI.Label(lk, "🔒 必上", St(13, SelGold, TextAnchor.MiddleCenter, true));
+                var lk = new Rect(bust.x + 3, bust.yMax - 20, bust.width - 6, 17);
+                if (!Img(lk, "ui/mark_required_lock")) { Rect(lk, new Color(0.04f, 0.06f, 0.1f, 0.82f)); GUI.Label(lk, "🔒 必上", St(13, SelGold, TextAnchor.MiddleCenter, true)); }
             }
             float tx = bust.xMax + 8, qs = Mathf.Min(r.height - 20, 70f);
             var stand = new Rect(r.xMax - qs - 8, r.y + 8, qs, r.height - 16);
-            Rect(stand, new Color(0.15f, 0.25f, 0.34f, 0.9f));
-            Rect(new Rect(stand.x + 6, stand.yMax - 10, stand.width - 12, 5), new Color(0.35f, 0.47f, 0.56f, 0.9f));
+            Rect(stand, new Color(0.10f, 0.17f, 0.25f, 0.85f));
+            Img(new Rect(stand.x, stand.yMax - stand.width * 1.25f * 0.42f, stand.width, stand.width * 1.25f * 0.42f), "ui/q_stand");
             DrawQ(new Rect(stand.x - 6, stand.y - 4, stand.width + 12, stand.height - 2), u);
             float tw = stand.x - tx - 6;
             GUI.Label(new Rect(tx, r.y + 6, tw, 26), u.Name, St(20, Ivory, TextAnchor.MiddleLeft, true));
             GUI.Label(new Rect(tx, r.y + 32, tw, 20), $"Lv.{u.Level}　{TroopTraits.Name(u.Troop, u.Rank)}", St(13, SelMist, TextAnchor.MiddleLeft));
-            Disc(new Vector2(tx + tw - 7, r.y + 19), 6f, Wuxing.Tint(u.Element));
+            // 五行小徽：色珠里写五行字（同设计图）
+            var ec = new Vector2(tx + tw - 9, r.y + 19);
+            Disc(ec, 9f, new Color(0.85f, 0.88f, 0.9f));
+            Disc(ec, 7.5f, Wuxing.Tint(u.Element));
+            GUI.Label(new Rect(ec.x - 9, ec.y - 9, 18, 18), Wuxing.Name(u.Element), St(11, u.Element == Element.Metal ? new Color(0.15f, 0.2f, 0.3f) : Ivory, TextAnchor.MiddleCenter, true));
             GUI.Label(new Rect(tx, r.y + 60, 40, 18), "兵力", St(12, SelMist, TextAnchor.MiddleLeft));
             GUI.Label(new Rect(tx, r.y + 60, tw, 18), u.MaxHp.ToString(), St(12, Ivory, TextAnchor.MiddleRight));
-            Bar(new Rect(tx, r.y + 78, tw, 5), 1f, SelJade);
+            SkinBar(new Rect(tx, r.y + 78, tw, 5), 1f, "ui/bar_troops");
             GUI.Label(new Rect(tx, r.y + 84, 40, 18), "策力", St(12, SelMist, TextAnchor.MiddleLeft));
             GUI.Label(new Rect(tx, r.y + 84, tw, 18), u.MaxEp.ToString(), St(12, Ivory, TextAnchor.MiddleRight));
-            Bar(new Rect(tx, r.y + 102, tw, 5), 1f, SelSky);
-            if (cursor) GUI.Label(new Rect(r.x - 12, r.center.y - 9, 14, 18), "◆", St(14, SelCyan, TextAnchor.MiddleCenter));
+            SkinBar(new Rect(tx, r.y + 102, tw, 5), 1f, "ui/bar_strategy");
+            if (cursor)
+            {
+                if (!Img(new Rect(r.x - 14, r.center.y - 8, 16, 16), "ui/cursor_diamond")) GUI.Label(new Rect(r.x - 12, r.center.y - 9, 14, 18), "◆", St(14, SelCyan, TextAnchor.MiddleCenter));
+            }
         }
 
         void DrawSelectMap(Rect r)
         {
-            SelBox(r, SelPanel, SelSilver);
+            if (!Nine(r, "ui/panel_frame_9slice", 48)) SelBox(r, SelPanel, SelSilver);
             GUI.Label(new Rect(r.x + 12, r.y + 4, 200, 26), "本场布阵预览", St(18, Ivory, TextAnchor.MiddleLeft, true));
             GUI.Label(new Rect(r.xMax - 212, r.y + 4, 200, 26), Chapter?.Where ?? "", St(13, SelMist, TextAnchor.MiddleRight));
             var area = new Rect(r.x + 12, r.y + 34, r.width - 24, r.height - 46);
@@ -275,6 +350,7 @@ namespace Prototype.BingshuTactics
                     var c = Grid.Impassable(grid.TerrainAt(p)) ? new Color(0.05f, 0.08f, 0.12f) : InDeploy(p) ? new Color(0.12f, 0.36f, 0.45f) : new Color(0.10f, 0.17f, 0.24f);
                     Rect(new Rect(o.x + x * cell + 0.5f, o.y + (H - 1 - y) * cell + 0.5f, cell - 1f, cell - 1f), c);
                 }
+            Img(new Rect(o.x - 8, o.y - 8, cell * W + 16, cell * H + 16), "ui/minimap_frame");
             foreach (var u in units.Where(u => u.Alive))
             {
                 var c = new Vector2(o.x + (u.Pos.x + 0.5f) * cell, o.y + (H - u.Pos.y - 0.5f) * cell);
@@ -285,7 +361,7 @@ namespace Prototype.BingshuTactics
 
         void DrawSelectEnemy(Rect r)
         {
-            SelBox(r, SelPanel, SelSilver);
+            if (!Nine(r, "ui/panel_frame_9slice", 48)) SelBox(r, SelPanel, SelSilver);
             var foes = units.Where(u => u.Alive && u.Team == Team.Enemy).ToList();
             GUI.Label(new Rect(r.x + 12, r.y + 4, 200, 26), "敌情摘要", St(18, Ivory, TextAnchor.MiddleLeft, true));
             GUI.Label(new Rect(r.xMax - 152, r.y + 4, 140, 26), $"敌方 {foes.Count} 人", St(16, Ivory, TextAnchor.MiddleRight, true));
@@ -300,8 +376,7 @@ namespace Prototype.BingshuTactics
                 foreach (var s in StrategiesOf(u).Select(l => l.Def).Concat(u.Crafts).Where(s => s.Effect == Effect.Damage && s.Element != Element.None))
                     if (els.Contains(Wuxing.Overcomes(s.Element))) { counters.Add($"{u.Name}·{s.Name} 克{Wuxing.Name(Wuxing.Overcomes(s.Element))}"); break; }
             var kr = new Rect(r.x + 12, r.y + 66, 30, 30);
-            SelBox(kr, SelSelBg, SelCyan);
-            GUI.Label(kr, "克", St(17, Ivory, TextAnchor.MiddleCenter, true));
+            if (!Img(kr, "ui/counter_badge")) { SelBox(kr, SelSelBg, SelCyan); GUI.Label(kr, "克", St(17, Ivory, TextAnchor.MiddleCenter, true)); }
             GUI.Label(new Rect(kr.xMax + 8, r.y + 62, r.width - 60, r.height - 70),
                 counters.Count > 0 ? string.Join(" / ", counters.Take(4)) : "已上阵者暂无能克制敌方五行的招式",
                 new GUIStyle(St(14, Ivory, TextAnchor.UpperLeft)) { wordWrap = true });
@@ -309,7 +384,7 @@ namespace Prototype.BingshuTactics
 
         void DrawSelectOrder(Rect r)
         {
-            SelBox(r, SelPanel, SelSilver);
+            if (!Nine(r, "ui/panel_frame_9slice", 48)) SelBox(r, SelPanel, SelSilver);
             GUI.Label(new Rect(r.x + 12, r.y + 4, 220, 26), "已上阵 · 出场顺序", St(18, Ivory, TextAnchor.MiddleLeft, true));
             var on = Fielded.ToList();
             int slots = Mathf.Max(on.Count, Mathf.Min(DeployCap, 10));
@@ -317,13 +392,13 @@ namespace Prototype.BingshuTactics
             for (int i = 0; i < slots; i++)
             {
                 var b = new Rect(r.x + 12 + i * (s + 6), r.y + 38, s, s);
-                SelBox(b, SelGroove, i < on.Count ? SelRed : SelSilver * 0.6f);
+                if (!Img(b, i < on.Count ? "ui/order_slot_filled" : "ui/order_slot")) SelBox(b, SelGroove, i < on.Count ? SelRed : SelSilver * 0.6f);
                 if (i < on.Count)
                 {
                     DrawQ(new Rect(b.x - 4, b.y - 6, b.width + 8, b.height + 4), on[i]);
                     GUI.Label(new Rect(b.x + 2, b.yMax - 16, 16, 16), (i + 1).ToString(), St(12, Ivory, TextAnchor.MiddleLeft, true));
                 }
-                else GUI.Label(b, "+", St(22, SelMist, TextAnchor.MiddleCenter));
+                else if (!STex("ui/order_slot")) GUI.Label(b, "+", St(22, SelMist, TextAnchor.MiddleCenter));
             }
             var mix = on.GroupBy(u => TroopTraits.ClassOf(u.Troop)).Select(g => $"{(g.Key == TroopClass.Foot ? "步" : g.Key == TroopClass.Horse ? "骑" : g.Key == TroopClass.Bow ? "弓" : "军")} {g.Count()}");
             GUI.Label(new Rect(r.x + 12, r.y + 44 + s, r.width - 24, 22), "兵种分布：" + string.Join("　", mix), St(14, SelMist, TextAnchor.MiddleLeft));
