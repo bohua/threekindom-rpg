@@ -1,0 +1,347 @@
+[
+  {
+    "id": "t_lord",
+    "name": "测主",
+    "tier": "T0",
+    "ownerLine": "tv",
+    "recruitableIn": [],
+    "factionsEligible": [],
+    "biography": "合成测试人物，不进正式剧情。",
+    "personality": {
+      "loyalty": 70,
+      "righteousness": 80,
+      "benevolence": 80,
+      "courage": 60,
+      "cunning": 60,
+      "fame": 60,
+      "profit": 30,
+      "pride": 40
+    },
+    "ambitions": [
+      {
+        "id": "rise",
+        "weight": 1000
+      }
+    ],
+    "values": {
+      "likes": [],
+      "dislikes": []
+    },
+    "favoredBooks": [],
+    "ownedItems": [],
+    "powerPositions": [],
+    "sources": [
+      "【测试】合成数据"
+    ],
+    "initialLocation": "t_camp",
+    "initialRecruitState": "inParty",
+    "initialFaction": "t_lord_band"
+  },
+  {
+    "id": "t_loyal",
+    "name": "忠将",
+    "tier": "T1",
+    "ownerLine": "tv",
+    "recruitableIn": [
+      "tv"
+    ],
+    "factionsEligible": [],
+    "biography": "合成测试人物，不进正式剧情。",
+    "personality": {
+      "loyalty": 90,
+      "righteousness": 85,
+      "benevolence": 70,
+      "courage": 70,
+      "cunning": 40,
+      "fame": 40,
+      "profit": 20,
+      "pride": 30
+    },
+    "ambitions": [
+      {
+        "id": "serve_house",
+        "weight": 600
+      },
+      {
+        "id": "find_true_lord",
+        "weight": 400
+      }
+    ],
+    "values": {
+      "likes": [
+        "benevolence",
+        "keep_promise"
+      ],
+      "dislikes": [
+        "deceit"
+      ]
+    },
+    "favoredBooks": [],
+    "ownedItems": [],
+    "powerPositions": [],
+    "sources": [
+      "【测试】合成数据"
+    ],
+    "initialLocation": "t_town",
+    "initialRecruitState": "known",
+    "initialFaction": "t_house"
+  },
+  {
+    "id": "t_proud",
+    "name": "傲将",
+    "tier": "T1",
+    "ownerLine": "tv",
+    "recruitableIn": [],
+    "factionsEligible": [],
+    "biography": "合成测试人物，不进正式剧情。",
+    "personality": {
+      "loyalty": 30,
+      "righteousness": 40,
+      "benevolence": 40,
+      "courage": 80,
+      "cunning": 60,
+      "fame": 90,
+      "profit": 50,
+      "pride": 95
+    },
+    "ambitions": [
+      {
+        "id": "win_fame",
+        "weight": 1000
+      }
+    ],
+    "values": {
+      "likes": [
+        "courtesy",
+        "valor"
+      ],
+      "dislikes": [
+        "insult"
+      ]
+    },
+    "favoredBooks": [],
+    "ownedItems": [
+      {
+        "itemId": "sword_t_proud",
+        "origin": "own"
+      }
+    ],
+    "powerPositions": [],
+    "sources": [
+      "【测试】合成数据"
+    ],
+    "initialLocation": "t_camp",
+    "initialRecruitState": "inParty",
+    "initialFaction": "t_lord_band"
+  },
+  {
+    "id": "t_rival",
+    "name": "对手",
+    "tier": "T2",
+    "ownerLine": "tv",
+    "recruitableIn": [
+      "tv"
+    ],
+    "factionsEligible": [],
+    "biography": "合成测试人物，不进正式剧情。",
+    "personality": {
+      "loyalty": 50,
+      "righteousness": 50,
+      "benevolence": 50,
+      "courage": 60,
+      "cunning": 60,
+      "fame": 60,
+      "profit": 50,
+      "pride": 50
+    },
+    "ambitions": [
+      {
+        "id": "rise",
+        "weight": 1000
+      }
+    ],
+    "values": {
+      "likes": [
+        "gift",
+        "courtesy"
+      ],
+      "dislikes": [
+        "insult"
+      ]
+    },
+    "favoredBooks": [],
+    "ownedItems": [],
+    "powerPositions": [],
+    "sources": [
+      "【测试】合成数据"
+    ],
+    "initialLocation": "t_town",
+    "initialRecruitState": "known",
+    "initialFaction": "t_rival_band"
+  },
+  {
+    "id": "t_doomed",
+    "name": "将死者",
+    "tier": "T3",
+    "ownerLine": "tv",
+    "recruitableIn": [],
+    "factionsEligible": [],
+    "biography": "合成测试人物，不进正式剧情。",
+    "personality": {
+      "loyalty": 90,
+      "righteousness": 90,
+      "benevolence": 60,
+      "courage": 95,
+      "cunning": 50,
+      "fame": 50,
+      "profit": 50,
+      "pride": 50
+    },
+    "ambitions": [
+      {
+        "id": "guard_city",
+        "weight": 1000
+      }
+    ],
+    "values": {
+      "likes": [
+        "valor",
+        "fought_alongside"
+      ],
+      "dislikes": [
+        "deceit"
+      ]
+    },
+    "favoredBooks": [],
+    "ownedItems": [],
+    "powerPositions": [
+      "t_post_a"
+    ],
+    "sources": [
+      "【测试】合成数据"
+    ],
+    "initialLocation": "t_city",
+    "initialRecruitState": "known",
+    "initialFaction": "t_house",
+    "initialRole": "守将"
+  },
+  {
+    "id": "t_squire",
+    "name": "同死者",
+    "tier": "T3",
+    "ownerLine": "tv",
+    "recruitableIn": [],
+    "factionsEligible": [],
+    "biography": "合成测试人物，不进正式剧情。",
+    "personality": {
+      "loyalty": 80,
+      "righteousness": 80,
+      "benevolence": 50,
+      "courage": 70,
+      "cunning": 40,
+      "fame": 40,
+      "profit": 40,
+      "pride": 40
+    },
+    "ambitions": [
+      {
+        "id": "guard_city",
+        "weight": 1000
+      }
+    ],
+    "values": {
+      "likes": [
+        "valor"
+      ],
+      "dislikes": []
+    },
+    "favoredBooks": [],
+    "ownedItems": [],
+    "powerPositions": [],
+    "sources": [
+      "【测试】合成数据"
+    ],
+    "initialLocation": "t_city",
+    "initialRecruitState": "known",
+    "initialFaction": "t_house"
+  },
+  {
+    "id": "t_heir",
+    "name": "继任者",
+    "tier": "T2",
+    "ownerLine": "tv",
+    "recruitableIn": [],
+    "factionsEligible": [],
+    "biography": "合成测试人物，不进正式剧情。",
+    "personality": {
+      "loyalty": 60,
+      "righteousness": 60,
+      "benevolence": 60,
+      "courage": 50,
+      "cunning": 70,
+      "fame": 60,
+      "profit": 50,
+      "pride": 50
+    },
+    "ambitions": [
+      {
+        "id": "rise",
+        "weight": 1000
+      }
+    ],
+    "values": {
+      "likes": [
+        "wisdom"
+      ],
+      "dislikes": []
+    },
+    "favoredBooks": [],
+    "ownedItems": [],
+    "powerPositions": [],
+    "sources": [
+      "【测试】合成数据"
+    ],
+    "initialLocation": "t_town",
+    "initialRecruitState": "known",
+    "initialFaction": "t_house"
+  },
+  {
+    "id": "t_wild",
+    "name": "乡野人",
+    "tier": "T3",
+    "ownerLine": "tv",
+    "recruitableIn": [],
+    "factionsEligible": [],
+    "biography": "合成测试人物，不进正式剧情。",
+    "personality": {
+      "loyalty": 50,
+      "righteousness": 50,
+      "benevolence": 60,
+      "courage": 50,
+      "cunning": 50,
+      "fame": 30,
+      "profit": 60,
+      "pride": 30
+    },
+    "ambitions": [
+      {
+        "id": "live_quietly",
+        "weight": 1000
+      }
+    ],
+    "values": {
+      "likes": [
+        "gift"
+      ],
+      "dislikes": []
+    },
+    "favoredBooks": [],
+    "ownedItems": [],
+    "powerPositions": [],
+    "sources": [
+      "【测试】合成数据"
+    ],
+    "initialLocation": "t_village",
+    "initialRecruitState": "unknown"
+  }
+]

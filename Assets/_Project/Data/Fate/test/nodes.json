@@ -1,0 +1,41 @@
+[
+  {
+    "id": "tv.N1",
+    "volume": "tv",
+    "year": 184,
+    "eraName": "测试元年",
+    "title": "合成节点一",
+    "next": "tv.N2"
+  },
+  {
+    "id": "tv.N2",
+    "volume": "tv",
+    "year": 185,
+    "eraName": "测试二年",
+    "title": "合成节点二（救人）",
+    "next": "tv.N3"
+  },
+  {
+    "id": "tv.N3",
+    "volume": "tv",
+    "year": 186,
+    "eraName": "测试三年",
+    "title": "合成节点三",
+    "next": "tv.N4"
+  },
+  {
+    "id": "tv.N4",
+    "volume": "tv",
+    "year": 187,
+    "eraName": "测试四年",
+    "title": "合成节点四（冷却用例）",
+    "next": "tv.N5"
+  },
+  {
+    "id": "tv.N5",
+    "volume": "tv",
+    "year": 188,
+    "eraName": "测试五年",
+    "title": "合成节点五（冷却用例）"
+  }
+]

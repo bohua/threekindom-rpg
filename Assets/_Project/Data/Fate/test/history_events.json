@@ -1,0 +1,41 @@
+[
+  {
+    "id": "h.t_war",
+    "stage": "tv.N1",
+    "scope": "world",
+    "delayStages": 0,
+    "causesDeviation": false,
+    "splitsTextGroup": false,
+    "memory": {
+      "key": "h.h.t_war",
+      "importance": 3,
+      "templateId": "mem.h.t_war"
+    }
+  },
+  {
+    "id": "h.t_flood",
+    "stage": "tv.N1",
+    "scope": "region:r_south",
+    "delayStages": 1,
+    "causesDeviation": false,
+    "splitsTextGroup": false,
+    "memory": {
+      "key": "h.h.t_flood",
+      "importance": 2,
+      "templateId": "mem.h.t_flood"
+    }
+  },
+  {
+    "id": "h.t_purge",
+    "stage": "tv.N2",
+    "scope": "explicit:t_heir",
+    "delayStages": 0,
+    "causesDeviation": true,
+    "splitsTextGroup": true,
+    "memory": {
+      "key": "h.h.t_purge",
+      "importance": 4,
+      "templateId": "mem.h.t_purge"
+    }
+  }
+]
