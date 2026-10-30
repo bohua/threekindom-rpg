@@ -23,6 +23,7 @@ public sealed class ChapterFlowTests
 {
     string saveDir;
     readonly Queue<int> picks = new Queue<int>();
+    bool letterboxSeen, inspectorSeen, letterboxPortrait;
 
     [SetUp] public void Fresh()
     {
@@ -71,6 +72,9 @@ public sealed class ChapterFlowTests
                 break;
             }
             Assert.Less(Time.realtimeSinceStartup, deadline, "scene " + scene + " stuck");
+            var hud = Object.FindFirstObjectByType<ThreeKingdoms.UI.Story.StageHud>();
+            if (hud && hud.LetterboxShown) { letterboxSeen = true; if (hud.PortraitSpeaker != null) letterboxPortrait = true; }
+            if (screen is FieldStoryController fsc && fsc.Find("du_you") is Transform dy && dy.gameObject.activeInHierarchy) inspectorSeen = true;
             if (screen.Choices != null) player.Choose(picks.Count > 0 ? picks.Dequeue() : 0);
             else player.Advance();
             yield return null;
@@ -212,6 +216,10 @@ public sealed class ChapterFlowTests
         Assert.AreEqual(GameRun.GongsunScene, SceneManager.GetActiveScene().name);
         Assert.AreEqual(ChapterStep.Gongsun, run.Chapter2.Step);
         Assert.AreEqual("A_self", run.Chapter2.Recall("liu_bei", "liubei_duyou"));
+        // 鞭督邮 plays as an automatic in-game scene like the oath (user 2026-10-26): letterbox, the inspector on stage.
+        Assert.IsTrue(letterboxSeen, "letterbox during 鞭督邮");
+        Assert.IsTrue(inspectorSeen, "督邮 on stage");
+        Assert.IsTrue(letterboxPortrait, "lines in the 鞭督邮 scene show the speaker's portrait (user 2026-10-26)");
         Assert.AreEqual(10, run.Chapter2.Memories.Count, "必做 9 条＋宛城 1 条");
         Assert.That(run.Data.Party.Select(g => run.Progress.Level(g)), Is.All.EqualTo(7));
     }

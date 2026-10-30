@@ -21,6 +21,10 @@ namespace Jrpg
         bool started;
 
         public CameraZone ActiveZone { get; private set; }
+        // A story scene's own shot distance (> 0) over any zone's.
+        public float StageDistance { get; set; }
+        // A short shake (a blow in a story scene), in seconds left.
+        public float ShakeSeconds { get; set; }
 
         void LateUpdate()
         {
@@ -30,7 +34,7 @@ namespace Jrpg
             ActiveZone = null;
             foreach (var z in CameraZone.All)
                 if (z.Contains(Target.position) && (ActiveZone == null || z.Priority > ActiveZone.Priority)) ActiveZone = z;
-            float tp = ActiveZone ? ActiveZone.Pitch : Pitch, td = ActiveZone ? ActiveZone.Distance : Distance;
+            float tp = ActiveZone ? ActiveZone.Pitch : Pitch, td = StageDistance > 0f ? StageDistance : ActiveZone ? ActiveZone.Distance : Distance;
             float ty = ActiveZone ? ActiveZone.Yaw : Yaw, tf = ActiveZone ? ActiveZone.Fov : Fov, ts = ActiveZone ? ActiveZone.Sway : 0f;
             Vector3 tl = ActiveZone ? ActiveZone.LookOffset : LookOffset;
             if (!started) { pitch = tp; distance = td; yaw = ty; fov = tf; look = tl; sway = ts; started = true; }
@@ -43,7 +47,9 @@ namespace Jrpg
             }
             float swing = sway * Mathf.Sin(Time.time * 0.35f);
             var rotation = Quaternion.Euler(pitch, yaw + swing, 0f);
-            transform.SetPositionAndRotation(Target.position + look + rotation * new Vector3(0, 0, -distance), rotation);
+            Vector3 shake = Vector3.zero;
+            if (ShakeSeconds > 0f) { ShakeSeconds -= Time.deltaTime; shake = Random.insideUnitSphere * 0.12f; }
+            transform.SetPositionAndRotation(Target.position + look + rotation * new Vector3(0, 0, -distance) + shake, rotation);
             var cam = GetComponent<Camera>();
             if (cam) cam.fieldOfView = fov;
             if (FocusVolume) Focus(FocusVolume, distance);
