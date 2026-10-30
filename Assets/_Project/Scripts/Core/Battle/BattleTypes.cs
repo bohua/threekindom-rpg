@@ -6,6 +6,9 @@ namespace ThreeKingdoms.Core.Battle
     {
         Infantry, Cavalry, Archer, YellowTurban, Strategist, Spearman, Crossbow, HorseArcher,
         Swordswoman, Dancer, Shaman, Pirate, Barbarian, Elephant,
+        // User 2026-10-30: civil officers get three lines after 曹操传 / 英杰传 — Strategist 军师 (offensive, the "black
+        // and red mage"), Geomancer 风水师 (healing and support, the "white mage"), Shaman now 妖术师 (status and disruption).
+        Geomancer,
     }
 
     // 大系: the matchup triangle is horse → foot → bow → horse; the mind class stands outside it.

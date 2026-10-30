@@ -177,7 +177,9 @@ namespace ThreeKingdoms.EditorTools
                 .Concat(Chapter2.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter2Source)))
                 .Concat(Chapter3.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter3Source)))
                 .Concat(Chapter4.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter4Source)))
-                .Concat(Chapter5.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter5Source)));
+                .Concat(Chapter5.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter5Source)))
+                // 糜芳 joins the Xiapi line-ups (user 2026-10-30, named generals only): Codex art/xuzhou-officers-art
+                .Concat(new[] { (Key: "NpcMiFang", Prefix: "MI_FANG", Walks: false, Dir: @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\xuzhou-officers-art") });
             foreach (var (key, prefix, walks, dir) in sheets)
             {
                 string poses = Path.Combine(dir, prefix + "_3X3.png");

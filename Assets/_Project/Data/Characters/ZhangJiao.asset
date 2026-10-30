@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
   Id: zhang_jiao
   DisplayName: "\u5F20\u89D2"
-  Troop: 4
+  Troop: 10
   Force: 40
   Command: 70
   Intellect: 85

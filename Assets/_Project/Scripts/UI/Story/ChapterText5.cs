@@ -11,7 +11,7 @@ namespace ThreeKingdoms.UI.Story
     {
         public static readonly Dictionary<string, string> Speakers = new Dictionary<string, string>
         {
-            ["taishi_ci"] = "太史慈", ["guan_hai"] = "管亥", ["mi_zhu"] = "糜竺", ["chen_deng"] = "陈登", ["sun_qian"] = "孙乾",
+            ["taishi_ci"] = "太史慈", ["guan_hai"] = "管亥", ["mi_zhu"] = "糜竺", ["chen_deng"] = "陈登", ["sun_qian"] = "孙乾", ["mi_fang"] = "糜芳",
             ["cao_bao"] = "曹豹", ["yu_jin"] = "于禁", ["cao_ren"] = "曹仁", ["chen_gui"] = "陈珪", ["refugee"] = "徐州难民",
             ["tian_kai"] = "田楷", ["xp_clerk"] = "州府吏", ["xp_officer"] = "守门军官", ["xp_old_soldier"] = "老卒", ["xp_refugee"] = "北海难民",
             ["xp_scholar"] = "读书人", ["xp_merchant"] = "行商",

@@ -355,6 +355,7 @@ namespace ThreeKingdoms.UI.Battle
                     _ => troop == Troop.Rebel ? School.Fa : School.Bing,
                 };
                 if (g.Element != UnitElement.None) u.Element = (Element)(int)g.Element;
+                if (troop == Troop.Shaman) u.Crafts = u.Crafts.Append("惑乱").ToArray();   // 妖术师 line (user 2026-10-30)
                 return u;
             }
 

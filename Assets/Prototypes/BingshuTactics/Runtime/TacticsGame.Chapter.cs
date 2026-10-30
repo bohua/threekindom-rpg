@@ -77,7 +77,11 @@ namespace Prototype.BingshuTactics
         public bool NoRetreatOnDefeat;
         public int Reputation;
         public RectInt? ExitZone;
-        public List<TacticsUnitDef> Reserves = new List<TacticsUnitDef>();   // 0.5：后备武将（不在地图上，可换人上阵）           // 0.4：撤离区（OpenExit 之后，我方进入即撤出战场）              // 0.3：声望（“众望”的物防加成随之增强）
+        public List<TacticsUnitDef> Reserves = new List<TacticsUnitDef>();   // 0.5：后备武将（不在地图上，可换人上阵）
+        // 上阵规则按每场战斗设计（用户 2026-10-30：“每场战斗可以有自己的上场限制……需要设置必上人物……我方上个5-10人很正常”）：
+        // MaxDeploy＝我方可操作武将上阵上限（0＝不限）；Required＝必上人物（显示名），超出上限时其余的进后备。
+        public int MaxDeploy;
+        public string[] Required = new string[0];           // 0.4：撤离区（OpenExit 之后，我方进入即撤出战场）              // 0.3：声望（“众望”的物防加成随之增强）
     }
 
     public sealed partial class TacticsGame
@@ -111,7 +115,17 @@ namespace Prototype.BingshuTactics
 
         void BuildChapterUnits()
         {
-            foreach (var d in Chapter.Units) SpawnUnit(d, d.Pos);
+            // 超过本场上阵上限的我方武将（非必上者，从后往前）转入后备
+            var field = Chapter.Units.Where(d => d.Team == Team.Player && !d.Ai).ToList();
+            if (Chapter.MaxDeploy > 0 && field.Count > Chapter.MaxDeploy)
+                foreach (var d in field.Where(d => !Chapter.Required.Contains(d.Name)).Reverse().Take(field.Count - Chapter.MaxDeploy).ToList())
+                {
+                    Chapter.Units.Remove(d);
+                    Chapter.Reserves.Add(d);
+                }
+            // 人多时预设落点可能撞人或落在不可走的格子，就近找空位
+            foreach (var d in Chapter.Units)
+                SpawnUnit(d, At(d.Pos) != null || !grid.In(d.Pos) || Grid.Impassable(grid.TerrainAt(d.Pos)) ? NearestFree(d.Pos) : d.Pos);
             BuildReserves();
             objective = Chapter.Objective;
         }
@@ -129,6 +143,15 @@ namespace Prototype.BingshuTactics
                 ["威慑"] = Craft("威慑", "自身周围3格内敌军物攻-20% 2回合", Effect.Debuff, Area.SelfCircle, 0, 3, 0f, 25, turns: 2, amount: 0.2f),
                 // 主稿 §3.9：关羽、张飞 10 级第三绝学
                 ["拖刀"] = TuoDao(), ["断桥"] = DuanQiao(),
+                // 徐州文武（武将表 v0.3：简雍、孙乾、糜竺、糜芳；用户 2026-10-30 选“只用具名武将”补足上阵人数）
+                ["舌辩"] = Craft("舌辩", "射程3内敌军单体物攻-20% 2回合", Effect.Debuff, Area.Single, 3, 0, 0f, 20, turns: 2, amount: 0.2f),
+                ["安民"] = Craft("安民", "射程3内友军单体回复25%兵力", Effect.Heal, Area.Single, 3, 0, 0.25f, 25),
+                ["筹粮"] = Craft("筹粮", "射程3内友军单体回复10策力", Effect.Buff, Area.Single, 3, 0, 0f, 20, amount: 10f),
+                ["结盟"] = Craft("结盟", "射程3内友军单体物防+20% 2回合", Effect.Buff, Area.Single, 3, 0, 0f, 25, turns: 2, amount: 0.2f),
+                ["犒军"] = Craft("犒军", "射程3内友军单体回复25%兵力", Effect.Heal, Area.Single, 3, 0, 0.25f, 20),
+                ["车阵"] = Craft("车阵", "自身周围1格友军受伤-25% 2回合", Effect.Guard, Area.SelfCircle, 0, 1, 0f, 30, turns: 2, amount: 0.25f),
+                ["惑乱"] = Craft("惑乱", "射程3内敌军单体混乱，下次行动原地不动", Effect.Debuff, Area.Single, 3, 0, 0f, 25),   // 妖术师（张宝、张角）
+                ["连射"] = Craft("连射", "射程3单体物理两段合计1.4倍", Effect.Damage, Area.Single, 3, 0, 1.4f, 25, might: true),
             };
             var u = NewUnit(d.Name, d.Key, d.Team, d.Troop, d.School, d.Hp, d.Atk, d.Def, d.Mat, d.Mdef, d.Speed, d.Move, d.Range, d.Ep, pos);
             u.Int = d.Int; u.Wu = d.Wu; u.Level = d.Level; u.Ai = d.Ai; u.Escort = d.Escort; u.Leader = d.Leader; u.Focus = d.Focus;

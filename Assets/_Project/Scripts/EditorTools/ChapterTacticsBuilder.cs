@@ -21,7 +21,7 @@ namespace ThreeKingdoms.EditorTools
         const string DefaultGroundSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v02-tactics-ground";
         static readonly string[] CharKeys = { "ZhangBao", "ZhangLiang", "NpcDongZhuo", "NpcBandit", "NpcBanditChief", "NpcYellowGuard", "YellowTurban", "NpcCaoCao", "NpcHanSoldier",
             "NpcBaimaRider", "NpcZhaoYun", "NpcGongsunZan", "NpcWenChou", "NpcQuYi", "NpcXiandeng", "NpcCrossbow",
-            "NpcTaishiCi", "NpcGuanHai", "NpcYtRemnant", "NpcCaoBao", "NpcYuJin", "NpcCaoRen", "NpcCaoInfantry", "NpcCaoCavalry", "NpcDanyang" };   // 0.5   // 0.4   // 0.3: the White Horse riders of the drill (Lü Bu and the Bingzhou riders use the prototype's own sheets)
+            "NpcTaishiCi", "NpcGuanHai", "NpcYtRemnant", "NpcCaoBao", "NpcYuJin", "NpcCaoRen", "NpcCaoInfantry", "NpcCaoCavalry", "NpcDanyang", "NpcJianYong", "NpcSunQian", "NpcMiZhu", "NpcMiFang", "NpcArcherSoldier" };   // 0.5   // 0.4   // 0.3: the White Horse riders of the drill (Lü Bu and the Bingzhou riders use the prototype's own sheets)
         // 0.3 battles 7–8 (V03_TAODONG_PLAN §4).
         public static readonly string[] Chapter3Paths = { "Assets/_Project/Scenes/Battle_Drill07.unity", "Assets/_Project/Scenes/Battle_Hulao08.unity" };
         // 0.4 battles 9–11 (V04_HEBEI_PLAN §4).

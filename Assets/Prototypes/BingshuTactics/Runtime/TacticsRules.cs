@@ -13,7 +13,7 @@ namespace Prototype.BingshuTactics
     public enum Team { Player, Enemy }
     // 兵种（数值主稿 v1.3 §3.14，用户 2026-10-27：主流 8 种＋特殊 6 种，不可转职、同线升阶）。顺序与正式代码 TroopType 一致。
     // Rebel＝贼众（黄巾／山贼／流寇），Strategist＝军师。
-    public enum Troop { Infantry, Cavalry, Archer, Rebel, Strategist, Spearman, Crossbow, HorseArcher, Swordswoman, Dancer, Shaman, Pirate, Barbarian, Elephant }
+    public enum Troop { Infantry, Cavalry, Archer, Rebel, Strategist, Spearman, Crossbow, HorseArcher, Swordswoman, Dancer, Shaman, Pirate, Barbarian, Elephant, Geomancer }   // Shaman＝妖术师，Geomancer＝风水师（用户 2026-10-30）
     public enum TroopClass { Foot, Horse, Bow, Mind }
     public enum Area { Single, Circle, Line, SelfCircle }
     public enum Effect { Damage, Heal, Guard, Buff, Debuff }
@@ -421,7 +421,7 @@ namespace Prototype.BingshuTactics
         {
             Troop.Cavalry or Troop.HorseArcher or Troop.Elephant => TroopClass.Horse,
             Troop.Archer or Troop.Crossbow => TroopClass.Bow,
-            Troop.Strategist or Troop.Dancer or Troop.Shaman => TroopClass.Mind,
+            Troop.Strategist or Troop.Dancer or Troop.Shaman or Troop.Geomancer => TroopClass.Mind,
             _ => TroopClass.Foot,
         };
 
@@ -435,8 +435,8 @@ namespace Prototype.BingshuTactics
                 Troop.Infantry => new[] { "步兵", "重步兵", "近卫兵" }, Troop.Spearman => new[] { "枪兵", "长枪兵", "虎卫" },
                 Troop.Cavalry => new[] { "骑兵", "突骑", "铁骑" }, Troop.Archer => new[] { "弓兵", "强弓兵", "神射手" },
                 Troop.Strategist => new[] { "军师", "谋士", "军师祭酒" }, Troop.Rebel => new[] { "贼众", "渠帅", "义军" },
-                Troop.Crossbow => new[] { "弩兵" }, Troop.HorseArcher => new[] { "弓骑" }, Troop.Swordswoman => new[] { "剑姬" },
-                Troop.Dancer => new[] { "舞姬" }, Troop.Shaman => new[] { "巫祝" }, Troop.Pirate => new[] { "水贼" },
+                Troop.Crossbow => new[] { "弩兵", "强弩兵", "神弩手" }, Troop.HorseArcher => new[] { "弓骑", "骁骑", "飞骑" }, Troop.Swordswoman => new[] { "剑姬" },
+                Troop.Dancer => new[] { "舞姬" }, Troop.Shaman => new[] { "妖术师", "幻术师", "大方士" }, Troop.Geomancer => new[] { "风水师", "堪舆师", "太卜" }, Troop.Pirate => new[] { "水贼" },
                 Troop.Barbarian => new[] { "蛮兵" }, _ => new[] { "象兵" },
             };
             int i = Mathf.Clamp(rank, 1, 3) - 1;
@@ -451,13 +451,22 @@ namespace Prototype.BingshuTactics
         public static int Range(Troop t, int rank = 1) => t switch
         {
             Troop.Archer => 3 + (rank >= 3 ? 1 : 0),
-            Troop.Crossbow or Troop.HorseArcher or Troop.Strategist or Troop.Dancer or Troop.Shaman => 2,
+            Troop.Crossbow or Troop.HorseArcher or Troop.Strategist or Troop.Dancer or Troop.Shaman or Troop.Geomancer => 2,
             _ => 1,
         };
 
-        // 策力上限＝20＋⌊智÷2⌋，军师线 +10／+15／+20（随阶），巫祝 +15；每次轮到自己回 ⌊智÷20⌋
+        // 策力上限＝20＋⌊智÷2⌋，军师线 +10／+15／+20（随阶），妖术师、风水师 +15；每次轮到自己回 ⌊智÷20⌋
         public static int MaxEp(int intel, Troop t, int rank = 1) =>
-            20 + intel / 2 + (t == Troop.Strategist ? (rank == 1 ? 10 : rank == 2 ? 15 : 20) : t == Troop.Shaman ? 15 : 0);
+            20 + intel / 2 + (t == Troop.Strategist ? (rank == 1 ? 10 : rank == 2 ? 15 : 20) : t == Troop.Shaman || t == Troop.Geomancer ? 15 : 0);
+
+        // 文官三线（用户 2026-10-30，参考曹操传、英杰传）：
+        // 军师（大法师）：伤害策略 ×1.1、咏唱 −10；风水师（白魔法师）：回复 ×1.25、增益多 1 回合、伤害策略 ×0.8；
+        // 妖术师（黑魔法师）：减益与混乱多 1 回合、减益幅度 +10%、伤害策略 ×0.9。
+        public static float StrategyDamageMul(Troop t) => t == Troop.Strategist ? 1.1f : t == Troop.Geomancer ? 0.8f : t == Troop.Shaman ? 0.9f : 1f;
+        public static float HealMul(Troop t) => t == Troop.Geomancer ? 1.25f : 1f;
+        public static int BuffTurns(Troop t) => t == Troop.Geomancer ? 1 : 0;
+        public static int DebuffTurns(Troop t) => t == Troop.Shaman ? 1 : 0;
+        public static float DebuffBonus(Troop t) => t == Troop.Shaman ? 0.1f : 0f;
         public static int EpRegen(int intel) => intel / 20;
         public static int CastCut(Troop t) => t == Troop.Strategist ? 10 : 0;                     // 军师咏唱 −10 AT
         public static int CpBonus(Troop t) => t == Troop.Rebel || t == Troop.Barbarian ? 2 : 0;   // 悍勇：气势获得 +2
@@ -475,7 +484,7 @@ namespace Prototype.BingshuTactics
             if (a == Troop.Elephant && charged) p += 20;                                       // 冲撞
             if (d == Troop.Spearman && ca == TroopClass.Horse) p -= 40;                        // 拒马：骑→枪净 0.9
             if (melee && ca == TroopClass.Foot && (d == Troop.Archer || d == Troop.Crossbow || d == Troop.HorseArcher || d == Troop.Strategist)) p += 20;   // 近身
-            if (melee && (d == Troop.Dancer || d == Troop.Shaman)) p += 20;
+            if (melee && (d == Troop.Dancer || d == Troop.Shaman || d == Troop.Geomancer)) p += 20;
             return p;
         }
 

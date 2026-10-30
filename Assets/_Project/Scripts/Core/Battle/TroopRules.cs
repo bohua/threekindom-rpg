@@ -15,7 +15,7 @@ namespace ThreeKingdoms.Core.Battle
         {
             TroopType.Cavalry or TroopType.HorseArcher or TroopType.Elephant => TroopClass.Horse,
             TroopType.Archer or TroopType.Crossbow => TroopClass.Bow,
-            TroopType.Strategist or TroopType.Dancer or TroopType.Shaman => TroopClass.Mind,
+            TroopType.Strategist or TroopType.Dancer or TroopType.Shaman or TroopType.Geomancer => TroopClass.Mind,
             _ => TroopClass.Foot,
         };
 
@@ -29,7 +29,8 @@ namespace ThreeKingdoms.Core.Battle
         {
             new[] { "步兵", "重步兵", "近卫兵" }, new[] { "骑兵", "突骑", "铁骑" }, new[] { "弓兵", "强弓兵", "神射手" },
             new[] { "贼众", "渠帅", "义军" }, new[] { "军师", "谋士", "军师祭酒" }, new[] { "枪兵", "长枪兵", "虎卫" },
-            new[] { "弩兵" }, new[] { "弓骑" }, new[] { "剑姬" }, new[] { "舞姬" }, new[] { "巫祝" }, new[] { "水贼" }, new[] { "蛮兵" }, new[] { "象兵" },
+            new[] { "弩兵", "强弩兵", "神弩手" }, new[] { "弓骑", "骁骑", "飞骑" }, new[] { "剑姬" }, new[] { "舞姬" }, new[] { "妖术师", "幻术师", "大方士" }, new[] { "水贼" }, new[] { "蛮兵" }, new[] { "象兵" },
+            new[] { "风水师", "堪舆师", "太卜" },
         };
 
         // The rank names exist for the six main lines (§3.14); the others read "<name>·二阶" until named.
@@ -48,7 +49,7 @@ namespace ThreeKingdoms.Core.Battle
         public static int DefaultRange(TroopType t) => t switch
         {
             TroopType.Archer => 3,
-            TroopType.Crossbow or TroopType.HorseArcher or TroopType.Strategist or TroopType.Dancer or TroopType.Shaman => 2,
+            TroopType.Crossbow or TroopType.HorseArcher or TroopType.Strategist or TroopType.Dancer or TroopType.Shaman or TroopType.Geomancer => 2,
             _ => 1,
         };
 
@@ -65,7 +66,7 @@ namespace ThreeKingdoms.Core.Battle
             if (a == TroopType.Elephant && charged) p += 20;                                         // 冲撞
             if (d == TroopType.Spearman && ca == TroopClass.Horse) p -= 40;                          // 拒马: 骑→枪 0.9
             if (melee && ca == TroopClass.Foot && (d == TroopType.Archer || d == TroopType.Crossbow || d == TroopType.HorseArcher || d == TroopType.Strategist)) p += 20;
-            if (melee && (d == TroopType.Dancer || d == TroopType.Shaman)) p += 20;
+            if (melee && (d == TroopType.Dancer || d == TroopType.Shaman || d == TroopType.Geomancer)) p += 20;
             return p;
         }
 

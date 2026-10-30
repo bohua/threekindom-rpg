@@ -29,7 +29,7 @@ namespace Prototype.BingshuTactics
         readonly Dictionary<Unit, int> turnCount = new Dictionary<Unit, int>();
         const float RefH = 720f;
 
-        enum Mode { Deploy, Circuit, Idle, Menu, SkillList, TargetMove, TargetAttack, TargetSkill, Busy, Victory, Defeat, Duel }
+        enum Mode { Select, Deploy, Circuit, Idle, Menu, SkillList, TargetMove, TargetAttack, TargetSkill, Busy, Victory, Defeat, Duel }
         Mode mode = Mode.Deploy;
 
         Grid grid;
@@ -75,6 +75,7 @@ namespace Prototype.BingshuTactics
             font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "Microsoft YaHei UI", "SimHei", "SimSun", "DengXian" }, 18);
             white = Texture2D.whiteTexture;
             Log("布阵：点选我方武将，再点蓝色格子调整站位。可先打开「兵书回路」配书。");
+            if (IsChapter && !Chapter.AutoPlay) EnterSelect();   // 出阵选将（用户 2026-10-30）
             if (IsChapter && Chapter.AutoPlay) { autoPlay = true; mode = Mode.Busy; StartCoroutine(BattleLoop()); }
             var args = System.Environment.GetCommandLineArgs();
             int i = System.Array.IndexOf(args, "-poc-shots");
@@ -525,6 +526,7 @@ namespace Prototype.BingshuTactics
             bool lb = Pressed(Kb?.qKey, Pad?.leftShoulder), rb = Pressed(Kb?.eKey, Pad?.rightShoulder);
             if (pulse != Vector2Int.zero || ok || cancel) padMode = true;
 
+            if (mode == Mode.Select) { SelectInput(pulse, ok, cancel, lb, rb); return; }
             if (mode == Mode.Circuit) { CircuitInput(pulse, ok, cancel, lb, rb); return; }
             if (mode == Mode.Duel) { DuelInput(pulse, ok); return; }
             if (lb) yawTarget -= 90f;
@@ -885,28 +887,41 @@ namespace Prototype.BingshuTactics
                 {
                     case Effect.Damage:
                     case Effect.Debuff when s.Power > 0:
-                        Hit(u, t, Combat.Damage(u, t, s.Power * mul, s.UsesMight, s.Element, HMul(u, t), InCamp(t), s.IsStrategy), s.IsStrategy ? HitKind.Strategy : HitKind.Technique);
+                        float lineMul = s.IsStrategy ? TroopTraits.StrategyDamageMul(u.Troop) : 1f;   // 文官三线
+                        Hit(u, t, Combat.Damage(u, t, s.Power * mul * lineMul, s.UsesMight, s.Element, HMul(u, t), InCamp(t), s.IsStrategy), s.IsStrategy ? HitKind.Strategy : HitKind.Technique);
                         if (s.AtDelay > 0 && t.Alive)
                         {
                             if (s.IsStrategy) Interrupt(t);   // 水系推迟也打断咏唱
                             t.At += s.AtDelay * mul;
                             popups.Add((views[t].position + Vector3.up * (2.6f * HeadK), "迟滞", new Color(0.5f, 0.75f, 1f), 0f));
                         }
-                        if (s.Effect == Effect.Debuff && t.Alive) t.AddStatus(new Status { Name = "破阵", DefMul = 1f - s.Amount, Turns = s.Turns });
+                        if (s.Effect == Effect.Debuff && t.Alive) t.AddStatus(new Status { Name = "破阵", DefMul = 1f - s.Amount - TroopTraits.DebuffBonus(u.Troop), Turns = s.Turns + TroopTraits.DebuffTurns(u.Troop) });
+                        break;
+                    case Effect.Debuff when s.Name == "惑乱":   // 妖术师：使敌军混乱，原地不动
+                        t.Chaos = true; t.ChaosForced = Mathf.Max(t.ChaosForced, 1 + TroopTraits.DebuffTurns(u.Troop));
+                        popups.Add((views[t].position + Vector3.up * 2f, "混乱", new Color(1f, 0.55f, 0.5f), 0f));
                         break;
                     case Effect.Debuff:
-                        t.AddStatus(new Status { Name = "威慑", AtkMul = 1f - s.Amount, Turns = s.Turns });
+                        t.AddStatus(new Status { Name = "威慑", AtkMul = 1f - s.Amount - TroopTraits.DebuffBonus(u.Troop), Turns = s.Turns + TroopTraits.DebuffTurns(u.Troop) });
                         popups.Add((views[t].position + Vector3.up * 2f, "物攻↓", new Color(0.8f, 0.6f, 1f), 0f));
                         break;
                     case Effect.Heal:
-                        int h = Combat.Heal(t, Mathf.Min(0.6f, s.Power * mul));
+                        int h = Combat.Heal(t, Mathf.Min(0.6f, s.Power * mul * TroopTraits.HealMul(u.Troop)));
                         t.Hp += h;
                         popups.Add((views[t].position + Vector3.up * (1.8f * HeadK), "+" + h, new Color(0.5f, 1f, 0.5f), 0f));
-                        if (s.Amount > 0) t.AddStatus(new Status { Name = "鼓舞", AtkMul = 1f + s.Amount, Turns = s.Turns });
+                        if (s.Amount > 0) t.AddStatus(new Status { Name = "鼓舞", AtkMul = 1f + s.Amount, Turns = s.Turns + TroopTraits.BuffTurns(u.Troop) });
                         break;
                     case Effect.Guard:
-                        t.AddStatus(new Status { Name = "阵", Guard = Mathf.Min(0.45f, s.Amount * mul), Turns = s.Turns });
+                        t.AddStatus(new Status { Name = "阵", Guard = Mathf.Min(0.45f, s.Amount * mul), Turns = s.Turns + TroopTraits.BuffTurns(u.Troop) });
                         popups.Add((views[t].position + Vector3.up * 2f, "结阵", new Color(0.9f, 0.75f, 0.4f), 0f));
+                        break;
+                    case Effect.Buff when s.Name == "筹粮":   // 孙乾：为友军补策力
+                        t.Ep = Mathf.Min(t.MaxEp, t.Ep + Mathf.RoundToInt(s.Amount));
+                        popups.Add((views[t].position + Vector3.up * 2f, "策力+" + Mathf.RoundToInt(s.Amount), new Color(0.5f, 0.75f, 1f), 0f));
+                        break;
+                    case Effect.Buff when s.Amount > 0:      // 结盟：物防提升
+                        t.AddStatus(new Status { Name = s.Name, DefMul = 1f + s.Amount, Turns = s.Turns + TroopTraits.BuffTurns(u.Troop) });
+                        popups.Add((views[t].position + Vector3.up * 2f, "物防↑", new Color(0.6f, 0.9f, 1f), 0f));
                         break;
                 }
             }
@@ -977,8 +992,19 @@ namespace Prototype.BingshuTactics
                 u.At = now + AtClock.Delay(70, u.Speed);
                 yield break;
             }
+            // 妖术师（敌我皆可）：隔次行动对射程内未混乱的目标施“惑乱”
+            var hex = u.Crafts.FirstOrDefault(c => c.Name == "惑乱" && u.Cp >= c.Cost);
+            var hexed = hex == null || turnCount[u] % 2 != 0 ? null
+                : Foes(u).Where(f => !f.Chaos && Grid.Dist(f.Pos, u.Pos) <= hex.Range).OrderByDescending(f => f.Atk).FirstOrDefault();
+            if (hexed != null)
+            {
+                Log($"{u.Name} 绝学「惑乱」");
+                yield return DoCraft(u, hex, hexed.Pos);
+                u.At = now + AtClock.Delay(hex.Recover, u.Speed);
+                yield break;
+            }
             // 电脑代打的我方武将优先武技与普攻，策略留给文官（主稿 T2）；敌军仍按原型规则
-            bool caster = u.Team != Team.Player || u.Int >= 75 || u.Troop == Troop.Strategist || u.Troop == Troop.Shaman;
+            bool caster = u.Team != Team.Player || u.Int >= 75 || u.Troop == Troop.Strategist || u.Troop == Troop.Shaman || u.Troop == Troop.Geomancer;
             var strats = caster ? StrategiesOf(u) : new List<LitStrategy>();
             var bigLit = strats.FirstOrDefault(l => l.Def.Area == Area.Circle && l.Def.Effect == Effect.Damage && u.Ep >= l.Def.Cost);
             if (bigLit.Def != null)
@@ -995,7 +1021,7 @@ namespace Prototype.BingshuTactics
                 var single = singleLit.Def;
                 var t = units.Where(x => x.Alive && x.Team != u.Team && Grid.Dist(x.Pos, u.Pos) <= single.Range).OrderBy(x => x.Hp).FirstOrDefault();
                 // 武将优先武技与普攻，策略只给文官或够不着时用（主稿 T2）
-                bool strategist = u.Int >= 75 || u.Troop == Troop.Strategist || u.Troop == Troop.Shaman;
+                bool strategist = u.Int >= 75 || u.Troop == Troop.Strategist || u.Troop == Troop.Shaman || u.Troop == Troop.Geomancer;
                 bool engaged = u.Team == Team.Player && Foes(u).Any(f => Grid.Dist(f.Pos, u.Pos) <= 1);   // 代打：被贴身时不站着咏唱
                 if (t != null && !engaged && (strategist || AttackableTargets(u, u.AtkRange).Count == 0) && Random.value < 0.6f) { BeginCast(u, single, singleLit.PowerMul, t.Pos, singleLit.CastCut); yield break; }
             }
@@ -1003,6 +1029,16 @@ namespace Prototype.BingshuTactics
             // 电脑代打的我方：气势够就放伤害武技／绝学（横扫要两人以上在身边）
             if (u.Team == Team.Player)
             {
+                // 辅助绝学：射程内有友军兵力过半折损就先救（安民、犒军、整队）
+                var heal = u.Crafts.FirstOrDefault(c => c.Effect == Effect.Heal && c.Area == Area.Single && u.Cp >= c.Cost);
+                var hurt = heal == null ? null : Friends(u).Where(f => Grid.Dist(f.Pos, u.Pos) <= heal.Range && f.Hp * 2 < f.MaxHp).OrderBy(f => f.Hp).FirstOrDefault();
+                if (hurt != null)
+                {
+                    Log($"{u.Name} 绝学「{heal.Name}」");
+                    yield return DoCraft(u, heal, hurt.Pos);
+                    u.At = now + AtClock.Delay(heal.Recover, u.Speed);
+                    yield break;
+                }
                 var near = AttackableTargets(u, 1);
                 var craft = u.Crafts.Where(c => c.Effect == Effect.Damage && u.Cp >= c.Cost && !c.IsStrategy &&
                         (c.Range < 0 ? near.Count > 0 : c.Area == Area.SelfCircle && grid.Diamond(u.Pos, c.Radius).Count(p => At(p) != null && At(p).Team != u.Team) >= 2))
@@ -1157,6 +1193,7 @@ namespace Prototype.BingshuTactics
             mouseScreen = new Vector2(e.mousePosition.x, Screen.height - e.mousePosition.y);
             GUI.matrix = Matrix4x4.Scale(new Vector3(S, S, 1));
             float sw = Screen.width / S;
+            if (mode == Mode.Select) { DrawSelect(sw); return; }
 
             DrawWorldLabels();
             DrawAtBarV();

@@ -39,6 +39,7 @@ namespace ThreeKingdoms.EditorTools
                     T(TroopType.Crossbow, 10, 2, 7), T(TroopType.HorseArcher, 0, 0, 10),
                     T(TroopType.Swordswoman, 10, 0, 8), T(TroopType.Dancer, 0, 0, 7), T(TroopType.Shaman, 0, 0, 7),
                     T(TroopType.Pirate, 20, 2, 7), T(TroopType.Barbarian, 35, 3, 6), T(TroopType.Elephant, 40, 5, 6),
+                    T(TroopType.Geomancer, 0, 0, 7),   // 风水师 (user 2026-10-30)
                 };
             });
             var ration = Asset<ItemDefinition>("Items/Ration", i => { i.Id = "ration"; i.DisplayName = "军粮"; i.HealPercent = 30; });
@@ -75,7 +76,7 @@ namespace ThreeKingdoms.EditorTools
             var officer = E(General("yt_officer", "YellowTurbanOfficer", "黄巾将领", TroopType.YellowTurban, 55, 45, 30, 0, 0, 0), UnitElement.Wood);
             var zhangLiang = E(General("zhang_liang", "ZhangLiang", "张梁", TroopType.YellowTurban, 72, 60, 48, 0, 0, 0, (1, enemyCharge)), UnitElement.Earth);
             var zhangBao = E(General("zhang_bao", "ZhangBao", "张宝", TroopType.Shaman, 70, 62, 55, 0, 0, 0, (1, enemySweep)), UnitElement.Earth);
-            var zhangJiao = E(General("zhang_jiao", "ZhangJiao", "张角", TroopType.Strategist, 40, 70, 85, 0, 0, 0, (1, enemyRumour), (1, enemyFire)), UnitElement.Earth);
+            var zhangJiao = E(General("zhang_jiao", "ZhangJiao", "张角", TroopType.Shaman, 40, 70, 85, 0, 0, 0, (1, enemyRumour), (1, enemyFire)), UnitElement.Earth);
 
             var b1 = Encounter("battle_1", "Battle1_ChengYuanzhi", "第一战 · 程远志来犯", EnemyAiKind.HighestTroops, 10, 30, (cheng, 2), (headman, 1), (headman, 1));
             var b2 = Encounter("battle_2", "Battle2_ZhangLiang", "第二战 · 张梁", EnemyAiKind.FacingSlot, 20, 50, (zhangLiang, 3), (officer, 1), (officer, 1), (officer, 1));
@@ -151,13 +152,13 @@ namespace ThreeKingdoms.EditorTools
             var caoRen = E(General("cao_ren", "CaoRen", "曹仁", TroopType.Cavalry, 82, 88, 60, 0, 0, 0, (1, enemyCharge), (1, enemySweep)), UnitElement.Fire);
             var deserter = E(General("deserter", "Deserter", "散兵", TroopType.Infantry, 66, 54, 24, 0, 0, 0), UnitElement.Fire);
             var b12 = Encounter("battle_12", "Battle12_Duchang", "第十二战 · 都昌解围", EnemyAiKind.FacingSlot, 170, 180,   // §3.10 (C18): 0.5 exp 170 / 190 / 210 / 140
-                (guanHai, 12), (ytRemnant, 10), (ytRemnant, 10), (ytRemnant, 9), (ytRemnant, 9));   // §3.11 sized it for four of ours (11 11 10 10 9); the 0.5 cap fields three, so five foes (≤ 3 × 1.75), one level lower
+                (guanHai, 12), (ytRemnant, 11), (ytRemnant, 11), (ytRemnant, 10), (ytRemnant, 10), (ytRemnant, 9), (ytRemnant, 9), (ytRemnant, 9));   // §3.11 plus two: six of ours take the field (2026-10-30)
             var b13 = Encounter("battle_13", "Battle13_XiapiEast", "第十三战 · 下邳城东", EnemyAiKind.FacingSlot, 190, 200,
-                (caoInf, 10), (caoInf, 9), (caoArcher, 9), (caoArcher, 9));   // §3.11 枪弓 4 人 (11 10 10 10) was sized for four of ours; the 0.5 cap fields three, so one level lower
+                (caoInf, 11), (caoInf, 10), (caoArcher, 10), (caoArcher, 10));   // §3.11 枪弓 4 人; Yu Jin joins as the second wave
             var b14 = Encounter("battle_14", "Battle14_XiapiWalls", "第十四战 · 下邳保卫", EnemyAiKind.FacingSlot, 210, 220,
-                (caoRen, 14), (caoCav, 12), (caoCav, 12));   // §3.11: 曹仁 + 曹骑 12 12 11 11 — the two 11s come as the round-5 wave
+                (caoRen, 14), (caoCav, 12), (caoCav, 12), (caoCav, 11), (caoCav, 11));   // §3.11
             var b15 = Encounter("battle_15", "Battle15_Xiaopei", "选做 · 小沛巡防", EnemyAiKind.FacingSlot, 140, 150,
-                (deserter, 13), (deserter, 13), (raider, 12), (raider, 12), (deserter, 12), (deserter, 11));
+                (deserter, 13), (deserter, 13), (raider, 12), (raider, 12), (deserter, 12), (deserter, 11), (raider, 11), (deserter, 11));   // eight of ours (2026-10-30)
             var b8 = Encounter("battle_8", "Battle8_Hulao", "第八战 · 虎牢关·三英战吕布", EnemyAiKind.FacingSlot, 90, 120, (luBu, 9), (bingzhou, 4), (bingzhou, 4), (bingzhou, 4));   // §3.11: Floor 0.5 instead of extra troops
 
             // Equipment catalogue (equipment-items GDD, adopted 2026-10-19; names provisional, values to be tuned).

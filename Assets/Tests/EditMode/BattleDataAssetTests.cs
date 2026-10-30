@@ -29,7 +29,7 @@ namespace ThreeKingdoms.Tests.EditMode
             Assert.That(b1.Enemies.Select(e => (e.General.Id, e.Level)), Is.EqualTo(new[] { ("cheng_yuanzhi", 2), ("yt_headman", 1), ("yt_headman", 1) }));
             Assert.AreEqual(EnemyAiKind.HighestTroops, b1.Ai);
             Assert.AreEqual(4, data.Encounter("battle_2").Enemies.Count);
-            Assert.AreEqual(TroopType.Strategist, data.Encounter("battle_3").Enemies[0].General.Troop);
+            Assert.AreEqual(TroopType.Shaman, data.Encounter("battle_3").Enemies[0].General.Troop);   // 张角 妖术师 (user 2026-10-30)
             Assert.That(data.Encounters.Select(e => e.ExpReward), Is.EqualTo(new[] { 10, 20, 30, 40, 50, 60, 70, 90, 90, 110, 130, 170, 190, 210, 140 }));   // BALANCE_MODEL_v1 C18: 0.5 exp
             Assert.That(data.Encounters.Select(e => e.CopperReward), Is.EqualTo(new[] { 30, 50, 60, 60, 70, 80, 60, 120, 100, 120, 150, 180, 200, 220, 150 }));
             Assert.AreEqual(30, data.Ration.HealPercent);
