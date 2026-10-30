@@ -1,0 +1,2346 @@
+{
+  "revision": 1,
+  "generated_at": "2026-10-26T14:02:14.730Z",
+  "plan_only": false,
+  "files": [
+    {
+      "path": "PROMPTS.md",
+      "bytes": 38780,
+      "sha256": "bc0feb9473a0e91b54f4fe2b57b06a1924df28255a3aa07d4881cc601887f1b4",
+      "problems": []
+    },
+    {
+      "path": "_checks/add_lantern.py",
+      "bytes": 349,
+      "sha256": "44c3c773f1eccab2ee9ed0b1ea1ab5508512e145174f53c058da2477abc66330",
+      "problems": []
+    },
+    {
+      "path": "_checks/assets.json",
+      "bytes": 16813,
+      "sha256": "865403bccab7af42135e7e3aebf545a368e6f897e5232198682c8a1d3bdf41a5",
+      "problems": []
+    },
+    {
+      "path": "_checks/crop_provenance.json",
+      "bytes": 14052,
+      "sha256": "2fd440674d63fe3aa61b4ca6a1a829d4b33781fb1cfae97190de99e54bdbb564",
+      "problems": []
+    },
+    {
+      "path": "_checks/delivery_checks.json",
+      "bytes": 528,
+      "sha256": "5f02d1858df1e3c5efbeac088741f48735e456039a6eade309ecf3a93c651a55",
+      "problems": []
+    },
+    {
+      "path": "_checks/detail_review.png",
+      "bytes": 461739,
+      "sha256": "67c0fa1400f2c0d36ef85d17a6aa7068a9cb3a644ea2b3e84e79a9b30d5c3b82",
+      "problems": [],
+      "png": {
+        "width": 1600,
+        "height": 1800,
+        "hasAlpha": false,
+        "binaryAlpha": true,
+        "transparentRatio": 0
+      }
+    },
+    {
+      "path": "_checks/edge_sheets.py",
+      "bytes": 922,
+      "sha256": "563979487c26be4d0dd40fe0bfdd2545898349c128ded4a019619be24b34c232",
+      "problems": []
+    },
+    {
+      "path": "_checks/edges_dark.png",
+      "bytes": 2198411,
+      "sha256": "7c1f134f8a53d1b778470c22dd609d9ad42f157aaeef36a9964cd64da932cf12",
+      "problems": [],
+      "png": {
+        "width": 1920,
+        "height": 2500,
+        "hasAlpha": false,
+        "binaryAlpha": true,
+        "transparentRatio": 0
+      }
+    },
+    {
+      "path": "_checks/edges_light.png",
+      "bytes": 2217181,
+      "sha256": "85dd18412008f41a0a12b62f0bac5c47b7c83170353547c484c35beec6ff5735",
+      "problems": [],
+      "png": {
+        "width": 1920,
+        "height": 2500,
+        "hasAlpha": false,
+        "binaryAlpha": true,
+        "transparentRatio": 0
+      }
+    },
+    {
+      "path": "_checks/finalize_delivery.py",
+      "bytes": 5851,
+      "sha256": "a53c6ddc50fd429144115df5fb9623b3844646b11389b2208d6eddf09ac17280",
+      "problems": []
+    },
+    {
+      "path": "_checks/generation_log.json",
+      "bytes": 5074,
+      "sha256": "b943cfd86b7b21d3729eb93d963b65f379afa45a4847a1618596ddd32544acc2",
+      "problems": []
+    },
+    {
+      "path": "_checks/inspect_alpha.py",
+      "bytes": 619,
+      "sha256": "1a03821c3254f71126514e93815579c2b762c6628fa54b09555ddb5562ac9245",
+      "problems": []
+    },
+    {
+      "path": "_checks/inspect_old.py",
+      "bytes": 995,
+      "sha256": "bbd16280255b71175905ca5dcc98e9588d4e8b4ea801478950b629756deffe47",
+      "problems": []
+    },
+    {
+      "path": "_checks/old_props_reference.jpg",
+      "bytes": 107407,
+      "sha256": "20db48d9b7f509df551a2fe23551eb370318a560d0ab068e888538a3cbafaacf",
+      "problems": []
+    },
+    {
+      "path": "_checks/partial.jpg",
+      "bytes": 82009,
+      "sha256": "9d238bf430b1338db0dadfe24746703207120378f387c1c25f6f26390b4d01c3",
+      "problems": []
+    },
+    {
+      "path": "_checks/process_assets.py",
+      "bytes": 6706,
+      "sha256": "cbda922c166a4c769bc04fadb6f719afc7afbbdb554a897f7ae1a532c078fc48",
+      "problems": []
+    },
+    {
+      "path": "_checks/replacement_groups.json",
+      "bytes": 293,
+      "sha256": "049eeb36cc38d040b53431e4bcbf09bcf00537ff08012ed8207448ab81c0d112",
+      "problems": []
+    },
+    {
+      "path": "_checks/segment_atlas.py",
+      "bytes": 3464,
+      "sha256": "1226bed669b8d9e0fa7f7311292400c131e44045d4a59c77b0e38c5e61c45d74",
+      "problems": []
+    },
+    {
+      "path": "_checks/segmentation.json",
+      "bytes": 13644,
+      "sha256": "48b8640420a873a8cebb6932700464ff977f3ce20eb721513547d0a620ae8c22",
+      "problems": []
+    },
+    {
+      "path": "_checks/segmented/oath_altar.png",
+      "bytes": 1001007,
+      "sha256": "f34f128bfac7feb60ff73fc1e3a5fa38e9f6df7952a3abb0d92c65195389319f",
+      "problems": [],
+      "png": {
+        "width": 1476,
+        "height": 707,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.559909997968438
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_anvil.png",
+      "bytes": 223748,
+      "sha256": "05be4f756531677302a8881538bcd6427ae1f3f8b3722342e053988ff5838c8b",
+      "problems": [],
+      "png": {
+        "width": 367,
+        "height": 361,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.30299576562228747
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_archery_target.png",
+      "bytes": 260005,
+      "sha256": "518229e7aa162b1cb7f6c54a21373fb4a5439842645463a4107aafe128c744d1",
+      "problems": [],
+      "png": {
+        "width": 337,
+        "height": 407,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.30725654167790667
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_armor_stand.png",
+      "bytes": 177164,
+      "sha256": "f8145470ed75e923cdf4374798f4aa65a2d25b1a0aec9ea1d2bd8bbfc225aeee",
+      "problems": [],
+      "png": {
+        "width": 264,
+        "height": 485,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.4771399562636676
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_army_tent.png",
+      "bytes": 1457936,
+      "sha256": "66a0ef475e3d42d48822ea12192ab7a04451eccf00946ea63e6f8c248ae26f6a",
+      "problems": [],
+      "png": {
+        "width": 1443,
+        "height": 769,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3536583497571794
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_banner_casino.png",
+      "bytes": 589080,
+      "sha256": "0560fecffd60924a5374b286b59ba469cd4ed4ad022f6f2e542a030238bbee89",
+      "problems": [],
+      "png": {
+        "width": 404,
+        "height": 1487,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5467250827301964
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_banner_han.png",
+      "bytes": 571845,
+      "sha256": "3ab0ed043a6df6670e84da24b774dd694fcfce53837c5a6ef7e4e61d6c8cc2d9",
+      "problems": [],
+      "png": {
+        "width": 398,
+        "height": 1487,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5430295390875021
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_banner_iron.png",
+      "bytes": 145949,
+      "sha256": "85047eae21a5589a26371a302550f62db5d9eedc4404d1007a488a130fac574e",
+      "problems": [],
+      "png": {
+        "width": 233,
+        "height": 584,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5331001234640484
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_banner_medicine.png",
+      "bytes": 145403,
+      "sha256": "ab6e5165f2cefcc4da1a9b37188063c0d6093d7cf31d70ea703a727c6838203d",
+      "problems": [],
+      "png": {
+        "width": 232,
+        "height": 584,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5349994095418045
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_banner_post.png",
+      "bytes": 145009,
+      "sha256": "d7bd4019fd1212d1355044f4118285d2edc297e2c731b59df6f4bdcfeb341d78",
+      "problems": [],
+      "png": {
+        "width": 234,
+        "height": 581,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5337908410197567
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_banner_wine.png",
+      "bytes": 143662,
+      "sha256": "4e2f9544cfa36755c8311dc66b3b7e00b9f26f31dde857b9fb00c885e7ee9a5e",
+      "problems": [],
+      "png": {
+        "width": 234,
+        "height": 583,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5356833941739602
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_barrel.png",
+      "bytes": 206244,
+      "sha256": "ef74b4535d466d0c830fa6c356d47ba0392ddb5ba724c785c28775b68033b486",
+      "problems": [],
+      "png": {
+        "width": 282,
+        "height": 368,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.140263644773358
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_basket_stack.png",
+      "bytes": 266084,
+      "sha256": "bb49e1d53d027fd00b5c324979e1dd8002583206b0f79b6001f944c4cbf3e3b7",
+      "problems": [],
+      "png": {
+        "width": 374,
+        "height": 359,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.21473790833122308
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_beggar_bowl.png",
+      "bytes": 119107,
+      "sha256": "30c3bfe7e4ef4fcd5b74141ef1be4b51ca0990b448d466f88c2b09fb393ef63f",
+      "problems": [],
+      "png": {
+        "width": 341,
+        "height": 192,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.24247006353861192
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_bookstand.png",
+      "bytes": 220767,
+      "sha256": "78b59ac053acb504df775d9f0105fc04e78530d5c075109f1c7dc2d3e5290cdc",
+      "problems": [],
+      "png": {
+        "width": 466,
+        "height": 292,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3126580045858075
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_bow_rack.png",
+      "bytes": 222679,
+      "sha256": "6586a2517171648642ef024a6e0ed1ac4a4a4f1c5a2944c70fdf8305e34a68d1",
+      "problems": [],
+      "png": {
+        "width": 417,
+        "height": 460,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5668334897299552
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_brazier.png",
+      "bytes": 157531,
+      "sha256": "697105b80b0fa245e28ba83a01159ab57eda42ea9c5bc1717f7c44a2ecfc73f7",
+      "problems": [],
+      "png": {
+        "width": 371,
+        "height": 297,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.39977492807681486
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_carry_pole.png",
+      "bytes": 137324,
+      "sha256": "6a28bebcd5dc875427fc4d75c99e333d72cd31cf9871e80b26d061162983b68a",
+      "problems": [],
+      "png": {
+        "width": 494,
+        "height": 268,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.6057390174632908
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_chopping_block.png",
+      "bytes": 190308,
+      "sha256": "2e34175dc0b5b4ddcda75744edecf0ec9336490a84ad6a7e9ab08e45dc67affe",
+      "problems": [],
+      "png": {
+        "width": 369,
+        "height": 345,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.38002435096814735
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_cloth_bolts.png",
+      "bytes": 187532,
+      "sha256": "47f279c9b447c10485acdfe6d85ffa69926e5b5c6250325212c81957302b7346",
+      "problems": [],
+      "png": {
+        "width": 392,
+        "height": 260,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.27467621664050235
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_dice_table.png",
+      "bytes": 240599,
+      "sha256": "cc7f08075266132b351bbdf939e75663787a8dce0ac00d042af18fdebb29172a",
+      "problems": [],
+      "png": {
+        "width": 573,
+        "height": 285,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.35188757233397633
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_firewood.png",
+      "bytes": 180024,
+      "sha256": "7e466a3c1f4a8af3e5b87373822156dc86253a12bcbd5df7cf0198670839db2c",
+      "problems": [],
+      "png": {
+        "width": 430,
+        "height": 221,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.2652320319898979
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_grain_measure.png",
+      "bytes": 173029,
+      "sha256": "8a0a4637bef0dc9a8661fa27639a4fa51da4b4b9cfeb352b174fe2ff2dc5cb52",
+      "problems": [],
+      "png": {
+        "width": 363,
+        "height": 284,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.33684476002017616
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_grain_sacks.png",
+      "bytes": 254270,
+      "sha256": "bd902ca00c5c29b3e5d68625afce896df6785d8d692f7a246559cd8a72f218f3",
+      "problems": [],
+      "png": {
+        "width": 482,
+        "height": 284,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.30026737186605107
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_handcart.png",
+      "bytes": 181086,
+      "sha256": "627dc3f1e4c65441c76851db6ef9c7d797dc22f3c6aad8ce1821a1fec113d059",
+      "problems": [],
+      "png": {
+        "width": 519,
+        "height": 279,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5385252864275799
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_hay_pile.png",
+      "bytes": 222824,
+      "sha256": "78c7dbc859e6f8c56da5aaa61f04ecfc72f1242c2b4768e64ce32237b0751872",
+      "problems": [],
+      "png": {
+        "width": 521,
+        "height": 260,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.4260741178207589
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_herb_mortar.png",
+      "bytes": 143042,
+      "sha256": "b9e9c1d1209ddffbcec0a0aa42106666a00904d62e24ee83606c136378de210c",
+      "problems": [],
+      "png": {
+        "width": 263,
+        "height": 307,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.2946582281616527
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_herb_rack.png",
+      "bytes": 274726,
+      "sha256": "fa5ad6743cb897edf5380a4ab1f78ea9080fc446fcdc74c6091425cc1a77a024",
+      "problems": [],
+      "png": {
+        "width": 396,
+        "height": 403,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3797967265709201
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_hitching_post.png",
+      "bytes": 135400,
+      "sha256": "e8f4d5bff2de3ba172422be3ed51dbdc8283b9137b6b5ac09a5e6a4322ae11c7",
+      "problems": [],
+      "png": {
+        "width": 436,
+        "height": 296,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5796320976940244
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_hoe_field.png",
+      "bytes": 277733,
+      "sha256": "3374a6521b1eab65ae1287a7db8cf533775539f5470dce20757d6390366004d8",
+      "problems": [],
+      "png": {
+        "width": 535,
+        "height": 264,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.21836590201076184
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_juggle_props.png",
+      "bytes": 358279,
+      "sha256": "4968413c77ee58c46d0052dce76180795856ffafc57ae0da455c54d0cd5c3d3d",
+      "problems": [],
+      "png": {
+        "width": 644,
+        "height": 315,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.2932761510401262
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_lantern_red.png",
+      "bytes": 1002726,
+      "sha256": "5d1d6d267e24a76f3556a7f807805da8a827d9fab67bfaa81cb2c63d015285dc",
+      "problems": [],
+      "png": {
+        "width": 543,
+        "height": 1464,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.4267037506667069
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_laundry_line.png",
+      "bytes": 256901,
+      "sha256": "3f2f9ad6016641ff17a6609ae502c26ee9bbd6ff7141d7af75c0dc4bbbdd337d",
+      "problems": [],
+      "png": {
+        "width": 608,
+        "height": 406,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5532757000259269
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_mat_loom.png",
+      "bytes": 230889,
+      "sha256": "3498d63de12e1088ee5a2c82810ad2f5b0d9cadee18d62e3014c6835f365e5fa",
+      "problems": [],
+      "png": {
+        "width": 435,
+        "height": 357,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.44400012878714706
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_notice_board.png",
+      "bytes": 300454,
+      "sha256": "434f88f2e8df39365c116ae266451badd13e35db9569358ffe2cbce9e1873c5c",
+      "problems": [],
+      "png": {
+        "width": 441,
+        "height": 478,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3793536940578184
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_ox_cart.png",
+      "bytes": 453862,
+      "sha256": "005eb02e9cc4c5ebb16eab8b58a4487138530978d6fe61a6b64624e008ec4891",
+      "problems": [],
+      "png": {
+        "width": 947,
+        "height": 431,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5591696332538705
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_produce_basket.png",
+      "bytes": 255943,
+      "sha256": "61ddfede38cbf9439176d17707f8db1552021de5d8fb89f2606ee3faee4203dc",
+      "problems": [],
+      "png": {
+        "width": 503,
+        "height": 269,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.25108826594337325
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_recruit_desk.png",
+      "bytes": 239241,
+      "sha256": "e0caf7471649c19be80d0e1502edf598c24fad13432fe58d374d3b2ae7ad1d1c",
+      "problems": [],
+      "png": {
+        "width": 584,
+        "height": 252,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.2763100674059578
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_sacks_pile.png",
+      "bytes": 525065,
+      "sha256": "66bbbfce3355abe4cdeafd4cb9b82efd9befbe96f9dc2ad2c0ef461fe2ce80da",
+      "problems": [],
+      "png": {
+        "width": 762,
+        "height": 420,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.35454318210223723
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_stall.png",
+      "bytes": 518138,
+      "sha256": "94a89c6a13d4ab2c52ba626598fc662e03633f2be53491a7828bf4bf340100f3",
+      "problems": [],
+      "png": {
+        "width": 646,
+        "height": 470,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.30158421711349714
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_stall_bamboo.png",
+      "bytes": 498504,
+      "sha256": "3873b74d73ff3416df0bf9ead76cc478664163f97b64980cc54289f6d66d1dbb",
+      "problems": [],
+      "png": {
+        "width": 627,
+        "height": 469,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.2801916596103556
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_stall_cloth.png",
+      "bytes": 475606,
+      "sha256": "a2c1fcd0b27d9798c853e282db967fabbbbbc8dad324cbbdc758d90727226292",
+      "problems": [],
+      "png": {
+        "width": 634,
+        "height": 432,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.2230072146278771
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_stall_grain.png",
+      "bytes": 527658,
+      "sha256": "c4f4763c772f936c95a0e8ad4013fc19be438a9853eca936a9240665aaa64ef4",
+      "problems": [],
+      "png": {
+        "width": 631,
+        "height": 441,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.19830668664718926
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_stone_bench.png",
+      "bytes": 185637,
+      "sha256": "ed8290a7cdda2f04d82b6fd41c30d185d60478b12a322617ab93a5acd968ded2",
+      "problems": [],
+      "png": {
+        "width": 502,
+        "height": 216,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.30390475136491074
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_straw_mats.png",
+      "bytes": 230565,
+      "sha256": "7c65752b2f6062afbb26bab66049f91da411facda4ad333d1b8fe15025d7eceb",
+      "problems": [],
+      "png": {
+        "width": 442,
+        "height": 293,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3414976912266613
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_training_dummy.png",
+      "bytes": 1256455,
+      "sha256": "5bc20d5d2afc08efa49e8974d9b8a020b70ce2258c6c157b2e6fd111c451fb2d",
+      "problems": [],
+      "png": {
+        "width": 811,
+        "height": 1691,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.6284806559131866
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_trough.png",
+      "bytes": 207620,
+      "sha256": "4691af5d62ea2f7db1e34c1587ddd5c0f1ec5a627728a75e0a481744122b83df",
+      "problems": [],
+      "png": {
+        "width": 632,
+        "height": 216,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.2918424753867792
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_war_drum.png",
+      "bytes": 262299,
+      "sha256": "260731f059dfba391d4b73990f987f5c3967c41d9056a2ca193959638e29eb99",
+      "problems": [],
+      "png": {
+        "width": 379,
+        "height": 444,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3191661318310395
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_wash_basin.png",
+      "bytes": 242275,
+      "sha256": "eb674d0c8340db9f99787be40fd838562c4a6f80e9974894389d91f6fc86a55d",
+      "problems": [],
+      "png": {
+        "width": 455,
+        "height": 276,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.23186016881669055
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_water_vat.png",
+      "bytes": 248447,
+      "sha256": "0f0edea31016ec8c41a34c5d7c2eeb692a6282361987cbf516b9127c9362cd8b",
+      "problems": [],
+      "png": {
+        "width": 377,
+        "height": 365,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.219454234947858
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_weapon_rack.png",
+      "bytes": 190549,
+      "sha256": "15831d94b40b4440c3e6293b5e51c63c7f8adea4b9a684451f2a40824e73313e",
+      "problems": [],
+      "png": {
+        "width": 428,
+        "height": 462,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.6236345430270664
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_well.png",
+      "bytes": 431082,
+      "sha256": "a0d8fe678d3f088aea42635ad488f2d99c44ea2fdd2a94d93f289af474b8f6d9",
+      "problems": [],
+      "png": {
+        "width": 504,
+        "height": 511,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.31544512782281864
+      }
+    },
+    {
+      "path": "_checks/segmented/prop_wine_jars.png",
+      "bytes": 229800,
+      "sha256": "9f97a95421a8bfa87491879f33fe407104d87be2e9e7e12810e35dca9660cbe0",
+      "problems": [],
+      "png": {
+        "width": 451,
+        "height": 303,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.272478467358931
+      }
+    },
+    {
+      "path": "_checks/source_integrity.json",
+      "bytes": 5761,
+      "sha256": "88333986e3f2caca329ebb0b54323b6b2d1e1fcd406ba4e7ced28d506eed8d4d",
+      "problems": []
+    },
+    {
+      "path": "_checks/validation.json",
+      "bytes": 27148,
+      "sha256": "e95b8d08b043dfc8f42f5d097dbbb4f56bef9c659457c19740245d7f82801a0e",
+      "problems": []
+    },
+    {
+      "path": "_checks/visual_review.md",
+      "bytes": 1898,
+      "sha256": "6fd36ac9548a3896a68f20e5ffffac777cc6db58321987811e4ef5bbc1d551b3",
+      "problems": []
+    },
+    {
+      "path": "_checks/write_probe.txt",
+      "bytes": 204,
+      "sha256": "86f114c4fa0673d9b1aed62598bef8ce98332d6751564421dbc06e72c8e71160",
+      "problems": []
+    },
+    {
+      "path": "_prompts/01_banners.txt",
+      "bytes": 3368,
+      "sha256": "707a6e4bdf14e86c40470ac1f1ca681f6e856a8f0c53ab1a06ec5a54b2249cb0",
+      "problems": []
+    },
+    {
+      "path": "_prompts/02_stalls.txt",
+      "bytes": 2734,
+      "sha256": "da7c157003a8998b477ac6ddc1035d13451b9735f9c5f2e1f8b04ace19279fc3",
+      "problems": []
+    },
+    {
+      "path": "_prompts/03_military.txt",
+      "bytes": 3164,
+      "sha256": "785a2a90913b64a3384ae844c890abddfa4c2ae37345f9a454b7e9d68af2fc4a",
+      "problems": []
+    },
+    {
+      "path": "_prompts/04_smallwares.txt",
+      "bytes": 3723,
+      "sha256": "b927e6acb391607ffd0749f3d0ffc825a83bea65a719a3f738e80eb08c58e8cc",
+      "problems": []
+    },
+    {
+      "path": "_prompts/05_ruralwares.txt",
+      "bytes": 3687,
+      "sha256": "c6e68703a5fb615670cdaf95de93c545f4c003412184f54350a656557d7281ce",
+      "problems": []
+    },
+    {
+      "path": "_prompts/06_furnishings.txt",
+      "bytes": 3089,
+      "sha256": "78afa5a144d77528d2d732f740eafc7f835ca5a29b16b805332e416c5b155dab",
+      "problems": []
+    },
+    {
+      "path": "_prompts/07_workstations.txt",
+      "bytes": 3351,
+      "sha256": "fd805eefcef0e3fe7a480a6020f1701877fe43a9d655020e17730d9fc1a3f2d6",
+      "problems": []
+    },
+    {
+      "path": "_prompts/08_cart_well.txt",
+      "bytes": 2699,
+      "sha256": "030c4166e1cb98cb054dcea9cbb85f84fbb6eb6ca28ff90ca9374fd0a27401da",
+      "problems": []
+    },
+    {
+      "path": "_prompts/09_oath_altar.txt",
+      "bytes": 1962,
+      "sha256": "00bff00cc0ff11de186e35b7985b46652601512771f326c6a2d3a3c427015068",
+      "problems": []
+    },
+    {
+      "path": "_prompts/10_army_tent.txt",
+      "bytes": 1910,
+      "sha256": "e98b712d6b2455fe1f7fcf955372cebb37278cb46fa7026c52332f0e9160f50c",
+      "problems": []
+    },
+    {
+      "path": "_prompts/11_lantern.txt",
+      "bytes": 1557,
+      "sha256": "39408d7a50490203a559b6f335310a24be8ba8fdb7fc8ee58701bc008e2e7728",
+      "problems": []
+    },
+    {
+      "path": "_prompts/12_tall_banners.txt",
+      "bytes": 2039,
+      "sha256": "f7b157f73d0a37dfa2873e6562d2a2fbc109de64224dc7358642a6a4a9753db8",
+      "problems": []
+    },
+    {
+      "path": "_prompts/13_tall_dummy.txt",
+      "bytes": 1743,
+      "sha256": "f260a03710067512b5b9c77edfc30ae3c2b366ea107cd99be70e2f997541be5c",
+      "problems": []
+    },
+    {
+      "path": "_sources/01_banners.png",
+      "bytes": 1116175,
+      "sha256": "6bc232882870a86e272b03ce4838d87a954b0439b105a7520d6b002f1a7aac0e",
+      "problems": [],
+      "png": {
+        "width": 2172,
+        "height": 724,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.6939240509548955
+      }
+    },
+    {
+      "path": "_sources/02_stalls.png",
+      "bytes": 2404102,
+      "sha256": "6ca4390e4bb3aa1bb55bf893139efa842f4cb6e3d63da9cf58dda1bc69c8fc9a",
+      "problems": [],
+      "png": {
+        "width": 1374,
+        "height": 1145,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.37605690204229514
+      }
+    },
+    {
+      "path": "_sources/03_military.png",
+      "bytes": 2372598,
+      "sha256": "5b645d89c3fb95bbf1caa0a69fc8dfe50f7e6b8b8832b51e2b66919f0dd696e9",
+      "problems": [],
+      "png": {
+        "width": 1536,
+        "height": 1024,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5979518890380859
+      }
+    },
+    {
+      "path": "_sources/04_smallwares.png",
+      "bytes": 2658310,
+      "sha256": "3f9943b0661ce2d8673723530007edb90df1da1763606b2cdbfdd52e9312df78",
+      "problems": [],
+      "png": {
+        "width": 1536,
+        "height": 1024,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5133781433105469
+      }
+    },
+    {
+      "path": "_sources/05_ruralwares.png",
+      "bytes": 2820654,
+      "sha256": "fc53d5ef626c0a11addd2248b8b785008f16d386869f33c82228f1fca15d2f53",
+      "problems": [],
+      "png": {
+        "width": 1536,
+        "height": 1024,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.4573129018147786
+      }
+    },
+    {
+      "path": "_sources/06_furnishings.png",
+      "bytes": 1667496,
+      "sha256": "c9b60f9d4b637835d7f4e5329053848bff2d28ade8765bb01f266afb1cc37d36",
+      "problems": [],
+      "png": {
+        "width": 1774,
+        "height": 887,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5622025016237294
+      }
+    },
+    {
+      "path": "_sources/07_workstations.png",
+      "bytes": 2514221,
+      "sha256": "8aa05b732fa6e140e16c4c54d68aff94016730a2ecd7d962bed1fd8cab3285dc",
+      "problems": [],
+      "png": {
+        "width": 1536,
+        "height": 1024,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5413742065429688
+      }
+    },
+    {
+      "path": "_sources/08_cart_well.png",
+      "bytes": 2660570,
+      "sha256": "3ab44d80111fdef77ad6628b033b8217daace461cae97d3c63d86e41a09d2cde",
+      "problems": [],
+      "png": {
+        "width": 1536,
+        "height": 1024,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5104490915934244
+      }
+    },
+    {
+      "path": "_sources/09_oath_altar.png",
+      "bytes": 1146892,
+      "sha256": "c3907b6238817f0e0852a646d76f5f4de50d5a9c757b474c6a5063ba185c23ea",
+      "problems": [],
+      "png": {
+        "width": 1774,
+        "height": 887,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.6863787210731486
+      }
+    },
+    {
+      "path": "_sources/10_army_tent.png",
+      "bytes": 1666140,
+      "sha256": "e8ad8e0e993693e22864538e649c90a3165ea6c888ba440dbb04fe55f8082102",
+      "problems": [],
+      "png": {
+        "width": 1499,
+        "height": 1049,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5201154121813653
+      }
+    },
+    {
+      "path": "_sources/11_lantern.png",
+      "bytes": 1832051,
+      "sha256": "c8ecc827e41d41838092b814ac5e4c9b1e3b1863f5a06089f3d12626954f394f",
+      "problems": [],
+      "png": {
+        "width": 1024,
+        "height": 1536,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.6984341939290365
+      }
+    },
+    {
+      "path": "_sources/12_tall_banners.png",
+      "bytes": 1993033,
+      "sha256": "487e04b9e2e9001122a4fee562d978cad6d2947a7725b2d744001ae63275ee43",
+      "problems": [],
+      "png": {
+        "width": 1024,
+        "height": 1536,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.6208101908365885
+      }
+    },
+    {
+      "path": "_sources/13_tall_dummy.png",
+      "bytes": 1435387,
+      "sha256": "f0f908dd9d6dcf5a7f15a05d5b6336b913868ec0589672aa85eaf8f14cb0681b",
+      "problems": [],
+      "png": {
+        "width": 860,
+        "height": 1828,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.6536963767747188
+      }
+    },
+    {
+      "path": "_sources/codex-exec-0a310def-2f0d-455d-be2b-c9b5fe0a6b50.png",
+      "bytes": 2404102,
+      "sha256": "6ca4390e4bb3aa1bb55bf893139efa842f4cb6e3d63da9cf58dda1bc69c8fc9a",
+      "problems": [],
+      "png": {
+        "width": 1374,
+        "height": 1145,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.37605690204229514
+      }
+    },
+    {
+      "path": "_sources/codex-exec-0ca344c5-1e66-48cf-883d-63972bb5e3c0.png",
+      "bytes": 2660570,
+      "sha256": "3ab44d80111fdef77ad6628b033b8217daace461cae97d3c63d86e41a09d2cde",
+      "problems": [],
+      "png": {
+        "width": 1536,
+        "height": 1024,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5104490915934244
+      }
+    },
+    {
+      "path": "_sources/codex-exec-2990bc15-fdae-451e-b82e-56201a7e995b.png",
+      "bytes": 2820654,
+      "sha256": "fc53d5ef626c0a11addd2248b8b785008f16d386869f33c82228f1fca15d2f53",
+      "problems": [],
+      "png": {
+        "width": 1536,
+        "height": 1024,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.4573129018147786
+      }
+    },
+    {
+      "path": "_sources/codex-exec-3c6c64a4-2fce-42d5-8595-e43b36a56c58.png",
+      "bytes": 1666140,
+      "sha256": "e8ad8e0e993693e22864538e649c90a3165ea6c888ba440dbb04fe55f8082102",
+      "problems": [],
+      "png": {
+        "width": 1499,
+        "height": 1049,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5201154121813653
+      }
+    },
+    {
+      "path": "_sources/codex-exec-46defa2a-1a49-4008-a005-b5cb6076bdc4.png",
+      "bytes": 1146892,
+      "sha256": "c3907b6238817f0e0852a646d76f5f4de50d5a9c757b474c6a5063ba185c23ea",
+      "problems": [],
+      "png": {
+        "width": 1774,
+        "height": 887,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.6863787210731486
+      }
+    },
+    {
+      "path": "_sources/codex-exec-757de2ba-890c-4492-813b-20b134a7805f.png",
+      "bytes": 2514221,
+      "sha256": "8aa05b732fa6e140e16c4c54d68aff94016730a2ecd7d962bed1fd8cab3285dc",
+      "problems": [],
+      "png": {
+        "width": 1536,
+        "height": 1024,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5413742065429688
+      }
+    },
+    {
+      "path": "_sources/codex-exec-831a4582-3138-4c00-a7de-2a9c4f2dc23b.png",
+      "bytes": 1993033,
+      "sha256": "487e04b9e2e9001122a4fee562d978cad6d2947a7725b2d744001ae63275ee43",
+      "problems": [],
+      "png": {
+        "width": 1024,
+        "height": 1536,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.6208101908365885
+      }
+    },
+    {
+      "path": "_sources/codex-exec-9939e445-94e9-4e0e-b914-b09588428f29.png",
+      "bytes": 1435387,
+      "sha256": "f0f908dd9d6dcf5a7f15a05d5b6336b913868ec0589672aa85eaf8f14cb0681b",
+      "problems": [],
+      "png": {
+        "width": 860,
+        "height": 1828,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.6536963767747188
+      }
+    },
+    {
+      "path": "_sources/codex-exec-acaff718-9f82-49cf-87a7-9c251b74bce8.png",
+      "bytes": 1832051,
+      "sha256": "c8ecc827e41d41838092b814ac5e4c9b1e3b1863f5a06089f3d12626954f394f",
+      "problems": [],
+      "png": {
+        "width": 1024,
+        "height": 1536,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.6984341939290365
+      }
+    },
+    {
+      "path": "_sources/codex-exec-ad225721-7948-4507-a2c4-dbf447413cd6.png",
+      "bytes": 1667496,
+      "sha256": "c9b60f9d4b637835d7f4e5329053848bff2d28ade8765bb01f266afb1cc37d36",
+      "problems": [],
+      "png": {
+        "width": 1774,
+        "height": 887,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5622025016237294
+      }
+    },
+    {
+      "path": "_sources/codex-exec-d850ea8a-fbc8-4c81-867c-179f9ac58a70.png",
+      "bytes": 1116175,
+      "sha256": "6bc232882870a86e272b03ce4838d87a954b0439b105a7520d6b002f1a7aac0e",
+      "problems": [],
+      "png": {
+        "width": 2172,
+        "height": 724,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.6939240509548955
+      }
+    },
+    {
+      "path": "_sources/codex-exec-db0a504a-ada2-408a-8916-aa350bbab45a.png",
+      "bytes": 2658310,
+      "sha256": "3f9943b0661ce2d8673723530007edb90df1da1763606b2cdbfdd52e9312df78",
+      "problems": [],
+      "png": {
+        "width": 1536,
+        "height": 1024,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5133781433105469
+      }
+    },
+    {
+      "path": "_sources/codex-exec-f811cdd8-a253-434f-ae9b-4f95009b6199.png",
+      "bytes": 2372598,
+      "sha256": "5b645d89c3fb95bbf1caa0a69fc8dfe50f7e6b8b8832b51e2b66919f0dd696e9",
+      "problems": [],
+      "png": {
+        "width": 1536,
+        "height": 1024,
+        "hasAlpha": true,
+        "binaryAlpha": false,
+        "transparentRatio": 0.5979518890380859
+      }
+    },
+    {
+      "path": "oath_altar.png",
+      "bytes": 74782,
+      "sha256": "9d7a4fd13f46d8d0240755607f9bc849c83d326b9820ab455b2a7210960bb5dc",
+      "problems": [],
+      "png": {
+        "width": 384,
+        "height": 192,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5830078125
+      }
+    },
+    {
+      "path": "preview.png",
+      "bytes": 2094026,
+      "sha256": "c8408c744144bdf7c788b166d568c996d00e79a0c5dbc56bcd7a8b9660276c25",
+      "problems": [],
+      "png": {
+        "width": 1800,
+        "height": 2746,
+        "hasAlpha": false,
+        "binaryAlpha": true,
+        "transparentRatio": 0
+      }
+    },
+    {
+      "path": "prop_anvil.png",
+      "bytes": 18495,
+      "sha256": "7f7abacfe0f6e6a359c0113b1fa725c11a3e4c20996ca56bb97ca9a74f0b7e6b",
+      "problems": [],
+      "png": {
+        "width": 120,
+        "height": 96,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.43046875
+      }
+    },
+    {
+      "path": "prop_archery_target.png",
+      "bytes": 48389,
+      "sha256": "1604f515370461df30c356dfcb63620d44ef97abdda94ed634d268eeffacb31d",
+      "problems": [],
+      "png": {
+        "width": 144,
+        "height": 204,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.42681100217864926
+      }
+    },
+    {
+      "path": "prop_armor_stand.png",
+      "bytes": 38026,
+      "sha256": "41d393e8f058a38db8cda3a029093263323082423739d154c3076142a46483cc",
+      "problems": [],
+      "png": {
+        "width": 120,
+        "height": 228,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5115862573099416
+      }
+    },
+    {
+      "path": "prop_army_tent.png",
+      "bytes": 257750,
+      "sha256": "07f766660e169610c237bdb99829fafd77867353218d2e0e6d52073538a9f365",
+      "problems": [],
+      "png": {
+        "width": 600,
+        "height": 420,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5106626984126984
+      }
+    },
+    {
+      "path": "prop_banner_casino.png",
+      "bytes": 56623,
+      "sha256": "9f03ce2c06cbb2070c777670e9c22dd50c7a5b30702bc50b3960bdb3302018ae",
+      "problems": [],
+      "png": {
+        "width": 120,
+        "height": 480,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5978993055555556
+      }
+    },
+    {
+      "path": "prop_banner_han.png",
+      "bytes": 57752,
+      "sha256": "b0a1a924df128d9ec59db02f5f67f06b0ff95b268b5fd9f5a8d60370691d41cb",
+      "problems": [],
+      "png": {
+        "width": 120,
+        "height": 480,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5874652777777778
+      }
+    },
+    {
+      "path": "prop_banner_iron.png",
+      "bytes": 41181,
+      "sha256": "1ddded9d7bc3950fd4cf3696ca1535b2bfc7f28a02539e46f337fa8823fe5730",
+      "problems": [],
+      "png": {
+        "width": 120,
+        "height": 288,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5528935185185185
+      }
+    },
+    {
+      "path": "prop_banner_medicine.png",
+      "bytes": 40956,
+      "sha256": "6918d08e6458732c8b3e530763ab8ba8986cd844cebe59b07ef879bc193ca628",
+      "problems": [],
+      "png": {
+        "width": 120,
+        "height": 288,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5570023148148148
+      }
+    },
+    {
+      "path": "prop_banner_post.png",
+      "bytes": 41149,
+      "sha256": "02a0300ad73762b7f0de50eea583c271c74a2f9f2c8337d67f3d3ea8da2daa61",
+      "problems": [],
+      "png": {
+        "width": 120,
+        "height": 288,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5496527777777778
+      }
+    },
+    {
+      "path": "prop_banner_wine.png",
+      "bytes": 40593,
+      "sha256": "a982b00986f7891d437fc23ce7db14ce6e7ea02f43fe83bb791bf59b34aa5272",
+      "problems": [],
+      "png": {
+        "width": 120,
+        "height": 288,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5521701388888889
+      }
+    },
+    {
+      "path": "prop_barrel.png",
+      "bytes": 24852,
+      "sha256": "26a4d6ccd0f9b67b41708a649785d91a15783182b8bb20861122cefd851c40d4",
+      "problems": [],
+      "png": {
+        "width": 96,
+        "height": 120,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.17586805555555557
+      }
+    },
+    {
+      "path": "prop_basket_stack.png",
+      "bytes": 42356,
+      "sha256": "0a4c38abcb54ea6f71d16d57a27ba3a5790fac676fe6839fe5b778116a69c227",
+      "problems": [],
+      "png": {
+        "width": 144,
+        "height": 144,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.26784336419753085
+      }
+    },
+    {
+      "path": "prop_beggar_bowl.png",
+      "bytes": 4302,
+      "sha256": "11efda60283c2aee6fcf311eb1b455cec985608183e2f9fd69c1a73aabb9af3e",
+      "problems": [],
+      "png": {
+        "width": 60,
+        "height": 36,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3277777777777778
+      }
+    },
+    {
+      "path": "prop_bookstand.png",
+      "bytes": 16557,
+      "sha256": "e781497bce217cb8c6194027fc959563d8c0b1ca6d0ce61f0900f4575d3e6a10",
+      "problems": [],
+      "png": {
+        "width": 120,
+        "height": 96,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.4783854166666667
+      }
+    },
+    {
+      "path": "prop_bow_rack.png",
+      "bytes": 50637,
+      "sha256": "772f82cb5c0283373127383ecae85f0cfc7252e3ba97938047260a6f830cad8e",
+      "problems": [],
+      "png": {
+        "width": 192,
+        "height": 240,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.6234592013888889
+      }
+    },
+    {
+      "path": "prop_brazier.png",
+      "bytes": 12625,
+      "sha256": "d5d7705ea3ec069721d1848fa2325cb458e4629b335efb526de6cb333a324513",
+      "problems": [],
+      "png": {
+        "width": 96,
+        "height": 120,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.6316840277777778
+      }
+    },
+    {
+      "path": "prop_brazier_glow_mask.png",
+      "bytes": 445,
+      "sha256": "6e34089a0d17112ce9f11344b50566b649129a41a3480274dc0464254954aeff",
+      "problems": [],
+      "png": {
+        "width": 96,
+        "height": 120,
+        "hasAlpha": false,
+        "binaryAlpha": true,
+        "transparentRatio": 0
+      }
+    },
+    {
+      "path": "prop_carry_pole.png",
+      "bytes": 28972,
+      "sha256": "a8033aeff03e71bc9db9a7abd5092f79b5458f052d9a95692383f4282f3a71da",
+      "problems": [],
+      "png": {
+        "width": 216,
+        "height": 144,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.6840277777777778
+      }
+    },
+    {
+      "path": "prop_chopping_block.png",
+      "bytes": 13127,
+      "sha256": "0f38ad1e16fe1290b0fac14d7c129bce4bdc77f1e45429328c6a07db91d91c2b",
+      "problems": [],
+      "png": {
+        "width": 96,
+        "height": 84,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.4176587301587302
+      }
+    },
+    {
+      "path": "prop_cloth_bolts.png",
+      "bytes": 25853,
+      "sha256": "67d03731de3b5415a7c1c364a1decf57f7a617787a76c646ec8b13cc6057946e",
+      "problems": [],
+      "png": {
+        "width": 144,
+        "height": 108,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3778292181069959
+      }
+    },
+    {
+      "path": "prop_dice_table.png",
+      "bytes": 65252,
+      "sha256": "c37c1436bdfecd0397ae9c252b48d9fba9214c74be76fd9f5e9f682c1a63a6e6",
+      "problems": [],
+      "png": {
+        "width": 288,
+        "height": 144,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.36200327932098764
+      }
+    },
+    {
+      "path": "prop_firewood.png",
+      "bytes": 38593,
+      "sha256": "fa09ce3bdbd49e8f07cb6b644f910c023e559fe187c2e6d1a253a1baa25fcce5",
+      "problems": [],
+      "png": {
+        "width": 192,
+        "height": 120,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.40616319444444443
+      }
+    },
+    {
+      "path": "prop_grain_measure.png",
+      "bytes": 9934,
+      "sha256": "5529735eb43592712000493dd65951384071f7c5b9fc117b8a4f139ffc50ea28",
+      "problems": [],
+      "png": {
+        "width": 84,
+        "height": 72,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.42410714285714285
+      }
+    },
+    {
+      "path": "prop_grain_sacks.png",
+      "bytes": 40512,
+      "sha256": "cf435096f7655d4d4fc98392ec596b052bb0a93a0d36a9c41905828639242d72",
+      "problems": [],
+      "png": {
+        "width": 192,
+        "height": 144,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.46119068287037035
+      }
+    },
+    {
+      "path": "prop_handcart.png",
+      "bytes": 59325,
+      "sha256": "8b78a05eb3fa7a932b6e32eb40f12fd254bff222791347f550c2a28e3f93f630",
+      "problems": [],
+      "png": {
+        "width": 288,
+        "height": 192,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.6328125
+      }
+    },
+    {
+      "path": "prop_hay_pile.png",
+      "bytes": 34145,
+      "sha256": "8d5835cb4eafc336dd39f9735868c1244216c49f03f34d3d12dee401589ff098",
+      "problems": [],
+      "png": {
+        "width": 192,
+        "height": 132,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5900804924242424
+      }
+    },
+    {
+      "path": "prop_herb_mortar.png",
+      "bytes": 12303,
+      "sha256": "27bcdbf9232eb02fa21becb706a0b05ed3d9671be68fd9aa480304eca7539f1f",
+      "problems": [],
+      "png": {
+        "width": 84,
+        "height": 84,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3949829931972789
+      }
+    },
+    {
+      "path": "prop_herb_rack.png",
+      "bytes": 77737,
+      "sha256": "74682e4bc2bfa02ca50fc279d25fcc4da4ddc907a793a75ee0045c1f22040376",
+      "problems": [],
+      "png": {
+        "width": 240,
+        "height": 204,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.48370098039215687
+      }
+    },
+    {
+      "path": "prop_hitching_post.png",
+      "bytes": 16953,
+      "sha256": "8fe0cd4e0d72e8876d2164d0f36ec40014592d36629cdeaba909de7f759780e9",
+      "problems": [],
+      "png": {
+        "width": 144,
+        "height": 144,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.722608024691358
+      }
+    },
+    {
+      "path": "prop_hoe_field.png",
+      "bytes": 132275,
+      "sha256": "6b312b70f8bd16b6768c613eaf56940f8996d4ae41d2e6c502124296d0a8da9a",
+      "problems": [],
+      "png": {
+        "width": 360,
+        "height": 180,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.23367283950617285
+      }
+    },
+    {
+      "path": "prop_juggle_props.png",
+      "bytes": 19621,
+      "sha256": "8dc1ce42066231f5b74ad5fd1ef5e569a4e8fccb7c6764f7b63f2b04f8adfb26",
+      "problems": [],
+      "png": {
+        "width": 144,
+        "height": 144,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.6669560185185185
+      }
+    },
+    {
+      "path": "prop_lantern_red.png",
+      "bytes": 3006,
+      "sha256": "076e3fed8f3b4fcec5bc9910a5d6ebd630f68b00510ba098bf7f3a3ffdac3da2",
+      "problems": [],
+      "png": {
+        "width": 48,
+        "height": 72,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.6770833333333334
+      }
+    },
+    {
+      "path": "prop_laundry_line.png",
+      "bytes": 96135,
+      "sha256": "1efc8cb3451024b1e2d6809f71a582159ed0a72bdc29720cb8671816549c3706",
+      "problems": [],
+      "png": {
+        "width": 360,
+        "height": 240,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5579282407407408
+      }
+    },
+    {
+      "path": "prop_mat_loom.png",
+      "bytes": 71046,
+      "sha256": "712cee7bff970ce9e880e63a348a9b658acecddf4cd6c6f43f25dafe93340b95",
+      "problems": [],
+      "png": {
+        "width": 240,
+        "height": 192,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.4569227430555556
+      }
+    },
+    {
+      "path": "prop_notice_board.png",
+      "bytes": 94253,
+      "sha256": "f478e84bd0b50417aa458b476aa10c47225dad045c9e55d56c91ed323fe3d633",
+      "problems": [],
+      "png": {
+        "width": 240,
+        "height": 264,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3991003787878788
+      }
+    },
+    {
+      "path": "prop_ox_cart.png",
+      "bytes": 72346,
+      "sha256": "ed44c5db25730ecdd4439f79a6e175136b185f0ff7597edf7008975178d16149",
+      "problems": [],
+      "png": {
+        "width": 360,
+        "height": 240,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.7023611111111111
+      }
+    },
+    {
+      "path": "prop_produce_basket.png",
+      "bytes": 24411,
+      "sha256": "2b0ace3dcfc1808d085c77762cba8a5ec9f324f5f37ea3eb55ba7a1bc57973b6",
+      "problems": [],
+      "png": {
+        "width": 144,
+        "height": 96,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.4155815972222222
+      }
+    },
+    {
+      "path": "prop_recruit_desk.png",
+      "bytes": 62562,
+      "sha256": "df193c63e4f2ba8536988ba87c7ecd55b659b9d076fd70d9ac7ff750c043d2e8",
+      "problems": [],
+      "png": {
+        "width": 288,
+        "height": 144,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.38230613425925924
+      }
+    },
+    {
+      "path": "prop_sacks_pile.png",
+      "bytes": 74642,
+      "sha256": "ce933120f66d66dbd115c23c27e57a6db425f513e421499e946c24e860a5f34a",
+      "problems": [],
+      "png": {
+        "width": 288,
+        "height": 180,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.4371141975308642
+      }
+    },
+    {
+      "path": "prop_stall.png",
+      "bytes": 174148,
+      "sha256": "6482eb87cd34d8bb11f6b070c66012b97753b82be1f305488428e58fb065262f",
+      "problems": [],
+      "png": {
+        "width": 360,
+        "height": 300,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3974722222222222
+      }
+    },
+    {
+      "path": "prop_stall_bamboo.png",
+      "bytes": 175636,
+      "sha256": "828865390d267cdc4975c6874a9c61f95306cceb8997fd4578b0ef488a0fe701",
+      "problems": [],
+      "png": {
+        "width": 360,
+        "height": 300,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.360787037037037
+      }
+    },
+    {
+      "path": "prop_stall_cloth.png",
+      "bytes": 164963,
+      "sha256": "aad516793a4b275f42bf02602cece4d2c8f5d89afa59a00eb87e569f3d4e181f",
+      "problems": [],
+      "png": {
+        "width": 360,
+        "height": 300,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3713148148148148
+      }
+    },
+    {
+      "path": "prop_stall_grain.png",
+      "bytes": 182438,
+      "sha256": "7bf3d04ecb6b8859109d79c1eb575b75929b52d8fc659ac67b397d3b117222d2",
+      "problems": [],
+      "png": {
+        "width": 360,
+        "height": 300,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.33573148148148146
+      }
+    },
+    {
+      "path": "prop_stone_bench.png",
+      "bytes": 23031,
+      "sha256": "fa7c134ebcae75de4fba02b0e4e710aa4866336788320e3842eac64e2913e253",
+      "problems": [],
+      "png": {
+        "width": 168,
+        "height": 72,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3191137566137566
+      }
+    },
+    {
+      "path": "prop_straw_mats.png",
+      "bytes": 46401,
+      "sha256": "5f764581c80a0bd19e46320b0ff2a8cc74e3200a7e9f1b367cf4cfa5aa34d7fb",
+      "problems": [],
+      "png": {
+        "width": 192,
+        "height": 168,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.5106026785714286
+      }
+    },
+    {
+      "path": "prop_training_dummy.png",
+      "bytes": 20856,
+      "sha256": "742f61dcd75e1688e2aea6806734086c52f6b681e8d251a299fd9264bbd84644",
+      "problems": [],
+      "png": {
+        "width": 96,
+        "height": 204,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.650531045751634
+      }
+    },
+    {
+      "path": "prop_trough.png",
+      "bytes": 21002,
+      "sha256": "6b4d8563e2ab349782e97088610c8b1f2e750a576f42ad01e85a08fb814e1b32",
+      "problems": [],
+      "png": {
+        "width": 192,
+        "height": 84,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.45771329365079366
+      }
+    },
+    {
+      "path": "prop_war_drum.png",
+      "bytes": 39570,
+      "sha256": "be39c94e6dadc015ccb75a719d6e585c5e934bee8cbc5d3b45b0b167f4ad8e1f",
+      "problems": [],
+      "png": {
+        "width": 144,
+        "height": 168,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.33639219576719576
+      }
+    },
+    {
+      "path": "prop_wash_basin.png",
+      "bytes": 19380,
+      "sha256": "ff99b0566b1142b096ecc6a274aa10cc44f6b3027776fa58d1d31b68e02ffaed",
+      "problems": [],
+      "png": {
+        "width": 144,
+        "height": 72,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.36429398148148145
+      }
+    },
+    {
+      "path": "prop_water_vat.png",
+      "bytes": 27865,
+      "sha256": "1b5e06a05fb80628796b2dca5b1501e91335a15ef3e3ec32a854152b3afeb7b0",
+      "problems": [],
+      "png": {
+        "width": 120,
+        "height": 120,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.27020833333333333
+      }
+    },
+    {
+      "path": "prop_weapon_rack.png",
+      "bytes": 41373,
+      "sha256": "55efc8512ce4cf3bda21062ee040d744bed4dde2e20436e87a6bae246704b78f",
+      "problems": [],
+      "png": {
+        "width": 192,
+        "height": 240,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.6823567708333333
+      }
+    },
+    {
+      "path": "prop_well.png",
+      "bytes": 60209,
+      "sha256": "b5215ad5cfa32a51fae694408a0e3024f46c94c235380b955888743e4f78511c",
+      "problems": [],
+      "png": {
+        "width": 180,
+        "height": 192,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.3662037037037037
+      }
+    },
+    {
+      "path": "prop_wine_jars.png",
+      "bytes": 47158,
+      "sha256": "ba257f03510b95adcfb646c96884576db92d72d1cc01ed49249050d65c79894a",
+      "problems": [],
+      "png": {
+        "width": 192,
+        "height": 168,
+        "hasAlpha": true,
+        "binaryAlpha": true,
+        "transparentRatio": 0.4513888888888889
+      }
+    }
+  ],
+  "deliverables": [
+    "PROMPTS.md",
+    "oath_altar.png",
+    "preview.png",
+    "prop_anvil.png",
+    "prop_archery_target.png",
+    "prop_armor_stand.png",
+    "prop_army_tent.png",
+    "prop_banner_casino.png",
+    "prop_banner_han.png",
+    "prop_banner_iron.png",
+    "prop_banner_medicine.png",
+    "prop_banner_post.png",
+    "prop_banner_wine.png",
+    "prop_barrel.png",
+    "prop_basket_stack.png",
+    "prop_beggar_bowl.png",
+    "prop_bookstand.png",
+    "prop_bow_rack.png",
+    "prop_brazier.png",
+    "prop_brazier_glow_mask.png",
+    "prop_carry_pole.png",
+    "prop_chopping_block.png",
+    "prop_cloth_bolts.png",
+    "prop_dice_table.png",
+    "prop_firewood.png",
+    "prop_grain_measure.png",
+    "prop_grain_sacks.png",
+    "prop_handcart.png",
+    "prop_hay_pile.png",
+    "prop_herb_mortar.png",
+    "prop_herb_rack.png",
+    "prop_hitching_post.png",
+    "prop_hoe_field.png",
+    "prop_juggle_props.png",
+    "prop_lantern_red.png",
+    "prop_laundry_line.png",
+    "prop_mat_loom.png",
+    "prop_notice_board.png",
+    "prop_ox_cart.png",
+    "prop_produce_basket.png",
+    "prop_recruit_desk.png",
+    "prop_sacks_pile.png",
+    "prop_stall.png",
+    "prop_stall_bamboo.png",
+    "prop_stall_cloth.png",
+    "prop_stall_grain.png",
+    "prop_stone_bench.png",
+    "prop_straw_mats.png",
+    "prop_training_dummy.png",
+    "prop_trough.png",
+    "prop_war_drum.png",
+    "prop_wash_basin.png",
+    "prop_water_vat.png",
+    "prop_weapon_rack.png",
+    "prop_well.png",
+    "prop_wine_jars.png"
+  ],
+  "missing": [],
+  "problems": [],
+  "ok": true,
+  "codex_report": {
+    "status": "done",
+    "summary": "已完成 54 张道具资源、总览和提示词文档。共生成 13 张原图，尺寸、文件名和透明度检查全部通过。",
+    "files": [
+      {
+        "path": "oath_altar.png",
+        "description": "384×192"
+      },
+      {
+        "path": "prop_anvil.png",
+        "description": "120×96"
+      },
+      {
+        "path": "prop_archery_target.png",
+        "description": "144×204"
+      },
+      {
+        "path": "prop_armor_stand.png",
+        "description": "120×228"
+      },
+      {
+        "path": "prop_army_tent.png",
+        "description": "600×420"
+      },
+      {
+        "path": "prop_banner_casino.png",
+        "description": "120×480"
+      },
+      {
+        "path": "prop_banner_han.png",
+        "description": "120×480"
+      },
+      {
+        "path": "prop_banner_iron.png",
+        "description": "120×288"
+      },
+      {
+        "path": "prop_banner_medicine.png",
+        "description": "120×288"
+      },
+      {
+        "path": "prop_banner_post.png",
+        "description": "120×288"
+      },
+      {
+        "path": "prop_banner_wine.png",
+        "description": "120×288"
+      },
+      {
+        "path": "prop_barrel.png",
+        "description": "96×120"
+      },
+      {
+        "path": "prop_basket_stack.png",
+        "description": "144×144"
+      },
+      {
+        "path": "prop_beggar_bowl.png",
+        "description": "60×36"
+      },
+      {
+        "path": "prop_bookstand.png",
+        "description": "120×96"
+      },
+      {
+        "path": "prop_bow_rack.png",
+        "description": "192×240"
+      },
+      {
+        "path": "prop_brazier.png",
+        "description": "96×120"
+      },
+      {
+        "path": "prop_brazier_glow_mask.png",
+        "description": "96×120，不透明黑白遮罩"
+      },
+      {
+        "path": "prop_carry_pole.png",
+        "description": "216×144"
+      },
+      {
+        "path": "prop_chopping_block.png",
+        "description": "96×84"
+      },
+      {
+        "path": "prop_cloth_bolts.png",
+        "description": "144×108"
+      },
+      {
+        "path": "prop_dice_table.png",
+        "description": "288×144"
+      },
+      {
+        "path": "prop_firewood.png",
+        "description": "192×120"
+      },
+      {
+        "path": "prop_grain_measure.png",
+        "description": "84×72"
+      },
+      {
+        "path": "prop_grain_sacks.png",
+        "description": "192×144"
+      },
+      {
+        "path": "prop_handcart.png",
+        "description": "288×192"
+      },
+      {
+        "path": "prop_hay_pile.png",
+        "description": "192×132"
+      },
+      {
+        "path": "prop_herb_mortar.png",
+        "description": "84×84"
+      },
+      {
+        "path": "prop_herb_rack.png",
+        "description": "240×204"
+      },
+      {
+        "path": "prop_hitching_post.png",
+        "description": "144×144"
+      },
+      {
+        "path": "prop_hoe_field.png",
+        "description": "360×180"
+      },
+      {
+        "path": "prop_juggle_props.png",
+        "description": "144×144"
+      },
+      {
+        "path": "prop_lantern_red.png",
+        "description": "48×72"
+      },
+      {
+        "path": "prop_laundry_line.png",
+        "description": "360×240"
+      },
+      {
+        "path": "prop_mat_loom.png",
+        "description": "240×192"
+      },
+      {
+        "path": "prop_notice_board.png",
+        "description": "240×264"
+      },
+      {
+        "path": "prop_ox_cart.png",
+        "description": "360×240"
+      },
+      {
+        "path": "prop_produce_basket.png",
+        "description": "144×96"
+      },
+      {
+        "path": "prop_recruit_desk.png",
+        "description": "288×144"
+      },
+      {
+        "path": "prop_sacks_pile.png",
+        "description": "288×180"
+      },
+      {
+        "path": "prop_stall.png",
+        "description": "360×300"
+      },
+      {
+        "path": "prop_stall_bamboo.png",
+        "description": "360×300"
+      },
+      {
+        "path": "prop_stall_cloth.png",
+        "description": "360×300"
+      },
+      {
+        "path": "prop_stall_grain.png",
+        "description": "360×300"
+      },
+      {
+        "path": "prop_stone_bench.png",
+        "description": "168×72"
+      },
+      {
+        "path": "prop_straw_mats.png",
+        "description": "192×168"
+      },
+      {
+        "path": "prop_training_dummy.png",
+        "description": "96×204"
+      },
+      {
+        "path": "prop_trough.png",
+        "description": "192×84"
+      },
+      {
+        "path": "prop_war_drum.png",
+        "description": "144×168"
+      },
+      {
+        "path": "prop_wash_basin.png",
+        "description": "144×72"
+      },
+      {
+        "path": "prop_water_vat.png",
+        "description": "120×120"
+      },
+      {
+        "path": "prop_weapon_rack.png",
+        "description": "192×240"
+      },
+      {
+        "path": "prop_well.png",
+        "description": "180×192"
+      },
+      {
+        "path": "prop_wine_jars.png",
+        "description": "192×168"
+      },
+      {
+        "path": "preview.png",
+        "description": "全部资源总览"
+      },
+      {
+        "path": "PROMPTS.md",
+        "description": "完整提示词、来源选择和处理说明"
+      },
+      {
+        "path": "_sources/",
+        "description": "13 张未经修改的生成原图"
+      },
+      {
+        "path": "_prompts/",
+        "description": "逐次生成提示词"
+      },
+      {
+        "path": "_checks/validation.json",
+        "description": "54 张资源逐项检查"
+      },
+      {
+        "path": "_checks/delivery_checks.json",
+        "description": "交付完整性检查"
+      },
+      {
+        "path": "_checks/source_integrity.json",
+        "description": "原图复制 SHA256 校验"
+      },
+      {
+        "path": "_checks/generation_log.json",
+        "description": "13 次生成记录"
+      },
+      {
+        "path": "_checks/visual_review.md",
+        "description": "视觉复核与验收边界"
+      },
+      {
+        "path": "_checks/process_assets.py",
+        "description": "裁切、缩放、透明度处理及检查脚本"
+      }
+    ],
+    "self_checks": [
+      {
+        "check": "文件名和尺寸",
+        "passed": true,
+        "detail": "54 张资源全部匹配清单，无缺失或额外资源 PNG。"
+      },
+      {
+        "check": "透明度与底边",
+        "passed": true,
+        "detail": "53 张透明资源 alpha 仅为 0/255，底部贴齐；透明像素 RGB 已清零。"
+      },
+      {
+        "check": "火盆遮罩",
+        "passed": true,
+        "detail": "RGB 无 alpha，仅纯黑和纯白，白色区域与最终火盆火焰对应。"
+      },
+      {
+        "check": "原图与生成上限",
+        "passed": true,
+        "detail": "13 张原图复制校验一致，低于 35 张上限；原图入口解析至物理 D 盘。"
+      },
+      {
+        "check": "视觉检查",
+        "passed": true,
+        "detail": "已复核总览、浅深背景边缘及重点放大图，修正截断、邻件残片和三件比例问题。"
+      },
+      {
+        "check": "平铺检查",
+        "passed": true,
+        "detail": "本批全部 tile_axes=none，无需无缝平铺检查。"
+      }
+    ],
+    "risks": [
+      "尚未进行游戏引擎导入、场景摆放或运行时验收。"
+    ],
+    "blocked_reason": ""
+  },
+  "images_generated_this_revision": 13
+}

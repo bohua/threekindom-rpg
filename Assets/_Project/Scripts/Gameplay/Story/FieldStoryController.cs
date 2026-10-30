@@ -18,8 +18,9 @@ namespace ThreeKingdoms.Gameplay.Story
     // does is FieldScripts; cutscenes play through the StagePlayer like on the story stage.
     public sealed class FieldStoryController : MonoBehaviour, IStoryScreen, IStageActors, IFieldHost, IShopTier, IFieldMarks
     {
-        // R2…R8: the story layer over an open region (RegionTravel, ChapterFieldBuilderRegions).
-        public enum Place { Camp, Anxi, Gongsun, Suanzao, Pingyuan, Xiapi, R2, R3, R5a, R5b, R6, R7, R8 }   // 0.3: Gongsun Zan's garrison, the Suanzao camp (FieldScripts3)
+        // R2…R8: the story layer over an open region (RegionTravel, ChapterFieldBuilderRegions). R1: the 涿蓟 map's own
+        // layer (FieldScriptsR1), last so the others keep their serialised values.
+        public enum Place { Camp, Anxi, Gongsun, Suanzao, Pingyuan, Xiapi, R2, R3, R5a, R5b, R6, R7, R8, R1 }   // 0.3: Gongsun Zan's garrison, the Suanzao camp (FieldScripts3)
 
         public Place Location;
         public BattleCatalog Catalog;
@@ -103,6 +104,8 @@ namespace ThreeKingdoms.Gameplay.Story
                 return GameRun.ForChapter(Catalog, ChapterStep.Xiapi, 810, 900, 2, development: true);
             if (Location == Place.Pingyuan)
                 return GameRun.ForChapter(Catalog, ChapterStep.Pingyuan, 370, 500, 2, development: true);
+            if (Location == Place.R1)   // the R1 map opened on its own: 190, Gongsun Zan's garrison as the base (its side quests)
+                return GameRun.ForChapter(Catalog, ChapterStep.Gongsun, 210, 400, 2, development: true);
             if (FieldScriptsRegions.IsRegion(Location))   // an open region opened on its own: 191 at Pingyuan as home
                 return GameRun.ForChapter(Catalog, ChapterStep.PingyuanSafe, 370, 500, 2, development: true);
             if (Location == Place.Gongsun || Location == Place.Suanzao)

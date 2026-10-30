@@ -25,10 +25,11 @@ namespace Jrpg
         public float StageDistance { get; set; }
         // A short shake (a blow in a story scene), in seconds left.
         public float ShakeSeconds { get; set; }
+        float zoneBlend;
 
         void LateUpdate()
         {
-            if (!Target) return;
+            if (!Target || Paused) return;
             if (!UseRig) { transform.position = Target.position + Offset; return; }
 
             ActiveZone = null;
@@ -41,12 +42,16 @@ namespace Jrpg
             else
             {
                 // Exponential ease: framerate independent, about 95 % of the way after BlendSeconds.
-                float k = 1f - Mathf.Exp(-3f * Time.deltaTime / Mathf.Max(0.05f, BlendSeconds));
+                // A zone may set its own pace (the Zhuojun square lowers slowly, user 2026-10-26); leaving it eases back at the same pace.
+                if (ActiveZone) zoneBlend = ActiveZone.BlendSeconds;
+                float blend = zoneBlend > 0f ? zoneBlend : BlendSeconds;
+                float k = 1f - Mathf.Exp(-3f * Time.deltaTime / Mathf.Max(0.05f, blend));
                 pitch = Mathf.Lerp(pitch, tp, k); distance = Mathf.Lerp(distance, td, k); yaw = Mathf.Lerp(yaw, ty, k);
                 fov = Mathf.Lerp(fov, tf, k); look = Vector3.Lerp(look, tl, k); sway = Mathf.Lerp(sway, ts, k);
             }
             float swing = sway * Mathf.Sin(Time.time * 0.35f);
-            var rotation = Quaternion.Euler(pitch, yaw + swing, 0f);
+            if (AvoidTerrain) LiftOverTerrain(Target.position + look, yaw + swing);
+            var rotation = Quaternion.Euler(pitch + lift, yaw + swing, 0f);
             Vector3 shake = Vector3.zero;
             if (ShakeSeconds > 0f) { ShakeSeconds -= Time.deltaTime; shake = Random.insideUnitSphere * 0.12f; }
             transform.SetPositionAndRotation(Target.position + look + rotation * new Vector3(0, 0, -distance) + shake, rotation);
@@ -55,8 +60,36 @@ namespace Jrpg
             if (FocusVolume) Focus(FocusVolume, distance);
         }
 
+        // Open regions (R1 涿蓟, user 2026-10-28): on a steep slope the ground between the party and the camera would fill
+        // the shot, so the camera tilts up over the ridge (quickly) and settles back once the view is clear (slowly).
+        // Only the terrain counts ("Terrain …" mesh colliders); trees and buildings are left to the see-through occluders.
+        public bool AvoidTerrain;
+        float lift;
+
+        void LiftOverTerrain(Vector3 focus, float heading)
+        {
+            float need = 0f;
+            for (float extra = 0f; pitch + extra <= 80f; extra += 4f)
+            {
+                need = extra;
+                var back = Quaternion.Euler(pitch + extra, heading, 0f) * Vector3.back;
+                bool blocked = false;
+                // Cast from the camera's spot toward the party: mesh colliders only stop rays that meet their front face.
+                var from = focus + back * distance;
+                foreach (var h in Physics.RaycastAll(from, -back, distance - 1.5f, ~0, QueryTriggerInteraction.Ignore))
+                    if (h.collider is MeshCollider && h.collider.name.StartsWith("Terrain")) { blocked = true; break; }
+                if (!blocked) break;
+            }
+            float rate = need > lift ? 6f : 1.2f;
+            lift = Mathf.Lerp(lift, need, 1f - Mathf.Exp(-rate * Time.deltaTime));
+        }
+
         // Jump straight to the current target's shot (after a teleport or scene load) instead of easing in.
         public void Snap() => started = false;
+
+        // A scripted shot (the first arrival in Zhuojun, user 2026-10-26) moves the camera itself while this is set.
+        public bool Paused;
+        public void FocusAt(float metres) { if (FocusVolume) Focus(FocusVolume, metres); }
 
         // Keeps the tilt-shift focus on the target as the distance changes. The URP depth-of-field override lives in
         // another assembly, so it is handled by type name. A small overlay volume carries a copy of the scene profile's

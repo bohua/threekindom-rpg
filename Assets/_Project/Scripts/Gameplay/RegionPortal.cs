@@ -17,6 +17,10 @@ namespace ThreeKingdoms.Gameplay
         [Tooltip("Name of the object to stand at in the target scene")] public string ArrivalSpot;
         public Vector3 Facing = Vector3.forward;
         [Tooltip("Chapter steps (ChapterStep values) during which the way is open; empty = always")] public int[] Steps = new int[0];
+        [Tooltip("Open only after the party has come through a portal this session (Zhuojun's ways out to R1)")] public bool AfterRegionVisit;
+
+        // Set once any portal has loaded a scene: a town whose early story keeps its gates shut opens its ways out after.
+        public static bool VisitedRegion;
 
         static string pendingArrival;
         static Vector3 pendingFacing;
@@ -41,11 +45,13 @@ namespace ThreeKingdoms.Gameplay
                 return;
             }
             pendingArrival = ArrivalSpot; pendingFacing = Facing;
+            VisitedRegion = true;
             SceneManager.LoadScene(TargetScene);
         }
 
         bool Open()
         {
+            if (AfterRegionVisit && !VisitedRegion && !SceneManager.GetActiveScene().name.StartsWith("Region_")) return false;
             if (Steps.Length == 0) return true;
             var run = GameRun.Current;
             return run == null || Steps.Contains((int)run.Chapter2.Step);
@@ -68,7 +74,7 @@ namespace ThreeKingdoms.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Hook() => SceneManager.sceneLoaded += (_, _) =>
         {
-            if (pendingArrival == null || FindFirstObjectByType<FieldStoryController>()) return;
+            if (pendingArrival == null || FindFirstObjectByType<FieldStoryController>() || FindFirstObjectByType<TownStoryController>()) return;
             var player = FindFirstObjectByType<PlayerMover>();
             var spot = TakeArrival(out var facing);
             if (player && spot) Teleport(player.transform, spot.position, facing);

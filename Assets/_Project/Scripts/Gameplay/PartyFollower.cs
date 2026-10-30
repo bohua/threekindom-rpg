@@ -42,7 +42,8 @@ namespace ThreeKingdoms.Gameplay
             {
                 float wanted = Mathf.Clamp(leaderSpeed + (Distance - TargetGap) * CatchUp, 0f, MaxSpeed);
                 Speed = Mathf.MoveTowards(Speed, wanted, Acceleration / Mathf.Max(1, Slot) * dt);
-                Distance -= Speed * dt;
+                // A long frame must not carry the follower past its gap (it overshot to 0.6 m at low frame rates).
+                Distance = Mathf.Max(Distance - Speed * dt, Mathf.Min(Distance, TargetGap));
             }
             Distance = Mathf.Clamp(Distance, 0.6f * Slot, Trail.Length - 0.5f);
             transform.position = Trail.PointBehind(Distance);

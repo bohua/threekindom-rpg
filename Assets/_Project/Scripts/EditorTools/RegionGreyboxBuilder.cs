@@ -35,6 +35,11 @@ namespace ThreeKingdoms.EditorTools
             public RegionPlace[] places = new RegionPlace[0];
             public RegionRoad[] roads = new RegionRoad[0];
             public RegionWater[] waters = new RegionWater[0];
+            public RegionWall[] walls = new RegionWall[0];   // impassable barriers along a line (R1: the Great Wall by Juyong)
+            public RegionSpot[] spots = new RegionSpot[0];
+            public RegionGround ground = new RegionGround();
+            public RegionScatter[] scatter = new RegionScatter[0];   // trees, reeds, rocks placed by the converter   // painted ground layers for GroundSplat (empty: the layout picture)   // named arrival points ("Spot <name>") for portals from other scenes
+            public RegionBackdrop[] backdrop = new RegionBackdrop[0];   // world-placed scenery beyond the edges (R1: the Yan mountains)
             public float spawnX, spawnZ;
             public float[] openZone = new float[0];   // x, z pairs: the part open in the earliest year, outlined on the ground
             public string wildSet, wildLayout;        // refinement: the region's Codex wild set and its placements in region metres
@@ -50,15 +55,36 @@ namespace ThreeKingdoms.EditorTools
             public float x, z, y, w, d, yaw;
             public int year;
             public string model, set;       // a Blender model for it, when its hub set exists
+            public bool spotBehind;         // arrival spot behind the place (a ferry, whose front is the water)
+            public RegionTalkData[] talks;  // people (or things) there to talk to (hubs "talks")
             public string wallModel;        // walled places: <wallModel>_wall_8m/_4m of the same set, the model as the gate
             public string layout;           // a hub set's own layout (Codex _checks/layout_*.json): every piece where Codex placed it
             public bool skip;               // a sub-place drawn by its hub's layout: label only
             public float layoutX, layoutZ;  // where the layout's origin sits relative to the place centre (e.g. its gate)
             public float layoutY;           // added to every piece's height (layouts written in absolute regional heights)
             public string portalScene, portalArrival;
-            public int[] portalSteps = new int[0];   // ChapterStep values during which the doorway is open (empty: always)
+            public float portalX, portalZ, portalW, portalD;   // the portal box in the place's frame (default: its south edge, 6 x 2.5 m)
+            public float[] portalFacing = new float[0];       // the way the party faces on arrival in the other scene
+            public int[] portalSteps = new int[0];            // chapter steps (ChapterStep) the way is open in; empty = always
             public string arrivalName;      // the spot in front of the place, named so a portal from the hub scene finds it
+            public string gates;                              // walled places: sides with a gate, e.g. "S,W" (default "S")
         }
+
+        [System.Serializable] public sealed class RegionWall
+        {
+            public string id; public float height = 6f; public float[] pts = new float[0];
+            public string set, model, tower;              // Blender modules along the line (8 m pieces, a tower every few)
+            public float[] skipX = new float[0];          // an x range left to a hub's own layout (R1: the Juyong pass)
+        }
+        [System.Serializable] public sealed class RegionBackdrop { public string set, model; }
+        [System.Serializable] public sealed class RegionSpot { public string name; public float x, z; }
+        // A resident stand-in (Zhuojun resident id) at an offset from the place, in the place's frame, with lines.
+        // A resident stand-in (Zhuojun resident id; none: an object to inspect) at an offset from the place, in the
+        // place's frame, with what is said at each chronicle node (RegionTalk.Entry).
+        [System.Serializable] public sealed class RegionTalkData { public string name, sprite; public float[] at; public int frame; public RegionTalk.Entry[] entries; }
+        // A Codex set of tiling ground textures (R1: art/r1-wild-ground) and which goes on which control channel.
+        [System.Serializable] public sealed class RegionScatter { public string set, model; public float x, z, yaw, scale = 1f; }
+        [System.Serializable] public sealed class RegionGround { public string set, @base, r, g, b, a; public float tile = 12f; }
 
         [System.Serializable] public sealed class RegionRoad { public string id; public float width = 5f; public float[] pts = new float[0]; }   // x, z pairs
         [System.Serializable] public sealed class RegionWater { public string id; public float level; public float width; public float[] line = new float[0]; public float[] poly = new float[0]; public float[] levels = new float[0]; }   // levels: per line point, for rivers that fall
@@ -66,7 +92,7 @@ namespace ThreeKingdoms.EditorTools
         // The regions built so far; their concept folder under art/.
         static readonly (string id, string concept)[] Regions =
         {
-            ("R3", "r3-julu-concept"), ("R5A", "r5a-suanzao-concept"), ("R5B", "r5b-luoyang-concept"),
+            ("R1", "r1-zhuoji-concept"), ("R3", "r3-julu-concept"), ("R5A", "r5a-suanzao-concept"), ("R5B", "r5b-luoyang-concept"),
             ("R7", "r7-qingzhou-concept"), ("R8", "r8-xuzhou-concept"), ("R6", "r6-yanzhou-concept"),
         };
 
@@ -106,10 +132,12 @@ namespace ThreeKingdoms.EditorTools
             mats.Clear();
             painted = false;
             LoadHeights(Path.Combine(src, "heights.bin"));
-            foreach (var f in new[] { "ground_tint.png", "map.png", "map_labeled.png" })
+            foreach (var f in new[] { "ground_tint.png", "map.png", "map_labeled.png", "ground_control.png" })
                 if (File.Exists(Path.Combine(src, f))) File.Copy(Path.Combine(src, f), $"{dir}/{f}", true);
             AssetDatabase.Refresh();
-            foreach (var set in data.places.Where(p => !string.IsNullOrEmpty(p.set)).Select(p => p.set).Distinct()) BlenderModels.Import(set);
+            // Each set once: a second import would remake (and orphan) the materials already on placed pieces.
+            foreach (var set in data.places.Select(p => p.set).Concat(data.walls.Select(w => w.set)).Concat(data.scatter.Select(v => v.set)).Concat(data.backdrop.Select(b => b.set)).Where(x => !string.IsNullOrEmpty(x)).Distinct())
+                BlenderModels.Import(set);
 
             MountedImporter.Import();
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -130,6 +158,46 @@ namespace ThreeKingdoms.EditorTools
             OpenZone(env);
             var spots = new GameObject("Spots").transform;
             foreach (var p in data.places) Place(env, labels, spots, p);
+            BarrierWalls(env);
+            Scatter(env);
+            // Scenery modelled in world metres (origin at the region's origin, as the Bohai hills): not walkable, the
+            // edge walls stop the party first.
+            foreach (var b in data.backdrop)
+            {
+                var t = BlenderModels.Place(b.set, env, b.model, "Backdrop " + b.model, Vector3.zero);
+                if (!t) continue;
+                foreach (var c in t.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
+                // The raw painted grass and slope read too loud over hundreds of metres: a calmer copy of each material,
+                // as the ground layers are graded (hubs "_ground".grade).
+                var graded = new Dictionary<Material, Material>();
+                foreach (var r in t.GetComponentsInChildren<Renderer>(true))
+                {
+                    var ms = r.sharedMaterials;
+                    for (int i = 0; i < ms.Length; i++)
+                    {
+                        if (!ms[i]) continue;
+                        if (!graded.TryGetValue(ms[i], out var gm))
+                        {
+                            gm = new Material(ms[i]) { name = "backdrop " + ms[i].name };
+                            var tint = new Color(0.60f, 0.68f, 0.66f);   // calmer and a little blue with distance
+                            if (gm.HasProperty("_BaseColor")) gm.SetColor("_BaseColor", gm.GetColor("_BaseColor") * tint);
+                            if (gm.HasProperty("_Color")) gm.SetColor("_Color", gm.GetColor("_Color") * tint);
+                            string gp = $"{matDir}/backdrop {ms[i].name}.mat";
+                            if (AssetDatabase.LoadAssetAtPath<Material>(gp)) AssetDatabase.DeleteAsset(gp);
+                            AssetDatabase.CreateAsset(gm, gp);
+                            graded[ms[i]] = gm;
+                        }
+                        ms[i] = gm;
+                    }
+                    r.sharedMaterials = ms;
+                }
+            }
+            foreach (var sp in data.spots)
+            {
+                var at = new GameObject("Spot " + sp.name).transform;
+                at.SetParent(spots, false);
+                at.position = new Vector3(sp.x, H(sp.x, sp.z), sp.z);
+            }
             Wild(env);
             DropPads(env);
             Edges(env);
@@ -174,6 +242,7 @@ namespace ThreeKingdoms.EditorTools
             if (!scenes.Any(s => s.path == scenePath)) scenes.Add(new EditorBuildSettingsScene(scenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
+            if (id == "R1") ChapterFieldBuilder.BuildR1Story();   // the side quests' people and controller over the map (npc-sidequests)
             Debug.Log($"REGION_GREYBOX_BUILT {id}");
             // The story layer (travel courier, side-quest people) goes back on after every rebuild.
             if (ChapterFieldBuilder.RegionPlace(id) is FieldStoryController.Place place) ChapterFieldBuilder.BuildRegionStory(place, scenePath);
@@ -425,7 +494,7 @@ namespace ThreeKingdoms.EditorTools
         {
             var g = new GameObject("Terrain").transform;
             g.SetParent(env, false);
-            var mat = GroundArray() ?? Mat("ground", Color.white, Tint());
+            var mat = GroundArray() ?? Splat() ?? Mat("ground", Color.white, Tint());
             var meshes = $"{dir}/{data.id}_Terrain.asset";
             AssetDatabase.DeleteAsset(meshes);
             bool first = true;
@@ -462,7 +531,52 @@ namespace ThreeKingdoms.EditorTools
                     r.shadowCastingMode = ShadowCastingMode.On;
                     go.AddComponent<MeshCollider>().sharedMesh = mesh;
                 }
-            // A skirt of the same ground a long way out, so the region's edge is not a cliff into the void.
+            if (painted) { PlainSkirt(g); Beyond(g, mat); return; }
+            // A skirt of the same ground 320 m out, at the border's own heights and in the same material, so the
+            // region's edge reads as more of the land rather than a flat pale plane (not walkable: the edge walls stop
+            // the party first).
+            {
+                const float S = 8f, M = 320f;
+                int n = Mathf.CeilToInt((W + 2 * M) / S), m = Mathf.CeilToInt((Hh + 2 * M) / S);
+                var verts = new List<Vector3>();
+                var tris = new List<int>();
+                for (int iz = 0; iz < m; iz++)
+                    for (int ix = 0; ix < n; ix++)
+                    {
+                        float x0 = -M + ix * S, z0 = -M + iz * S, x1 = x0 + S, z1 = z0 + S;
+                        if (x0 >= 0 && x1 <= W && z0 >= 0 && z1 <= Hh) continue;   // the terrain itself
+                        int b = verts.Count;
+                        foreach (var (x, z) in new[] { (x0, z0), (x1, z0), (x0, z1), (x1, z1) })
+                        {
+                            bool outside = x < 0 || x > W || z < 0 || z > Hh;
+                            verts.Add(new Vector3(x, H(x, z) - (outside ? 0.05f : 0.3f), z));
+                        }
+                        tris.AddRange(new[] { b, b + 2, b + 1, b + 1, b + 2, b + 3 });
+                    }
+                var mesh = new Mesh { name = "Outer ground", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                mesh.SetVertices(verts); mesh.SetTriangles(tris, 0);
+                mesh.RecalculateNormals(); mesh.RecalculateBounds();
+                AssetDatabase.AddObjectToAsset(mesh, meshes);
+                var go = new GameObject("Outer ground");
+                go.transform.SetParent(g, false);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var outer = mat;
+                if (splat)
+                {
+                    // Plain meadow outside: the control map clamped at the border would smear its last row outward.
+                    outer = new Material(mat) { name = "outer ground" };
+                    outer.SetTexture("_Control", null);   // the shader default is black: base layer only
+                    string op = $"{matDir}/outer ground.mat";
+                    if (AssetDatabase.LoadAssetAtPath<Material>(op)) AssetDatabase.DeleteAsset(op);
+                    AssetDatabase.CreateAsset(outer, op);
+                }
+                go.AddComponent<MeshRenderer>().sharedMaterial = outer;
+            }
+        }
+
+        // A skirt of the same ground a long way out, so the region's edge is not a cliff into the void (painted regions).
+        static void PlainSkirt(Transform g)
+        {
             var skirt = GameObject.CreatePrimitive(PrimitiveType.Plane);
             Object.DestroyImmediate(skirt.GetComponent<Collider>());
             skirt.name = "Outer ground";
@@ -470,7 +584,6 @@ namespace ThreeKingdoms.EditorTools
             skirt.transform.position = new Vector3(data.width / 2f, -6f, data.height / 2f);   // below every river bed
             skirt.transform.localScale = new Vector3(data.width / 10f * 4f, 1, data.height / 10f * 4f);
             skirt.GetComponent<MeshRenderer>().sharedMaterial = Mat("outer ground", new Color(0.56f, 0.62f, 0.44f));
-            if (painted) Beyond(g, mat);
         }
 
         // The country past the region's edge (user 2026-10-30: the edges showed an empty plain): the edge ground carries
@@ -534,10 +647,103 @@ namespace ThreeKingdoms.EditorTools
                     Ribbon(g, w.id, line, w.width, mat, level, 0f, false);
                 }
             }
+            // Rivers are not walkable: an invisible wall down each river in 2 m pieces, left open under bridges and at
+            // landings that face the water (their jetties stand over it).
+            var walls = new GameObject("River walls").transform;
+            walls.SetParent(g, false);
+            foreach (var w in data.waters)
+            {
+                if (w.line.Length < 4) continue;
+                var pts = Pts(w.line);
+                for (int i = 0; i + 1 < pts.Count; i++)
+                {
+                    Vector3 a = pts[i], b = pts[i + 1];
+                    float len = Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z));
+                    var dir = new Vector3(b.x - a.x, 0, b.z - a.z) / Mathf.Max(len, 0.01f);
+                    for (float t = 0; t < len; t += 2f)
+                    {
+                        var c = a + dir * Mathf.Min(t + 1f, len);
+                        if (data.places.Any(p => (p.kind == "bridge" && Vector2.Distance(new Vector2(p.x, p.z), new Vector2(c.x, c.z)) < p.w / 2f + 2f)
+                                              || (p.spotBehind && Vector2.Distance(new Vector2(p.x, p.z), new Vector2(c.x, c.z)) < p.w / 2f + w.width / 2f + 2f)))
+                            continue;
+                        var go = new GameObject($"River wall {w.id} {t:0}");
+                        go.transform.SetParent(walls, false);
+                        go.transform.position = new Vector3(c.x, w.level + 1f, c.z);
+                        go.transform.rotation = Quaternion.LookRotation(dir);
+                        go.AddComponent<BoxCollider>().size = new Vector3(Mathf.Max(2f, w.width - 3f), 8f, 2.2f);
+                    }
+                }
+            }
+        }
+
+        static bool splat;
+
+        // Vegetation and rocks the converter placed by ground (river willows and reeds, roadside poplars, hill pines and
+        // granite, meadow elms and shrubs, groves by the villages), each standing on the terrain, turned and sized a little.
+        static void Scatter(Transform env)
+        {
+            if (data.scatter.Length == 0) return;
+            var g = new GameObject("Vegetation").transform;
+            g.SetParent(env, false);
+            int i = 0;
+            foreach (var v in data.scatter)
+            {
+                var t = BlenderModels.Place(v.set, g, v.model, $"{v.model} {i++}", new Vector3(v.x, H(v.x, v.z) - 0.05f, v.z), v.yaw);
+                if (!t) continue;
+                t.localScale *= v.scale;
+            }
+        }
+
+        // The blended ground (user 2026-10-28 "野外精修，出精细贴图"): five painted layers mixed by greybox/ground_control.png
+        // through ThreeKingdoms/GroundSplat, ragged noisy borders and no square blocks (terrain-transition rule). Roads,
+        // yards and plots are painted into the control map, so their flat greybox strips and pads are left out.
+        static Material Splat()
+        {
+            splat = false;
+            var gr = data.ground;
+            if (gr == null || string.IsNullOrEmpty(gr.set) || !File.Exists($"{dir}/ground_control.png")) return null;
+            string src = Path.Combine(CodexArt, gr.set), to = $"{dir}/Ground";
+            var keys = new[] { gr.@base, gr.r, gr.g, gr.b, gr.a };
+            if (keys.Any(k => string.IsNullOrEmpty(k) || !File.Exists(Path.Combine(src, k + ".png")))) return null;
+            Directory.CreateDirectory(to);
+            string graded = Path.Combine(CodexArt, Regions.First(r => r.id == data.id).concept, "greybox", "ground");   // the converter's graded copies
+            foreach (var k in keys)
+                File.Copy(File.Exists(Path.Combine(graded, k + ".png")) ? Path.Combine(graded, k + ".png") : Path.Combine(src, k + ".png"), $"{to}/{k}.png", true);
+            AssetDatabase.Refresh();
+            Texture2D Layer(string k)
+            {
+                string path = $"{to}/{k}.png";
+                var ti = (TextureImporter)AssetImporter.GetAtPath(path);
+                ti.textureType = TextureImporterType.Default; ti.mipmapEnabled = true; ti.filterMode = FilterMode.Trilinear; ti.anisoLevel = 4;
+                ti.wrapMode = TextureWrapMode.Repeat; ti.maxTextureSize = 2048; ti.npotScale = TextureImporterNPOTScale.None;
+                ti.textureCompression = TextureImporterCompression.CompressedHQ; ti.sRGBTexture = true;
+                ti.SaveAndReimport();
+                return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            }
+            string cp = $"{dir}/ground_control.png";
+            var ci = (TextureImporter)AssetImporter.GetAtPath(cp);
+            ci.textureType = TextureImporterType.Default; ci.sRGBTexture = false; ci.mipmapEnabled = false; ci.filterMode = FilterMode.Bilinear;
+            ci.wrapMode = TextureWrapMode.Clamp; ci.maxTextureSize = 4096; ci.npotScale = TextureImporterNPOTScale.None;
+            ci.textureCompression = TextureImporterCompression.Uncompressed; ci.alphaIsTransparency = false;
+            ci.SaveAndReimport();
+            var m = new Material(Shader.Find("ThreeKingdoms/GroundSplat")) { name = "ground splat" };
+            m.SetTexture("_Control", AssetDatabase.LoadAssetAtPath<Texture2D>(cp));
+            m.SetTexture("_Base", Layer(keys[0])); m.SetTexture("_LayerR", Layer(keys[1])); m.SetTexture("_LayerG", Layer(keys[2]));
+            m.SetTexture("_LayerB", Layer(keys[3])); m.SetTexture("_LayerA", Layer(keys[4]));
+            m.SetFloat("_TileMetres", gr.tile);
+            m.SetFloat("_Smooth", 1f);
+            m.SetFloat("_Ragged", 0.2f);
+            m.SetVector("_Bounds", new Vector4(0, 0, data.width, data.height));
+            string mp = $"{matDir}/ground splat.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(mp)) AssetDatabase.DeleteAsset(mp);
+            AssetDatabase.CreateAsset(m, mp);
+            splat = true;
+            return m;
         }
 
         static void Roads(Transform env)
         {
+            if (splat) return;
             var g = new GameObject("Roads").transform;
             g.SetParent(env, false);
             var mat = Mat("road", new Color(0.80f, 0.70f, 0.52f));
@@ -683,7 +889,7 @@ namespace ThreeKingdoms.EditorTools
         {
             var g = new GameObject($"{p.kind} {p.name}").transform;
             g.SetParent(env, false);
-            float y = H(p.x, p.z);
+            float y = p.kind == "bridge" ? p.y : p.spotBehind ? Mathf.Max(p.y, H(p.x, p.z)) : H(p.x, p.z);
             g.position = new Vector3(p.x, y, p.z);
             g.rotation = Quaternion.Euler(0, p.yaw, 0);
             float w = Mathf.Max(p.w, 4f), d = Mathf.Max(p.d, 4f);
@@ -691,12 +897,13 @@ namespace ThreeKingdoms.EditorTools
                 || (!string.IsNullOrEmpty(p.layout) && ModelLayout(g, p))
                 || (!string.IsNullOrEmpty(p.wallModel) && ModelWalls(g, p, w, d))
                 || (string.IsNullOrEmpty(p.wallModel) && !string.IsNullOrEmpty(p.model) && BlenderModels.Place(p.set, g, p.model, p.name, Vector3.zero) != null);
+            if (modelled && p.kind == "house") return;   // houses carry no label or spot of their own
             if (!modelled)
                 switch (p.kind)
                 {
                     case "town":
                     case "gate_town":
-                        Walls(g, w, d, p.kind == "town" ? 6f : 5f, gateOpen: p.year <= 0 || !string.IsNullOrEmpty(p.portalScene));
+                        Walls(g, w, d, p.kind == "town" ? 6f : 5f, gateOpen: p.year <= 0 || !string.IsNullOrEmpty(p.portalScene), sides: p.gates);
                         if (p.kind == "town") { Box(g, "Hall", new Vector3(0, 0, d * 0.25f), new Vector3(14f, 5f, 9f), 0.6f); for (int i = -1; i <= 1; i += 2) Box(g, "Block", new Vector3(i * w * 0.25f, 0, 0), new Vector3(10f, 4f, 8f), 0.64f); }
                         break;
                     case "camp":
@@ -714,6 +921,26 @@ namespace ThreeKingdoms.EditorTools
                             Box(g, "House", at, new Vector3(6f, 3.4f, 5f), 0.66f, i * 17f);
                         }
                         break;
+                    case "hamlet":
+                        // Houses placed one by one (kind "house"); the village itself is a yard of bare earth.
+                        if (!splat) Box(g, "Yard", new Vector3(0, -0.12f, 0), new Vector3(w * 0.8f, 0.3f, d * 0.8f), 0.7f, 0f, solid: false);
+                        break;
+                    case "house":
+                        if (!splat) Box(g, "Foundation", new Vector3(0, -0.1f, 0), new Vector3(p.w + 4f, 0.3f, p.d + 4f), 0.72f, 0f, solid: false);
+                        Box(g, "House", Vector3.zero, new Vector3(p.w, 3.2f, p.d), 0.66f);
+                        Box(g, "Roof", new Vector3(0, 3.2f, 0), new Vector3(p.w + 0.6f, 1.2f, p.d + 0.6f), 0.42f, 0f, solid: false);
+                        return;   // no label or spot of its own
+                    case "tree":
+                        // A landmark tree (R1: the great mulberry at Lousang, seen from afar).
+                        Box(g, "Trunk", Vector3.zero, new Vector3(1.6f, 6f, 1.6f), 0.38f);
+                        var crown = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                        Object.DestroyImmediate(crown.GetComponent<Collider>());
+                        crown.name = "Crown"; crown.transform.SetParent(g, false);
+                        crown.transform.localPosition = new Vector3(0, 9f, 0); crown.transform.localScale = new Vector3(15f, 8f, 15f);
+                        crown.GetComponent<MeshRenderer>().sharedMaterial = Mat("tree crown", new Color(0.46f, 0.62f, 0.36f));
+                        break;
+                    case "gate":
+                        break;   // a way into a town scene: only its portal
                     case "post_station":
                         Box(g, "Post station", new Vector3(0, 0, 3f), new Vector3(8f, 3.6f, 6f), 0.7f);
                         Box(g, "Stable", new Vector3(9f, 0, 3f), new Vector3(7f, 3f, 5f), 0.6f);
@@ -723,7 +950,7 @@ namespace ThreeKingdoms.EditorTools
                         Box(g, "Guard post", new Vector3(w / 2f + 3f, 0, -2f), new Vector3(3f, 6f, 3f), 0.42f);
                         break;
                     case "bridge":
-                        Box(g, "Deck", new Vector3(0, -0.2f, 0), new Vector3(Mathf.Max(5f, p.w), 0.4f, Mathf.Max(5f, p.d)), 0.55f, 0f, solid: false);
+                        Box(g, "Deck", new Vector3(0, -0.2f, 0), new Vector3(Mathf.Max(5f, p.w), 0.4f, Mathf.Max(5f, p.d)), 0.55f, 0f, solid: p.y > 0f);
                         break;
                     case "ferry":
                         Box(g, "Landing", new Vector3(0, -0.3f, 0), new Vector3(8f, 0.3f, 6f), 0.55f, 0f, solid: false);
@@ -732,26 +959,55 @@ namespace ThreeKingdoms.EditorTools
                     case "battlefield":
                     case "explore":
                     default:
-                        // A low pad the size of the place and a marker post, so the spot reads without blocking it. In a
-                        // painted region the ground and the wild set already show the place: no grey pad on the earth.
-                        if (painted) break;
-                        Box(g, "Pad", new Vector3(0, -0.1f, 0), new Vector3(Mathf.Min(w, 16f), 0.3f, Mathf.Min(d, 16f)), 0.62f, 0f, solid: false);
-                        Box(g, "Post", Vector3.zero, new Vector3(0.4f, 3f, 0.4f), 0.4f);
+                        // A low pad the size of the place and a marker post, so the spot reads without blocking it.
+                        if (painted) break;   // a painted region's ground and wild set already show the place
+                        if (!splat) Box(g, "Pad", new Vector3(0, -0.1f, 0), new Vector3(Mathf.Min(w, 16f), 0.3f, Mathf.Min(d, 16f)), 0.62f, 0f, solid: false);
+                        if (!splat) Box(g, "Post", Vector3.zero, new Vector3(0.4f, 3f, 0.4f), 0.4f);   // painted ground: the label marks it
                         break;
                 }
             Label(labels, p.name, g.position + new Vector3(0, Mathf.Max(8f, d * 0.12f), 0));
+            foreach (var td in p.talks ?? new RegionTalkData[0])
+            {
+                var off = td.at != null && td.at.Length >= 2 ? new Vector3(td.at[0], 0, td.at[1]) : new Vector3(0, 0, -(d / 2f + 1f));
+                var at = g.position + g.rotation * off;
+                at.y = H(at.x, at.z);
+                var holder = new GameObject("Talk " + td.name);
+                holder.transform.SetParent(g, true);
+                holder.transform.position = at;
+                var talk = holder.AddComponent<RegionTalk>();
+                talk.Entries = td.entries ?? new RegionTalk.Entry[0];
+                if (!string.IsNullOrEmpty(td.sprite))
+                {
+                    var npc = HD2DSampleBuilder.Character(td.name, ResidentImporter.KeyFor(td.sprite), at, td.frame, isPlayer: false);
+                    npc.transform.SetParent(holder.transform, true);
+                    talk.Body = npc;
+                }
+                else talk.BubbleHeight = 1.8f;
+            }
+            if (modelled && !p.skip)
+            {
+                // A disabled review shot of a modelled place (-camera "Review <id>"), from the south and above.
+                var review = new GameObject("Review " + p.id).AddComponent<UnityEngine.Camera>();
+                review.enabled = false; review.fieldOfView = 30f; review.farClipPlane = 1500f;
+                float back = Mathf.Max(w, d) * 0.95f + (string.IsNullOrEmpty(p.layout) ? 12f : 20f);
+                review.transform.position = g.position + new Vector3(0, back * 0.75f, -back);
+                review.transform.LookAt(g.position);
+            }
             var spot = new GameObject(string.IsNullOrEmpty(p.arrivalName) ? "Spot " + p.name : p.arrivalName);
             spot.transform.SetParent(spots, false);
-            // In front of the place (south of it in its own frame), where the party stands on arrival.
-            var front = g.position + g.rotation * new Vector3(0, 0, -(d / 2f + 4f));
+            // In front of the place (south of it in its own frame), where the party stands on arrival; at one end of
+            // a bridge, and behind a place that faces the water.
+            var front = g.position + g.rotation * (p.kind == "bridge" ? new Vector3(w / 2f + 3f, 0, 0) : new Vector3(0, 0, (p.spotBehind ? 1f : -1f) * (d / 2f + 4f)));
             spot.transform.position = new Vector3(front.x, H(front.x, front.z), front.z);
             if (!string.IsNullOrEmpty(p.portalScene))
             {
                 var portal = new GameObject("Portal " + p.name).AddComponent<RegionPortal>();
                 portal.transform.SetParent(g, false);
-                portal.transform.localPosition = new Vector3(0, 0, -d / 2f);
-                portal.Size = new Vector2(6f, 2.5f); portal.TargetScene = p.portalScene; portal.ArrivalSpot = p.portalArrival;
-                portal.Facing = Vector3.forward;
+                bool custom = p.portalW > 0f;
+                portal.transform.localPosition = custom ? new Vector3(p.portalX, 0, p.portalZ) : new Vector3(0, 0, -d / 2f);
+                portal.Size = custom ? new Vector2(p.portalW, p.portalD) : new Vector2(6f, 2.5f);
+                portal.TargetScene = p.portalScene; portal.ArrivalSpot = p.portalArrival;
+                portal.Facing = p.portalFacing.Length >= 3 ? new Vector3(p.portalFacing[0], p.portalFacing[1], p.portalFacing[2]) : Vector3.forward;
                 portal.Steps = p.portalSteps ?? new int[0];
             }
         }
@@ -769,7 +1025,8 @@ namespace ThreeKingdoms.EditorTools
         // A piece with a child keeps only that object of a prop group, moved to the piece's origin.
         static bool ModelLayout(Transform g, RegionPlace p)
         {
-            string path = Path.Combine(CodexArt, p.set, p.layout.Replace('/', Path.DirectorySeparatorChar));
+            // A layout of the set's own (Codex _checks/…), or one kept in the repository (tools/…: R1's view of Zhuojun's walls).
+            string path = p.layout.StartsWith("tools/") ? Path.GetFullPath(p.layout) : Path.Combine(CodexArt, p.set, p.layout.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(path)) return false;
             var file = JsonUtility.FromJson<LayoutFile>(File.ReadAllText(path));
             int n = 0;
@@ -825,17 +1082,81 @@ namespace ThreeKingdoms.EditorTools
         }
 
         // A rectangle of wall round a place with a 7 m gap in the middle of its south side.
-        static void Walls(Transform g, float w, float d, float h, bool gateOpen, float shade = 0.52f)
+        // sides: the sides with a gate ("S,W"), default the south one.
+        static void Walls(Transform g, float w, float d, float h, bool gateOpen, float shade = 0.52f, string sides = null)
         {
             float t = 2f, gap = 7f;
-            Box(g, "Wall N", new Vector3(0, 0, d / 2f), new Vector3(w, h, t), shade);
-            Box(g, "Wall W", new Vector3(-w / 2f, 0, 0), new Vector3(t, h, d), shade);
-            Box(g, "Wall E", new Vector3(w / 2f, 0, 0), new Vector3(t, h, d), shade);
-            float side = (w - gap) / 2f;
-            Box(g, "Wall SW", new Vector3(-(gap + side) / 2f, 0, -d / 2f), new Vector3(side, h, t), shade);
-            Box(g, "Wall SE", new Vector3((gap + side) / 2f, 0, -d / 2f), new Vector3(side, h, t), shade);
-            Box(g, "Gate tower", new Vector3(0, h, -d / 2f), new Vector3(gap + 2f, 2.5f, t + 1f), shade * 0.9f, 0f, solid: false);
-            if (!gateOpen) Box(g, "Gate (shut)", new Vector3(0, 0, -d / 2f), new Vector3(gap, h, 0.6f), 0.3f);
+            var gated = (string.IsNullOrEmpty(sides) ? "S" : sides).Split(',').Select(x => x.Trim()).ToArray();
+            foreach (var (side, centre, along) in new[] { ("S", new Vector3(0, 0, -d / 2f), w), ("N", new Vector3(0, 0, d / 2f), w),
+                                                          ("W", new Vector3(-w / 2f, 0, 0), d), ("E", new Vector3(w / 2f, 0, 0), d) })
+            {
+                bool ew = side == "W" || side == "E";
+                Vector3 dir = ew ? Vector3.forward : Vector3.right;
+                Vector3 Size(float len) => ew ? new Vector3(t, h, len) : new Vector3(len, h, t);
+                if (!gated.Contains(side)) { Box(g, "Wall " + side, centre, Size(along), shade); continue; }
+                float part = (along - gap) / 2f;
+                Box(g, $"Wall {side}1", centre - dir * (gap + part) / 2f, Size(part), shade);
+                Box(g, $"Wall {side}2", centre + dir * (gap + part) / 2f, Size(part), shade);
+                var tower = ew ? new Vector3(t + 1f, 2.5f, gap + 2f) : new Vector3(gap + 2f, 2.5f, t + 1f);
+                Box(g, "Gate tower " + side, centre + Vector3.up * h, tower, shade * 0.9f, 0f, solid: false);
+                if (!gateOpen) Box(g, "Gate (shut) " + side, centre, ew ? new Vector3(0.6f, h, gap) : new Vector3(gap, h, 0.6f), 0.3f);
+            }
+        }
+
+        // A barrier line from Blender modules: 8 m pieces end to end along each leg, sunk to the lowest ground under the
+        // piece (the modules carry a deep footing), a tower every fourth piece. False when the set is missing.
+        static bool ModelWall(Transform g, RegionWall wall, List<Vector3> pts)
+        {
+            if (string.IsNullOrEmpty(wall.model)) return false;
+            bool any = false;
+            int n = 0;
+            for (int i = 0; i + 1 < pts.Count; i++)
+            {
+                var a = pts[i]; var b = pts[i + 1];
+                float len = Vector3.Distance(a, b);
+                int k = Mathf.Max(1, Mathf.RoundToInt(len / 8f));
+                float yaw = Mathf.Atan2(b.x - a.x, b.z - a.z) * Mathf.Rad2Deg - 90f;
+                for (int j = 0; j < k; j++)
+                {
+                    var p0 = Vector3.Lerp(a, b, j / (float)k); var p1 = Vector3.Lerp(a, b, (j + 1) / (float)k);
+                    var c = (p0 + p1) / 2f;
+                    if (wall.skipX.Length >= 2 && c.x > wall.skipX[0] && c.x < wall.skipX[1]) continue;
+                    float y = Mathf.Min(H(p0.x, p0.z), H(p1.x, p1.z), H(c.x, c.z));
+                    var t = BlenderModels.Place(wall.set, g, wall.model, $"{wall.id} {i}.{j}", new Vector3(c.x, y, c.z), yaw);
+                    if (!t) return any;
+                    any = true;
+                    t.localScale = new Vector3(len / k / 8f, 1f, 1f);
+                    if (!string.IsNullOrEmpty(wall.tower) && n++ % 4 == 0)
+                        BlenderModels.Place(wall.set, g, wall.tower, $"{wall.id} tower {i}.{j}", new Vector3(p0.x, Mathf.Min(H(p0.x, p0.z), y), p0.z), yaw);
+                }
+            }
+            return any;
+        }
+
+        // Impassable walls along a line, following the ground (R1: the Great Wall along the Juyong ridge).
+        static void BarrierWalls(Transform env)
+        {
+            var g = new GameObject("Barrier walls").transform;
+            g.SetParent(env, false);
+            foreach (var wall in data.walls)
+            {
+                var pts = Pts(wall.pts);
+                if (ModelWall(g, wall, pts)) continue;
+                for (int i = 0; i + 1 < pts.Count; i++)
+                {
+                    var a = pts[i]; var b = pts[i + 1];
+                    int n = Mathf.Max(1, Mathf.CeilToInt(Vector3.Distance(a, b) / 6f));
+                    for (int k = 0; k < n; k++)
+                    {
+                        var p0 = Vector3.Lerp(a, b, k / (float)n); var p1 = Vector3.Lerp(a, b, (k + 1) / (float)n);
+                        var c = (p0 + p1) / 2f;
+                        float y = Mathf.Min(H(p0.x, p0.z), H(p1.x, p1.z), H(c.x, c.z)) - 1f;
+                        float yaw = Mathf.Atan2(p1.x - p0.x, p1.z - p0.z) * Mathf.Rad2Deg;
+                        Box(g, $"{wall.id} {i}.{k}", new Vector3(c.x, y, c.z), new Vector3(2.4f, wall.height + 1f, Vector3.Distance(p0, p1) + 0.4f), 0.5f, yaw);
+                    }
+                    if (i % 2 == 0) Box(g, $"{wall.id} tower {i}", new Vector3(a.x, H(a.x, a.z) - 1f, a.z), new Vector3(5f, wall.height + 4f, 5f), 0.46f);
+                }
+            }
         }
 
         static void Label(Transform labels, string text, Vector3 at)
@@ -867,7 +1188,7 @@ namespace ThreeKingdoms.EditorTools
             z0.transform.SetParent(g, false);
             z0.transform.position = new Vector3(data.width / 2f, 0, data.height / 2f);
             z0.Major = data.name; z0.Minor = "野外"; z0.Size = new Vector2(data.width + 100f, data.height + 100f); z0.Ride = true;
-            foreach (var p in data.places)
+            foreach (var p in data.places.Where(p => p.kind != "house"))
             {
                 var z = new GameObject($"{data.name} · {p.name}").AddComponent<LocationZone>();
                 z.transform.SetParent(g, false);
@@ -895,6 +1216,7 @@ namespace ThreeKingdoms.EditorTools
             follow.Offset = new Vector3(0, 0.8f, 0) + pitch * new Vector3(0, 0, -HD2DSampleBuilder.CameraDistance);
             camGo.transform.position = player.position + follow.Offset;
             follow.UseRig = true;
+            follow.AvoidTerrain = true;
             follow.Pitch = HD2DSampleBuilder.CameraPitch; follow.Distance = HD2DSampleBuilder.CameraDistance; follow.Fov = HD2DSampleBuilder.CameraFov;
             camGo.AddComponent<SeeThroughOccluders>().Target = player;
 
@@ -936,7 +1258,7 @@ namespace ThreeKingdoms.EditorTools
             hud.Map = map; hud.FullMap = Painted("map_labeled.png") ?? map;
             hud.Player = player; hud.RegionName = data.name;
             hud.MapBounds = new Vector4(0, 0, data.width, data.height);
-            var named = data.places.Where(p => p.kind != "exit").ToArray();
+            var named = data.places.Where(p => p.kind != "exit" && p.kind != "house").ToArray();
             hud.PlaceNames = named.Select(p => p.name.Split('（')[0]).ToArray();
             hud.PlacePositions = named.Select(p => new Vector3(p.x, 0, p.z)).ToArray();
         }

@@ -56,6 +56,18 @@ namespace ThreeKingdoms.UI.Story
             ["tavern.11"] = "若蒙不弃，关某愿随兄长同行！",
             ["tavern.12"] = "好！俺庄后有一桃园，花开正盛。明日便在园中祭告天地，结为兄弟！",
             // The peach-garden oath, about 30 s on its own (user 2026-10-24); the oath words follow 演义 第1回.
+            // The first arrival in Zhuojun (user 2026-10-26): through the south gate to the square, then the landmarks.
+            ["arrival.1"] = "幽州涿郡。中平元年春，黄巾将起，城里依旧熙熙攘攘。",
+            ["arrival.2"] = "北望燕山。这里是刘备的故乡。",
+            ["arrival.office"] = "郡署：涿郡太守的治所，募兵的榜文从这里发出。",
+            ["arrival.tavern"] = "酒肆：南来北往的客人在此歇脚，消息也最灵通。",
+            ["arrival.smithy"] = "铁匠铺：打造兵器甲胄，可以买卖、更换装备。",
+            ["arrival.casino"] = "赌坊：骰子声日夜不停。",
+            ["arrival.clinic"] = "医舍：坐堂的医者，也卖草药。",
+            ["arrival.post"] = "驿站与马厩：公文和驿马由此往来。",
+            ["arrival.barracks"] = "军营：官军正在操练，营门前有人排队应募。",
+            ["arrival.granary"] = "粮仓：郡中存粮的地方。",
+            ["arrival.grove"] = "出西门不远，是一片正在盛开的桃林。",
             ["oath.1"] = "城西桃园，桃花正盛。香案已备，三牲俱全。",
             ["oath.2"] = "二位贤弟，今日焚香告天，结为兄弟。",
             ["oath.3"] = "痛快！俺盼这一天好久了！",
@@ -193,6 +205,7 @@ namespace ThreeKingdoms.UI.Story
             : key != null && ChapterText3.Speakers.TryGetValue(key, out var c3) ? c3
             : key != null && ChapterText4.Speakers.TryGetValue(key, out var c4) ? c4
             : key != null && ChapterText5.Speakers.TryGetValue(key, out var c5) ? c5
+            : key != null && SidequestText.Speakers.TryGetValue(key, out var sq) ? sq
             : key != null && SideText.Speaker(key) is string side ? side : "";
         public static string Line(string key)
         {
@@ -218,6 +231,7 @@ namespace ThreeKingdoms.UI.Story
             if (ChapterText3.Lines.TryGetValue(key, out var chapter3Line)) return chapter3Line;   // 0.3 讨董篇
             if (ChapterText4.Lines.TryGetValue(key, out var chapter4Line)) return chapter4Line;   // 0.4 河北篇
             if (ChapterText5.Lines.TryGetValue(key, out var chapter5Line)) return chapter5Line;   // 0.5 徐州篇
+            if (SidequestText.Lines.TryGetValue(key, out var sidequestLine)) return sidequestLine;   // chapter 1 NPCs and side quests
             if (SideText.Lines.TryGetValue(key, out var sideLine)) return sideLine;   // chapter one's side quests
             if (key.StartsWith("dlg.lb1.") && SideText.Extracted(key) is string written) return written;
             // A resident with nothing new to say repeats the earlier line (.won → .after → base).
@@ -236,6 +250,11 @@ namespace ThreeKingdoms.UI.Story
             if (key == null) return "";
             if (key.StartsWith("talk:")) return $"[确认] 与{Speaker(key.Substring(5))}交谈";
             if (key == "notice") return "[确认] 查看告示";
+            if (key == "side:merchants") return "[确认] 与张世平、苏双交谈";
+            if (key == "side:gu_sou") return "[确认] 听鼓叟说书";
+            if (key == "side:smith") return "[确认] 与铁匠交谈（取兵器）";
+            if (key == "side:lu_yu") return "[确认] 与卢毓交谈";
+            if (key == "side:lu_sao") return "[确认] 与卢家长嫂交谈";
             if (key == "beggar") return "[确认] 与乞丐交谈";
             if (key == "scholar") return "[确认] 与读书人交谈";
             if (key == "casino") return "[确认] 与地痞交谈（赌大小）";

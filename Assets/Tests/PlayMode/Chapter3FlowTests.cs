@@ -124,7 +124,7 @@ public sealed class Chapter3FlowTests
         yield return Drive(stage, stage.Player);
     }
 
-    [UnityTest]
+    [UnityTest, Timeout(900000)]   // the whole chapter on a busy machine runs past the default 180 s
     public IEnumerator TheTaodongChapterPlaysThrough()
     {
         // Gongsun Zan's garrison: arrival autosave, D4, 众望 learned.
@@ -141,8 +141,15 @@ public sealed class Chapter3FlowTests
         Assert.AreEqual(ChronicleNode.N4, run.Chapter2.Node);
         yield return TalkTo(gs, "bell");
         Assert.AreEqual(1, run.Progress.Inventory.Count(run.Data.Economy.Find("baima_bell")));
+        // 田豫点兵 (npc-sidequests sq.lb1.r1.tian_yu_roll): offer, the four squads, the sick man behind the hay, back to Tian Yu.
+        yield return TalkTo(gs, "tian_yu");
+        Assert.IsTrue(run.Chapter2.Has(FieldScripts3.RollStarted));
+        for (int n = 1; n <= 4; n++) yield return TalkTo(gs, "roll_head_" + n);
+        yield return TalkTo(gs, "roll_sick");
+        Assert.IsTrue(run.Chapter2.Has(FieldScripts3.RollFound));
         yield return TalkTo(gs, "tian_yu");
         Assert.IsTrue(run.Chapter2.Has(ChapterState.TianYu));
+        Assert.AreEqual("fair", run.Chapter2.Recall("tian_yu", "first_roll"));
 
         // The optional drill (battle 7): once, back to the garrison, no step change.
         yield return TalkTo(gs, "baima_rider", 0);
@@ -154,6 +161,8 @@ public sealed class Chapter3FlowTests
         Assert.IsFalse(run.Chapter2.DrillOpen);
         Assert.IsFalse(run.RecordVictory("battle_7"), "the drill pays once");
 
+        // 简雍打听 in Ji is played on the R1 map (R1SidequestTests); here it is taken as done before D5.
+        run.Chapter2.Set(FieldScriptsR1.JianYongEar);
         // D5 and the departure (confirm), the march, Suanzao.
         yield return TalkTo(gs, "gongsun_zan", 0);
         yield return PlayStage();

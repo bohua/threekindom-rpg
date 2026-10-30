@@ -1,0 +1,255 @@
+{
+  "tavern_front": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/tavern_front.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "tavern_back": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/tavern_back.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "tavern_side": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/tavern_side.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "timber_beam": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-ground/timber_beam.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "roof_tiles_grey": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-ground/roof_tiles_grey.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "roof_underside": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-ground/roof_underside.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "roof_eave": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-ground/roof_eave.png",
+    "alpha_clip": true,
+    "tiling": true,
+    "two_sided": false
+  },
+  "roof_ridge": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-ground/roof_ridge.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "roof_ridge_end": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-ground/roof_ridge_end.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": true
+  },
+  "platform_edge_deep": {
+    "texture": "textures/platform_edge_deep.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "platform_top_deep": {
+    "texture": "textures/platform_top_deep.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "steps_riser_deep": {
+    "texture": "textures/steps_riser_deep.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "steps_tread_deep": {
+    "texture": "textures/steps_tread_deep.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "steps_side_deep": {
+    "texture": "textures/steps_side_deep.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "plaque_tavern": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/plaque_tavern.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "smithy_front": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/smithy_front.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false,
+    "emission_mask": "smithy_forge_glow_mask"
+  },
+  "smithy_forge_glow_mask": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/smithy_forge_glow_mask.png",
+    "alpha_clip": false,
+    "tiling": false,
+    "two_sided": false
+  },
+  "wall_rammed_earth": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-ground/wall_rammed_earth.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "smithy_side": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/smithy_side.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "floor_wood_planks": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-ground/floor_wood_planks.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "plaque_smithy": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/plaque_smithy.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "casino_front": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/casino_front.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "casino_back": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/casino_back.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "casino_side": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/casino_side.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "interior_shop_back_wall": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-ground/interior_shop_back_wall.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "plaque_casino": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/plaque_casino.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "clinic_front": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/clinic_front.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "clinic_side": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/clinic_side.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "stable_front": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/stable_front.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "stable_side": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/stable_side.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "roof_thatch": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-ground/roof_thatch.png",
+    "alpha_clip": false,
+    "tiling": true,
+    "two_sided": false
+  },
+  "roof_thatch_eave": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-ground/roof_thatch_eave.png",
+    "alpha_clip": true,
+    "tiling": true,
+    "two_sided": false
+  },
+  "post_station_front": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/post_station_front.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "post_station_side": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/post_station_side.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "house_b_front": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/house_b_front.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "house_b_back": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/house_b_back.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "house_b_side": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/house_b_side.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "house_c_front": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/house_c_front.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "house_c_back": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/house_c_back.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "house_c_side": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/house_c_side.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "granary_front": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/granary_front.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  },
+  "granary_side": {
+    "texture": "D:/BuildArtifacts/Codex/hd2d-jrpg/art/zhuojun-hd-buildings/granary_side.png",
+    "alpha_clip": true,
+    "tiling": false,
+    "two_sided": false
+  }
+}

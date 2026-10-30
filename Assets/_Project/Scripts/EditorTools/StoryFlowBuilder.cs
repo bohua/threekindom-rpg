@@ -56,6 +56,22 @@ namespace ThreeKingdoms.EditorTools
             catch (System.Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
         }
 
+        // Only the town and its story wiring (the HD renovation, production/levels/zhuojun/hd-renovation.md).
+        [MenuItem("JRPG/Rebuild Zhuojun Town only")]
+        public static void RebuildTown()
+        {
+            ZhuojunTownBuilder.Build();
+            WireTown();
+            AssetDatabase.SaveAssets();
+            Debug.Log("ZHUOJUN_TOWN_REWIRED");
+        }
+
+        public static void RebuildTownFromCommandLine()
+        {
+            try { RebuildTown(); EditorApplication.Exit(0); }
+            catch (System.Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
+        }
+
         // The Yellow Turbans blocking the south gate (user 2026-10-22), just outside its passage: one group per battle,
         // the leader in front and first. Sprite keys follow INITIAL_SCENARIO_ART: Cheng Yuanzhi and the unnamed officers
         // share the generic sheet, the three brothers have their own. A wall across the passage's outer end keeps Liu
@@ -222,6 +238,7 @@ namespace ThreeKingdoms.EditorTools
             Object.DestroyImmediate(zou.GetComponent<Collider>());
             zou.SetActive(false);
             c.ZouJing = zou.transform;
+            ZhuojunSideFolk.AddTo(c);   // chapter 1 side-quest people with their own sprites (npc-sidequests R1)
             // The second batch of townsfolk (user 2026-10-22) and the four who do more than talk.
             c.Ambient = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
                 .Where(t => t.parent && t.parent.name == "Townsfolk").OrderBy(t => t.name).ToArray();

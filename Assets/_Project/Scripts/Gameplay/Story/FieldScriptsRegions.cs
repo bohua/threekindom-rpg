@@ -11,7 +11,7 @@ namespace ThreeKingdoms.Gameplay.Story
     {
         public const string Courier = "post_courier";
 
-        public static bool IsRegion(FieldStoryController.Place p) => p >= FieldStoryController.Place.R2;
+        public static bool IsRegion(FieldStoryController.Place p) => p >= FieldStoryController.Place.R2 && p != FieldStoryController.Place.R1;
         public static bool Mine(FieldStoryController c) => IsRegion(c.Location);
 
         public static string RegionId(FieldStoryController.Place p) => p switch
@@ -19,7 +19,7 @@ namespace ThreeKingdoms.Gameplay.Story
             FieldStoryController.Place.R2 => Chapter1Chronicle.R2, FieldStoryController.Place.R3 => Chapter1Chronicle.R3,
             FieldStoryController.Place.R5a => Chapter1Chronicle.R5a, FieldStoryController.Place.R5b => Chapter1Chronicle.R5b,
             FieldStoryController.Place.R6 => Chapter1Chronicle.R6, FieldStoryController.Place.R7 => Chapter1Chronicle.R7,
-            FieldStoryController.Place.R8 => Chapter1Chronicle.R8, _ => null,
+            FieldStoryController.Place.R8 => Chapter1Chronicle.R8, FieldStoryController.Place.R1 => Chapter1Chronicle.R1, _ => null,
         };
 
         static string Name(FieldStoryController c) => RegionTravel.ById(RegionId(c.Location))?.Name ?? "";
