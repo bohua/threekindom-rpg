@@ -71,6 +71,12 @@ namespace ThreeKingdoms.UI.Battle
         // GENERALS_ROSTER v0.3: fixed attributes, roster troop types (太史慈 弓骑, 于禁 步兵, 曹军步卒 枪兵).
         static readonly GeneralSpec ZhaoYun = new GeneralSpec("zhao_yun", "赵云", TroopType.Cavalry, 93, 86, 74, element: UnitElement.Fire);
         static readonly GeneralSpec TaishiCi = new GeneralSpec("taishi_ci", "太史慈", TroopType.HorseArcher, 93, 82, 60, element: UnitElement.Fire);
+        // Xuzhou's civil and military officers (GENERALS_ROSTER v0.3). User 2026-10-30 chose named generals only to fill
+        // the larger line-ups: 简雍 rides with Liu Bei from battle 12; Tao Qian attaches 糜竺, 糜芳 and 孙乾 at Xiapi.
+        static readonly GeneralSpec JianYong = new GeneralSpec("jian_yong", "简雍", TroopType.Strategist, 35, 50, 80, element: UnitElement.Water);
+        static readonly GeneralSpec SunQian = new GeneralSpec("sun_qian", "孙乾", TroopType.Strategist, 32, 55, 72, element: UnitElement.Water);
+        static readonly GeneralSpec MiZhu = new GeneralSpec("mi_zhu", "糜竺", TroopType.Strategist, 30, 52, 76, element: UnitElement.Metal);
+        static readonly GeneralSpec MiFang = new GeneralSpec("mi_fang", "糜芳", TroopType.Archer, 60, 58, 48, element: UnitElement.Metal);
         static readonly GeneralSpec CaoBao = new GeneralSpec("cao_bao", "曹豹", TroopType.Infantry, 70, 66, 40);
         static readonly GeneralSpec Danyang = new GeneralSpec("danyang", "丹杨兵", TroopType.Infantry, 72, 70, 30);
         static readonly GeneralSpec YuJin = new GeneralSpec("yu_jin", "于禁", TroopType.Infantry, 76, 86, 68, element: UnitElement.Earth);
@@ -101,6 +107,20 @@ namespace ThreeKingdoms.UI.Battle
                 return u;
             }
             TacticsUnitDef Zhao(Vector2Int pos) => Guest(ZhaoYun, "ZhaoYun", pos, "援护", "连击");
+            TacticsUnitDef Officer(GeneralSpec g, string key, School school, Vector2Int pos, params string[] crafts)
+            {
+                var u = Guest(g, key, pos, crafts);
+                u.School = school;
+                return u;
+            }
+            void Officers(Vector2Int near, bool xiapi)
+            {
+                def.Units.Add(Officer(JianYong, "JianYong", School.Ru, near + new Vector2Int(-1, 0), "舌辩", "安民"));
+                if (!xiapi) return;
+                def.Units.Add(Officer(MiZhu, "MiZhu", School.Mo, near + new Vector2Int(1, 0), "犒军", "车阵"));
+                def.Units.Add(Officer(MiFang, "ArcherSoldier", School.Mo, near + new Vector2Int(0, -1), "连射"));
+                def.Units.Add(Officer(SunQian, "SunQian", School.Ru, near + new Vector2Int(-1, -1), "筹粮", "结盟"));
+            }
             TacticsUnitDef Taishi(Vector2Int pos) => Guest(TaishiCi, "TaishiCi", pos, "火矢");
             TacticsUnitDef Ally(GeneralSpec g, string key, int level, Vector2Int pos)
             {
@@ -125,6 +145,7 @@ namespace ThreeKingdoms.UI.Battle
             {
                 def.Units.Add(Hero("liu_bei", a)); def.Units.Add(Hero("guan_yu", b)); def.Units.Add(Hero("zhang_fei", c));
                 if (ch.Has(ChapterState.ZhaoYunGuest)) def.Units.Add(Zhao(zhaoAt));
+                Officers(a, xiapi: true);
                 def.Required = new[] { "刘备", "关羽", "张飞" };
             }
             void Enemies(Vector2Int[] spots, string[] names = null)
@@ -151,9 +172,10 @@ namespace ThreeKingdoms.UI.Battle
                     // The formation choice now decides who leads (the front slots); everyone takes the field (user 2026-10-30).
                     var order = pick.Concat(all.Where(k => !pick.Contains(k))).ToArray();
                     for (int i = 0; i < order.Length; i++) def.Units.Add(Make(order[i], slots[i + 1]));
+                    Officers(slots[0], xiapi: false);
                     def.Required = new[] { "刘备" };
-                    Enemies(new[] { At(rows, 7, 4), At(rows, 4, 5), At(rows, 11, 5), At(rows, 2, 1), At(rows, 13, 1), At(rows, 7, 2) },
-                        new[] { null, "黄巾余部甲", "黄巾余部乙", "黄巾余部丙", "黄巾余部丁", "黄巾余部戊" });   // BALANCE_MODEL_v1 §3.11: 管亥 + 五名余部（贼众，近战）
+                    Enemies(new[] { At(rows, 7, 4), At(rows, 4, 5), At(rows, 11, 5), At(rows, 2, 1), At(rows, 13, 1), At(rows, 7, 2), At(rows, 3, 3), At(rows, 12, 3) },
+                        new[] { null, "黄巾余部甲", "黄巾余部乙", "黄巾余部丙", "黄巾余部丁", "黄巾余部戊", "黄巾余部己", "黄巾余部庚" });   // BALANCE_MODEL_v1 §3.11: 管亥 + 五名余部（贼众，近战）
                     def.Units[0 + 3 + 0].Leader = true;
                     def.Objective = "击溃管亥，解都昌之围";
                     def.Events.Add(new TacticsEvent { Round = 2, Actions = new[] { Line("taishi_ci", "b12.hint.1"), Line("liu_bei", "b12.hint.2") } });
@@ -178,7 +200,7 @@ namespace ThreeKingdoms.UI.Battle
                         Actions = new[]
                         {
                             Banner("第二波 · 于禁出阵"),
-                            new TacticsAction { Kind = TacticsActionKind.Spawn, Units = new[] { yj } },   // BALANCE_MODEL_v1 §3.11: four foes plus Yu Jin (≤ 3 × 1.75)   // BALANCE_MODEL_v1 §3.11: 杂兵 = our level − 1
+                            new TacticsAction { Kind = TacticsActionKind.Spawn, Units = new[] { yj, Foe(CaoInf, 11, At(rows, 5, 11), "CaoInfantry"), Foe(CaoInf, 11, At(rows, 12, 11), "CaoInfantry") } },   // eight of ours since 2026-10-30   // BALANCE_MODEL_v1 §3.11: 杂兵 = our level − 1
                             Line("yu_jin", "b13.yujin.1"), Goal("把于禁的兵力压到一半以下，或坚持到第 6 回合"),
                         },
                     });
@@ -218,7 +240,7 @@ namespace ThreeKingdoms.UI.Battle
                     def.Events.Add(new TacticsEvent
                     {
                         Round = 3,
-                        Actions = new[] { Banner("曹军攻城") },   // BALANCE_MODEL_v1 §3.11: five in all, the infantry wave is gone
+                        Actions = new[] { Banner("第二波 · 曹军步卒"), new TacticsAction { Kind = TacticsActionKind.Spawn, Units = new[] { Foe(CaoInf, 12, At(rows, 4, 11), "CaoInfantry"), Foe(CaoInf, 12, At(rows, 12, 11), "CaoInfantry") } } },
                     });
                     def.Events.Add(new TacticsEvent { Round = 4, Actions = new[] { Banner("曹军阵中骚动"), Line("narrator", "b14.stir.1") } });   // REVIEW_V05 R3
                     def.Events.Add(new TacticsEvent
@@ -243,8 +265,8 @@ namespace ThreeKingdoms.UI.Battle
                 {
                     rows = Stages4.Pingyuan; def.Where = "沛国 · 小沛郊外"; def.Deploy = new RectInt(2, 8, 12, 3);
                     Brothers(rows, At(rows, 7, 1), At(rows, 5, 3), At(rows, 10, 3), At(rows, 8, 2));
-                    Enemies(new[] { At(rows, 7, 10), At(rows, 3, 9), At(rows, 12, 9), At(rows, 5, 11), At(rows, 10, 11), At(rows, 8, 11) },
-                        new[] { "散兵头目", "散兵甲", "流寇甲", "流寇乙", "散兵乙", "散兵丙" });
+                    Enemies(new[] { At(rows, 7, 10), At(rows, 3, 9), At(rows, 12, 9), At(rows, 5, 11), At(rows, 10, 11), At(rows, 8, 11), At(rows, 2, 11), At(rows, 13, 11) },
+                        new[] { "散兵头目", "散兵甲", "流寇甲", "流寇乙", "散兵乙", "散兵丙", "流寇丙", "散兵丁" });
                     def.Units.First(u => u.Name == "散兵头目").Leader = true;
                     def.Objective = "肃清小沛郊外的散兵流寇";
                     def.OpeningLines = Lines("liu_bei", "b15.open.1", "zhang_fei", "b15.open.2");

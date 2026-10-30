@@ -908,6 +908,14 @@ namespace Prototype.BingshuTactics
                         t.AddStatus(new Status { Name = "阵", Guard = Mathf.Min(0.45f, s.Amount * mul), Turns = s.Turns });
                         popups.Add((views[t].position + Vector3.up * 2f, "结阵", new Color(0.9f, 0.75f, 0.4f), 0f));
                         break;
+                    case Effect.Buff when s.Name == "筹粮":   // 孙乾：为友军补策力
+                        t.Ep = Mathf.Min(t.MaxEp, t.Ep + Mathf.RoundToInt(s.Amount));
+                        popups.Add((views[t].position + Vector3.up * 2f, "策力+" + Mathf.RoundToInt(s.Amount), new Color(0.5f, 0.75f, 1f), 0f));
+                        break;
+                    case Effect.Buff when s.Amount > 0:      // 结盟：物防提升
+                        t.AddStatus(new Status { Name = s.Name, DefMul = 1f + s.Amount, Turns = s.Turns });
+                        popups.Add((views[t].position + Vector3.up * 2f, "物防↑", new Color(0.6f, 0.9f, 1f), 0f));
+                        break;
                 }
             }
             yield return new WaitForSeconds(0.55f);
@@ -1003,6 +1011,16 @@ namespace Prototype.BingshuTactics
             // 电脑代打的我方：气势够就放伤害武技／绝学（横扫要两人以上在身边）
             if (u.Team == Team.Player)
             {
+                // 辅助绝学：射程内有友军兵力过半折损就先救（安民、犒军、整队）
+                var heal = u.Crafts.FirstOrDefault(c => c.Effect == Effect.Heal && c.Area == Area.Single && u.Cp >= c.Cost);
+                var hurt = heal == null ? null : Friends(u).Where(f => Grid.Dist(f.Pos, u.Pos) <= heal.Range && f.Hp * 2 < f.MaxHp).OrderBy(f => f.Hp).FirstOrDefault();
+                if (hurt != null)
+                {
+                    Log($"{u.Name} 绝学「{heal.Name}」");
+                    yield return DoCraft(u, heal, hurt.Pos);
+                    u.At = now + AtClock.Delay(heal.Recover, u.Speed);
+                    yield break;
+                }
                 var near = AttackableTargets(u, 1);
                 var craft = u.Crafts.Where(c => c.Effect == Effect.Damage && u.Cp >= c.Cost && !c.IsStrategy &&
                         (c.Range < 0 ? near.Count > 0 : c.Area == Area.SelfCircle && grid.Diamond(u.Pos, c.Radius).Count(p => At(p) != null && At(p).Team != u.Team) >= 2))

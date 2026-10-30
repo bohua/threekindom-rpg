@@ -151,13 +151,13 @@ namespace ThreeKingdoms.EditorTools
             var caoRen = E(General("cao_ren", "CaoRen", "曹仁", TroopType.Cavalry, 82, 88, 60, 0, 0, 0, (1, enemyCharge), (1, enemySweep)), UnitElement.Fire);
             var deserter = E(General("deserter", "Deserter", "散兵", TroopType.Infantry, 66, 54, 24, 0, 0, 0), UnitElement.Fire);
             var b12 = Encounter("battle_12", "Battle12_Duchang", "第十二战 · 都昌解围", EnemyAiKind.FacingSlot, 170, 180,   // §3.10 (C18): 0.5 exp 170 / 190 / 210 / 140
-                (guanHai, 12), (ytRemnant, 11), (ytRemnant, 11), (ytRemnant, 10), (ytRemnant, 10), (ytRemnant, 9));   // §3.11 (all five of ours take the field since 2026-10-30)
+                (guanHai, 12), (ytRemnant, 11), (ytRemnant, 11), (ytRemnant, 10), (ytRemnant, 10), (ytRemnant, 9), (ytRemnant, 9), (ytRemnant, 9));   // §3.11 plus two: six of ours take the field (2026-10-30)
             var b13 = Encounter("battle_13", "Battle13_XiapiEast", "第十三战 · 下邳城东", EnemyAiKind.FacingSlot, 190, 200,
                 (caoInf, 11), (caoInf, 10), (caoArcher, 10), (caoArcher, 10));   // §3.11 枪弓 4 人; Yu Jin joins as the second wave
             var b14 = Encounter("battle_14", "Battle14_XiapiWalls", "第十四战 · 下邳保卫", EnemyAiKind.FacingSlot, 210, 220,
                 (caoRen, 14), (caoCav, 12), (caoCav, 12), (caoCav, 11), (caoCav, 11));   // §3.11
             var b15 = Encounter("battle_15", "Battle15_Xiaopei", "选做 · 小沛巡防", EnemyAiKind.FacingSlot, 140, 150,
-                (deserter, 13), (deserter, 13), (raider, 12), (raider, 12), (deserter, 12), (deserter, 11));
+                (deserter, 13), (deserter, 13), (raider, 12), (raider, 12), (deserter, 12), (deserter, 11), (raider, 11), (deserter, 11));   // eight of ours (2026-10-30)
             var b8 = Encounter("battle_8", "Battle8_Hulao", "第八战 · 虎牢关·三英战吕布", EnemyAiKind.FacingSlot, 90, 120, (luBu, 9), (bingzhou, 4), (bingzhou, 4), (bingzhou, 4));   // §3.11: Floor 0.5 instead of extra troops
 
             // Equipment catalogue (equipment-items GDD, adopted 2026-10-19; names provisional, values to be tuned).
