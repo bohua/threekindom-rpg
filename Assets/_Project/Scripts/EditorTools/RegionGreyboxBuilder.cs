@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Jrpg;
 using ThreeKingdoms.Gameplay;
+using ThreeKingdoms.Gameplay.Story;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -174,6 +175,8 @@ namespace ThreeKingdoms.EditorTools
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
             Debug.Log($"REGION_GREYBOX_BUILT {id}");
+            // The story layer (travel courier, side-quest people) goes back on after every rebuild.
+            if (ChapterFieldBuilder.RegionPlace(id) is FieldStoryController.Place place) ChapterFieldBuilder.BuildRegionStory(place, scenePath);
         }
 
         // ---------- heights ----------

@@ -36,6 +36,7 @@ namespace ThreeKingdoms.Gameplay.Story
             {
                 case "lu_ditou": case "bian_sheng": case "fan_shen": case "gu_sou": case "wu_laoli": case "feng_widow": case "feng_kuan": return true;
                 case "zhang_shiping": return N5(c) && ch.Step == ChapterStep.PingyuanSafe;
+                case "qz_aide": return N5(c) || N6(c);
                 // The boy: at the ferry towing until he joins (path B), then at the barracks door.
                 case "a_he_tow": return N5(c) && !ch.Has(AheJoined) && Guangzong(ch) == "punished";
                 case "a_he": return ch.Has(AheJoined) || N5(c) && Guangzong(ch) != "punished";
@@ -56,6 +57,7 @@ namespace ThreeKingdoms.Gameplay.Story
                     return null;
                 case "wu_laoli": return N6(c) && !ch.Has(Gaotang) ? "raw:[确认] 与高唐老吏交谈" : null;
                 case "py_clerk": return N6(c) && !ch.Has(ChapterScripts4.Assassin) ? "raw:[确认] 回相府（夜里有客求见）" : null;
+                case "qz_aide": return "raw:[确认] 与青州从事交谈（通行文书）";
                 default: return null;
             }
         }
@@ -87,6 +89,7 @@ namespace ThreeKingdoms.Gameplay.Story
             "a_he" or "a_he_tow" => AHe(c, id),
             "zhang_shiping" => new[] { L("zhang_shiping", "dlg.lb1.zhang_shiping.N5.word") },
             "wu_laoli" => WuLaoli(c),
+            "qz_aide" => QingzhouAide(c),
             "feng_widow" => new[] { L("feng_widow", c.Run.Chapter2.Has(Gaotang) ? "sq.r4.widow.after" : "sq.r4.widow.plain") },
             "feng_kuan" => new[] { L("feng_kuan", "dlg.lb1.npc.r4.gaotang.son.N5.1") },
             "py_clerk" => N6(c) && !c.Run.Chapter2.Has(ChapterScripts4.Assassin) ? FieldScripts4.Assassin(c) : null,
@@ -310,6 +313,29 @@ namespace ThreeKingdoms.Gameplay.Story
                 }));
             steps.Add(Flag(Farewell));
             return steps.ToArray();
+        }
+
+        // The Qingzhou aide Bi Qian (R4 §6.5 领通行文书点): Tian Kai's passes, Ji province from 191, Yan province added in 192.
+        static IEnumerable<StageStep> QingzhouAide(FieldStoryController c)
+        {
+            var ch = c.Run.Chapter2;
+            if (N6(c) && !ch.Has(SideQuestsR3.PassYanzhou))
+            {
+                yield return L("qz_aide", "dlg.lb1.npc.r4.pingyuan.qingzhou_aide.N6.1");
+                yield return Flag(SideQuestsR3.PassJizhou);
+                yield return Flag(SideQuestsR3.PassYanzhou);
+                yield return L("system", "sq.r4.pass.yan");
+                yield break;
+            }
+            if (!ch.Has(SideQuestsR3.PassJizhou))
+            {
+                yield return L("qz_aide", "dlg.lb1.npc.r4.pingyuan.qingzhou_aide.N5.1");
+                yield return L("qz_aide", "dlg.lb1.npc.r4.pingyuan.qingzhou_aide.N5.2");
+                yield return Flag(SideQuestsR3.PassJizhou);
+                yield return L("system", "sq.r4.pass.ji");
+                yield break;
+            }
+            yield return L("qz_aide", N6(c) ? "dlg.lb1.npc.r4.pingyuan.qingzhou_aide.N6.1" : "dlg.lb1.npc.r4.pingyuan.qingzhou_aide.N6pre.1");
         }
 
         // ---------- sq.lb1.L6.gaotang_2 高唐旧吏 ----------

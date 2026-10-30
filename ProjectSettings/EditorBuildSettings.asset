@@ -87,6 +87,24 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/Battle_Xiaopei15.unity
     guid: e65e2d3051ce5014eb978fc29d36a651
   - enabled: 1
+    path: Assets/_Project/Scenes/Story_Stage.unity
+    guid: bd21b4bd674b15f4fa3e4c4e622ee66a
+  - enabled: 1
+    path: Assets/_Project/Scenes/Camp_LuZhi.unity
+    guid: 30dd67548b25c4a489c027e8efaf107a
+  - enabled: 1
+    path: Assets/_Project/Scenes/Anxi_Town.unity
+    guid: 2a623a7547ffb654cbd444f39957e712
+  - enabled: 1
+    path: Assets/_Project/Scenes/Camp_Gongsun.unity
+    guid: 68a4945e918446445840b387d5246d46
+  - enabled: 1
+    path: Assets/_Project/Scenes/Camp_Suanzao.unity
+    guid: 7cf9319640146504ba70c498412fc36d
+  - enabled: 1
+    path: Assets/_Project/Scenes/Xiapi_City.unity
+    guid: 75269daf68b9fdd4d9e175ce172801e2
+  - enabled: 1
     path: Assets/_Project/Scenes/Zhongshan_Region.unity
     guid: 32c533716dc434b4f9d44cec6cf8e0e4
   - enabled: 1
@@ -107,23 +125,5 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Region_R8.unity
     guid: ea119d073eed12148a12ee66912b1366
-  - enabled: 1
-    path: Assets/_Project/Scenes/Story_Stage.unity
-    guid: bd21b4bd674b15f4fa3e4c4e622ee66a
-  - enabled: 1
-    path: Assets/_Project/Scenes/Camp_LuZhi.unity
-    guid: 30dd67548b25c4a489c027e8efaf107a
-  - enabled: 1
-    path: Assets/_Project/Scenes/Anxi_Town.unity
-    guid: 2a623a7547ffb654cbd444f39957e712
-  - enabled: 1
-    path: Assets/_Project/Scenes/Camp_Gongsun.unity
-    guid: 68a4945e918446445840b387d5246d46
-  - enabled: 1
-    path: Assets/_Project/Scenes/Camp_Suanzao.unity
-    guid: 7cf9319640146504ba70c498412fc36d
-  - enabled: 1
-    path: Assets/_Project/Scenes/Xiapi_City.unity
-    guid: 75269daf68b9fdd4d9e175ce172801e2
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

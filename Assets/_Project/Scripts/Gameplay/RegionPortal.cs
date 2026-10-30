@@ -51,6 +51,9 @@ namespace ThreeKingdoms.Gameplay
             return run == null || Steps.Contains((int)run.Chapter2.Step);
         }
 
+        // A journey from elsewhere (RegionTravel) asks for its arrival spot the same way.
+        public static void SetArrival(string spot, Vector3 facing) { pendingArrival = spot; pendingFacing = facing; }
+
         // The arrival spot a portal asked for, once (the place's own start-up uses it in place of its default).
         public static Transform TakeArrival(out Vector3 facing)
         {
