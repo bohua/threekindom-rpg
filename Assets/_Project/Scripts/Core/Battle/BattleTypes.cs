@@ -1,7 +1,18 @@
 namespace ThreeKingdoms.Core.Battle
 {
-    // Closed set (ADR-0002 §3). Yellow Turban and Strategist are enemy-only (combat GDD, user 2026-10-18).
-    public enum TroopType { Infantry, Cavalry, Archer, YellowTurban, Strategist }
+    // Closed set (ADR-0002 §3), extended to 8 main + 6 special types (BALANCE_MODEL_v1 §3.14, user 2026-10-27).
+    // Values of the first five are kept for the existing assets: YellowTurban is now 贼众 (Yellow Turbans, bandits, raiders).
+    public enum TroopType
+    {
+        Infantry, Cavalry, Archer, YellowTurban, Strategist, Spearman, Crossbow, HorseArcher,
+        Swordswoman, Dancer, Shaman, Pirate, Barbarian, Elephant,
+    }
+
+    // 大系: the matchup triangle is horse → foot → bow → horse; the mind class stands outside it.
+    public enum TroopClass { Foot, Horse, Bow, Mind }
+
+    // A unit's five-element (单位五行): a named general's school leaning, or set per enemy in the data (BALANCE_MODEL_v1 §3.5).
+    public enum UnitElement { None, Metal, Wood, Water, Fire, Earth }
 
     // Ally (0.2, SYSTEMS_V02 §2): a unit on our side that takes no orders, e.g. Dong Zhuo's army in battle 5.
     public enum Side { Player, Enemy, Ally }

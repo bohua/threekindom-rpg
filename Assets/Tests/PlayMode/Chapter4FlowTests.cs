@@ -14,7 +14,7 @@ using UnityEngine.TestTools;
 
 // 0.4 河北篇 acceptance (V04_HEBEI_PLAN, SYSTEMS_V04 §7): one play-through of the Pingyuan base and section seven — E3,
 // rumours and training, the porridge and the canal, battle 9, the ferry, 192, battle 10 with Zhao Yun, choice ⑥, battle 11
-// with the way out, Zhending, back to Pingyuan for the assassin (choice ⑦), scroll ⑧ and the title.
+// with the way out, Zhending, back to Pingyuan for the assassin (choice ⑦), scroll ⑧ and on into 0.5.
 public sealed class Chapter4FlowTests
 {
     string saveDir;
@@ -167,16 +167,17 @@ public sealed class Chapter4FlowTests
         yield return WinBattle("battle_11");
         Assert.AreEqual(ChapterStep.Zhending, run.Chapter2.Step);
 
-        // Zhending, back to Pingyuan: the assassin (choice ⑦ A), the after-story, scroll ⑧, the title.
+        // Zhending, back to Pingyuan: the assassin (choice ⑦ A), scroll ⑧ (no seal since 0.5), then 193 opens in Pingyuan.
         yield return PlayStage();
         yield return WaitFor<FieldStoryController>(90f);
         py = Object.FindFirstObjectByType<FieldStoryController>();
         yield return Drive(py, py.Stage);
         yield return PlayStage();
-        float deadline = Time.realtimeSinceStartup + 60f;
-        while (SceneManager.GetActiveScene().name != GameRun.TitleScene) { Assert.Less(Time.realtimeSinceStartup, deadline); StoryCinematics.Advance(); yield return null; }
+        yield return WaitFor<FieldStoryController>(90f);
+        Assert.AreEqual(GameRun.BohaiScene, SceneManager.GetActiveScene().name);
         Assert.AreEqual(ChapterScripts4.ScrollJieqiao, StoryCinematics.LastScroll);
-        Assert.AreEqual(ChapterStep.Done04, run.Chapter2.Step);
+        Assert.AreEqual(ChapterStep.Beihai, run.Chapter2.Step);
+        Assert.AreEqual(ChronicleNode.N7, run.Chapter2.Node);
         Assert.AreEqual("A_free", run.Chapter2.Recall("liu_ping", "liuping_assassin"));
         Assert.That(run.Data.Party.Select(g => run.Progress.Level(g)), Is.All.GreaterThanOrEqualTo(11));
     }

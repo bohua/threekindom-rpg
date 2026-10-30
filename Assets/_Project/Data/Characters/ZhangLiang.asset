@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
   Id: zhang_liang
   DisplayName: "\u5F20\u6881"
-  Troop: 0
-  Force: 75
-  Command: 65
-  Intellect: 50
+  Troop: 3
+  Force: 72
+  Command: 60
+  Intellect: 48
+  Element: 5
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

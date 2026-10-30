@@ -251,12 +251,9 @@ namespace Prototype.BingshuTactics
 
         void BuildLibrary()
         {
-            void B(string n, Element e, int g) => library.Add(new Book(n, e, g));
-            B("《尉缭子》", Element.Metal, 2); B("《吴子》", Element.Metal, 3); B("《六韬·虎韬》", Element.Metal, 1); B("《尉缭子》残卷", Element.Metal, 1);
-            B("《三略》", Element.Wood, 2); B("《司马法》", Element.Wood, 2); B("《管子·牧民》", Element.Wood, 1); B("《司马法》残卷", Element.Wood, 1);
-            B("《管子·度地》", Element.Water, 3); B("《墨子·备水》", Element.Water, 2); B("《孙子·行军》", Element.Water, 1);
-            B("《孙子·火攻》", Element.Fire, 3); B("《六韬·火战》", Element.Fire, 2); B("《火攻》残卷", Element.Fire, 1); B("《火攻》残卷", Element.Fire, 1);
-            B("《孙膑兵法·八阵》", Element.Earth, 3); B("《墨子·备城门》", Element.Earth, 2); B("《六韬·龙韬》", Element.Earth, 1);
+            // 书库与开局镶嵌和行旅菜单的兵书页共用一份（Bookcase）；篇章战斗用玩家当前的书库（同一批 Book 对象）
+            library.Clear();
+            library.AddRange(IsChapter && Chapter.Library != null ? Chapter.Library : Bookcase.NewLibrary());
         }
 
         Book L(string name, int skip = 0) => library.Where(b => b.Name == name).Skip(skip).First();
@@ -264,30 +261,26 @@ namespace Prototype.BingshuTactics
         // 刘关张默认配书（原型配置；兵书页的改动只在本次游玩内存中）
         void DefaultBooks(Unit u)
         {
-            switch (u.Name)
-            {
-                case "刘备": u.Slots[0] = L("《管子·度地》"); u.Slots[1] = L("《三略》"); u.Slots[2] = L("《司马法》"); u.Slots[3] = L("《墨子·备水》"); break;
-                case "关羽": u.Slots[0] = L("《孙子·火攻》"); u.Slots[3] = L("《六韬·火战》"); u.Slots[4] = L("《火攻》残卷"); u.Slots[1] = L("《尉缭子》"); u.Slots[2] = L("《管子·牧民》"); break;
-                case "张飞": u.Slots[0] = L("《孙膑兵法·八阵》"); u.Slots[1] = L("《墨子·备城门》"); u.Slots[5] = L("《六韬·龙韬》"); u.Slots[2] = L("《吴子》"); break;
-            }
+            Bookcase.Default(u.Name, u.Slots, library);
+            RefreshTechniques(u);
         }
 
         void BuildUnits()
         {
             if (IsChapter) { BuildChapterUnits(); return; }
-            var liu = NewUnit("刘备", "LiuBei", Team.Player, Troop.Archer, School.Ru, 160, 50, 35, 56, 35, 8, 3, 3, 60, new Vector2Int(1, 5));
-            liu.Int = 81; liu.Wu = 68;
+            var liu = NewUnit("刘备", "LiuBei", Team.Player, Troop.Infantry, School.Ru, 160, 50, 40, 56, 35, 6, 3, 1, 58, new Vector2Int(1, 5));
+            liu.Int = 76; liu.Wu = 68;   // 武将表 v0.3 固定四维
             liu.Crafts.Add(Craft("整队", "单体友军回复30%兵力", Effect.Heal, Area.Single, 3, 0, 0.30f, 20));
             liu.Crafts.Add(Craft("火矢", "单体计策1.3倍（射程4）", Effect.Damage, Area.Single, 4, 0, 1.3f, 25));
 
             var guan = NewUnit("关羽", "GuanYu", Team.Player, Troop.Cavalry, School.Bing, 170, 64, 36, 47, 29, 10, 5, 1, 40, new Vector2Int(2, 7));
-            guan.Int = 63; guan.Wu = 96;
+            guan.Int = 70; guan.Wu = 96;
             guan.Crafts.Add(Craft("突击", "近战单体物理1.5倍", Effect.Damage, Area.Single, -1, 0, 1.5f, 25, might: true));
             guan.Crafts.Add(Craft("破阵", "近战单体1.1倍，物防-20% 2回合", Effect.Debuff, Area.Single, -1, 0, 1.1f, 30, might: true, turns: 2, amount: 0.2f));
 
-            var zhang = NewUnit("张飞", "ZhangFei", Team.Player, Troop.Infantry, School.Fa, 190, 66, 40, 40, 24, 6, 3, 1, 30, new Vector2Int(2, 3));
-            zhang.Int = 48; zhang.Wu = 100;
-            zhang.Crafts.Add(Craft("横扫", "自身周围2格内敌军物理0.65倍", Effect.Damage, Area.SelfCircle, 0, 2, 0.65f, 30, might: true));
+            var zhang = NewUnit("张飞", "ZhangFei", Team.Player, Troop.Cavalry, School.Fa, 170, 66, 36, 40, 24, 10, 5, 1, 40, new Vector2Int(2, 3));
+            zhang.Int = 40; zhang.Wu = 97;
+            zhang.Crafts.Add(Craft("横扫", "自身周围2格内敌军物理0.8倍", Effect.Damage, Area.SelfCircle, 0, 2, 0.8f, 30, might: true));
             zhang.Crafts.Add(Craft("威慑", "自身周围3格内敌军物攻-20% 2回合", Effect.Debuff, Area.SelfCircle, 0, 3, 0f, 25, turns: 2, amount: 0.2f));
             foreach (var pu in new[] { liu, guan, zhang }) DefaultBooks(pu);
 
@@ -319,7 +312,7 @@ namespace Prototype.BingshuTactics
             {
                 Name = name, Key = key, Team = team, Troop = troop, School = school, Element = Circuits.Of(school).Affinity,
                 MaxHp = hp, Hp = hp, Atk = atk, Def = def, Mat = mat, Mdef = mdef, Speed = speed, Move = move, AtkRange = range,
-                MaxEp = ep, Ep = ep, Cp = 30, Pos = pos, At = 800f / speed
+                MaxEp = ep, Ep = ep, Cp = 30, Pos = pos, At = AtClock.Delay(100, speed)
             };
             units.Add(u);
             var material = key switch
@@ -425,7 +418,11 @@ namespace Prototype.BingshuTactics
             return t;
         }
 
-        void Log(string s) => log = s;
+        void Log(string s)
+        {
+            log = s;
+            if (Chapter != null && Chapter.AutoPlay && Application.isBatchMode) Debug.Log($"TACTICS r{Rounds} {s} | " + string.Join(" ", units.Where(u => u.Alive).Select(u => $"{u.Name}:{u.Hp}")));   // tests: the AI play-through in the log
+        }
 
         // ---------------- 每帧 ----------------
         void Update()
@@ -660,7 +657,7 @@ namespace Prototype.BingshuTactics
 
         List<Unit> AttackableTargets(Unit u, int range)
         {
-            var r = ReachOf(u);
+            var r = range > 1 ? AttackReach(u) : ReachOf(u);
             return Foes(u).Where(f => r.Keys.Any(p => CanStop(u, p) && Grid.Dist(p, f.Pos) <= RangeAt(u, p, range))).ToList();
         }
 
@@ -690,22 +687,38 @@ namespace Prototype.BingshuTactics
             return grid.AreaOf(s, u.Pos, center).ToList();
         }
 
+        static readonly SkillDef Zonghuo = new SkillDef
+        {
+            Name = "纵火", Desc = "单体纵火（张角策略绝学）", IsStrategy = true, Element = Element.Fire, Effect = Effect.Damage, Area = Area.Single,
+            Range = 5, Power = 1.25f, Cost = 6, Cast = 40,
+        };
+
         List<LitStrategy> StrategiesOf(Unit u)
         {
-            if (u.Name == "张角")
-                return Strategies.All.Where(s => s.Name == "引火" || s.Name == "火烧营寨").Select(s => new LitStrategy(s, 0, 0)).ToList();
+            if (u.Name == "张角")   // 主稿 §3.9：纵火（单体计策 1.25，策力 6，咏唱 40）与火烧营寨
+                return new[] { Zonghuo }.Concat(Strategies.All.Where(s => s.Name == "火烧营寨")).Select(s => new LitStrategy(s, 0, 0)).ToList();
             return CircuitMath.Lit(u.Circuit, u.Slots, u.Int);
         }
 
         // ---------------- 战斗主循环 ----------------
+        // 功法书点出的武技（设计稿 15.9）随回路更新：先去掉旧的书武技，再按当前镶嵌重新加上
+        void RefreshTechniques(Unit u)
+        {
+            var bookSkills = new HashSet<SkillDef>(TechniqueTable.All);
+            u.Crafts.RemoveAll(bookSkills.Contains);
+            foreach (var t in CircuitMath.Techniques(u.Circuit, u.Slots, u.Int)) u.Crafts.Add(t.Def);
+        }
+
         IEnumerator BattleLoop()
         {
+            foreach (var pu in units.Where(x => x.Team == Team.Player)) RefreshTechniques(pu);
             Log("开战！左侧行动条从上到下为行动顺序；策略需要咏唱，读条期间会被行动条挤后。");
             if (IsChapter) yield return OpeningLines();
             while (true)
             {
                 var u = AtClock.Next(units);
-                now = u.At; active = u; u.Defending = false; moved = false;
+                now = u.At; active = u; u.Defending = false; moved = false; u.Charged = false;
+                u.Ep = Mathf.Min(u.MaxEp, u.Ep + TroopTraits.EpRegen(u.Int));   // 主稿 §3.4：每次轮到自己回 ⌊智÷20⌋ 策力
                 if (IsChapter)
                 {
                     yield return ChapterRoundEvents();
@@ -744,6 +757,8 @@ namespace Prototype.BingshuTactics
                     yield return EnemyTurn(u);
                 }
                 if (u.Team == Team.Player) yield return MaybeDuel(u);
+                if (u.Troop == Troop.Dancer)   // 舞姬：每次行动为半径 2 友军回 3 气势
+                    foreach (var f in Friends(u).Where(f => f != u && Grid.Dist(f.Pos, u.Pos) <= 2)) GainCp(f, 3);
                 u.TickStatuses();
                 mode = Mode.Busy; turns++;
 
@@ -765,24 +780,65 @@ namespace Prototype.BingshuTactics
             actionDone = true; mode = Mode.Busy; pendingSkill = null; reach = null;
         }
 
-        void Hit(Unit a, Unit t, int dmg)
+        // 命中的种类决定气势：普攻全额、武技／绝学减半并能打断咏唱、策略每次施放另计、反击不回气势
+        public enum HitKind { Attack, Technique, Strategy, Counter }
+
+        void GainCp(Unit u, int amount) => u.Cp = Mathf.Min(100, u.Cp + amount + TroopTraits.CpBonus(u.Troop));
+
+        // 咏唱被武技／绝学命中或被水系推迟时中断，退还一半策力（主稿 §3.3）
+        void Interrupt(Unit t)
+        {
+            if (t.PendingCast == null || !t.Alive) return;
+            t.Ep = Mathf.Min(t.MaxEp, t.Ep + t.PendingCast.Cost / 2);
+            Log($"{t.Name} 的「{t.PendingCast.Name}」被打断");
+            popups.Add((views[t].position + Vector3.up * (2.6f * HeadK), "打断", new Color(0.7f, 0.85f, 1f), 0f));
+            t.PendingCast = null; t.PendingFollow = null;
+        }
+
+        void Hit(Unit a, Unit t, int dmg, HitKind kind = HitKind.Attack)
         {
             HitFx(a, t);
+            // 中流砥柱：相邻友军所受伤害的一半由立柱者承受
+            var pillar = units.FirstOrDefault(g => g.Alive && g != t && g.Team == t.Team && Grid.Dist(g.Pos, t.Pos) <= 1 && g.Statuses.Any(s => s.Name == "砥柱"));
+            if (pillar != null && dmg > 1)
+            {
+                int share = dmg / 2; dmg -= share;
+                pillar.Hp = Mathf.Max(0, pillar.Hp - Floored(pillar, share));
+                popups.Add((views[pillar].position + Vector3.up * (1.8f * HeadK), share.ToString(), new Color(0.95f, 0.8f, 0.5f), 0f));
+            }
             dmg = Floored(t, dmg);   // 0.3：不可击败的首领
             t.Hp = Mathf.Max(0, t.Hp - dmg);
-            a.Cp = Mathf.Min(100, a.Cp + 8); t.Cp = Mathf.Min(100, t.Cp + 5);
+            int gain = 5 + a.Wu / 10;
+            if (kind == HitKind.Attack) GainCp(a, gain);
+            else if (kind == HitKind.Technique) GainCp(a, gain / 2);
+            GainCp(t, 6);
             popups.Add((views[t].position + Vector3.up * (1.8f * HeadK), dmg.ToString(), new Color(1f, 0.95f, 0.8f), 0f));
             if (!t.Alive)
             {
                 t.PendingCast = null; t.PendingFollow = null;
+                if (kind != HitKind.Counter) GainCp(a, 10);   // 击破 +10
                 popups.Add((views[t].position + Vector3.up * (2.3f * HeadK), "撤退", new Color(1f, 0.5f, 0.4f), 0f));
+                return;
+            }
+            if (kind == HitKind.Technique) Interrupt(t);
+            // 枪兵拒马：被骑系近战命中后反击一次普攻（不推后行动条）
+            float counter = kind == HitKind.Counter || kind == HitKind.Strategy ? 0f : TroopTraits.CounterPower(t.Troop, a.Troop, Grid.Dist(a.Pos, t.Pos) <= 1, t.Rank);
+            if (counter > 0f && a.Alive)
+            {
+                popups.Add((views[t].position + Vector3.up * (2.6f * HeadK), "反击", new Color(1f, 0.7f, 0.4f), 0f));
+                Hit(t, a, Combat.Damage(t, a, counter, true, Element.None, HMul(t, a), InCamp(a)), HitKind.Counter);
             }
         }
 
+        // 弩兵不能移动后射击：只能从原地出手
+        Dictionary<Vector2Int, Vector2Int> AttackReach(Unit u) => u.Troop == Troop.Crossbow ? new Dictionary<Vector2Int, Vector2Int> { [u.Pos] = u.Pos } : ReachOf(u);
+
         IEnumerator DoAttack(Unit u, Unit target)
         {
-            var r = ReachOf(u);
-            yield return Walk(u, Grid.Path(r, ApproachTile(u, target, u.AtkRange, r)));
+            var r = AttackReach(u);
+            var path = Grid.Path(r, ApproachTile(u, target, u.AtkRange, r));
+            if (path.Count > 1) u.Charged = true;
+            yield return Walk(u, path);
             yield return Lunge(u, target.Pos);
             var victim = Cover(u, target);   // 0.3 众望
             Hit(u, victim, Combat.Damage(u, victim, 1f, true, Element.None, HMul(u, victim), InCamp(victim)));
@@ -791,14 +847,16 @@ namespace Prototype.BingshuTactics
         IEnumerator DoCraft(Unit u, SkillDef s, Vector2Int targetTile)
         {
             if (s.Name == "三英") { yield return SanYing(u); yield break; }   // 0.3 合体技
-            if (s.Name == "换人") { yield return SwapOut(u); yield break; }   // 0.5 后备换人
+            if (s.Name.StartsWith("换上·")) { yield return SwapOut(u, s.Name.Substring(3)); yield break; }   // 0.5 后备换人
             u.Cp -= s.Cost;
             popups.Add((views[u].position + Vector3.up * (2.4f * HeadK), "武技·" + s.Name, new Color(1f, 0.85f, 0.3f), 0f));
             if (s.Range < 0)
             {
                 var target = At(targetTile);
                 var r = ReachOf(u);
-                yield return Walk(u, Grid.Path(r, ApproachTile(u, target, 1, r)));
+                var path = Grid.Path(r, ApproachTile(u, target, 1, r));
+                if (path.Count > 1) u.Charged = true;
+                yield return Walk(u, path);
                 yield return Lunge(u, target.Pos);
             }
             else yield return Lunge(u, targetTile == u.Pos ? u.Pos + Vector2Int.right : targetTile);
@@ -816,14 +874,21 @@ namespace Prototype.BingshuTactics
             {
                 var t = t0;
                 if (s.Name == "众望") { ApplyZhongwang(u, t); continue; }   // 0.3 刘备招牌技
+                if (s.Name == "中流砥柱")   // 主稿 D4：2 回合内相邻友军所受伤害的一半由自己承受
+                {
+                    u.AddStatus(new Status { Name = "砥柱", Turns = s.Turns });
+                    popups.Add((views[u].position + Vector3.up * 2f, "中流砥柱", new Color(0.9f, 0.75f, 0.4f), 0f));
+                    break;
+                }
                 if (s.Effect == Effect.Damage || (s.Effect == Effect.Debuff && s.Power > 0)) t = Cover(u, t0, covered);
                 switch (s.Effect)
                 {
                     case Effect.Damage:
                     case Effect.Debuff when s.Power > 0:
-                        Hit(u, t, Combat.Damage(u, t, s.Power * mul, s.UsesMight, s.Element, HMul(u, t), InCamp(t)));
+                        Hit(u, t, Combat.Damage(u, t, s.Power * mul, s.UsesMight, s.Element, HMul(u, t), InCamp(t), s.IsStrategy), s.IsStrategy ? HitKind.Strategy : HitKind.Technique);
                         if (s.AtDelay > 0 && t.Alive)
                         {
+                            if (s.IsStrategy) Interrupt(t);   // 水系推迟也打断咏唱
                             t.At += s.AtDelay * mul;
                             popups.Add((views[t].position + Vector3.up * (2.6f * HeadK), "迟滞", new Color(0.5f, 0.75f, 1f), 0f));
                         }
@@ -850,22 +915,22 @@ namespace Prototype.BingshuTactics
 
         IEnumerator ExecuteCast(Unit u)
         {
-            var s = u.PendingCast;
-            if (u.Ep < s.Cost) { Log($"{u.Name}：策力不足，{s.Name}未能发动"); yield break; }
-            u.Ep -= s.Cost;
+            var s = u.PendingCast;   // 策力在开始咏唱时已扣除（被打断时退一半）
             Log($"{u.Name} 发动策略「{s.Name}」{(u.PendingMul > 1f ? $"（威力×{u.PendingMul:0.00}）" : "")}");
             popups.Add((views[u].position + Vector3.up * (2.4f * HeadK), "策略·" + s.Name, Wuxing.Tint(s.Element), 0f));
             yield return Lunge(u, u.Pos + Grid.DirTo(u.Pos, u.PendingTarget));
             yield return Apply(u, s, CastArea(u), u.PendingMul);
+            GainCp(u, 4);   // 策略命中 +4（每次施放一次）
         }
 
-        void BeginCast(Unit u, SkillDef s, float mul, Vector2Int target)
+        void BeginCast(Unit u, SkillDef s, float mul, Vector2Int target, int castCut = 0)
         {
+            u.Ep = Mathf.Max(0, u.Ep - s.Cost);
             u.PendingCast = s; u.PendingMul = mul; u.PendingTarget = target;
             u.PendingDir = Grid.DirTo(u.Pos, target);
             var t = At(target);
             u.PendingFollow = s.Area == Area.Line || s.Radius >= 99 ? null : t;
-            u.At = now + AtClock.Delay(s.Cast, u.Speed);
+            u.At = now + AtClock.Delay(Mathf.Max(10, s.Cast - castCut - TroopTraits.CastCut(u.Troop)), u.Speed);
             Log($"{u.Name} 开始咏唱「{s.Name}」，将在行动条上的位置发动");
         }
 
@@ -904,29 +969,52 @@ namespace Prototype.BingshuTactics
                 popups.Add((views[u].position + Vector3.up * 2f, "防御", Color.white, 0f));
                 u.At = now + AtClock.Delay(50, u.Speed); yield break;
             }
-            var strats = StrategiesOf(u);
-            var big = strats.Select(l => l.Def).FirstOrDefault(s => s.Area == Area.Circle && s.Effect == Effect.Damage && u.Ep >= s.Cost);
-            if (big != null)
-            {
-                var best = grid.Diamond(u.Pos, big.Range)
-                    .Select(p => (p, n: grid.Diamond(p, big.Radius).Count(q => At(q) != null && At(q).Team != u.Team)))
-                    .OrderByDescending(x => x.n).First();
-                if (best.n >= 2) { BeginCast(u, big, 1f, best.p); yield break; }
-            }
-            var single = strats.Select(l => l.Def).FirstOrDefault(s => s.Area == Area.Single && s.Effect == Effect.Damage && u.Ep >= s.Cost);
-            if (single != null)
-            {
-                var t = units.Where(x => x.Alive && x.Team != u.Team && Grid.Dist(x.Pos, u.Pos) <= single.Range).OrderBy(x => x.Hp).FirstOrDefault();
-                if (t != null && Random.value < 0.6f) { BeginCast(u, single, 1f, t.Pos); yield break; }
-            }
-
-            if (ExitTarget(u) is Vector2Int exitAt && u.Move > 0)   // 0.4：撤离区开放后，电脑代打的我方朝撤离区走
+            if (ExitTarget(u) is Vector2Int exitAt && u.Move > 0)   // 0.4：撤离区开放后，电脑代打的我方朝撤离区走（先于策略）
             {
                 var er = ReachOf(u);
                 var ed = er.Keys.Where(p => CanStop(u, p)).OrderBy(p => Grid.Dist(p, exitAt)).First();
                 yield return Walk(u, Grid.Path(er, ed));
                 u.At = now + AtClock.Delay(70, u.Speed);
                 yield break;
+            }
+            // 电脑代打的我方武将优先武技与普攻，策略留给文官（主稿 T2）；敌军仍按原型规则
+            bool caster = u.Team != Team.Player || u.Int >= 75 || u.Troop == Troop.Strategist || u.Troop == Troop.Shaman;
+            var strats = caster ? StrategiesOf(u) : new List<LitStrategy>();
+            var bigLit = strats.FirstOrDefault(l => l.Def.Area == Area.Circle && l.Def.Effect == Effect.Damage && u.Ep >= l.Def.Cost);
+            if (bigLit.Def != null)
+            {
+                var big = bigLit.Def;
+                var best = grid.Diamond(u.Pos, big.Range)
+                    .Select(p => (p, n: grid.Diamond(p, big.Radius).Count(q => At(q) != null && At(q).Team != u.Team)))
+                    .OrderByDescending(x => x.n).First();
+                if (best.n >= 2) { BeginCast(u, big, bigLit.PowerMul, best.p, bigLit.CastCut); yield break; }
+            }
+            var singleLit = strats.FirstOrDefault(l => l.Def.Area == Area.Single && l.Def.Effect == Effect.Damage && u.Ep >= l.Def.Cost);
+            if (singleLit.Def != null)
+            {
+                var single = singleLit.Def;
+                var t = units.Where(x => x.Alive && x.Team != u.Team && Grid.Dist(x.Pos, u.Pos) <= single.Range).OrderBy(x => x.Hp).FirstOrDefault();
+                // 武将优先武技与普攻，策略只给文官或够不着时用（主稿 T2）
+                bool strategist = u.Int >= 75 || u.Troop == Troop.Strategist || u.Troop == Troop.Shaman;
+                bool engaged = u.Team == Team.Player && Foes(u).Any(f => Grid.Dist(f.Pos, u.Pos) <= 1);   // 代打：被贴身时不站着咏唱
+                if (t != null && !engaged && (strategist || AttackableTargets(u, u.AtkRange).Count == 0) && Random.value < 0.6f) { BeginCast(u, single, singleLit.PowerMul, t.Pos, singleLit.CastCut); yield break; }
+            }
+
+            // 电脑代打的我方：气势够就放伤害武技／绝学（横扫要两人以上在身边）
+            if (u.Team == Team.Player)
+            {
+                var near = AttackableTargets(u, 1);
+                var craft = u.Crafts.Where(c => c.Effect == Effect.Damage && u.Cp >= c.Cost && !c.IsStrategy &&
+                        (c.Range < 0 ? near.Count > 0 : c.Area == Area.SelfCircle && grid.Diamond(u.Pos, c.Radius).Count(p => At(p) != null && At(p).Team != u.Team) >= 2))
+                    .OrderByDescending(c => c.Power).FirstOrDefault();
+                if (craft != null)
+                {
+                    var tp = craft.Range < 0 ? near.OrderBy(x => x.Hp).First().Pos : u.Pos;
+                    Log($"{u.Name} 武技「{craft.Name}」");
+                    yield return DoCraft(u, craft, tp);
+                    u.At = now + AtClock.Delay(craft.Recover, u.Speed);
+                    yield break;
+                }
             }
             var targets = AttackableTargets(u, u.AtkRange);
             if (targets.Count > 0)
@@ -986,7 +1074,7 @@ namespace Prototype.BingshuTactics
                         return;
                     }
                     if (!ValidSkillTarget(active, pendingSkill, p)) return;
-                    if (pendingSkill.IsStrategy) { BeginCast(active, pendingSkill, pendingMul, p); actionDone = true; mode = Mode.Busy; pendingSkill = null; }
+                    if (pendingSkill.IsStrategy) { BeginCast(active, pendingSkill, pendingMul, p, StrategiesOf(active).FirstOrDefault(l => l.Def == pendingSkill).CastCut); actionDone = true; mode = Mode.Busy; pendingSkill = null; }
                     else StartCoroutine(Run(DoCraft(active, pendingSkill, p), pendingSkill.Recover, $"{active.Name} 武技「{pendingSkill.Name}」"));
                     return;
             }
@@ -1002,7 +1090,7 @@ namespace Prototype.BingshuTactics
         void UndoMove()
         {
             active.Pos = preMovePos; rigs[active].Root.position = Tile(preMovePos); rigs[active].Dir = preMoveDir;
-            moved = false; reach = null; ringSel = DefaultRing(); cursor = active.Pos; mode = Mode.Menu;
+            moved = false; active.Charged = false; reach = null; ringSel = DefaultRing(); cursor = active.Pos; mode = Mode.Menu;
             Log($"{active.Name} 退回原位，重新下令");
         }
 
@@ -1011,7 +1099,7 @@ namespace Prototype.BingshuTactics
             preMovePos = active.Pos; preMoveDir = rigs[active].Dir;
             mode = Mode.Busy; Log($"{active.Name} 移动");
             yield return Walk(active, path);
-            moved = true; reach = null; ringSel = DefaultRing(); mode = Mode.Menu;
+            moved = true; active.Charged = true; reach = null; ringSel = DefaultRing(); mode = Mode.Menu;
             Log($"{active.Name} 已移动：可攻击、用武技、防御或待机（策略须原地咏唱）");
         }
 
@@ -1159,7 +1247,7 @@ namespace Prototype.BingshuTactics
         bool HasTargets(Unit u, SkillDef s)
         {
             if (s.Name == "三英") return ComboReady(u);   // 0.3
-            if (s.Name == "换人") return BenchReady(u);   // 0.5
+            if (s.Name.StartsWith("换上·")) return BenchReady(u, s.Name.Substring(3));   // 0.5
             bool Ok(Unit t) => t != null && t.Alive && (s.TargetsAllies ? t.Team == u.Team : t.Team != u.Team) && !(s.Name == "众望" && t == u);
             if (s.Range < 0) return !s.TargetsAllies && AttackableTargets(u, 1).Count > 0;
             if (s.Radius >= 99) return Friends(u).Any();
@@ -1240,13 +1328,22 @@ namespace Prototype.BingshuTactics
             if (u == null) return;
             var r = new Rect(sw - 250, 244, 240, 150);
             Rect(r, new Color(0.04f, 0.06f, 0.1f, 0.88f));
-            string troop = u.Troop switch { Troop.Infantry => "步兵", Troop.Cavalry => "骑兵", Troop.Archer => "弓兵", Troop.Rebel => "黄巾军", _ => "文官／军师" };
+            string troop = TroopTraits.Name(u.Troop, u.Rank);
             GUI.Label(new Rect(r.x + 10, r.y + 6, 220, 22), $"<b>{u.Name}</b>  {troop}", text);
             GUI.Label(new Rect(r.x + 10, r.y + 30, 220, 20), $"兵力 {u.Hp}/{u.MaxHp}  速度 {u.Speed}  移动 {u.Move}  智力 {u.Int}", small);
             GUI.Label(new Rect(r.x + 10, r.y + 50, 220, 20), $"物攻 {u.Atk} 物防 {u.Def} 计攻 {u.Mat} 计防 {u.Mdef}", small);
             GUI.Label(new Rect(r.x + 10, r.y + 70, 220, 20), $"五行 <color=#{ColorUtility.ToHtmlStringRGB(Wuxing.Tint(u.Element))}>{Wuxing.Name(u.Element)}</color>（被{Wuxing.Name(Wuxing.All.First(x => Wuxing.Overcomes(x) == u.Element))}克）", small);
             GUI.Label(new Rect(r.x + 10, r.y + 90, 220, 20), u.Statuses.Count > 0 ? "状态：" + string.Join("、", u.Statuses.Select(s => $"{s.Name}{s.Turns}")) : "状态：无", small);
             if (u.PendingCast != null) GUI.Label(new Rect(r.x + 10, r.y + 110, 220, 20), $"咏唱中：{u.PendingCast.Name}", small);
+            // 主稿 D6：对敌卡标出兵种项与可克它的招式（“克”字提示）
+            else if (active != null && active.Team != u.Team)
+            {
+                int troopPts = TroopTraits.Points(active.Troop, u.Troop, true, active.Charged, active.Rank);
+                var counters = StrategiesOf(active).Select(l => l.Def).Concat(active.Crafts)
+                    .Where(s => s.Effect == Effect.Damage && s.Element != Element.None && Wuxing.Overcomes(s.Element) == u.Element).Select(s => s.Name).Distinct().ToList();
+                string troopText = troopPts == 0 ? "兵种 ±0" : $"兵种 {(troopPts > 0 ? "+" : "")}{troopPts}%";
+                GUI.Label(new Rect(r.x + 10, r.y + 110, 230, 20), troopText + (counters.Count > 0 ? $"  <color=#ffcf5a>克</color>：{string.Join("、", counters)}（五行+20%）" : ""), small);
+            }
         }
 
         void DrawDeploy(float sw)

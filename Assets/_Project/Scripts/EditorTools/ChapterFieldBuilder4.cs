@@ -54,6 +54,7 @@ namespace ThreeKingdoms.EditorTools
                 Person(people, "py_woman 平原县民", Folk("E13"), new Vector3(cx + 7f, 0, -166f)),
                 Person(people, "py_child 孩童", Folk("E15"), new Vector3(cx + 2f, 0, -170f)),
                 Person(people, "assassin 刺客", Folk("E10"), new Vector3(cx, 0, -300f)),   // stands off-map until E9
+                Person(people, "taishi_ci 太史慈", Folk("F01"), new Vector3(cx + 4f, 0, -300f)),   // 0.5: off-map until F1
             };
 
             var go = new GameObject("Pingyuan Story");

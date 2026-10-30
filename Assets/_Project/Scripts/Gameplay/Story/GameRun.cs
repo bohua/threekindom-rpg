@@ -30,6 +30,9 @@ namespace ThreeKingdoms.Gameplay.Story
         // 0.4 河北篇 (design/v0.4-hebei): the Bohai plain (RegionScenes R4) and battles 9–11 on the tactics map.
         public static readonly string[] Chapter4BattleScenes = { "Battle_Pingyuan09", "Battle_Panhe10", "Battle_Jieqiao11" };
         public const string BohaiScene = "Bohai_Plain";
+        // 0.5 徐州篇 (design/v0.5-xuzhou): Xiapi to walk in, battles 12–15 on the tactics map.
+        public const string XiapiScene = "Xiapi_City";
+        public static readonly string[] Chapter5BattleScenes = { "Battle_Duchang12", "Battle_XiapiEast13", "Battle_XiapiWalls14", "Battle_Xiaopei15" };
         public const string Chapter = "第一章　涿郡起兵";
         // Walkable open regions (chapter 1 art probe, 2026-10-24): region id → scene.
         public static readonly System.Collections.Generic.IReadOnlyDictionary<string, string> RegionScenes =
@@ -100,7 +103,7 @@ namespace ThreeKingdoms.Gameplay.Story
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() { Current = null; SaveDirectoryOverride = null; }
 
-        public static int BattleIndex(string encounterId) => Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6", "battle_7", "battle_8", "battle_9", "battle_10", "battle_11" }, encounterId);
+        public static int BattleIndex(string encounterId) => Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6", "battle_7", "battle_8", "battle_9", "battle_10", "battle_11", "battle_12", "battle_13", "battle_14", "battle_15" }, encounterId);
 
         public static string SceneFor(string encounterId) => encounterId switch
         {
@@ -115,6 +118,10 @@ namespace ThreeKingdoms.Gameplay.Story
             "battle_9" => Chapter4BattleScenes[0],
             "battle_10" => Chapter4BattleScenes[1],
             "battle_11" => Chapter4BattleScenes[2],
+            "battle_12" => Chapter5BattleScenes[0],
+            "battle_13" => Chapter5BattleScenes[1],
+            "battle_14" => Chapter5BattleScenes[2],
+            "battle_15" => Chapter5BattleScenes[3],
             _ => null,
         };
 
@@ -133,7 +140,8 @@ namespace ThreeKingdoms.Gameplay.Story
         }
 
         // Header of a save slot: the chapter part the play-through is in.
-        public string ChapterTitle => Chapter2.Step >= ChapterStep.Done03 ? "第一篇章　河北"
+        public string ChapterTitle => Chapter2.Step >= ChapterStep.Done04 ? "第一篇章　徐州"
+            : Chapter2.Step >= ChapterStep.Done03 ? "第一篇章　河北"
             : Chapter2.Step >= ChapterStep.Done ? "第一篇章　讨董"
             : Chapter2.Step >= ChapterStep.Anxi ? "第一篇章　安喜县尉"
             : Chapter2.Step >= ChapterStep.Camp ? "第一篇章　黄巾转战" : Chapter;
@@ -149,12 +157,18 @@ namespace ThreeKingdoms.Gameplay.Story
         public SaveSlots Slots() => Slots(Data.ManualSaveSlots);
 
         // location: SaveData.TownLocation (the tavern) or the battle id whose pre-battle state this is.
+        // 兵书书库与镶嵌（UI 层 BingshuShelf 持有并序列化；Gameplay 层只存文本，不依赖兵书规则程序集）
+        public string BingshuState { get; set; } = "";
+        public Func<string> BingshuSnapshot { get; set; }
+
         public SaveData Capture(string location)
         {
             SyncChronicle();
             var leader = Progress.Party.Count > 0 ? Progress.Party[0] : null;
-            return SaveCodec.Capture(Story, Progress.Inventory, Progress.ExpByGeneral, location, leader != null ? Progress.Level(leader) : 1,
+            var save = SaveCodec.Capture(Story, Progress.Inventory, Progress.ExpByGeneral, location, leader != null ? Progress.Level(leader) : 1,
                 ChapterTitle, Application.version, DateTime.Now, Life, Chapter2, Chronicle);
+            save.bingshu = BingshuSnapshot?.Invoke() ?? BingshuState ?? "";
+            return save;
         }
 
         public void SaveTo(string slot, string location) => Slots().Write(slot, Capture(location));
@@ -166,7 +180,7 @@ namespace ThreeKingdoms.Gameplay.Story
             if (!SaveCodec.TryRestore(save, data.Economy, out var restored, out error)) return false;
             var progress = new DevPartyProgress(data, restored.Inventory);
             progress.RestoreExp(restored.Exp);
-            Current = new GameRun(data, restored.Story, progress, false) { Life = restored.Life, Chapter2 = restored.Chapter ?? new ChapterState(), Chronicle = restored.Chronicle };
+            Current = new GameRun(data, restored.Story, progress, false) { Life = restored.Life, Chapter2 = restored.Chapter ?? new ChapterState(), Chronicle = restored.Chronicle, BingshuState = save.bingshu ?? "" };
             if (restored.Location == SaveData.TownLocation)
             {
                 Current.NextArrival = Arrival.AtTavern;
@@ -176,6 +190,8 @@ namespace ThreeKingdoms.Gameplay.Story
             else if (restored.Location == SaveData.AnxiLocation) SceneManager.LoadScene(AnxiScene);
             else if (restored.Location == SaveData.GongsunLocation) SceneManager.LoadScene(GongsunScene);
             else if (restored.Location == SaveData.SuanzaoLocation) SceneManager.LoadScene(SuanzaoScene);
+            else if (restored.Location == SaveData.XiapiLocation) SceneManager.LoadScene(XiapiScene);
+            else if (restored.Location == SaveData.ChapterDoneLocation) { Current = null; error = "第一篇章已完成，第二篇章尚未开放。"; return false; }
             else if (restored.Location.StartsWith(SaveData.RegionPrefix))
             {
                 if (!RegionScenes.TryGetValue(restored.Location.Substring(SaveData.RegionPrefix.Length), out string scene))

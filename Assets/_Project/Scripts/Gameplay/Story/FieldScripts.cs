@@ -15,6 +15,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static IEnumerable<StageStep> OnArrive(FieldStoryController c)
         {
+            if (FieldScripts5.Mine(c)) return FieldScripts5.OnArrive(c);   // 0.5
             if (FieldScripts4.Mine(c)) return FieldScripts4.OnArrive(c);
             if (FieldScripts3.Mine(c)) return FieldScripts3.OnArrive(c);   // 0.3
             var ch = c.Run.Chapter2;
@@ -63,6 +64,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static string Prompt(FieldStoryController c, string id)
         {
+            if (FieldScripts5.Mine(c)) return FieldScripts5.Prompt(c, id);   // 0.5
             if (FieldScripts4.Mine(c)) return FieldScripts4.Prompt(c, id);
             if (FieldScripts3.Mine(c)) return FieldScripts3.Prompt(c, id);
             var ch = c.Run.Chapter2;
@@ -85,6 +87,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static bool Marked(FieldStoryController c, string id)
         {
+            if (FieldScripts5.Mine(c)) return FieldScripts5.Marked(c, id);   // 0.5
             if (FieldScripts4.Mine(c)) return FieldScripts4.Marked(c, id);
             if (FieldScripts3.Mine(c)) return FieldScripts3.Marked(c, id);
             var ch = c.Run.Chapter2;
@@ -104,6 +107,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static string Objective(FieldStoryController c)
         {
+            if (FieldScripts5.Mine(c)) return FieldScripts5.Objective(c);   // 0.5
             if (FieldScripts4.Mine(c)) return FieldScripts4.Objective(c);
             if (FieldScripts3.Mine(c)) return FieldScripts3.Objective(c);
             var ch = c.Run.Chapter2;
@@ -118,6 +122,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static IEnumerable<StageStep> Talk(FieldStoryController c, string id)
         {
+            if (FieldScripts5.Mine(c)) return FieldScripts5.Talk(c, id);   // 0.5
             if (FieldScripts4.Mine(c)) return FieldScripts4.Talk(c, id);
             if (FieldScripts3.Mine(c)) return FieldScripts3.Talk(c, id);
             var ch = c.Run.Chapter2;

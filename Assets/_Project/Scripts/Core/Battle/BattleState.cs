@@ -231,9 +231,12 @@ namespace ThreeKingdoms.Core.Battle
             var (atkStat, defStat) = kind == DamageKind.Strategy
                 ? (BattleStat.StrategyAttack, BattleStat.StrategyDefense)
                 : (BattleStat.PhysicalAttack, BattleStat.PhysicalDefense);
-            bool advantage = HasAdvantage(actor, target);
+            // Strategies take no troop matchup (BALANCE_MODEL_v1 §3.5 T1); 步兵 defends at −60%.
+            int advantagePercent = kind == DamageKind.Strategy ? 100 : troops.AdvantagePercent(actor.Troop, target.Troop);
+            bool advantage = advantagePercent > 100;
+            int guard = target.Defending ? TroopRules.GuardPercent(target.Troop, config.GuardPercent) : 100;
             int damage = BattleRules.Damage(actor.Stats.Get(atkStat), actor.ModifierPercent(atkStat),
-                target.Stats.Get(defStat), target.ModifierPercent(defStat), powerPercent, advantage, target.Defending, config);
+                target.Stats.Get(defStat), target.ModifierPercent(defStat), powerPercent, advantagePercent, guard, config);
             int dealt = target.TakeDamage(damage);
             log.Add(new BattleEvent(BattleEventKind.Damage, actor, target, skill, dealt, advantage, guarded: target.Defending,
                 command: skill == null ? CommandKind.Attack : CommandKind.Skill));

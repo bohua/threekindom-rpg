@@ -15,9 +15,10 @@ MonoBehaviour:
   Id: cheng_yuanzhi
   DisplayName: "\u7A0B\u8FDC\u5FD7"
   Troop: 3
-  Force: 60
+  Force: 62
   Command: 55
   Intellect: 30
+  Element: 5
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

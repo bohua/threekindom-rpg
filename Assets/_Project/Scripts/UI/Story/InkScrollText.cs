@@ -37,10 +37,14 @@ namespace ThreeKingdoms.UI.Story
                 "初平三年，公孫瓚與袁紹戰於磐河，為文醜所逐，墜馬坡下。忽一少年將軍白馬銀槍，挺身救之，乃常山趙雲。雲曰：天下洶洶，從仁政所在。——事本《三國演義》第七回，語出裴注引《雲別傳》"),
             ["jieqiao"] = new Entry("界橋",
                 "袁紹遣麴義以八百先登、千張強弩伏於界橋，白馬義從大敗，嚴綱陣斬。劉備與關、張、趙雲斷後，護公孫瓚南還。——事本《三國志·公孫瓚傳》裴注引《英雄記》；劉備斷後為本作改編"),
+            ["beihai"] = new Entry("都昌解圍",
+                "黃巾管亥圍北海孔融於都昌，太史慈突圍至平原求救。劉備斂容答曰：「孔北海知世間有劉備邪！」即遣精兵三千隨慈往，賊聞兵至，解圍散走。——事本《三國志·太史慈傳》；關羽斬管亥本《三國演義》第十一回，趙雲在場為本作改編"),
+            ["sanrang"] = new Entry("三讓徐州",
+                "陶謙病篤，謂別駕麋竺曰：「非劉備不能安此州也。」謙死，竺率州人迎先主，先主未敢當。陳登、孔融皆勸之，先主遂領徐州。——事本《三國志·先主傳》；三讓之數本《三國演義》第十二回"),
         };
 
         // Only the last scroll of the current version gets the 完成 seal (0.2: 安喜掛印; 0.3: 焚洛陽; 0.4: 界橋).
-        public static bool Sealed(string id) => id == "jieqiao";
+        public static bool Sealed(string id) => id == "sanrang";   // the last scroll of the chapter (0.5)
 
         public static bool TryGet(string id, out Entry entry) => Entries.TryGetValue(id ?? "", out entry);
 

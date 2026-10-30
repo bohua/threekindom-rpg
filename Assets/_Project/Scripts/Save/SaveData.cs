@@ -15,6 +15,8 @@ namespace ThreeKingdoms.Save
         public const string CampLocation = "camp", AnxiLocation = "anxi";
         // 0.3: Gongsun Zan's garrison and the Suanzao camp.
         public const string GongsunLocation = "camp_gongsun", SuanzaoLocation = "suanzao";
+        // 0.5: Xiapi; the chapter-complete save (第二篇章 continues from it).
+        public const string XiapiLocation = "xiapi", ChapterDoneLocation = "chapter1_done";
         // A post station in an open region (chapter 1 art probe): "region:R4".
         public const string RegionPrefix = "region:";
 
@@ -56,6 +58,8 @@ namespace ThreeKingdoms.Save
         // 0.2 chapter (SYSTEMS_V02 §3, §5); a format 1 save reads them as empty.
         public int chapterStep;
         public string[] chapterFlags = Array.Empty<string>();
+        // 兵书（策略书／功法书）书库与各武将的镶嵌，由行旅菜单兵书页写成一行文本（2026-10-26；旧存档为空＝开局默认）
+        public string bingshu = "";
         public MemoryEntry[] memories = Array.Empty<MemoryEntry>();
     }
 

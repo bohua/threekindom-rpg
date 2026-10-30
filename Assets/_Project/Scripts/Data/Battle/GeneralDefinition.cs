@@ -22,6 +22,8 @@ namespace ThreeKingdoms.Data.Battle
         [Range(1, 100)] public int Force = 50;
         [Range(1, 100)] public int Command = 50;
         [Range(1, 100)] public int Intellect = 50;
+        [Tooltip("单位五行；无 = 按学派偏向")] public UnitElement Element;
+        [Tooltip("四维固定不成长（用户 2026-10-27）；以下三项保留为 0")]
         [Min(0)] public int ForceGrowth;
         [Min(0)] public int CommandGrowth;
         [Min(0)] public int IntellectGrowth;
