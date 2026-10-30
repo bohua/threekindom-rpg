@@ -113,6 +113,24 @@ namespace ThreeKingdoms.UI.Story
             m.SetColor("_BaseColor", new Color(1f, 1f, 1f, Mathf.Clamp01(alpha)));
         }
 
+        // A transparent unlit material like the ground overlays' (for pieces laid on the map, such as march arrows),
+        // and the diorama's root, so such pieces move and are destroyed with it.
+        public Material NewOverlayMaterial(Texture texture)
+        {
+            foreach (var m in overlays.Values)
+            {
+                var copy = new Material(m);
+                copy.SetTexture("_BaseMap", texture);
+                copy.SetColor("_BaseColor", Color.white);
+                copy.renderQueue = m.renderQueue + 20;
+                return copy;
+            }
+            return null;
+        }
+
+        public Transform Root => root.transform;
+        public const int Layer = LayerIndex;
+
         public void Dispose()
         {
             foreach (var (l, on) in otherLights) if (l) l.enabled = on;
