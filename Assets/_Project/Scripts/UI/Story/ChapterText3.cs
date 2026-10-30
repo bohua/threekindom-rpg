@@ -11,7 +11,7 @@ namespace ThreeKingdoms.UI.Story
     {
         public static readonly Dictionary<string, string> Speakers = new Dictionary<string, string>
         {
-            ["gongsun_zan"] = "公孙瓒", ["jian_yong"] = "简雍", ["tian_yu"] = "田豫", ["baima_rider"] = "白马义从", ["groom"] = "马夫",
+            ["gongsun_zan"] = "公孙瓒", ["jian_yong"] = "简雍", ["tian_yu"] = "田豫", ["baima_rider"] = "白马义从", ["groom"] = "马夫", ["roll_head"] = "队头", ["roll_sick"] = "病兵",
             ["gs_quartermaster"] = "军需官", ["gs_soldier_a"] = "白马营士卒", ["gs_soldier_b"] = "白马营士卒", ["gs_guard"] = "南门守卒",
             ["yuan_shao"] = "袁绍", ["yuan_shu"] = "袁术", ["kong_rong"] = "孔融", ["tao_qian"] = "陶谦", ["hua_xiong"] = "华雄",
             ["lu_bu"] = "吕布", ["chen_gong"] = "陈宫", ["lv_boshe"] = "吕伯奢", ["messenger"] = "探马", ["old_soldier"] = "守井老卒",
@@ -93,12 +93,27 @@ namespace ThreeKingdoms.UI.Story
             ["gs.opt.shop"] = "买卖装备", ["gs.opt.save"] = "记下行程（存档）", ["gs.opt.cancel"] = "没什么",
             ["gs.bell.found"] = "草料堆后挂着一串铜铃，铃舌系着一缕白马鬃。",
             ["gs.bell.note"] = "得到“白马铃”。——白马义从系在马颈上的铃，据说铃声一响，胡骑便退。",
-            ["gs.tianyu.1"] = "您就是涿郡刘玄德？我叫田豫，渔阳人。我常在这里看白马营操练。",
-            ["gs.tianyu.2"] = "小兄弟看得这样入神，可是也想从军？",
-            ["gs.tianyu.3"] = "想！可他们说我年纪小。刘君，您愿意收我吗？我能骑马，也会射箭。",
-            ["gs.tianyu.4"] = "好志气。只要你愿意，便随我左右。",
-            ["gs.tianyu.5"] = "多谢刘君！田豫此生不忘！",
-            ["gs.tianyu.after"] = "刘君，我今天又射中了三箭！",
+            // 田豫点兵 (npc-sidequests R1_R2 sq.lb1.r1.tian_yu_roll; dlg.lb1.tian_yu.N4.*, dlg.lb1.tian_yu_roll.*). Counts per squad
+            // and the short lines marked 原创补 are this build's, filling steps the design describes without a line.
+            ["gs.tianyu.1"] = "渔阳田豫。在下听说刘君带兵不打骂，想跟着刘君。",
+            ["gs.tianyu.zf"] = "你多大？毛还没长齐，跟着打仗？",
+            ["gs.tianyu.2"] = "十九。不小了。张将军若不信，豫可以替刘君把兵点一遍。",
+            ["gs.tianyu.after"] = "兵法说，‘爱兵如子’。豫觉得还差半句：赏罚要让兵看得见。",
+            ["gs.roll.wait"] = "第三队还差一个人。没看见人之前，豫不落笔。",
+            ["gs.roll.idle"] = "点卯的时候再来问。",
+            ["gs.roll.head1"] = "第一队，五十人，都在。",
+            ["gs.roll.head2"] = "第二队，五十人，都在。",
+            ["gs.roll.head4"] = "第四队，四十八人，都在。册上也是四十八。",
+            ["gs.roll.s2.1"] = "少了个人。八成是跑了，这种人营里一抓一大把。",
+            ["gs.roll.s2.2"] = "册子上写的是‘病’。没看见人之前，豫不写‘逃’。去马厩看看。",
+            ["gs.roll.s3.1"] = "别……别报我逃。我爹在渔阳等我回去……",
+            ["gs.roll.s3.lb"] = "没人报你逃。田豫在校场等着，他说了算。",
+            ["gs.roll.sick.after"] = "烧退了些。田司马说，病好了就归队。",
+            ["gs.roll.s4"] = "他病了，不是逃了。病好归队，这几天的粮照发。谁有话，来找豫。",
+            ["gs.roll.s5"] = "四队，实到一百九十七，病一人。豫点完了。刘君，以后的兵，豫来管。",
+            ["gs.zan.ear_first"] = "南下的事不急。玄德，你还没去蓟城见过刘幽州吧？出营门往北就是。看看再来。",   // 补 (简雍打听 must come first)
+            ["gs.zan.roll_first"] = "玄德，你那个渔阳小兄弟要替你点兵，先把兵点清楚了，再来听我说南下的事。",
+            ["mem.tianyu_roll"] = "田豫记得：初平元年，点兵于公孙营，病一人，未书逃",
             ["mem.tianyu_met"] = "田豫记得：刘备肯收下年少的自己",
             ["gs.zan.talk"] = "玄德，曹孟德传来檄文，关东诸侯要在酸枣会盟讨董。我意已决，率军南下，你可愿同去？",
             ["gs.zan.after_drill"] = "玄德，你那两位兄弟把我的白马义从都比下去了！好，正好随我南下讨董。曹孟德的檄文到了。",

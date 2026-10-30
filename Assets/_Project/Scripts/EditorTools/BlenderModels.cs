@@ -21,7 +21,7 @@ namespace ThreeKingdoms.EditorTools
         public const string Root = "Assets/_Project/Art/Environment/Blender";
         public static bool Enabled = !System.Environment.GetCommandLineArgs().Contains("-noBlender");
 
-        sealed class Entry { public string Texture; public bool Clip, Blend, TwoSided, Tiling; }
+        sealed class Entry { public string Texture; public bool Clip, Blend, TwoSided, Tiling, Triplanar; public float Metres = 12f; }
         static readonly Dictionary<string, Dictionary<string, Entry>> sets = new Dictionary<string, Dictionary<string, Entry>>();
         static readonly Dictionary<string, Material> made = new Dictionary<string, Material>();
 
@@ -70,7 +70,11 @@ namespace ThreeKingdoms.EditorTools
                     Blend = Regex.IsMatch(body, "\"alpha_blend\"\\s*:\\s*true"),
                     TwoSided = Regex.IsMatch(body, "\"two_sided\"\\s*:\\s*true"),
                     Tiling = Regex.IsMatch(body, "\"tiling\"\\s*:\\s*true"),
+                    // Rock faces Codex projects from the world (the Taihang cliffs): "projection": "world_triplanar".
+                    Triplanar = Regex.IsMatch(body, "\"projection\"\\s*:\\s*\"[^\"]*triplanar"),
                 };
+                var size = Regex.Match(body, "\"texture_scale_m\"\\s*:\\s*([0-9.]+)");
+                if (size.Success) d[m.Groups[1].Value].Metres = float.Parse(size.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
             }
             return d;
         }
@@ -112,6 +116,16 @@ namespace ThreeKingdoms.EditorTools
         // Flat painted look, as ZhuojunTownBuilder.Mat: no smoothness, highlights or reflections; cut-out alpha.
         static Material MakeMaterial(string set, string key, Entry e)
         {
+            if (e.Triplanar)
+            {
+                var tri = new Material(Shader.Find("ThreeKingdoms/WorldTriplanar")) { name = key };
+                tri.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(e.Texture));
+                tri.SetFloat("_Meters", e.Metres);
+                string tp = $"{Dir(set)}/Materials/{key}.mat";
+                if (AssetDatabase.LoadAssetAtPath<Material>(tp)) AssetDatabase.DeleteAsset(tp);
+                AssetDatabase.CreateAsset(tri, tp);
+                return made[set + "/" + key] = tri;
+            }
             var m = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = key };
             m.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(e.Texture));
             m.SetColor("_BaseColor", Color.white);
@@ -180,11 +194,16 @@ namespace ThreeKingdoms.EditorTools
             if (made.TryGetValue(set + "/" + key, out var m) && m) { m.SetColor("_BaseColor", c); EditorUtility.SetDirty(m); }
         }
 
+        internal static IEnumerable<string> Keys(string set) => sets.TryGetValue(set, out var d) ? d.Keys.ToList() : new List<string>();
+
         static Material Swap(string set, Material imported)
         {
             if (!imported) return null;
             string key = Regex.Replace(imported.name, "\\.\\d+$", "");
-            return made.TryGetValue(set + "/" + key, out var m) ? m : imported;
+            if (made.TryGetValue(set + "/" + key, out var m)) return m;
+            // Some sets name the Blender material with a region prefix ("R6_granite") and the table without it.
+            string bare = Regex.Replace(key, "^R\\d+[A-Za-z]?_", "");
+            return made.TryGetValue(set + "/" + bare, out m) ? m : imported;
         }
 
         static Bounds LocalBounds(Transform root, MeshFilter f)

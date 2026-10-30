@@ -103,9 +103,11 @@ namespace ThreeKingdoms.EditorTools
             // Danyang troops at the gate and the steps (scenery).
             foreach (var (x, z) in new[] { (-6.5f, -38.5f), (6.5f, -38.5f), (-5f, 20f), (5f, 20f) })
                 Person(p, $"Danyang soldier {x},{z}", Folk("F13"), new Vector3(x, 0, z));
+            people.AddRange(SidePeople(FieldStoryController.Place.Xiapi, p));
             var c = f.Controller;
             c.Location = FieldStoryController.Place.Xiapi;
             c.People = people.ToArray();
+            c.Spots = new[] { Spot(f, "wall_stairs 登城石阶", new Vector3(12f, 0, -36.6f)) };
             c.ArrivalSpot = Spot(f, "Arrival (inside the east gate)", new Vector3(0, 0, -36f));
             c.ReturnSpot = Spot(f, "Return (hall square)", new Vector3(0, 0, 8f));
             Huds(c);

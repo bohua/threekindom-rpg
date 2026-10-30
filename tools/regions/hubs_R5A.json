@@ -1,6 +1,50 @@
 {
- "suanzao": {"set": "r5a-blender-suanzao", "layout": "_checks/layout_assembly.json", "layoutZ": -40},
- "tent_1": {"skip": true}, "tent_2": {"skip": true}, "tent_3": {"skip": true}, "tent_4": {"skip": true}, "tent_5": {"skip": true}, "tent_6": {"skip": true},
- "commander": {"skip": true}, "altar": {"skip": true},
- "hulao": {"set": "r5a-blender-suanzao", "model": "hulao_gate"}
+ "suanzao": {
+  "set": "r5a-blender-suanzao",
+  "layout": "_checks/layout_assembly.json",
+  "layoutZ": -40
+ },
+ "tent_1": {
+  "skip": true
+ },
+ "tent_2": {
+  "skip": true
+ },
+ "tent_3": {
+  "skip": true
+ },
+ "tent_4": {
+  "skip": true
+ },
+ "tent_5": {
+  "skip": true
+ },
+ "tent_6": {
+  "skip": true
+ },
+ "commander": {
+  "skip": true
+ },
+ "altar": {
+  "skip": true
+ },
+ "hulao": {
+  "set": "r5a-blender-suanzao",
+  "model": "hulao_gate"
+ },
+ "_wild": {
+  "set": "r5a-blender-wild",
+  "layout": "_checks/r5a_wild_placements.json"
+ },
+ "_detail": {
+  "set": "r5a-hd-ground",
+  "layout": "_checks/r5a_detail_placements.json"
+ },
+ "_dropPads": [
+  "foundation_house",
+  "foundation_village",
+  "foundation_ruin",
+  "foundation_post",
+  "mud_camp"
+ ]
 }

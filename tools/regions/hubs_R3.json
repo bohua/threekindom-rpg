@@ -1,4 +1,100 @@
 {
- "guangzong": {"set": "r3-blender-luzhi-camp", "model": "guangzong_gate", "wallModel": "guangzong"},
- "_spawn": [380, 350]
+ "guangzong": {
+  "set": "r3-blender-luzhi-camp",
+  "model": "guangzong_gate",
+  "wallModel": "guangzong"
+ },
+ "luzhi_camp": {
+  "portalScene": "Camp_LuZhi",
+  "portalArrival": "Arrival (inside the gate)",
+  "portalSteps": [
+   3
+  ],
+  "arrivalName": "Arrival outside Lu Zhi camp gate",
+  "set": "r3-blender-luzhi-camp",
+  "layout": "_checks/camp_layout.json"
+ },
+ "_spawn": [
+  380,
+  350
+ ],
+ "ye": {
+  "set": "r3-blender-ye",
+  "layout": "_checks/ye_layout_placements.json"
+ },
+ "handan": {
+  "set": "r3-blender-ye",
+  "layout": "_checks/handan_layout_placements.json"
+ },
+ "_wild": {
+  "set": "r3-blender-wild",
+  "layout": "_checks/r3_wild_placements.json",
+  "skip": [
+   "taihang_cliff_c",
+   "village_ground_burned",
+   "taihang_cliff_b",
+   "r3_wild_foundations",
+   "village_ground_reed",
+   "village_ground_elm",
+   "taihang_cliff_a"
+  ],
+  "tint": {
+   "adobe_pale": [
+    0.8,
+    0.76,
+    0.7
+   ],
+   "reed_thatch": [
+    0.78,
+    0.72,
+    0.6
+   ],
+   "woven_straw": [
+    0.8,
+    0.74,
+    0.62
+   ],
+   "foundation_house": [
+    0.82,
+    0.78,
+    0.72
+   ],
+   "foundation_village": [
+    0.82,
+    0.78,
+    0.72
+   ],
+   "foundation_ruin": [
+    0.8,
+    0.76,
+    0.7
+   ],
+   "foundation_post": [
+    0.82,
+    0.78,
+    0.72
+   ]
+  }
+ },
+ "siege_trench": {
+  "set": "r3-blender-luzhi-camp",
+  "layout": "_checks/siege_layout_claude.json"
+ },
+ "city_forecourt": {
+  "skip": true
+ },
+ "fukou": {
+  "skip": true
+ },
+ "_detail": {
+  "set": "r3-wild-detail",
+  "layout": "_checks/r3_detail_placements.json"
+ },
+ "_dropPads": [
+  "mud_camp",
+  "foundation_house",
+  "foundation_village",
+  "foundation_ruin",
+  "foundation_post"
+ ]
 }
