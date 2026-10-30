@@ -78,4 +78,28 @@ public sealed class ZhuojunSidequestTests
         Assert.Contains("dlg.lb1.gu_sou.N1.introduced.3", heard);
         Assert.AreEqual("introduced", c.Run.Chapter2.Recall("gu_sou", "met_liu_bei"));
     }
+    // 卢门：灵位前的字 (sq.lb1.L4.zhuo): back in Zhuojun in 192 by the realm map, the guard's news, then Lu Yu at his
+    // family's gate: three rations and the stone-classic copy (with Lu Zhi's slip) left by the tablet.
+    [UnityTest, Timeout(480000)] public IEnumerator LuYuAtTheMemorialTablet()
+    {
+        var run = GameRun.ForChapter(Catalog, ThreeKingdoms.Core.Story.ChapterStep.Pingyuan, 400, 300, rations: 4);
+        run.Chapter2.Set(ThreeKingdoms.Core.Story.ChapterState.Year192);
+        run.Chapter2.Set(TownStoryController.RubbingGot);
+        run.Chapter2.Set(TownStoryController.LuzhiSlip);
+        yield return SceneManager.LoadSceneAsync("Zhuojun_Town");
+        yield return null; yield return null;
+        var c = Object.FindFirstObjectByType<TownStoryController>();
+        float deadline = Time.realtimeSinceStartup + 20f;
+        while (c.Busy) { Assert.Less(Time.realtimeSinceStartup, deadline); c.Advance(); yield return null; }
+        Assert.IsTrue(c.Run.Chapter2.Has(TownStoryController.LuMenHeard), "the guard's news");
+        var lu = GameObject.Find("lu_yu 卢毓");
+        Assert.IsNotNull(lu, "Lu Yu at the gate in 192");
+        var heard = new List<string>();
+        yield return Talk(c, lu.transform, new Queue<int>(new[] { 0, 0 }), heard);
+        Assert.Contains("dlg.lb1.lu_yu.N6.rub.1", heard);
+        Assert.AreEqual("given", c.Run.Chapter2.Recall("lu_yu", "rice"));
+        Assert.AreEqual("gave_rubbing", c.Run.Chapter2.Recall("lu_yu", "rubbing"));
+        Assert.AreEqual(1, c.Run.Progress.Inventory.Rations);
+        Assert.IsTrue(c.Run.Chapter2.Has(TownStoryController.LuMen));
+    }
 }

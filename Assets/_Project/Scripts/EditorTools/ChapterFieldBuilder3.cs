@@ -211,6 +211,7 @@ namespace ThreeKingdoms.EditorTools
             Person(p, "Gate guard E", Folk("C09"), new Vector3(2.8f, 0, -20.4f));
             Person(p, "Hall guard W", Folk("D02"), new Vector3(-3.4f, 0, 15.2f));
             Person(p, "Hall guard E", Folk("D02"), new Vector3(3.4f, 0, 15.2f));
+            people.AddRange(SidePeople(FieldStoryController.Place.Gongsun, p));
             var c = f.Controller;
             c.Location = FieldStoryController.Place.Gongsun;
             c.People = people.ToArray();

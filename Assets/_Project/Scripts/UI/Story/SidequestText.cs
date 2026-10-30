@@ -15,6 +15,7 @@ namespace ThreeKingdoms.UI.Story
             ["ji_guest_state"] = "楼下州里的客", ["ji_refugee"] = "许氏", ["ji_east_gate"] = "通事老达", ["kumo"] = "库莫",
             ["guan_jing"] = "关靖", ["liu_bei_mu"] = "刘母", ["liu_zijing"] = "刘子敬", ["liu_yuanqi"] = "刘元起", ["yuanqi_qi"] = "元起妻",
             ["liu_deran"] = "刘德然", ["young_liu_bei"] = "少年刘备", ["young_liu_zijing"] = "刘子敬（当年）",
+            ["lu_yu"] = "卢毓", ["lu_sao"] = "卢家长嫂",
         };
 
         public static readonly Dictionary<string, string> Lines = new Dictionary<string, string>
@@ -142,6 +143,33 @@ namespace ThreeKingdoms.UI.Story
             ["dlg.lb1.L6.flash.2"] = "汝勿妄语，灭吾门也！",
             ["dlg.lb1.L6.flash.3"] = "（风过桑林。刘备在树下站了一会儿。）",   // 补
             ["mem.liu_bei_L6_lousang"] = "刘备记得：回到楼桑村，在那棵桑树下站了一会儿",
+
+            // ---------- sq.lb1.L4.zhuo 卢门：灵位前的字 (涿郡, 192–193) ----------
+            ["dlg.lb1.L4.guard"] = "卢尚书家挂白了。",
+            ["dlg.lb1.lu_yu.N6.1"] = "您是……刘玄德？家父的学生。请进，只是家里没有好茶。",
+            ["dlg.lb1.lu_yu.N6.2"] = "家父在上谷山中过世。遗命葬于土穴，不用棺椁，只裹一层单帛。",
+            ["dlg.lb1.lu_yu.N6.3"] = "关外的路不通，我们去不了。只能在堂上设个灵位。",
+            ["dlg.lb1.lu_yu.N6.4"] = "两位兄长都殁了。嫂嫂带着侄儿，家里只剩毓一个男丁。毓今年十岁。",
+            ["dlg.lb1.lu_sao.N6.1"] = "小叔每天先分粥，分完了才吃。他吃的那一碗，最稀。",
+            ["dlg.lb1.lu_sao.N7.1"] = "刘君，孩子面前我不哭。您也别说可怜的话，他听不得。",
+            ["dlg.lb1.L4.rice.ask"] = "（行囊里还有军粮。）",
+            ["dlg.lb1.L4.rice.give"] = "留下三份军粮",
+            ["dlg.lb1.L4.rice.not"] = "什么也不说",
+            ["dlg.lb1.L4.rice.demur"] = "家父说，不受无名之食。",
+            ["dlg.lb1.L4.rice.named"] = "这是学生给先生家的，有名。",
+            ["dlg.lb1.lu_yu.N6.rub.1"] = "这片简……是家父批过的。‘之’字最后一笔往上挑。是家父的字。",
+            ["dlg.lb1.lu_yu.N6.rub.0"] = "这是太学的石经？家父说过，他在东观校过这些经。",
+            ["dlg.lb1.L4.rub.ask"] = "（石经摹本……）",
+            ["dlg.lb1.L4.rub.give"] = "留给卢毓",
+            ["dlg.lb1.L4.rub.keep"] = "自己留着",
+            ["dlg.lb1.lu_yu.N6.gave.1"] = "毓会把它挂在灵位旁边。等毓读懂了这一段，再告诉您。",
+            ["dlg.lb1.lu_yu.N6.kept.1"] = "您留着好。家父校过的东西，在您那里，就还在外面走着。",
+            ["dlg.lb1.L4.rub.keepsake"] = "信物“石经摹本”留在身边——绑卢植。",
+            ["dlg.lb1.lu_yu.N7.1"] = "今年北边又打起来了，米价一斗……毓记不清了，反正是买不起。",
+            ["dlg.lb1.lu_yu.N7.rice"] = "上回您送的粮，嫂嫂省着吃到了开春。毓记着。",
+            ["mem.lu_yu.rice.given"] = "卢毓记得：家父过世那年，刘玄德留下了三份军粮",
+            ["mem.lu_yu.rubbing.gave_rubbing"] = "卢毓记得：刘玄德把石经摹本留在了家父的灵位旁",
+            ["mem.lu_yu.rubbing.kept_rubbing"] = "卢毓记得：家父校过的东西，在刘玄德那里还走着",
         };
     }
 }

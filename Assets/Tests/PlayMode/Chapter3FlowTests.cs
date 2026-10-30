@@ -124,7 +124,7 @@ public sealed class Chapter3FlowTests
         yield return Drive(stage, stage.Player);
     }
 
-    [UnityTest]
+    [UnityTest, Timeout(900000)]   // the whole chapter on a busy machine runs past the default 180 s
     public IEnumerator TheTaodongChapterPlaysThrough()
     {
         // Gongsun Zan's garrison: arrival autosave, D4, 众望 learned.

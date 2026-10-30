@@ -44,30 +44,60 @@ namespace ThreeKingdoms.Gameplay.Story
             return null;
         }
 
+        // The realm-map courier at each walkable home (RegionTravel); in the regions he is FieldScriptsRegions'.
+        static bool HomeCourier(FieldStoryController c, string id) => id == FieldScriptsRegions.Courier && !FieldScriptsRegions.Mine(c);
+
         // Null when the person is not a side-quest person here (the scene's own scripts decide).
         public static bool? Present(FieldStoryController c, string id) =>
-            SideQuestsEarly.Mine(c) ? SideQuestsEarly.Present(c, id)
+            HomeCourier(c, id) ? RegionTravel.Allowed(c.Run.Chapter2)
+            : SideQuestsEarly.Mine(c) ? SideQuestsEarly.Present(c, id)
             : SideQuestsR5a.Mine(c) ? SideQuestsR5a.Present(c, id)
             : SideQuestsR4.Mine(c) ? SideQuestsR4.Present(c, id)
-            : SideQuestsR8.Mine(c) ? SideQuestsR8.Present(c, id) : null;
+            : SideQuestsR8.Mine(c) ? SideQuestsR8.Present(c, id)
+            : SideQuestsR5b.Mine(c) ? SideQuestsR5b.Present(c, id)
+            : SideQuestsR3.Mine(c) ? SideQuestsR3.Present(c, id)
+            : SideQuestsR6.Mine(c) ? SideQuestsR6.Present(c, id)
+            : SideQuestsR7.Mine(c) ? SideQuestsR7.Present(c, id)
+            : SideQuestsR2.Mine(c) ? SideQuestsR2.Present(c, id)
+            : SideQuestsR5aWild.Mine(c) ? SideQuestsR5aWild.Present(c, id) : null;
 
         public static string Prompt(FieldStoryController c, string id) =>
-            SideQuestsEarly.Mine(c) ? SideQuestsEarly.Prompt(c, id)
+            HomeCourier(c, id) ? "raw:[确认] 与驿卒交谈（天下图）"
+            : SideQuestsEarly.Mine(c) ? SideQuestsEarly.Prompt(c, id)
             : SideQuestsR5a.Mine(c) ? SideQuestsR5a.Prompt(c, id)
             : SideQuestsR4.Mine(c) ? SideQuestsR4.Prompt(c, id)
-            : SideQuestsR8.Mine(c) ? SideQuestsR8.Prompt(c, id) : null;
+            : SideQuestsR8.Mine(c) ? SideQuestsR8.Prompt(c, id)
+            : SideQuestsR5b.Mine(c) ? SideQuestsR5b.Prompt(c, id)
+            : SideQuestsR3.Mine(c) ? SideQuestsR3.Prompt(c, id)
+            : SideQuestsR6.Mine(c) ? SideQuestsR6.Prompt(c, id)
+            : SideQuestsR7.Mine(c) ? SideQuestsR7.Prompt(c, id)
+            : SideQuestsR2.Mine(c) ? SideQuestsR2.Prompt(c, id)
+            : SideQuestsR5aWild.Mine(c) ? SideQuestsR5aWild.Prompt(c, id) : null;
 
         public static bool Marked(FieldStoryController c, string id) =>
             SideQuestsEarly.Mine(c) ? SideQuestsEarly.Marked(c, id)
             : SideQuestsR5a.Mine(c) ? SideQuestsR5a.Marked(c, id)
             : SideQuestsR4.Mine(c) ? SideQuestsR4.Marked(c, id)
-            : SideQuestsR8.Mine(c) && SideQuestsR8.Marked(c, id);
+            : SideQuestsR8.Mine(c) ? SideQuestsR8.Marked(c, id)
+            : SideQuestsR5b.Mine(c) ? SideQuestsR5b.Marked(c, id)
+            : SideQuestsR3.Mine(c) ? SideQuestsR3.Marked(c, id)
+            : SideQuestsR6.Mine(c) ? SideQuestsR6.Marked(c, id)
+            : SideQuestsR7.Mine(c) ? SideQuestsR7.Marked(c, id)
+            : SideQuestsR2.Mine(c) ? SideQuestsR2.Marked(c, id)
+            : SideQuestsR5aWild.Mine(c) && SideQuestsR5aWild.Marked(c, id);
 
         public static IEnumerable<StageStep> Talk(FieldStoryController c, string id) =>
-            SideQuestsEarly.Mine(c) ? SideQuestsEarly.Talk(c, id)
+            HomeCourier(c, id) ? RegionTravel.Courier(c, id)
+            : SideQuestsEarly.Mine(c) ? SideQuestsEarly.Talk(c, id)
             : SideQuestsR5a.Mine(c) ? SideQuestsR5a.Talk(c, id)
             : SideQuestsR4.Mine(c) ? SideQuestsR4.Talk(c, id)
-            : SideQuestsR8.Mine(c) ? SideQuestsR8.Talk(c, id) : null;
+            : SideQuestsR8.Mine(c) ? SideQuestsR8.Talk(c, id)
+            : SideQuestsR5b.Mine(c) ? SideQuestsR5b.Talk(c, id)
+            : SideQuestsR3.Mine(c) ? SideQuestsR3.Talk(c, id)
+            : SideQuestsR6.Mine(c) ? SideQuestsR6.Talk(c, id)
+            : SideQuestsR7.Mine(c) ? SideQuestsR7.Talk(c, id)
+            : SideQuestsR2.Mine(c) ? SideQuestsR2.Talk(c, id)
+            : SideQuestsR5aWild.Mine(c) ? SideQuestsR5aWild.Talk(c, id) : null;
 
         // Played after the scene's own arrival steps.
         public static IEnumerable<StageStep> OnArrive(FieldStoryController c) =>

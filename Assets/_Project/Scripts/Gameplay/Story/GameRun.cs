@@ -36,7 +36,14 @@ namespace ThreeKingdoms.Gameplay.Story
         public const string Chapter = "第一章　涿郡起兵";
         // Walkable open regions (chapter 1 art probe, 2026-10-24): region id → scene.
         public static readonly System.Collections.Generic.IReadOnlyDictionary<string, string> RegionScenes =
-            new System.Collections.Generic.Dictionary<string, string> { [Chapter1Chronicle.R4] = "Bohai_Plain" };
+            new System.Collections.Generic.Dictionary<string, string>
+            {
+                [Chapter1Chronicle.R4] = "Bohai_Plain",
+                // Chapter one's other open regions (RegionTravel): a save there resumes at the post station.
+                [Chapter1Chronicle.R1] = "Region_R1", [Chapter1Chronicle.R2] = "Zhongshan_Region", [Chapter1Chronicle.R3] = "Region_R3",
+                [Chapter1Chronicle.R5a] = "Region_R5A", [Chapter1Chronicle.R5b] = "Region_R5B", [Chapter1Chronicle.R6] = "Region_R6",
+                [Chapter1Chronicle.R7] = "Region_R7", [Chapter1Chronicle.R8] = "Region_R8",
+            };
 
         public enum Arrival { NewGame, ReturnFromBattle, AtTavern, FromTavernInside, AtSouthGate }
 
@@ -209,6 +216,7 @@ namespace ThreeKingdoms.Gameplay.Story
             {
                 if (!RegionScenes.TryGetValue(restored.Location.Substring(SaveData.RegionPrefix.Length), out string scene))
                 { error = $"区域 {restored.Location} 还没有场景"; Current = null; return false; }
+                if (scene != BohaiScene) RegionPortal.SetArrival(RegionTravel.PostArrival, Vector3.forward);
                 LoadScene(scene);
             }
             else LoadScene(SceneFor(restored.Location));

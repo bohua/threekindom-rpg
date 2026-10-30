@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Jrpg;
 using ThreeKingdoms.Gameplay;
+using ThreeKingdoms.Gameplay.Story;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -65,8 +66,8 @@ namespace ThreeKingdoms.EditorTools
             public float portalX, portalZ, portalW, portalD;   // the portal box in the place's frame (default: its south edge, 6 x 2.5 m)
             public float[] portalFacing = new float[0];       // the way the party faces on arrival in the other scene
             public int[] portalSteps = new int[0];            // chapter steps (ChapterStep) the way is open in; empty = always
-            public string gates;                              // walled places: sides with a gate, e.g. "S,W" (default "S")
             public string arrivalName;      // the spot in front of the place, named so a portal from the hub scene finds it
+            public string gates;                              // walled places: sides with a gate, e.g. "S,W" (default "S")
         }
 
         [System.Serializable] public sealed class RegionWall
@@ -243,6 +244,8 @@ namespace ThreeKingdoms.EditorTools
             AssetDatabase.SaveAssets();
             if (id == "R1") ChapterFieldBuilder.BuildR1Story();   // the side quests' people and controller over the map (npc-sidequests)
             Debug.Log($"REGION_GREYBOX_BUILT {id}");
+            // The story layer (travel courier, side-quest people) goes back on after every rebuild.
+            if (ChapterFieldBuilder.RegionPlace(id) is FieldStoryController.Place place) ChapterFieldBuilder.BuildRegionStory(place, scenePath);
         }
 
         // ---------- heights ----------
@@ -528,19 +531,7 @@ namespace ThreeKingdoms.EditorTools
                     r.shadowCastingMode = ShadowCastingMode.On;
                     go.AddComponent<MeshCollider>().sharedMesh = mesh;
                 }
-            if (painted)
-            {
-                // A skirt of the same ground a long way out, so the region's edge is not a cliff into the void.
-                var skirt = GameObject.CreatePrimitive(PrimitiveType.Plane);
-                Object.DestroyImmediate(skirt.GetComponent<Collider>());
-                skirt.name = "Outer ground";
-                skirt.transform.SetParent(g, false);
-                skirt.transform.position = new Vector3(data.width / 2f, -6f, data.height / 2f);   // below every river bed
-                skirt.transform.localScale = new Vector3(data.width / 10f * 4f, 1, data.height / 10f * 4f);
-                skirt.GetComponent<MeshRenderer>().sharedMaterial = Mat("outer ground", new Color(0.56f, 0.62f, 0.44f));
-                Beyond(g, mat);
-            }
-            else
+            if (painted) { PlainSkirt(g); Beyond(g, mat); return; }
             // A skirt of the same ground 320 m out, at the border's own heights and in the same material, so the
             // region's edge reads as more of the land rather than a flat pale plane (not walkable: the edge walls stop
             // the party first).
@@ -581,6 +572,18 @@ namespace ThreeKingdoms.EditorTools
                 }
                 go.AddComponent<MeshRenderer>().sharedMaterial = outer;
             }
+        }
+
+        // A skirt of the same ground a long way out, so the region's edge is not a cliff into the void (painted regions).
+        static void PlainSkirt(Transform g)
+        {
+            var skirt = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            Object.DestroyImmediate(skirt.GetComponent<Collider>());
+            skirt.name = "Outer ground";
+            skirt.transform.SetParent(g, false);
+            skirt.transform.position = new Vector3(data.width / 2f, -6f, data.height / 2f);   // below every river bed
+            skirt.transform.localScale = new Vector3(data.width / 10f * 4f, 1, data.height / 10f * 4f);
+            skirt.GetComponent<MeshRenderer>().sharedMaterial = Mat("outer ground", new Color(0.56f, 0.62f, 0.44f));
         }
 
         // The country past the region's edge (user 2026-10-30: the edges showed an empty plain): the edge ground carries
@@ -957,9 +960,9 @@ namespace ThreeKingdoms.EditorTools
                     case "explore":
                     default:
                         // A low pad the size of the place and a marker post, so the spot reads without blocking it.
-                        if (painted || splat) break;
-                        Box(g, "Pad", new Vector3(0, -0.1f, 0), new Vector3(Mathf.Min(w, 16f), 0.3f, Mathf.Min(d, 16f)), 0.62f, 0f, solid: false);
-                        Box(g, "Post", Vector3.zero, new Vector3(0.4f, 3f, 0.4f), 0.4f);   // painted ground: the label marks it
+                        if (painted) break;   // a painted region's ground and wild set already show the place
+                        if (!splat) Box(g, "Pad", new Vector3(0, -0.1f, 0), new Vector3(Mathf.Min(w, 16f), 0.3f, Mathf.Min(d, 16f)), 0.62f, 0f, solid: false);
+                        if (!splat) Box(g, "Post", Vector3.zero, new Vector3(0.4f, 3f, 0.4f), 0.4f);   // painted ground: the label marks it
                         break;
                 }
             Label(labels, p.name, g.position + new Vector3(0, Mathf.Max(8f, d * 0.12f), 0));

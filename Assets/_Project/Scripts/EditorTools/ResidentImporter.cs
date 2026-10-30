@@ -140,10 +140,26 @@ namespace ThreeKingdoms.EditorTools
         };
         const string Chapter5Source = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v05-characters-sprites";
 
+        // Chapter one's side-quest people (Codex art/ch1-npc-sprites after the approved design art/ch1-npc-concept).
+        public static readonly (string Id, string Key, string Prefix, bool Walks, string StandIn)[] Chapter1Side =
+        {
+            ("G01", "NpcCh1GuSou", "CH1_GU_SOU", false, "N09"),
+            ("G02", "NpcCh1AHe", "CH1_A_HE", false, "N10"),
+            ("G03", "NpcCh1ZhangShiping", "CH1_ZHANG_SHIPING", false, "N20"),
+            ("G04", "NpcCh1SuShuang", "CH1_SU_SHUANG", false, "N20"),
+            ("G05", "NpcCh1LuYu", "CH1_LU_YU", false, "N10"),
+            ("G06", "NpcCh1YingShao", "CH1_YING_SHAO", false, "N03"),
+            ("G07", "NpcCh1ZhengXuan", "CH1_ZHENG_XUAN", false, "N09"),
+            ("G08", "NpcCh1DianWei", "CH1_DIAN_WEI", false, "N12"),
+            ("G09", "NpcCh1HuaTuo", "CH1_HUA_TUO", false, "N09"),
+            ("G10", "NpcCh1ZhangLiao", "CH1_ZHANG_LIAO", false, "N01"),
+        };
+        const string Chapter1SideSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\ch1-npc-sprites";
+
         // A 0.2 / 0.3 person's atlas now: their own once imported, else the stand-in resident's.
         public static string ChapterKey(string id)
         {
-            var c = Chapter2.Concat(Chapter3).Concat(Chapter4).Concat(Chapter5).First(x => x.Id == id);
+            var c = Chapter2.Concat(Chapter3).Concat(Chapter4).Concat(Chapter5).Concat(Chapter1Side).First(x => x.Id == id);
             return File.Exists(HD2DSampleBuilder.AtlasPath(c.Key)) ? c.Key : Residents.First(x => x.Id == c.StandIn).Key;
         }
 
@@ -177,7 +193,8 @@ namespace ThreeKingdoms.EditorTools
                 .Concat(Chapter2.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter2Source)))
                 .Concat(Chapter3.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter3Source)))
                 .Concat(Chapter4.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter4Source)))
-                .Concat(Chapter5.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter5Source)));
+                .Concat(Chapter5.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter5Source)))
+                .Concat(Chapter1Side.Select(c => (c.Key, c.Prefix, c.Walks, Dir: Chapter1SideSource)));
             foreach (var (key, prefix, walks, dir) in sheets)
             {
                 string poses = Path.Combine(dir, prefix + "_3X3.png");
