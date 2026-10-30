@@ -431,6 +431,17 @@ if sc and ground:
             if free(x, z):
                 add(model_, x, z, 0.85, 1.2, set_)
                 scatter[-1]['grove'] = name_ + model_
+    # Granite crags and small cliffs on the steepest hill ground (hubs "_scatter".crags: {set, models, count}).
+    cg = sc.get('crags')
+    if cg:
+        placed = 0
+        for _ in range(20000):
+            if placed >= cg['count']:
+                break
+            x, z = rs.uniform(6, W - 6), rs.uniform(6, D - 6)
+            if at(A, x, z) > 0.8 and rs.random() < 0.3 and free(x, z, 3):
+                add(cg['models'][int(rs.integers(0, len(cg['models'])))], x, z, 0.8, 1.35, cg['set'])
+                placed += 1
     for v in scatter:
         v.pop('grove', None)
 
@@ -451,8 +462,10 @@ for p in places:
                                 yaw=round(-(math.degrees(mid) + 90), 1), scale=1.0))
         a += step
 
+backdrop = hubs.get('_backdrop') or []   # world-placed Blender scenery beyond the edges (R1: the Yan mountains)
+
 region = dict(id=P, name=name, scene=f'Region_{P}', width=W, height=D, places=places, roads=roads, waters=waters,
-              walls=walls, ground=ground or {}, scatter=scatter, spots=[dict(name=k, x=float(v[0]), z=float(v[1])) for k, v in (hubs.get('_spots') or {}).items()], spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p])
+              walls=walls, ground=ground or {}, scatter=scatter, spots=[dict(name=k, x=float(v[0]), z=float(v[1])) for k, v in (hubs.get('_spots') or {}).items()], spawnX=sx, spawnZ=sz, openZone=[float(v) for p in zone for v in p], backdrop=backdrop)
 json.dump(region, open(os.path.join(out, 'region.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 with open(os.path.join(out, 'heights.bin'), 'wb') as f:
     f.write(H.astype('<f4').tobytes())

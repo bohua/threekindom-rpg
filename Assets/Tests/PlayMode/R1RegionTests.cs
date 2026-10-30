@@ -1,3 +1,4 @@
+using ThreeKingdoms.Core.Story;
 using System.Collections;
 using Jrpg;
 using NUnit.Framework;
@@ -41,7 +42,8 @@ public sealed class R1RegionTests
 
     static float Flat(Vector3 a, Vector3 b) => Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z));
 
-    [UnityTest]
+    // A cold editor's first load of Zhuojun_Town can take over two minutes.
+    [UnityTest, Timeout(480000)]
     public IEnumerator RegionLeadsIntoZhuojunAndBack()
     {
         GameRun.NewGame(Catalog).NextArrival = GameRun.Arrival.ReturnFromBattle;
@@ -94,5 +96,21 @@ public sealed class R1RegionTests
         var cc = Player.GetComponent<CharacterController>();
         for (int i = 0; i < 120; i++) { cc.Move(inward * 0.25f + Vector3.down * 0.2f); yield return null; }
         Assert.Greater(Flat(Player.position, mid), 5f, "walked into the river: " + Player.position);
+    }
+    // People at the wild spots after the NPC design's R1.6 wiring table (user 2026-10-29): in 190 (N4) the hunter
+    // stands at his cabin and his first line shows in the bubble; the old soldier is still at the beacon.
+    [UnityTest]
+    public IEnumerator WildSpotsHaveSomeoneToTalkTo()
+    {
+        GameRun.ForChapter(Catalog, ChapterStep.Gongsun, 0, 100);
+        SceneManager.LoadScene("Region_R1");
+        yield return WaitScene("Region_R1");
+        var hunter = GameObject.Find("Talk 猎户石大");
+        Assert.IsNotNull(hunter, "the hunter is placed");
+        Assert.IsNotNull(GameObject.Find("Talk 郝老卒").GetComponent<RegionTalk>().Current, "the old soldier is at the beacon in 190");
+        yield return WalkInto(hunter.transform.position + new Vector3(1.5f, 0.5f, -1.5f));
+        yield return null; yield return null;
+        var hud = Object.FindFirstObjectByType<ThreeKingdoms.UI.Region.RegionHud>();
+        Assert.IsTrue(hud.BubbleLines.Count > 0 && hud.BubbleLines[0].StartsWith("猎户石大：皮子要不要"), string.Join("|", hud.BubbleLines));
     }
 }

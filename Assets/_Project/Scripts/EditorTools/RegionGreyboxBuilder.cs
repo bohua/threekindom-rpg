@@ -38,6 +38,7 @@ namespace ThreeKingdoms.EditorTools
             public RegionSpot[] spots = new RegionSpot[0];
             public RegionGround ground = new RegionGround();
             public RegionScatter[] scatter = new RegionScatter[0];   // trees, reeds, rocks placed by the converter   // painted ground layers for GroundSplat (empty: the layout picture)   // named arrival points ("Spot <name>") for portals from other scenes
+            public RegionBackdrop[] backdrop = new RegionBackdrop[0];   // world-placed scenery beyond the edges (R1: the Yan mountains)
             public float spawnX, spawnZ;
             public float[] openZone = new float[0];   // x, z pairs: the part open in the earliest year, outlined on the ground
         }
@@ -49,6 +50,7 @@ namespace ThreeKingdoms.EditorTools
             public int year;
             public string model, set;       // a Blender model for it, when its hub set exists
             public bool spotBehind;         // arrival spot behind the place (a ferry, whose front is the water)
+            public RegionTalkData[] talks;  // people (or things) there to talk to (hubs "talks")
             public string wallModel;        // walled places: <wallModel>_wall_8m/_4m of the same set, the model as the gate
             public string layout;           // a hub set's own layout (Codex _checks/layout_*.json): every piece where Codex placed it
             public bool skip;               // a sub-place drawn by its hub's layout: label only
@@ -65,7 +67,12 @@ namespace ThreeKingdoms.EditorTools
             public string set, model, tower;              // Blender modules along the line (8 m pieces, a tower every few)
             public float[] skipX = new float[0];          // an x range left to a hub's own layout (R1: the Juyong pass)
         }
+        [System.Serializable] public sealed class RegionBackdrop { public string set, model; }
         [System.Serializable] public sealed class RegionSpot { public string name; public float x, z; }
+        // A resident stand-in (Zhuojun resident id) at an offset from the place, in the place's frame, with lines.
+        // A resident stand-in (Zhuojun resident id; none: an object to inspect) at an offset from the place, in the
+        // place's frame, with what is said at each chronicle node (RegionTalk.Entry).
+        [System.Serializable] public sealed class RegionTalkData { public string name, sprite; public float[] at; public int frame; public RegionTalk.Entry[] entries; }
         // A Codex set of tiling ground textures (R1: art/r1-wild-ground) and which goes on which control channel.
         [System.Serializable] public sealed class RegionScatter { public string set, model; public float x, z, yaw, scale = 1f; }
         [System.Serializable] public sealed class RegionGround { public string set, @base, r, g, b, a; public float tile = 12f; }
@@ -119,7 +126,7 @@ namespace ThreeKingdoms.EditorTools
                 if (File.Exists(Path.Combine(src, f))) File.Copy(Path.Combine(src, f), $"{dir}/{f}", true);
             AssetDatabase.Refresh();
             // Each set once: a second import would remake (and orphan) the materials already on placed pieces.
-            foreach (var set in data.places.Select(p => p.set).Concat(data.walls.Select(w => w.set)).Concat(data.scatter.Select(v => v.set)).Where(x => !string.IsNullOrEmpty(x)).Distinct())
+            foreach (var set in data.places.Select(p => p.set).Concat(data.walls.Select(w => w.set)).Concat(data.scatter.Select(v => v.set)).Concat(data.backdrop.Select(b => b.set)).Where(x => !string.IsNullOrEmpty(x)).Distinct())
                 BlenderModels.Import(set);
 
             MountedImporter.Import();
@@ -143,6 +150,38 @@ namespace ThreeKingdoms.EditorTools
             foreach (var p in data.places) Place(env, labels, spots, p);
             BarrierWalls(env);
             Scatter(env);
+            // Scenery modelled in world metres (origin at the region's origin, as the Bohai hills): not walkable, the
+            // edge walls stop the party first.
+            foreach (var b in data.backdrop)
+            {
+                var t = BlenderModels.Place(b.set, env, b.model, "Backdrop " + b.model, Vector3.zero);
+                if (!t) continue;
+                foreach (var c in t.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
+                // The raw painted grass and slope read too loud over hundreds of metres: a calmer copy of each material,
+                // as the ground layers are graded (hubs "_ground".grade).
+                var graded = new Dictionary<Material, Material>();
+                foreach (var r in t.GetComponentsInChildren<Renderer>(true))
+                {
+                    var ms = r.sharedMaterials;
+                    for (int i = 0; i < ms.Length; i++)
+                    {
+                        if (!ms[i]) continue;
+                        if (!graded.TryGetValue(ms[i], out var gm))
+                        {
+                            gm = new Material(ms[i]) { name = "backdrop " + ms[i].name };
+                            var tint = new Color(0.60f, 0.68f, 0.66f);   // calmer and a little blue with distance
+                            if (gm.HasProperty("_BaseColor")) gm.SetColor("_BaseColor", gm.GetColor("_BaseColor") * tint);
+                            if (gm.HasProperty("_Color")) gm.SetColor("_Color", gm.GetColor("_Color") * tint);
+                            string gp = $"{matDir}/backdrop {ms[i].name}.mat";
+                            if (AssetDatabase.LoadAssetAtPath<Material>(gp)) AssetDatabase.DeleteAsset(gp);
+                            AssetDatabase.CreateAsset(gm, gp);
+                            graded[ms[i]] = gm;
+                        }
+                        ms[i] = gm;
+                    }
+                    r.sharedMaterials = ms;
+                }
+            }
             foreach (var sp in data.spots)
             {
                 var at = new GameObject("Spot " + sp.name).transform;
@@ -653,6 +692,24 @@ namespace ThreeKingdoms.EditorTools
                         break;
                 }
             Label(labels, p.name, g.position + new Vector3(0, Mathf.Max(8f, d * 0.12f), 0));
+            foreach (var td in p.talks ?? new RegionTalkData[0])
+            {
+                var off = td.at != null && td.at.Length >= 2 ? new Vector3(td.at[0], 0, td.at[1]) : new Vector3(0, 0, -(d / 2f + 1f));
+                var at = g.position + g.rotation * off;
+                at.y = H(at.x, at.z);
+                var holder = new GameObject("Talk " + td.name);
+                holder.transform.SetParent(g, true);
+                holder.transform.position = at;
+                var talk = holder.AddComponent<RegionTalk>();
+                talk.Entries = td.entries ?? new RegionTalk.Entry[0];
+                if (!string.IsNullOrEmpty(td.sprite))
+                {
+                    var npc = HD2DSampleBuilder.Character(td.name, ResidentImporter.KeyFor(td.sprite), at, td.frame, isPlayer: false);
+                    npc.transform.SetParent(holder.transform, true);
+                    talk.Body = npc;
+                }
+                else talk.BubbleHeight = 1.8f;
+            }
             if (modelled && !p.skip)
             {
                 // A disabled review shot of a modelled place (-camera "Review <id>"), from the south and above.
