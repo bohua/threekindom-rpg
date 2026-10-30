@@ -108,6 +108,9 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/Region_R8.unity
     guid: ea119d073eed12148a12ee66912b1366
   - enabled: 1
+    path: Assets/_Project/Scenes/Region_R1.unity
+    guid: d857612f57d05f84981d251299d0a23d
+  - enabled: 1
     path: Assets/_Project/Scenes/Story_Stage.unity
     guid: bd21b4bd674b15f4fa3e4c4e622ee66a
   - enabled: 1
@@ -125,8 +128,5 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Xiapi_City.unity
     guid: 75269daf68b9fdd4d9e175ce172801e2
-  - enabled: 1
-    path: Assets/_Project/Scenes/Region_R1.unity
-    guid: d857612f57d05f84981d251299d0a23d
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
