@@ -43,6 +43,7 @@ namespace ThreeKingdoms.UI.Story
         readonly Label titleName, titleSites;
         readonly List<Region> regions = new List<Region>();
         readonly Sprite[] marchFrames, wagonFrames, dustFrames;
+        readonly Facing columnFacing, wagonFacing;
         readonly VisualElement wagon, dust;
         readonly TianxiaArrow arrow;
         readonly Vector2[] route;   // map_base pixels
@@ -91,11 +92,13 @@ namespace ThreeKingdoms.UI.Story
             // Liu Bei's column (Codex art/tianxia-liu-march; the imperial column of the prologue until it is in), the
             // baggage wagon behind it and the dust they raise.
             dust = Sprite(root, 120, 90);
-            wagon = Sprite(root, 180, 126);
-            column = Sprite(root, 240, 160);
+            wagon = Sprite(root, 180, 156);
+            column = Sprite(root, 240, 190);
             marchFrames = PrologueMapFx.Slice(Resources.Load<Texture2D>("Prologue/liu_army_march"), 8)
                 ?? PrologueMapFx.Slice(Resources.Load<Texture2D>("Prologue/han_army_march"), 8);
             wagonFrames = PrologueMapFx.Slice(Resources.Load<Texture2D>("Prologue/liu_wagon_march"), 8);
+            columnFacing = new Facing("liu_army", marchFrames);
+            wagonFacing = new Facing("liu_wagon", wagonFrames);
             dustFrames = PrologueMapFx.Slice(Resources.Load<Texture2D>("Prologue/march_dust"), 6)
                 ?? PrologueMapFx.Slice(Resources.Load<Texture2D>("Prologue/han_army_dust"), 6);
             columnPlate = Plate("刘备军", 22, Cyan);
@@ -146,7 +149,9 @@ namespace ThreeKingdoms.UI.Story
             d.y = 0f;
             d = d.sqrMagnitude < 1e-4f ? Vector3.forward : d.normalized;
             // High and steep behind the column: the peaks of the diorama are tall next to the plains' roads.
-            var follow = new PrologueDiorama.Pose(p - d * 3.2f + Vector3.up * 7.2f, p + d * 1.6f, 44f);
+            // From behind and to one side (a three-quarter view), so the march is seen going its way, not only its back.
+            var aside = Vector3.Cross(Vector3.up, d);
+            var follow = new PrologueDiorama.Pose(p - d * 2.4f - aside * 2.4f + Vector3.up * 7.2f, p + d * 1.4f, 44f);
             var arrive = new PrologueDiorama.Pose(b + new Vector3(0f, 7.5f, -4.8f), b, 44f);
             follow = Clear(follow, 2.8f, true);
             arrive = Clear(arrive, 3.2f, false);
@@ -171,11 +176,18 @@ namespace ThreeKingdoms.UI.Story
             float colA = Mathf.Clamp01((t - 0.06f) / 0.06f) * Mathf.Clamp01((0.95f - t) / 0.05f);
             bool moving = t > 0.18f && k < 0.999f;
             int frame = moving ? (int)(time * 8f) : 0;
-            float gap = Mathf.Min(0.9f, len * 0.08f);
+            float gap = Mathf.Min(1.5f, len * 0.12f);
             var (wagonAt, wagonDir) = arrow.At(Mathf.Max(0f, k * len - gap));
             var (dustAt, _) = arrow.At(Mathf.Max(0f, k * len - gap * 0.45f));
-            March(column, marchFrames, p, d, colA, frame);
-            March(wagon, wagonFrames, wagonAt, wagonDir, colA * (wagonFrames != null ? 1f : 0f), frame + 3);
+            March(column, columnFacing, p, d, colA, frame);
+            March(wagon, wagonFacing, wagonAt, wagonDir, colA * (wagonFrames != null ? 1f : 0f), frame + 3);
+            // Whichever stands lower on screen is nearer the camera and is drawn over the other.
+            var nearer = WagonNearer(p, wagonAt) ? wagon : column;
+            if (nearer.parent != null && nearer.parent.IndexOf(nearer) < nearer.parent.IndexOf(nearer == wagon ? column : wagon))
+            {
+                var parent = nearer.parent; int at = parent.IndexOf(nearer == wagon ? column : wagon);
+                parent.Remove(nearer); parent.Insert(at, nearer);
+            }
             March(dust, dustFrames, dustAt, d, colA * (moving ? 0.85f : 0f), (int)(time * 10f));
             FollowWorld(columnPlate, p, colA);
 
@@ -184,12 +196,21 @@ namespace ThreeKingdoms.UI.Story
             mist.style.opacity = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.88f) / 0.1f)) + Mathf.Clamp01(1f - t / 0.04f);
         }
 
+        bool WagonNearer(Vector3 columnAt, Vector3 wagonAt)
+        {
+            var c = map.Project(MapOf(columnAt), columnAt.y); var w = map.Project(MapOf(wagonAt), wagonAt.y);
+            return c.HasValue && w.HasValue && w.Value.y > c.Value.y;
+        }
+
         static VisualElement Sprite(VisualElement parent, float w, float h)
         {
             var v = new VisualElement { pickingMode = PickingMode.Ignore };
             v.style.position = Position.Absolute;
             v.style.width = w; v.style.height = h; v.style.marginLeft = -w / 2f; v.style.marginTop = -h;
             v.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(100));
+            // Sheets of different proportions (side view, the five directions) fit the box standing on its bottom.
+            v.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
+            v.style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Bottom);
             parent.Add(v);
             return v;
         }
@@ -202,6 +223,68 @@ namespace ThreeKingdoms.UI.Story
             v.style.backgroundImage = new StyleBackground(frames[frame % frames.Length]);
             var ahead = map.Project(MapOf(at + heading * 0.6f), at.y); var here = map.Project(MapOf(at), at.y);
             if (ahead.HasValue && here.HasValue) v.style.scale = new Scale(new Vector3(ahead.Value.x < here.Value.x ? -1f : 1f, 1f, 1f));
+        }
+
+        // The column or the wagon drawn the way it goes on screen (user 2026-10-30: "行军动画应该考虑前进的方向，不能总是
+        // 左右布局"): eight directions from five drawn ones (Codex art/tianxia-liu-march-dirs), the left three mirrored.
+        void March(VisualElement v, Facing facing, Vector3 at, Vector3 heading, float alpha, int frame)
+        {
+            if (!facing.Directional) { March(v, facing.Side, at, heading, alpha, frame); return; }
+            FollowWorld(v, at, alpha);
+            var ahead = map.Project(MapOf(at + heading * 0.6f), at.y); var here = map.Project(MapOf(at), at.y);
+            if (ahead.HasValue && here.HasValue)
+            {
+                var sv = ahead.Value - here.Value;   // screen fractions, y down
+                sv.x *= 16f / 9f;
+                if (sv.sqrMagnitude > 1e-8f) facing.Turn(Mathf.Atan2(-sv.y, sv.x) * Mathf.Rad2Deg);
+            }
+            var (frames, mirror) = facing.Current;
+            v.style.backgroundImage = new StyleBackground(frames[frame % frames.Length]);
+            v.style.scale = new Scale(new Vector3(mirror ? -1f : 1f, 1f, 1f));
+        }
+
+        sealed class Facing
+        {
+            // Screen directions counter-clockwise from east in 45° steps: E NE N NW W SW S SE.
+            static readonly (string sheet, bool mirror)[] Octants = { ("e", false), ("ne", false), ("n", false), ("ne", true), ("e", true), ("se", true), ("s", false), ("se", false) };
+            readonly Dictionary<string, Sprite[]> sheets = new Dictionary<string, Sprite[]>();
+            public readonly Sprite[] Side;
+            public bool Directional => sheets.ContainsKey("e") && sheets.ContainsKey("ne") && sheets.ContainsKey("n") && sheets.ContainsKey("se") && sheets.ContainsKey("s");
+            int octant = -1;
+
+            public Facing(string prefix, Sprite[] side)
+            {
+                Side = side;
+                foreach (var d in new[] { "e", "ne", "n", "se", "s", "w", "nw", "sw" })
+                {
+                    var frames = PrologueMapFx.Slice(Resources.Load<Texture2D>($"Prologue/{prefix}_{d}"), 8);
+                    if (frames != null) sheets[d] = frames;
+                }
+            }
+
+            // Angle in degrees, counter-clockwise from screen east; holds the current octant until the heading is
+            // clearly into the next one, so a road wavering near a boundary does not flicker.
+            public void Turn(float angle)
+            {
+                float a = (angle % 360f + 360f) % 360f;
+                int nearest = Mathf.RoundToInt(a / 45f) % 8;
+                if (octant < 0) { octant = nearest; return; }
+                float off = Mathf.Abs(Mathf.DeltaAngle(a, octant * 45f));
+                if (off > 22.5f + 8f) octant = nearest;
+            }
+
+            public (Sprite[] frames, bool mirror) Current
+            {
+                get
+                {
+                    // The left three are drawn too (art/tianxia-liu-march-west, the banner's 劉 reads right); mirrored
+                    // right-hand ones only stand in until they are.
+                    var (sheet, mirror) = Octants[Mathf.Max(0, octant)];
+                    string left = mirror ? (sheet == "e" ? "w" : sheet == "ne" ? "nw" : "sw") : null;
+                    if (left != null && sheets.TryGetValue(left, out var drawn)) return (drawn, false);
+                    return (sheets[sheet], mirror);
+                }
+            }
         }
 
         void FollowWorld(VisualElement v, Vector3 at, float alpha)
