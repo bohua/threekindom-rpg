@@ -118,7 +118,7 @@ namespace ThreeKingdoms.UI.Battle
                 def.Units.Add(Officer(JianYong, "JianYong", School.Ru, near + new Vector2Int(-1, 0), "舌辩", "安民"));
                 if (!xiapi) return;
                 def.Units.Add(Officer(MiZhu, "MiZhu", School.Mo, near + new Vector2Int(1, 0), "犒军", "车阵"));
-                def.Units.Add(Officer(MiFang, "ArcherSoldier", School.Mo, near + new Vector2Int(0, -1), "连射"));
+                def.Units.Add(Officer(MiFang, "MiFang", School.Mo, near + new Vector2Int(0, -1), "连射"));
                 def.Units.Add(Officer(SunQian, "SunQian", School.Ru, near + new Vector2Int(-1, -1), "筹粮", "结盟"));
             }
             TacticsUnitDef Taishi(Vector2Int pos) => Guest(TaishiCi, "TaishiCi", pos, "火矢");

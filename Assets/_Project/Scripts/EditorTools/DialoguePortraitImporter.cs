@@ -63,6 +63,9 @@ namespace ThreeKingdoms.EditorTools
             ("cao_ren", V05, "CAO_REN_PORTRAIT", true, false, 0.6f, 0.5f),
             ("cao_bao", V05, "CAO_BAO_PORTRAIT", true, false, 0.6f, 0.5f),
             ("tao_qian", @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\tao-qian-portrait", "TAO_QIAN_MAIN_PORTRAIT", true, false, 0.6f, 0.5f),
+            // Xuzhou officers who take the field (Codex art/xuzhou-officers-art, 2026-10-30)
+            ("sun_qian", @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\xuzhou-officers-art", "SUN_QIAN_PORTRAIT", true, false, 0.6f, 0.5f),
+            ("mi_fang", @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\xuzhou-officers-art", "MI_FANG_PORTRAIT", true, false, 0.6f, 0.5f),
         };
         const string V05 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v05-portraits";
         const string V04 = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\v04-portraits";
