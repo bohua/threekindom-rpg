@@ -198,6 +198,7 @@ namespace ThreeKingdoms.Gameplay.Story
             // An oath interrupted by a reload replays from the start (GDD rule 11).
             story.ToSafeState();
             ShowZouJing();
+            SetUpSidequests();   // chapter 1 NPC design: the horse merchants, Gu Sou (TownStoryController.Sidequests)
             if (story.Phase == StoryPhase.Oath) StartCoroutine(PlayOath());
             else if (Run.Chapter2.Step == ChapterStep.ZouJingOrders) StartCoroutine(PlayZouJingOrders());   // 0.2 C1
             else if (firstArrival && PlayArrivalIntro && story.Phase == StoryPhase.FindCompanions && !story.ZhangFeiJoined)
@@ -241,12 +242,14 @@ namespace ThreeKingdoms.Gameplay.Story
             if (Busy) return;
             UpdatePrompt();
             if (Prompt == null) return;
+            if (Prompt.StartsWith("gate:") && HintSmith()) return;
             if (Prompt == "notice") StartCoroutine(Run.Story.ZhangFeiJoined ? Say(NoticeRead) : MeetZhangFei());
             else if (Prompt == "tavern") StartCoroutine(EnterTavern());
             else if (Prompt == "gate:leave") StartCoroutine(LeaveZhuojun());
             else if (Prompt == "gate:locked" || Prompt == "gate:done") StartCoroutine(Say(new[] { new DialogueLine("system", Prompt) }));
             else if (Prompt == ShopPanel || Prompt == SavePanel) { Face(Prompt == ShopPanel ? Smith : Innkeeper); OpenPanel(Prompt); }
             else if (Prompt.StartsWith("npc:")) TalkToResident(Prompt.Substring(4));
+            else if (StartSide(Prompt)) { }
             else if (StartLife(Prompt)) { }
             else if (Prompt.StartsWith("gate:battle_")) ChallengeAtGate();
         }
@@ -362,6 +365,7 @@ namespace ThreeKingdoms.Gameplay.Story
                     : reason == StoryState.ReasonAllDone ? "gate:done" : "gate:locked";
             else if (Near(NoticeBoard, p)) prompt = "notice";
             else if (Near(TavernDoor, p) && story.ZhangFeiJoined && !story.GuanYuJoined) prompt = "tavern";
+            else if (SidePrompt(p) is string side) prompt = side;
             else if (LifePrompt(p) is string life) prompt = life;
             else if (Near(Smith, p)) prompt = ShopPanel;
             else if (Near(Innkeeper, p)) prompt = SavePanel;
