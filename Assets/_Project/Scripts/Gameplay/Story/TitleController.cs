@@ -17,7 +17,14 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             GameRun.Clear();
             GameRun.PrologueDue = true;
-            SceneManager.LoadScene(GameRun.TownScene);
+            // The prologue ends on the young man of Lousang (user 2026-10-30): the game opens at home in the R1 map, and
+            // he walks to Zhuojun for the notice. Builds without the R1 map open at the notice board as before.
+            if (Application.CanStreamedLevelBeLoaded(GameRun.R1Scene))
+            {
+                GameRun.NewGame(Catalog);
+                SceneManager.LoadScene(GameRun.R1Scene);
+            }
+            else SceneManager.LoadScene(GameRun.TownScene);
         }
 
         // Ok means the scene is loading; anything else leaves the file untouched and returns why.

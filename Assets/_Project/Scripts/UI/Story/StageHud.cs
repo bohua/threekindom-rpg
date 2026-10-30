@@ -98,6 +98,8 @@ namespace ThreeKingdoms.UI.Story
             cinemaHide.Add(prompt);
 
             BuildMarch();
+            // The 天下图 the marches fly over, read ahead on the story stage only (the walkable places hold no marches).
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == GameRun.StageScene) PrologueDiorama.Preload();
             // Comic panel (user 2026-10-25: the 鞭督邮 story as a 连环画): a paper-framed picture over a dimmed scene, the
             // dialogue box below it. Under everything else so lines, choices and fades stay on top.
             comic = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -234,7 +236,7 @@ namespace ThreeKingdoms.UI.Story
             if (s.Prompt != null && s.Prompt.StartsWith("raw:")) prompt.text = s.Busy ? "" : s.Prompt.Substring(4);
             foreach (var bar in letterbox) if (bar != null) bar.style.display = s.Letterbox && !cinema ? DisplayStyle.Flex : DisplayStyle.None;
             dialogue.PortraitsEnabled = true;   // user 2026-10-26: lines in the automatic scenes keep their portraits too
-            if (s.Letterbox) SceneShot();
+            if (s.Letterbox || s.Line.HasValue) SceneShot();   // -sceneShots only
             var line = s.Line;
             if (line.HasValue && !cinema && s.Card == null) dialogue.Show(line.Value.Speaker, line.Value.Line);
             else dialogue.Hide();
@@ -421,7 +423,7 @@ namespace ThreeKingdoms.UI.Story
             ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(args[i + 1], $"march-{shot.From}-{shot.To}-{marchShot++}.png"));
         }
 
-        void OnDisable() { flight?.Dispose(); flight = null; if (watched != null) watched.Remembered -= OnRemembered; watched = null; }
+        void OnDisable() { flight?.Dispose(); flight = null; PrologueDiorama.ReleasePreload(); if (watched != null) watched.Remembered -= OnRemembered; watched = null; }
 
         void OnRemembered(Memory m) => toasts.Enqueue(ChapterText.Remembered(m.Who));
 

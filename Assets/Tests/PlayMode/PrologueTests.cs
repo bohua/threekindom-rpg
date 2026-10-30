@@ -55,6 +55,41 @@ public sealed class PrologueTests
         Assert.AreEqual("notice", c.Prompt, "reading the notice is the next step");
     }
 
+    // User 2026-10-30: a new game opens in Lousang (the R1 map); after the prologue Liu Bei talks with his mother, then
+    // the goal sends him to Zhuojun for the notice.
+    [UnityTest] public IEnumerator NewGameOpensInLousangWithHisMother()
+    {
+#if UNITY_EDITOR
+        var catalog = UnityEditor.AssetDatabase.LoadAssetAtPath<ThreeKingdoms.Data.Battle.BattleCatalog>("Assets/_Project/Data/Battle/BattleCatalog.asset");
+#else
+        ThreeKingdoms.Data.Battle.BattleCatalog catalog = null;
+#endif
+        GameRun.NewGame(catalog);
+        GameRun.PrologueDue = true;
+        yield return SceneManager.LoadSceneAsync(GameRun.R1Scene);
+        yield return null;
+        var c = Object.FindFirstObjectByType<FieldStoryController>();
+        Assert.IsNotNull(c, "the R1 map has its story layer");
+        Assert.IsFalse(GameRun.PrologueDue, "taken once");
+        var mother = c.Find("ls_mother");
+        Assert.IsTrue(mother && mother.gameObject.activeInHierarchy, "his mother is at home");
+        Assert.Less(Vector3.Distance(c.Player.transform.position, mother.position), 2.5f, "Liu Bei starts beside her");
+        yield return WaitFor(() => Object.FindFirstObjectByType<StoryCinematicsView>().PrologueShot >= 0, 5f, "prologue starts");
+        StoryCinematics.SkipPrologue = true;
+        // The talk with his mother follows; move it along until control returns.
+        float deadline = Time.realtimeSinceStartup + 30f;
+        bool talked = false;
+        while (c.Busy)
+        {
+            if (c.Line.HasValue) { talked |= c.Line.Value.Speaker == "liu_bei_mu"; c.Stage.Advance(); }
+            Assert.Less(Time.realtimeSinceStartup, deadline, "the opening ends");
+            yield return null;
+        }
+        Assert.IsTrue(talked, "his mother speaks");
+        Assert.IsTrue(c.Player.InputEnabled);
+        StringAssert.Contains("涿郡", c.Objective, "the goal is the notice in Zhuojun");
+    }
+
     [UnityTest] public IEnumerator SkippingEndsItAtOnce()
     {
         GameRun.PrologueDue = true;

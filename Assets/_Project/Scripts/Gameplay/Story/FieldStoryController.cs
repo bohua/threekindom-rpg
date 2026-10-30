@@ -92,7 +92,13 @@ namespace ThreeKingdoms.Gameplay.Story
             RefreshFlags();
             ObjectiveText = () => FieldScripts.Objective(this);
             var arrival = FieldScripts.OnArrive(this);
-            if (arrival != null) Play(arrival);
+            // A new game opens here (user 2026-10-30): the prologue, then Liu Bei at home with his mother in Lousang.
+            if (Location == Place.R1 && GameRun.PrologueDue && FieldScriptsR1.InOpening(this))
+            {
+                GameRun.PrologueDue = false;
+                StartCoroutine(NewGameOpening());
+            }
+            else if (arrival != null) Play(arrival);
             if (DevTalk != null && Run.IsDevelopment) StartCoroutine(DevTalkRoutine());
             Changed?.Invoke();
         }
@@ -104,6 +110,8 @@ namespace ThreeKingdoms.Gameplay.Story
                 return GameRun.ForChapter(Catalog, ChapterStep.Xiapi, 810, 900, 2, development: true);
             if (Location == Place.Pingyuan)
                 return GameRun.ForChapter(Catalog, ChapterStep.Pingyuan, 370, 500, 2, development: true);
+            if (Location == Place.R1 && GameRun.PrologueDue)   // -scene Region_R1 -prologueShots: the new game's opening
+                return GameRun.NewGame(Catalog);
             if (Location == Place.R1)   // the R1 map opened on its own: 190, Gongsun Zan's garrison as the base (its side quests)
                 return GameRun.ForChapter(Catalog, ChapterStep.Gongsun, 210, 400, 2, development: true);
             if (FieldScriptsRegions.IsRegion(Location))   // an open region opened on its own: 191 at Pingyuan as home
@@ -249,15 +257,35 @@ namespace ThreeKingdoms.Gameplay.Story
             StartCoroutine(ReplayPrologue());
         }
 
+        IEnumerator NewGameOpening()
+        {
+            var mother = Find("ls_mother");
+            if (mother)
+            {
+                mother.gameObject.SetActive(true);
+                // In the open yard south-west of the house (her own spot is under the eaves, hidden from the camera).
+                // Placed first, so the prologue's last shot fades out onto him already at home.
+                PlaceAt(mother, Ground(mother.position + new Vector3(-4f, 0f, -5f)));
+                PlaceAt(Player.transform, Ground(mother.position + new Vector3(-1.5f, 0f, -0.6f)));
+                Face(mother);
+                var face = Player.transform.position - mother.position; face.y = 0f;
+                if (face.sqrMagnitude > 0.01f) mother.rotation = Quaternion.LookRotation(face);
+            }
+            yield return ReplayPrologue();
+            yield return PlayScene(FieldScriptsR1.Opening(this));
+        }
+
         IEnumerator ReplayPrologue()
         {
             Busy = chronicle = true;
             Prompt = null;
             SetControl(false);
             Changed?.Invoke();
+            WhiteboxLabel.Suppressed = true;
             try { yield return StoryCinematics.Prologue(); }
             finally
             {
+                WhiteboxLabel.Suppressed = false;
                 Busy = chronicle = false;
                 SetControl(true);
                 Changed?.Invoke();
@@ -381,7 +409,10 @@ namespace ThreeKingdoms.Gameplay.Story
             foreach (var f in new[] { GuanYuFollower, ZhangFeiFollower })
             {
                 if (!f) continue;
-                f.gameObject.SetActive(true);
+                // Before the brothers have joined (a new game's opening in Lousang) Liu Bei walks alone.
+                bool joined = Run == null || (f == GuanYuFollower ? Run.Story.GuanYuJoined : Run.Story.ZhangFeiJoined);
+                f.gameObject.SetActive(joined);
+                if (!joined) continue;
                 f.enabled = true;
                 f.Slot = ++slot;
                 f.Trail = trail;
@@ -392,6 +423,13 @@ namespace ThreeKingdoms.Gameplay.Story
         void SetControl(bool on) { if (Player) Player.InputEnabled = on; }
 
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0, v.z);
+
+        static Vector3 Ground(Vector3 at)
+        {
+            foreach (var h in Physics.RaycastAll(at + Vector3.up * 50f, Vector3.down, 100f).OrderBy(h => h.distance))
+                if (!h.collider.isTrigger && !h.collider.GetComponentInParent<CharacterController>()) return h.point;
+            return at;
+        }
 
         static void PlaceAt(Transform who, Vector3 at)
         {

@@ -11,6 +11,7 @@ namespace ThreeKingdoms.Gameplay
         public float MaxDistance = 220f;
 
         public static bool Hidden;
+        public static bool Suppressed;   // under a full-screen cinematic (the prologue)
         static GUIStyle style, shadow;
         static int lastToggleFrame = -1;
 
@@ -25,7 +26,7 @@ namespace ThreeKingdoms.Gameplay
 
         void OnGUI()
         {
-            if (Hidden || string.IsNullOrEmpty(Text)) return;
+            if (Hidden || Suppressed || string.IsNullOrEmpty(Text)) return;
             var cam = Camera.main;
             if (!cam) return;
             Vector3 sp = cam.WorldToScreenPoint(transform.position + Vector3.up * Height);

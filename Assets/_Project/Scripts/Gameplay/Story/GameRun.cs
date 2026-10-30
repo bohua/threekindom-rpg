@@ -17,6 +17,7 @@ namespace ThreeKingdoms.Gameplay.Story
     {
         public const string TitleScene = "Title";
         public const string TownScene = "Zhuojun_Town";
+        public const string R1Scene = "Region_R1";   // 涿蓟: a new game opens in Lousang (user 2026-10-30)
         public const string TavernScene = "Zhuojun_Tavern";   // indoor scene where Guan Yu joins (user 2026-10-22)
         public static readonly string[] BattleScenes = { "Battle_Tutorial01", "Battle_Tutorial02", "Battle_Tutorial03" };
         // 0.2 黄巾篇 (V02_HUANGJIN_PLAN §3): Lu Zhi's camp and Anxi county to walk in, the story stage for scenes that are

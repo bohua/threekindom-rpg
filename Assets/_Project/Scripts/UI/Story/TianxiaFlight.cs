@@ -393,8 +393,20 @@ namespace ThreeKingdoms.UI.Story
                     foreach (Match p in Regex.Matches(m.Groups[3].Value, @"\[\s*([0-9.]+)\s*,\s*([0-9.]+)\s*\]"))
                         pts.Add(new Vector2(float.Parse(p.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture), float.Parse(p.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture)));
                     if (back) pts.Reverse();
-                    // The road runs hub to hub; the march runs place to place.
-                    if (pts.Count >= 2) { pts[0] = a; pts[pts.Count - 1] = b; return pts.ToArray(); }
+                    // The road runs hub to hub; the march runs place to place: keep the road's points that lie between the two
+                    // places along the way (a place beyond a hub, such as 都昌 past 临淄, would otherwise make it double back).
+                    var dirAB = (b - a).normalized;
+                    float lenAB = Vector2.Distance(a, b);
+                    var road = new List<Vector2> { a };
+                    float last = 0f;
+                    foreach (var q in pts)
+                    {
+                        float along = Vector2.Dot(q - a, dirAB);
+                        if (along <= last + 2f || along >= lenAB - 2f) continue;
+                        road.Add(q); last = along;
+                    }
+                    road.Add(b);
+                    if (road.Count >= 2) return road.ToArray();
                 }
             }
             var n = new Vector2(-(b - a).y, (b - a).x).normalized * Vector2.Distance(a, b) * 0.08f;
