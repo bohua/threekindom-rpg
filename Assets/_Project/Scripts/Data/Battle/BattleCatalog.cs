@@ -27,8 +27,7 @@ namespace ThreeKingdoms.Data.Battle
             if (!Config || !Troops || !Ration) throw new InvalidOperationException($"{name}: 缺少战斗配置、兵种表或军粮。");
             var config = new BattleConfig(Config.AdvantagePercent, Config.GuardPercent, Config.MinModifierPercent, Config.MaxAttribute, Config.ExpTable);
             var troops = new TroopTable(
-                Troops.Types.Select(t => new TroopTypeSpec(t.Type, t.TroopBonus, t.DefenseBonus, t.BaseSpeed, t.PlayerUsable)),
-                Troops.Advantages.Select(a => (a.Attacker, a.Defender)));
+                Troops.Types.Select(t => new TroopTypeSpec(t.Type, t.TroopBonus, t.DefenseBonus, t.BaseSpeed, t.PlayerUsable, t.Move, t.Range)));
             foreach (TroopType t in Enum.GetValues(typeof(TroopType))) troops.Get(t);   // every type must have numbers
 
             var skills = new Dictionary<BattleSkillDefinition, SkillSpec>();
@@ -47,7 +46,7 @@ namespace ThreeKingdoms.Data.Battle
                 if (generals.TryGetValue(def, out var spec)) return spec;
                 var unlocks = def.Skills.Select(s => new SkillUnlock(s.Level, Skill(s.Skill, def.name)));
                 spec = new GeneralSpec(def.Id, def.DisplayName, def.Troop, def.Force, def.Command, def.Intellect,
-                    def.ForceGrowth, def.CommandGrowth, def.IntellectGrowth, unlocks);
+                    def.ForceGrowth, def.CommandGrowth, def.IntellectGrowth, unlocks, def.Element);
                 generals[def] = spec;
                 return spec;
             }

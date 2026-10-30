@@ -47,7 +47,7 @@
 #   Each entry: name, status, source, referenced_by[], attributes{}, added, revised
 
 version: 1
-last_updated: ""
+last_updated: "2026-10-27"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 # Named game-world objects: enemies, NPCs, characters, factions, bosses.
@@ -58,7 +58,82 @@ last_updated: ""
 # Attribute fields: any key stats that could appear in another GDD
 #   (health, damage, drops, faction, etc.)
 
-entities: []
+entities:
+  - name: liu_bei
+    status: active
+    source: design/balance/GENERALS_ROSTER.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      troop: 步兵
+      force_command_intellect: "68/78/76"
+      school: 儒·水
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: guan_yu
+    status: active
+    source: design/balance/GENERALS_ROSTER.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      troop: 骑兵
+      force_command_intellect: "96/88/70"
+      school: 兵·火
+      mount: 枣红马（设定）
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: zhang_fei
+    status: active
+    source: design/balance/GENERALS_ROSTER.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      troop: 骑兵
+      force_command_intellect: "97/78/40"
+      school: 法·土
+      mount: 乌云踏雪
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: zhao_yun
+    status: active
+    source: design/balance/GENERALS_ROSTER.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      troop: 骑兵
+      force_command_intellect: "93/86/74"
+      school: 兵·火
+      mount: 照夜玉狮子
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: cao_cao
+    status: active
+    source: design/balance/GENERALS_ROSTER.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      troop: 骑兵
+      force_command_intellect: "78/96/94"
+      mount: 绝影（第一篇章）
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: lu_bu
+    status: active
+    source: design/balance/GENERALS_ROSTER.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      troop: 骑兵
+      force_command_intellect: "100/88/25"
+      floor: 0.5
+    added: 2026-10-27
+    revised: 2026-10-27
 
 # Example (remove when first real entry is added):
 #
@@ -116,7 +191,67 @@ items: []
 #   output_range[min, max], added
 # Optional: expression (the actual formula), notes
 
-formulas: []
+formulas:
+  - name: derived_stats
+    status: active
+    source: design/balance/BALANCE_MODEL_v1.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      max_troops: "80 + 16×等级 + 兵种修正 + 升阶×10 + 装备"
+      physical_attack: "10 + ⌊武÷2⌋ + 4×(等级−1) + 装备"
+      physical_defense: "5 + ⌊统÷3⌋ + 2×(等级−1) + 兵种修正 + 升阶×2 + 装备"
+      strategy_attack: "10 + ⌊智÷2⌋ + 4×(等级−1)"
+      strategy_defense: "5 + ⌊智÷3⌋ + 2×(等级−1)"
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: at_delay
+    status: active
+    source: design/balance/BALANCE_MODEL_v1.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      expression: "动作量 × 16 ÷ (速度 + 10)"
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: matchup
+    status: active
+    source: design/balance/BALANCE_MODEL_v1.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      expression: "clamp(1 + 0.3·压制 + Σ兵种特长 + 0.2·五行, 0.7, 1.6)；策略只吃五行"
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: strategy_points
+    status: active
+    source: design/balance/BALANCE_MODEL_v1.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      max: "20 + ⌊智÷2⌋（军师 +10/15/20，巫祝 +15）"
+      regen_per_turn: "⌊智÷20⌋"
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: morale
+    status: active
+    source: design/balance/BALANCE_MODEL_v1.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      start: 30
+      attack_hit: "5 + ⌊武÷10⌋"
+      technique_hit: "减半"
+      taken: 6
+      strategy_cast: 4
+      kill: 10
+    added: 2026-10-27
+    revised: 2026-10-27
 
 # Example:
 #
@@ -149,7 +284,67 @@ formulas: []
 #
 # Required fields: name, status, source, referenced_by, value, unit, added
 
-constants: []
+constants:
+  - name: troop_rank_levels
+    status: active
+    source: design/balance/BALANCE_MODEL_v1.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      value: "1 / 10 / 20"
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: overflow_cap_tier1
+    status: active
+    source: design/balance/BALANCE_MODEL_v1.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      value: 2
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: overflow_cap_tier23
+    status: active
+    source: design/balance/BALANCE_MODEL_v1.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      value: 5
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: surplus_cast_cut
+    status: active
+    source: design/balance/BALANCE_MODEL_v1.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      value: "5 AT/点，≤3 点"
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: big_technique_threshold
+    status: active
+    source: design/balance/BALANCE_MODEL_v1.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      value: 3
+    added: 2026-10-27
+    revised: 2026-10-27
+  - name: exp_v05
+    status: active
+    source: design/balance/BALANCE_MODEL_v1.md
+    referenced_by:
+      - design/gdd/bingshu-system.md
+      - design/balance/GENERALS_ROSTER.md
+    attributes:
+      value: "170 / 190 / 210 / 140"
+    added: 2026-10-27
+    revised: 2026-10-27
 
 # Example:
 #

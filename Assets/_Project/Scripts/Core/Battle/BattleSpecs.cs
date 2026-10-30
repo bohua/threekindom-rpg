@@ -13,19 +13,25 @@ namespace ThreeKingdoms.Core.Battle
         public int DefenseBonus { get; }
         public int BaseSpeed { get; }
         public bool PlayerUsable { get; }
+        public int Move { get; }
+        public int Range { get; }
+        public TroopClass Class => TroopRules.ClassOf(Type);
 
-        public TroopTypeSpec(TroopType type, int troopBonus, int defenseBonus, int baseSpeed, bool playerUsable)
+        // move / range 0 = the type's default (TroopRules).
+        public TroopTypeSpec(TroopType type, int troopBonus, int defenseBonus, int baseSpeed, bool playerUsable, int move = 0, int range = 0)
         {
             Type = type; TroopBonus = troopBonus; DefenseBonus = defenseBonus; BaseSpeed = baseSpeed; PlayerUsable = playerUsable;
+            Move = move > 0 ? move : TroopRules.DefaultMove(type);
+            Range = range > 0 ? range : TroopRules.DefaultRange(type);
         }
     }
 
+    // Per-type numbers; the matchups are rules (TroopRules), not pairs any more (BALANCE_MODEL_v1 §3.5: 压制 + 特长).
     public sealed class TroopTable
     {
         readonly Dictionary<TroopType, TroopTypeSpec> types;
-        readonly HashSet<(TroopType, TroopType)> advantages;
 
-        public TroopTable(IEnumerable<TroopTypeSpec> entries, IEnumerable<(TroopType attacker, TroopType defender)> advantagePairs)
+        public TroopTable(IEnumerable<TroopTypeSpec> entries)
         {
             types = new Dictionary<TroopType, TroopTypeSpec>();
             foreach (var e in entries)
@@ -33,13 +39,13 @@ namespace ThreeKingdoms.Core.Battle
                 if (types.ContainsKey(e.Type)) throw new ArgumentException($"兵种 {e.Type} 重复定义。");
                 types.Add(e.Type, e);
             }
-            advantages = new HashSet<(TroopType, TroopType)>(advantagePairs);
         }
 
         public TroopTypeSpec Get(TroopType type) =>
             types.TryGetValue(type, out var spec) ? spec : throw new KeyNotFoundException($"兵种表缺少 {type}。");
 
-        public bool HasAdvantage(TroopType attacker, TroopType defender) => advantages.Contains((attacker, defender));
+        public int AdvantagePercent(TroopType attacker, TroopType defender) => TroopRules.RoundAttackPercent(attacker, defender);
+        public bool HasAdvantage(TroopType attacker, TroopType defender) => AdvantagePercent(attacker, defender) > 100;
     }
 
     public sealed class BattleConfig
@@ -112,15 +118,18 @@ namespace ThreeKingdoms.Core.Battle
         public int CommandGrowth { get; }
         public int IntellectGrowth { get; }
         public IReadOnlyList<SkillUnlock> Skills { get; }
+        public UnitElement Element { get; }   // 单位五行; None = the school's leaning
 
+        // Attributes are fixed (user 2026-10-27): the growth arguments are kept for old call sites and ignored by the formulas.
         public GeneralSpec(string id, string displayName, TroopType troop, int force, int command, int intellect,
-            int forceGrowth = 0, int commandGrowth = 0, int intellectGrowth = 0, IEnumerable<SkillUnlock> skills = null)
+            int forceGrowth = 0, int commandGrowth = 0, int intellectGrowth = 0, IEnumerable<SkillUnlock> skills = null, UnitElement element = UnitElement.None)
         {
             if (string.IsNullOrEmpty(id)) throw new ArgumentException("武将缺少 Id。");
             Id = id; DisplayName = displayName; Troop = troop;
             Force = force; Command = command; Intellect = intellect;
             ForceGrowth = forceGrowth; CommandGrowth = commandGrowth; IntellectGrowth = intellectGrowth;
             Skills = (skills ?? Enumerable.Empty<SkillUnlock>()).OrderBy(s => s.Level).ToArray();
+            Element = element;
         }
 
         // Fixed growth, auto-learned skills: every skill unlocked at or below the level, in unlock order.

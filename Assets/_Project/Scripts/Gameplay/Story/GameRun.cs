@@ -157,12 +157,18 @@ namespace ThreeKingdoms.Gameplay.Story
         public SaveSlots Slots() => Slots(Data.ManualSaveSlots);
 
         // location: SaveData.TownLocation (the tavern) or the battle id whose pre-battle state this is.
+        // 兵书书库与镶嵌（UI 层 BingshuShelf 持有并序列化；Gameplay 层只存文本，不依赖兵书规则程序集）
+        public string BingshuState { get; set; } = "";
+        public Func<string> BingshuSnapshot { get; set; }
+
         public SaveData Capture(string location)
         {
             SyncChronicle();
             var leader = Progress.Party.Count > 0 ? Progress.Party[0] : null;
-            return SaveCodec.Capture(Story, Progress.Inventory, Progress.ExpByGeneral, location, leader != null ? Progress.Level(leader) : 1,
+            var save = SaveCodec.Capture(Story, Progress.Inventory, Progress.ExpByGeneral, location, leader != null ? Progress.Level(leader) : 1,
                 ChapterTitle, Application.version, DateTime.Now, Life, Chapter2, Chronicle);
+            save.bingshu = BingshuSnapshot?.Invoke() ?? BingshuState ?? "";
+            return save;
         }
 
         public void SaveTo(string slot, string location) => Slots().Write(slot, Capture(location));
@@ -174,7 +180,7 @@ namespace ThreeKingdoms.Gameplay.Story
             if (!SaveCodec.TryRestore(save, data.Economy, out var restored, out error)) return false;
             var progress = new DevPartyProgress(data, restored.Inventory);
             progress.RestoreExp(restored.Exp);
-            Current = new GameRun(data, restored.Story, progress, false) { Life = restored.Life, Chapter2 = restored.Chapter ?? new ChapterState(), Chronicle = restored.Chronicle };
+            Current = new GameRun(data, restored.Story, progress, false) { Life = restored.Life, Chapter2 = restored.Chapter ?? new ChapterState(), Chronicle = restored.Chronicle, BingshuState = save.bingshu ?? "" };
             if (restored.Location == SaveData.TownLocation)
             {
                 Current.NextArrival = Arrival.AtTavern;

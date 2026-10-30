@@ -16,8 +16,9 @@ MonoBehaviour:
   DisplayName: "\u5415\u5E03"
   Troop: 1
   Force: 100
-  Command: 85
-  Intellect: 30
+  Command: 88
+  Intellect: 25
+  Element: 4
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

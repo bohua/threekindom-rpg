@@ -57,13 +57,13 @@ public class TacticsRulesTests
     [Test]
     public void Strategy_NeedsTotalsOnOneLine_NotAcrossLines()
     {
-        var dao = Circuits.Of(School.Dao);   // 三条三位短线：0-1-2, 0-3-4, 0-5-6
+        var dao = Circuits.Of(School.Dao);   // 中枢—巽离一线 0-1-2，外圈两段 3-4、5-6
         var slots = new Book[7];
         slots[1] = B(Element.Fire, 2); slots[3] = B(Element.Fire, 2);   // 火分在两条线上，各 2
         var lit = CircuitMath.Lit(dao, slots, 60);
         Assert.IsTrue(Has(lit, "引火"));
         Assert.IsFalse(Has(lit, "火烧营寨"));    // 合计 4 但不在同一条线
-        slots[0] = B(Element.Wood, 1); slots[2] = B(Element.Fire, 2);   // 中枢（锁木）计入每条线：火4、木2
+        slots[0] = B(Element.Wood, 1); slots[2] = B(Element.Fire, 2);   // 中枢（锁木）只在第一条线上：火4、木2
         lit = CircuitMath.Lit(dao, slots, 60);
         Assert.IsTrue(Has(lit, "火烧营寨"));
     }
@@ -78,7 +78,9 @@ public class TacticsRulesTests
         Assert.AreEqual(1f, l1.PowerMul, 1e-4);
         slots[2] = B(Element.Fire, 3); slots[4] = B(Element.Fire, 3); slots[1] = B(Element.Fire, 3);   // 火 2+4+4+4=14
         var l2 = CircuitMath.Lit(bing, slots, 100).First(x => x.Def.Name == "引火");
-        Assert.AreEqual(1f + CircuitMath.OverflowStep * CircuitMath.OverflowCap, l2.PowerMul, 1e-4);
+        // 主稿 v1.3 §3.7：一阶溢出封顶 2 点，盈余每点咏唱 −5（最多 3 点）
+        Assert.AreEqual(1f + CircuitMath.OverflowStep * CircuitMath.TierOneCap, l2.PowerMul, 1e-4);
+        Assert.AreEqual(15, l2.CastCut);
     }
 
     [Test]
@@ -86,8 +88,8 @@ public class TacticsRulesTests
     {
         var cav = new Unit { Troop = Troop.Cavalry, Atk = 60, Mat = 60 };
         var rebel = new Unit { Troop = Troop.Rebel, Element = Element.Earth, Def = 20, Mdef = 20 };
-        Assert.AreEqual(50, Combat.Damage(cav, rebel, 1f, true, Element.None) / 1.4f, 1f);
-        Assert.AreEqual(1.6f, Combat.AdvMul(cav, rebel, Element.Wood), 1e-4);   // 骑克黄巾＋木克土
+        Assert.AreEqual(50, Combat.Damage(cav, rebel, 1f, true, Element.None) / 1.3f, 1f);
+        Assert.AreEqual(1.5f, Combat.AdvMul(cav, rebel, Element.Wood), 1e-4);   // 骑压步（贼众）+0.3 ＋木克土 +0.2
         Assert.AreEqual(1.0f, Combat.AdvMul(new Unit { Troop = Troop.Infantry }, rebel, Element.Fire), 1e-4);
     }
 
@@ -207,8 +209,9 @@ public class TacticsRulesTests
         Assert.IsFalse(r.ContainsKey(new Vector2Int(2, 0)));   // 沙2＋浅滩2 超出移动力
         Assert.AreEqual(1.2f, Combat.HeightMul(3, 0), 1e-4);   // 封顶 +20%
         Assert.AreEqual(0.9f, Combat.HeightMul(0, 1), 1e-4);
-        var t = new Unit();
+        var t = new Unit { Troop = Troop.Archer };
         Assert.AreEqual(0.85f, Combat.TakenMul(t, true), 1e-4);   // 营寨
+        Assert.AreEqual(0.7f, Combat.TakenMul(new Unit { Troop = Troop.Infantry }, true), 1e-4);   // 步兵守营寨翻倍（主稿 §3.14）
         t.Defending = true;
         Assert.AreEqual(0.5f, Combat.TakenMul(t, true), 1e-4);    // 只取最强
     }
@@ -293,5 +296,71 @@ public class TacticsRulesTests
         u.AddStatus(new Status { Name = "破阵", DefMul = 0.8f, Turns = 2 });
         Assert.AreEqual(1.2f, u.DefMul, 1e-4);
         Assert.AreEqual(1.5f, u.AtkMul, 1e-4);
+    }
+
+    static Book K(Element e, int g) => new Book("功法", e, g, BookKind.Technique);
+
+    [Test]
+    public void Hub_LinksToExactlyOneDirection()
+    {
+        // 用户 2026-10-26：每个武将的命盘里，有且只有一个方位可以连到八卦中心点
+        foreach (var c in Circuits.All)
+        {
+            var neighbours = c.Lines.SelectMany(line => line.Select((s, i) => (s, i))
+                .Where(x => x.s == 0).SelectMany(x => new[] { x.i > 0 ? line[x.i - 1] : -1, x.i < line.Length - 1 ? line[x.i + 1] : -1 }))
+                .Where(n => n >= 0).Distinct().ToList();
+            Assert.AreEqual(1, neighbours.Count, c.Name);
+            Assert.AreEqual(1, c.Lines.Count(line => line.Contains(0)), c.Name + " 中枢只在一条绳路上");
+        }
+    }
+
+    [Test]
+    public void TechniqueBooks_DoNotCountForStrategies_AndStrategyBooksMakeNoTechniques()
+    {
+        var bing = Circuits.Of(School.Bing);
+        var slots = new Book[6];
+        slots[0] = K(Element.Fire, 3);
+        Assert.IsFalse(Has(CircuitMath.Lit(bing, slots, 100), "引火"), "功法书不给策略计点");
+        Assert.AreEqual("猛击", CircuitMath.Techniques(bing, slots, 100).Single().Def.Name, "一本功法自成小武技");
+        slots[0] = B(Element.Fire, 3);
+        Assert.IsTrue(Has(CircuitMath.Lit(bing, slots, 100), "引火"));
+        Assert.IsEmpty(CircuitMath.Techniques(bing, slots, 100), "策略书不出武技");
+    }
+
+    [Test]
+    public void AdjacentTechniqueBooks_MergeIntoBigTechnique_WhenSameElementReachesThree()
+    {
+        var ru = Circuits.Of(School.Ru);                 // 外圈一段 离4–巽5–震6
+        var slots = new Book[7];
+        slots[4] = K(Element.Metal, 2); slots[5] = K(Element.Metal, 1);
+        var t = CircuitMath.Techniques(ru, slots, 81);
+        Assert.AreEqual("突阵", t.Single().Def.Name, "相邻两本金系合计 3 → 大武技（主稿 §3.8 门槛 3）");
+        slots[4] = K(Element.Metal, 1); slots[5] = K(Element.Metal, 1);
+        CollectionAssert.AreEquivalent(new[] { "刺击" }, CircuitMath.Techniques(ru, slots, 81).Select(x => x.Def.Name), "合计 2 不足：各出小武技（同名只留一招）");
+        slots[4] = K(Element.Earth, 2); slots[5] = K(Element.Fire, 2);
+        CollectionAssert.AreEquivalent(new[] { "格挡", "猛击" }, CircuitMath.Techniques(ru, slots, 81).Select(x => x.Def.Name), "异五行相邻不并组（C10）");
+        slots[4] = K(Element.Metal, 2);
+        slots[5] = B(Element.Metal, 3);
+        Assert.AreEqual(1, CircuitMath.Techniques(ru, slots, 81).Count, "中间隔着策略书就不相连");
+    }
+
+    [Test]
+    public void Bookcase_DefaultSocketsFitTheirCircuits_AndDoNotShareBooks()
+    {
+        var lib = Bookcase.NewLibrary();
+        var used = new System.Collections.Generic.HashSet<Book>();
+        foreach (var name in new[] { "刘备", "关羽", "张飞" })
+        {
+            var c = Circuits.Of(Bookcase.SchoolOf(name));
+            var s = new Book[7];
+            Bookcase.Default(name, s, lib);
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (s[i] == null) continue;
+                Assert.IsTrue(CircuitMath.Fits(c, i, s[i]), $"{name} 槽{i} {s[i].Name}");
+                Assert.IsTrue(used.Add(s[i]), $"{s[i].Name} 被两人同时装备");
+            }
+            Assert.IsTrue(s.Any(b => b != null && b.IsTechnique), name + " 开局带一本功法书");
+        }
     }
 }

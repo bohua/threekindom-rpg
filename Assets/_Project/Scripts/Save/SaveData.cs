@@ -58,6 +58,8 @@ namespace ThreeKingdoms.Save
         // 0.2 chapter (SYSTEMS_V02 §3, §5); a format 1 save reads them as empty.
         public int chapterStep;
         public string[] chapterFlags = Array.Empty<string>();
+        // 兵书（策略书／功法书）书库与各武将的镶嵌，由行旅菜单兵书页写成一行文本（2026-10-26；旧存档为空＝开局默认）
+        public string bingshu = "";
         public MemoryEntry[] memories = Array.Empty<MemoryEntry>();
     }
 
