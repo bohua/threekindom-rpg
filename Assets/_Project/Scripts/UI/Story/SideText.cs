@@ -1,0 +1,282 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace ThreeKingdoms.UI.Story
+{
+    // Chapter one's side-quest text (design/chapter1-rise/npc-sidequests). The writers' keyed lines (dlg.lb1.…) come from
+    // Resources/Text/npc_lines_ch1.json, extracted from the design files by tools/npc/extract_lines.py — edit the design
+    // file and extract again, never these strings. Here only what the design leaves unkeyed: prompts, choice labels,
+    // system lines, keepsakes, memory texts, and the few joins between the writers' steps (marked 原创补句 in review).
+    public static class SideText
+    {
+        public static readonly Dictionary<string, string> Speakers = new Dictionary<string, string>
+        {
+            ["gu_sou"] = "鼓叟", ["a_he"] = "阿禾", ["zhang_shiping"] = "张世平", ["su_shuang"] = "苏双", ["lu_yu"] = "卢毓",
+            ["ying_shao"] = "应劭", ["zheng_xuan"] = "郑玄", ["dian_wei"] = "典韦", ["hua_tuo"] = "华佗", ["zhang_liao"] = "并州将",
+            ["zang_hong"] = "臧洪", ["bao_xin"] = "鲍信", ["bao_tao"] = "鲍韬", ["zuo_mancang"] = "左满仓",
+            ["zheng_hao"] = "郑蒿", ["lu_ditou"] = "鲁堤头", ["bian_sheng"] = "卞生", ["fan_shen"] = "范婶", ["lusan"] = "老卤", ["liu_ping"] = "刘平",
+            ["wu_laoli"] = "伍老吏", ["feng_widow"] = "冯家娘子", ["feng_kuan"] = "冯宽", ["a_he_tow"] = "阿禾",
+            ["chu_weng"] = "褚翁", ["pan_daqiao"] = "潘大樵", ["yao_heng"] = "姚衡", ["mi_fang"] = "糜芳",
+            ["dy_p2"] = "潘小樵", ["dy_p3"] = "韦阿松", ["dy_p4"] = "祝老三", ["dy_p5"] = "凌石头", ["dy_p6"] = "胡斗",
+            ["dy_p7"] = "施狗儿", ["dy_p8"] = "骆青", ["dy_p9"] = "费阿七", ["dy_p10"] = "严水生",
+        };
+
+        public static readonly Dictionary<string, string> Lines = new Dictionary<string, string>
+        {
+            // ---------- shared ----------
+            ["sq.book.3"] = "史事簿记下：鼓叟书目·三《会盟》",
+            ["sq.keepsake.zang_hong_draft"] = "获得信物：臧洪盟辞底稿（臧洪）",
+            ["sq.keepsake.bao_tao_arrow"] = "获得信物：鲍韬的箭（鲍信）",
+
+            // ---------- R5a 酸枣 ----------
+            ["sq.r5a.gu_sou.again"] = "《会盟》说完了。客官要听下回，得等下回的事出了才有。",
+            ["sq.r5a.zang_hong.wait"] = "坛成了。今夜洪还要再念几遍，念到不抖为止。",
+            ["sq.r5a.altar.1"] = "二十个民夫，两天没吃上饭，坐在坛下不动。洪是个功曹，拿不出粮来。",
+            ["sq.r5a.altar.prompt"] = "（坛还差最上一层土。如何帮臧洪？）",
+            ["sq.r5a.altar.host"] = "去张邈帐求粮（地主管饭）",
+            ["sq.r5a.altar.own"] = "从自家口粮里拨（军粮−1）",
+            ["sq.r5a.altar.carry"] = "让张飞、田豫带兵上去抬土",
+            ["sq.r5a.altar.later"] = "稍后再说",
+            ["sq.r5a.altar.host.1"] = "张邈当即拨了两车粮：“陈留的民夫，陈留管饭。”民夫吃饱，把最后一层土筑上了。",
+            ["sq.r5a.altar.own.1"] = "末席的粮也是粮。拨一车过去。",
+            ["sq.r5a.altar.own.2"] = "民夫吃上了自家营里拨来的粮，坛顶的土当天就筑平了。",
+            ["sq.r5a.altar.carry.1"] = "张飞扛起土筐就上，民夫被他逗笑了，一起动手。天黑前，坛成。",
+            ["sq.r5a.altar.later.1"] = "那洪再等等。只是会盟之前，坛总得筑完。",
+            ["sq.r5a.altar.night"] = "当夜，坛下无人。臧洪拿着读稿，站在第一级台阶上。",
+            ["sq.r5a.altar.ask"] = "洪念给你听，你说，可有哪一句是空话？",
+            ["sq.r5a.altar.answer"] = "（如何回答臧洪？）",
+            ["sq.r5a.altar.hard"] = "没有空话，只是“必无二志”最难",
+            ["sq.r5a.altar.below"] = "句句都好，只怕坛下的人更信",
+            ["sq.r5a.altar.thanks"] = "……洪记下了。会盟之后，再来找你。",
+            ["sq.r5a.bao_tao.ask"] = "兄长那里，你替我说了没有？",
+            ["sq.r5a.arrow.prompt"] = "（与鲍韬比三箭）",
+            ["sq.r5a.arrow.win"] = "全力射",
+            ["sq.r5a.arrow.yield"] = "让他一箭",
+            ["sq.r5a.arrow.win.1"] = "三箭过后，刘备两中靶心，鲍韬一中。",
+            ["sq.r5a.arrow.win.2"] = "输了就喂马，三天，我认。",
+            ["sq.r5a.arrow.lose.1"] = "最后一箭，刘备的手偏了半寸。鲍韬赢了。",
+            ["sq.r5a.arrow.give"] = "这是我的箭，白羽缠红线。我打完董卓回来，你还我，再比一场。",
+            ["sq.r5a.arrow.ask"] = "玄德，你替我去跟兄长说一句：让我打前站。他听得进卢公门生的话。",
+            ["sq.r5a.arrow.goal"] = "鲍韬把一支白羽缠红线的箭插进了刘备的箭囊。去鲍信帐前替他说话。",
+            ["sq.r5a.arrow.word"] = "（如何劝鲍信？）",
+            ["sq.r5a.arrow.let_go"] = "拦不住，不如成全",
+            ["sq.r5a.arrow.stay_close"] = "让他在你马后",
+            ["sq.r5a.bao_xin.after"] = "……我再想想。你的话，我记着。",
+            ["sq.r5a.bianshui.card"] = "初平元年（190）　荥阳汴水之后",
+            ["sq.r5a.bianshui.1"] = "曹操西进，于荥阳汴水为徐荣所败。鲍信被创，其弟鲍韬战死。鲍信裹着伤，坐在帐门口。",
+
+            // ---------- R3 卢植大营 / R2 安喜 (0.2 scenes) ----------
+            ["sq.r3.ahe.scene"] = "一个瘦小的孩子从伤兵帐后钻出来，怀里抱着两块麦饼，正撞上军需官。",
+            ["sq.r3.ahe.kneel"] = "刘备走上前，蹲下来，与孩子一般高。",
+            ["sq.r3.ahe.prompt"] = "（这孩子怎么办？）",
+            ["sq.r3.ahe.cover"] = "替他担下：饼是备给的",
+            ["sq.r3.ahe.law"] = "交军法：按规矩办",
+            ["sq.r3.ahe.book"] = "史事簿记下：广宗营中的孩子",
+            ["sq.r2.ahe.food"] = "（背包里还有军粮。单独塞一份给阿禾？）",
+            ["sq.r2.ahe.food.give"] = "给他一份军粮（军粮−1）",
+            ["sq.r2.ahe.food.no"] = "不必了",
+            ["sq.r2.ahe.food.take"] = "……我收下。婆婆一份，我一份。",
+            ["sq.r2.ahe.food.granny"] = "他不收，老身替他收着。……这孩子，嘴硬。",
+            ["sq.r2.wine.prompt"] = "（苏双要请县尉喝酒）",
+            ["sq.r2.wine.drink"] = "坐下喝一碗",
+            ["sq.r2.wine.decline"] = "推辞：在任上，不饮",
+            ["sq.r2.wine.drink.1"] = "那备就讨一碗。当年那笔钱，备还没谢过二位。",
+            ["sq.r2.wine.decline.1"] = "二位的心意备领了。县里的事还多，酒等下回。",
+            ["sq.r2.wine.dates"] = "苏双塞来一袋中山枣。县吏的委托栏里多了一句：县里的路要保住。",
+            ["mem.a_he.guangzong.covered"] = "阿禾记得：广宗营里，有人说“饼是备给的”",
+            ["mem.a_he.guangzong.punished"] = "阿禾记得：广宗营里，那人把他交给了军法",
+            ["mem.liu_bei.a_he_guangzong.covered"] = "刘备记得：替一个孩子认了一块饼",
+            ["mem.liu_bei.a_he_guangzong.punished"] = "刘备记得：把偷饼的孩子交给了军法",
+            ["mem.zheng_hao.released_a_he.yes"] = "郑蒿记得：放走了马厩里的孩子",
+            ["mem.a_he.anxi.recognized"] = "阿禾记得：安喜市集口，又见到了那个县尉",
+            ["mem.a_he.anxi.hid"] = "阿禾记得：安喜市集口，他躲开了那个县尉",
+            ["mem.a_he.anxi_extra_food.yes"] = "阿禾记得：安喜那袋米",
+            ["mem.su_shuang.anxi_wine.drank"] = "苏双记得：刘县尉坐下喝了那碗中山酒",
+            ["mem.su_shuang.anxi_wine.declined"] = "苏双记得：刘县尉推了那碗酒",
+
+            // ---------- R4 平原 ----------
+            ["sq.book.5"] = "史事簿记下：鼓叟书目·五《白马》",
+            ["sq.book.5b"] = "史事簿记下：鼓叟书目·五《白马不还》",
+            ["sq.keepsake.lu_ditou_clappers"] = "获得信物：夯歌竹板（鲁堤头）——老鲁说：板子给你，歌留在堤上",
+            ["sq.keepsake.a_he_banner"] = "获得信物：白马残旗（阿禾）",
+            ["sq.r4.n6.goal"] = "界桥之后，回到平原。夜里相府有客求见——想好了再回相府。",
+            ["sq.r4.levee.prompt"] = "（鲁堤头等着县令画押）",
+            ["sq.r4.levee.walk"] = "不写“堤固”，跟他走一遍堤",
+            ["sq.r4.levee.later"] = "改日再来",
+            ["sq.r4.levee.supply"] = "三十里堤走完，补堤要三样东西：苇子、人手、黄土。",
+            ["sq.r4.levee.fan"] = "粥棚的范婶应下了：每天给堤上送一锅粥。",
+            ["sq.r4.levee.earth"] = "碱土不粘，要黄土。近处的黄土坡，是刘平家的。",
+            ["sq.r4.levee.ram"] = "土齐了，人齐了。上堤夯土，得有人领唱夯歌。",
+            ["sq.r4.levee.song"] = "（夯歌谁来领？）",
+            ["sq.r4.levee.song.liu"] = "刘备领唱",
+            ["sq.r4.levee.song.zhang"] = "让张飞领唱",
+            ["sq.r4.levee.song.lead"] = "一夯下去哟——",
+            ["sq.r4.levee.song.all"] = "（众）堤不塌哟！",
+            ["sq.r4.levee.song.all.zf"] = "（众人被张飞震得直笑）堤不塌哟！",
+            ["sq.r4.fan.plain"] = "粥熬得稀，可锅不能停。县令要尝一口？",
+            ["sq.r4.same.sit"] = "刘备在卞生身边席地坐下，端起一簋粥，自己先吃了一口，再递过去。",
+            ["sq.r4.gu_sou.idle"] = "书说完了，老汉歇歇嗓子。",
+            ["sq.r4.book.ahe_left"] = "说到锅碗那句，阿禾转身走了。",
+            ["sq.r4.ahe.notice"] = "兵营门口贴着田豫的招兵告示。一个瘦高的少年站在告示前看了很久。",
+            ["sq.r4.ahe.name"] = "阿禾。",
+            ["sq.r4.ahe.zheng_hao"] = "……那老头。他给过我一碗水。",
+            ["sq.r4.ahe.joined"] = "阿禾编进了田豫的新兵队。兵籍上写着：巨鹿禾。",
+            ["sq.r4.ahe.bring.prompt"] = "（北上界桥，带不带新兵队？）",
+            ["sq.r4.ahe.bring"] = "带上新兵队，站在看得见的地方",
+            ["sq.r4.ahe.leave"] = "新兵队留守平原",
+            ["sq.r4.ahe.leave.1"] = "新兵队留下守平原。这一仗，等你们练好了再说。",
+            ["sq.r4.ahe.wounded"] = "胳膊挨了一下，旗没撒手。……你收着吧，我没地方放。",
+            ["sq.r4.ahe.idle"] = "田队长说，新兵要先学会站。我站了一上午了。",
+            ["sq.r4.ahe.leave.prompt"] = "（阿禾跟着走，还是留下？）",
+            ["sq.r4.ahe.follow"] = "带走：跟着兵营走",
+            ["sq.r4.ahe.stay"] = "留下：守平原的堤",
+            ["sq.r4.ahe.follow.1"] = "跟着兵营走。田豫在哪，你就在哪。",
+            ["sq.r4.ahe.follow.debt"] = "那我去跟田队长说！……二十钱，我跟着你，慢慢还。",
+            ["sq.r4.ahe.stay.1"] = "平原的堤，得有人守。备把它交给你。",
+            ["sq.r4.gaotang.prompt"] = "（对冯宽说什么？）",
+            ["sq.r4.gaotang.owed"] = "认账：你父亲替备守了东门",
+            ["sq.r4.gaotang.comfort"] = "安慰：有难处来平原找备",
+            ["sq.r4.widow.plain"] = "外地来的？……没什么，看人罢了。",
+            ["sq.r4.widow.after"] = "那孩子又去练射了。……刘令，路上小心。",
+
+            // ---------- R8 下邳 ----------
+            ["sq.keepsake.gu_sou_drumsticks"] = "获得信物：说书人的鼓槌（鼓叟）",
+            ["sq.keepsake.zhang_shiping_ledger"] = "获得信物：马商的旧账簿（张世平）",
+            ["sq.keepsake.pan_daqiao_tags"] = "获得信物：竹名牌（潘大樵）——十枚竹片穿一根绳，每片刻一个名字",
+            ["sq.keepsake.chu_weng_mat"] = "获得信物：旧蒲席一领（褚翁）",
+            ["sq.r8.gu_sou.short"] = "后半段还没长出来，过些日子再来。",
+            ["sq.r8.gu_sou.after"] = "书说完了，槌子也给了。老汉往后用手拍。",
+            ["sq.r8.book.prompt"] = "（这书说得可对？）",
+            ["sq.r8.book.too_much"] = "多说了",
+            ["sq.r8.book.too_little"] = "少说了",
+            ["sq.r8.book.right"] = "说得对",
+            ["sq.r8.ans.too_little"] = "少说了？哪一段？……使君不说，老汉就留着这个空。下回再遇见，使君得补给老汉。",
+            ["sq.r8.book.right.end"] = "围着听书的人一齐叫好。",
+            ["sq.r8.ahe.ask"] = "使君，这孩子能不能留在营里？她娘来了，也好找。",
+            ["sq.r8.ahe.prompt"] = "（这孩子怎么安置？）",
+            ["sq.r8.ahe.kept"] = "留在营里，你照看",
+            ["sq.r8.ahe.camp"] = "交给难民营，等她娘",
+            ["sq.r8.ahe.kept.1"] = "留在营里。你背她进的城，你照看她。",
+            ["sq.r8.ahe.camp.1"] = "送去难民营登册。她娘若到了，一问便知。",
+            ["sq.r8.wall.card"] = "下邳城头　东望泗水",
+            ["sq.r8.wall.wind"] = "城头只有风声，和泗水的水声。刘备站了一会儿，转身下城。",
+            ["sq.r8.wall.xiami_short"] = "下密，备只做了几个月的丞。走的时候，连一双鞋都没带走。",
+            ["sq.r8.wall.end"] = "张飞上前一步想说话，关羽抬手按住他的肩。刘备转身下城。",
+            ["sq.r8.roll.book"] = "兵营案上的交割簿只写着一行：“丹杨兵四千，拨与平原相刘。”",
+            ["sq.r8.roll.tianyu"] = "簿上只有数。豫要名字，曹将军的人说丹杨兵从来不记名。",
+            ["sq.r8.roll.goal"] = "潘大樵那一什的另外九个人散在城里。一个一个去认。",
+            ["sq.r8.roll.left"] = "还差几个？我那一什的人，都在城里，跑不了。",
+            ["sq.r8.roll.all"] = "都认过了？……那将军打算怎么写？",
+            ["sq.r8.roll.prompt"] = "（交割簿怎么记？）",
+            ["sq.r8.roll.by_name"] = "十个名字一个个写上，往后按什记名",
+            ["sq.r8.roll.by_count"] = "簿子照旧记数，名字我记住就是",
+            ["sq.r8.roll.by_name.tianyu"] = "豫来写。四千个名字，豫写到年底。",
+            ["sq.r8.roll.by_count.tianyu"] = "数目清楚，调度方便。",
+            ["sq.r8.roll.found.p2"] = "认得了：潘小樵（潘大樵之弟）",
+            ["sq.r8.roll.found.p3"] = "认得了：韦阿松",
+            ["sq.r8.roll.found.p4"] = "认得了：祝老三",
+            ["sq.r8.roll.found.p5"] = "认得了：凌石头",
+            ["sq.r8.roll.found.p6"] = "认得了：胡斗",
+            ["sq.r8.roll.found.p7"] = "认得了：施狗儿",
+            ["sq.r8.roll.found.p8"] = "认得了：骆青",
+            ["sq.r8.roll.found.p9"] = "认得了：费阿七",
+            ["sq.r8.roll.found.p10"] = "认得了：严水生",
+            ["sq.r8.mats.rice"] = "使君要是有心，替我讨一车米。粥要米，席不要。",
+            ["sq.r8.mats.goal"] = "褚翁的粥快熬不下去了。去糜家商号讨一车米。",
+            ["sq.r8.mats.wait"] = "米呢？锅里只剩水了。",
+            ["sq.r8.mats.ask"] = "城南路边有个老人施粥，备想向糜家讨一车米。",
+            ["sq.r8.mats.mifang"] = "笮融的祠？那人截了三郡的漕粮，糜家的米给他的祠，不吉利。",
+            ["sq.r8.mats.mizhu"] = "米是给喝粥的人，不是给祠的。装一车。",
+            ["sq.r8.mats.goal2"] = "糜竺装了一车米。送去褚翁那里。",
+            ["sq.r8.mats.thanks"] = "一车米！今天能多熬三锅。",
+            ["sq.r8.mats.seal"] = "陈校尉有令：此祠以截留委输之资所造，名义不正，当封。",
+            ["sq.r8.mats.prompt"] = "（这祠怎么办？）",
+            ["sq.r8.mats.official"] = "祠牌摘下，粥棚归官府，请褚翁照管",
+            ["sq.r8.mats.shrine"] = "祠照旧，粥照施，官府不插手",
+            ["sq.r8.mats.official.1"] = "牌子摘了，粥棚归官府。米从州府出，请褚翁照管。",
+            ["sq.r8.mats.official.2"] = "下吏记册。",
+            ["sq.r8.mats.official.chen"] = "使君肯按规矩办，登省心。",
+            ["sq.r8.mats.shrine.1"] = "祠照旧，粥照施。官府不必插手。",
+            ["sq.r8.mats.shrine.2"] = "下吏回去禀告。",
+            ["sq.r8.mats.shrine.chen"] = "使君心软。……登记下了，不是坏话。",
+            ["sq.r8.mats.gift"] = "这领席子是浴佛那年铺在路边的，边上破了。使君拿去吧。",
+            ["sq.r8.mats.feel"] = "这席压边压得松，编的人手生。",
+            ["sq.r8.mats.feel.2"] = "是我编的。笮督那年要的席太多，我们这些不会编的也得编。",
+
+            // ---------- memory texts (mem.<who>.<key>.<value>) ----------
+            ["mem.a_he.jieqiao.wounded"] = "阿禾记得：界桥头负了伤，旗没撒手",
+            ["mem.a_he.jieqiao.absent"] = "阿禾记得：界桥那回，他没赶上",
+            ["mem.liu_bei.a_he_jieqiao.wounded"] = "刘备记得：界桥带上了新兵队，阿禾负伤回来",
+            ["mem.liu_bei.a_he_jieqiao.absent"] = "刘备记得：界桥没带新兵队",
+            ["mem.a_he.pingyuan_name.he"] = "阿禾记得：兵籍上写着“巨鹿禾”",
+            ["mem.tian_yu.named_a_he.yes"] = "田豫记得：替一个黄巾户的孩子起了大名",
+            ["mem.a_he.secret_kept.promised"] = "阿禾记得：刘备答应不说他爹的事",
+            ["mem.lu_ditou.levee.liu_bei_sang"] = "鲁堤头记得：县令领唱夯歌，调还准",
+            ["mem.lu_ditou.levee.zhang_fei_sang"] = "鲁堤头记得：黑脸兄弟一嗓子，对岸都应",
+            ["mem.liu_bei.pingyuan_levee.done"] = "刘备记得：平原的堤，是和民夫一起夯的",
+            ["mem.liu_ping.levee_refused.yes"] = "刘平记得：没把黄土坡借给县令",
+            ["mem.liu_bei.same_table.yes"] = "刘备记得：与卞生同吃一簋粥",
+            ["mem.gu_sou.pingyuan_audience.yes"] = "鼓叟记得：平原驿前那位听书不走的县令",
+            ["mem.a_he.leave_pingyuan.follow"] = "阿禾记得：这回，他跟着走了",
+            ["mem.a_he.leave_pingyuan.stay"] = "阿禾记得：使君把平原的堤交给了他",
+            ["mem.liu_bei.a_he_choice.follow"] = "刘备记得：带阿禾随兵营走",
+            ["mem.liu_bei.a_he_choice.stay"] = "刘备记得：把平原的堤交给阿禾",
+            ["mem.liu_bei.gaotang.owed"] = "刘备记得：高唐东门，冯县丞替他守了最后一个时辰",
+            ["mem.liu_bei.gaotang.comfort"] = "刘备记得：高唐冯家，他说往后有难处来找他",
+            ["mem.gu_sou.zhixilang_answer.too_much"] = "鼓叟记得：使君说《织席郎》多说了",
+            ["mem.gu_sou.zhixilang_answer.too_little"] = "鼓叟记得：使君说《织席郎》少说了一段，欠他一个空",
+            ["mem.gu_sou.zhixilang_answer.right"] = "鼓叟记得：使君说《织席郎》说得对",
+            ["mem.liu_bei.heard_zhixilang.yes"] = "刘备记得：下邳州府广场，鼓叟说了一段《织席郎》",
+            ["mem.a_he.xiapi_child.kept"] = "阿禾记得：使君让他照看背进城的孩子",
+            ["mem.a_he.xiapi_child.camp"] = "阿禾记得：那孩子送去了难民营，等她娘",
+            ["mem.mi_zhu.horse_merchants.yes"] = "糜竺记得：张、苏二公说起使君的账",
+            ["mem.zhang_shiping.xiapi.yes"] = "张世平记得：下邳船边，又见了刘使君",
+            ["mem.liu_bei.wall_monologue.full"] = "刘备记得：下邳城头，想起了楼桑、高唐、下密",
+            ["mem.liu_bei.wall_monologue.short"] = "刘备记得：下邳城头，想起了一些不敢回去看的地方",
+            ["mem.pan_daqiao.names_asked.by_name"] = "潘大樵记得：刘将军把十个名字一个个写上了簿子",
+            ["mem.pan_daqiao.names_asked.by_count"] = "潘大樵记得：刘将军认得我们十个人",
+            ["mem.tian_yu.danyang_roll.by_name"] = "田豫记得：丹杨兵按什记名",
+            ["mem.tian_yu.danyang_roll.by_count"] = "田豫记得：丹杨兵照旧记数",
+            ["mem.tao_qian.danyang_names.yes"] = "陶谦记得：刘备把丹杨兵的名字写上了簿子",
+            ["mem.chu_weng.spread_mats.official"] = "褚翁记得：使君摘了祠牌，粥棚归了官府",
+            ["mem.chu_weng.spread_mats.shrine"] = "褚翁记得：使君让祠照旧，粥照施",
+            ["mem.chen_deng.futu_shrine.by_rule"] = "陈登记得：浮屠祠一事，刘备按规矩办",
+            ["mem.chen_deng.futu_shrine.soft"] = "陈登记得：浮屠祠一事，刘备心软",
+
+            // ---------- memory texts (mem.<who>.<key>.<value>) ----------
+            ["mem.gu_sou.heard_suanzao.yes"] = "鼓叟记得：酸枣驿门前，那位客官听完了《会盟》",
+            ["mem.zang_hong.altar_answer.hard"] = "臧洪记得：刘备说“必无二志”四字最难",
+            ["mem.zang_hong.altar_answer.below"] = "臧洪记得：刘备说坛下的人比坛上的人更信",
+            ["mem.zang_hong.altar_oath_done.yes"] = "臧洪记得：坛下末席，有人听完了",
+            ["mem.zuo_mancang.altar_meal.host_grain"] = "左满仓记得：会盟坛下，是刘备替民夫向张邈讨的饭",
+            ["mem.zuo_mancang.altar_meal.own_grain"] = "左满仓记得：会盟坛下，刘备拨了自家的粮",
+            ["mem.zuo_mancang.altar_meal.carry_earth"] = "左满仓记得：会盟坛下，刘备的兵替民夫抬了土",
+            ["mem.bao_xin.brother_word.let_go"] = "鲍信记得：刘备说令弟之志，不如成全",
+            ["mem.bao_xin.brother_word.stay_close"] = "鲍信记得：刘备劝他让弟弟跟在马后",
+            ["mem.bao_xin.liu_kept_arrow.yes"] = "鲍信记得：鲍韬的箭，刘备替他收着",
+        };
+
+        static Dictionary<string, string> extracted;
+
+        // The writers' keyed line, or null.
+        public static string Extracted(string key)
+        {
+            if (extracted == null)
+            {
+                extracted = new Dictionary<string, string>();
+                var asset = Resources.Load<TextAsset>("Text/npc_lines_ch1");
+                if (asset != null)
+                {
+                    var table = JsonUtility.FromJson<Table>(asset.text);
+                    for (int i = 0; i < table.keys.Length && i < table.texts.Length; i++) extracted[table.keys[i]] = table.texts[i];
+                }
+            }
+            return extracted.TryGetValue(key, out var s) ? s : null;
+        }
+
+        [System.Serializable] sealed class Table { public string[] keys = new string[0]; public string[] texts = new string[0]; }
+
+        // The speaker of an extracted key without a name here: the key's id (dlg.lb1.<id>.…).
+        public static string Speaker(string id) => Speakers.TryGetValue(id, out var s) ? s : null;
+    }
+}

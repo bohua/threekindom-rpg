@@ -90,6 +90,24 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/Zhongshan_Region.unity
     guid: 32c533716dc434b4f9d44cec6cf8e0e4
   - enabled: 1
+    path: Assets/_Project/Scenes/Region_R3.unity
+    guid: 77455b09d97853b47876e356024cb1df
+  - enabled: 1
+    path: Assets/_Project/Scenes/Region_R5A.unity
+    guid: e536a7efbcd0f3743b146aba7969d3e2
+  - enabled: 1
+    path: Assets/_Project/Scenes/Region_R5B.unity
+    guid: 53394d4561fb2e345a138106326c9479
+  - enabled: 1
+    path: Assets/_Project/Scenes/Region_R6.unity
+    guid: 16390eadc0dddb043ae97339be785f46
+  - enabled: 1
+    path: Assets/_Project/Scenes/Region_R7.unity
+    guid: be50767dec24c8b4eaea02b40caa388c
+  - enabled: 1
+    path: Assets/_Project/Scenes/Region_R8.unity
+    guid: ea119d073eed12148a12ee66912b1366
+  - enabled: 1
     path: Assets/_Project/Scenes/Story_Stage.unity
     guid: bd21b4bd674b15f4fa3e4c4e622ee66a
   - enabled: 1
