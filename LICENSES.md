@@ -1,7 +1,8 @@
 # License register
 
 - All project-authored C# code and generated placeholder PNGs / materials / scene geometry: MIT, copyright 2026 HD-2D JRPG contributors. Commercial use permitted.
-- No third-party art, music, fonts or downloaded game assets are included.
+- No third-party art, fonts or downloaded game assets are included.
+- Music: generated with Suno on a paid (Pro/Premier) plan and downloaded through Suno's own download button; under Suno's Terms of Service (2026-09-03) the subscriber owns qualifying paid-plan output and may use it commercially, and rights survive cancelling. Music from official music APIs (ElevenLabs Music, Google Lyria) is used only on plans whose terms allow commercial use. Every track, its plan, channel and date is listed in `design/audio/LICENSE_LEDGER.csv` (ADR-0011). https://suno.com/terms-of-service
 - Unity Editor and Unity packages remain under their respective Unity licenses. Unity Personal commercial use depends on ongoing financial eligibility. https://unity.com/products/unity-personal
 - Blender: GPL; created artwork is not automatically GPL. https://www.blender.org/about/license/
 - Krita: GPL; your artwork belongs to you. https://krita.org/en/about/license/

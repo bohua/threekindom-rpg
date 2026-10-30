@@ -1,0 +1,26 @@
+cue_id,scene,source,loop,bpm,beats_per_bar,mood,lead_instruments,length_s,vocals,motif,status,account_tier,generation_id,download_channel,terms_snapshot
+taoyuan_oath,桃园结义过场,suno,no,76,4,庄重温暖,古筝 笛 二胡 弦乐,32,none,theme,in_game,paid,,,https://suno.com/terms-of-service
+scroll_finale,水墨画卷收尾,suno,no,,,恢宏英雄赞歌,,15,none,theme,in_game,paid,,,https://suno.com/terms-of-service
+victory_aspiration,破黄巾后兄弟对白,suno,yes,,,昂扬,,30,none,theme,in_game,paid,,,https://suno.com/terms-of-service
+mus_battle_boss,头目战（张角、华雄等）,suno,yes,138,4,压迫 激昂,大鼓 唢呐 低音弦乐 合唱,150,choir,theme,card_ready,pro,,,https://suno.com/terms-of-service
+mus_battle_hulao,虎牢关（三英战吕布）,suno,yes,150,4,史诗 狂烈,战鼓 铜管 琵琶轮指 合唱,180,choir,theme,card_ready,pro,,,https://suno.com/terms-of-service
+mus_theme_huangjin,黄巾军主题（敌方事件）,suno,yes,96,4,诡异 狂热,低沉人声吟唱 埙 锣,120,chant,huangjin,card_ready,pro,,,https://suno.com/terms-of-service
+mus_town_zhuojun,涿郡城镇,suno,yes,100,4,轻快 乡土,竹笛 琵琶 小鼓,120,none,theme,planned,pro,,,
+mus_town_xiapi,下邳主城,api,yes,92,4,富庶 端庄,古琴 笙 编钟,120,none,,planned,,,,
+mus_field_bohai,渤海野外（白天明快）,api,yes,108,4,开阔 明亮,笛 弦乐 竖琴感古筝,150,none,,planned,,,,
+mus_world_march,大地图／行军,api,yes,112,4,行进 坚定,小军鼓 弦乐 笛,120,none,,planned,,,,
+mus_battle_normal,常规战棋战斗,api,yes,128,4,紧张 有节奏,鼓 琵琶 弦乐,150,none,,planned,,,,
+mus_battle_crisis,战斗危急层（兵力低）,api,yes,128,4,急迫,同 mus_battle_normal 加密鼓点,60,none,,planned,,,,
+mus_camp,兵营／营寨,api,yes,90,4,肃穆,鼓 埙 低弦,90,none,,planned,,,,
+mus_inn_shop,客栈／商店,api,yes,96,4,热闹 轻松,扬琴 笛 拍板,90,none,,planned,,,,
+mus_event_sorrow,剧情悲伤,api,yes,64,4,哀婉,二胡 箫 钢琴感古筝,90,none,,planned,,,,
+mus_event_tension,剧情紧张,api,yes,84,4,不安,低弦 颤音 定音鼓,90,none,,planned,,,,
+mus_menu,菜单,api,yes,80,4,沉静,古琴 箫,90,none,,planned,,,,
+mus_mini_dice,赌大小,api,yes,118,4,诙谐,梆子 扬琴 笛,60,none,,planned,,,,
+mus_mini_archery,射箭小游戏,api,yes,124,4,爽快,鼓 笛 琵琶,60,none,,planned,,,,
+mus_credits,片尾字幕,suno,no,,,回顾 温暖 壮阔,,180,optional,theme,planned,pro,,,
+jng_victory,战斗胜利,api,no,,,昂扬,,6,none,theme,planned,,,,
+jng_defeat,战斗失败,api,no,,,低落,,6,none,,planned,,,,
+jng_levelup,升级,api,no,,,明亮,,3,none,,planned,,,,
+jng_save,存档,api,no,,,平和,,2,none,,planned,,,,
+jng_stinger_scene,场景过渡 stinger,api,no,,,点题,,3,none,,planned,,,,
