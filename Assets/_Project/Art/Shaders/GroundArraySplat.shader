@@ -122,6 +122,8 @@ Shader "ThreeKingdoms/GroundArraySplat"
                         half3 rock = SAMPLE_TEXTURE2D_ARRAY(_Layers, sampler_trilinear_repeat, q.zy, _RockLayer).rgb * w.x
                                    + SAMPLE_TEXTURE2D_ARRAY(_Layers, sampler_trilinear_repeat, q.xz, _RockLayer).rgb * w.y
                                    + SAMPLE_TEXTURE2D_ARRAY(_Layers, sampler_trilinear_repeat, q.xy, _RockLayer).rgb * w.z;
+                        // A shade darker and greyer than the flat ground: bare faces read as shadowed rock, not paint.
+                        rock = lerp(dot(rock, half3(0.3, 0.59, 0.11)).xxx, rock, 0.7) * 0.88;
                         albedo = lerp(albedo, rock * _Tint.rgb, steep);
                     }
                 }
