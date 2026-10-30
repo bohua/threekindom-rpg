@@ -235,3 +235,63 @@ MonoBehaviour:
     Flip: 0
     Crop: 0.6
     Axis: 0.5
+  - Speaker: gu_sou
+    Texture: {fileID: 2800000, guid: fdf20162efe40b24faeef3196be9abc9, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: a_he
+    Texture: {fileID: 2800000, guid: 2688d5f42ba6b8643bfedf68382f1817, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.62
+    Axis: 0.5
+  - Speaker: a_he_tow
+    Texture: {fileID: 2800000, guid: 2688d5f42ba6b8643bfedf68382f1817, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.62
+    Axis: 0.5
+  - Speaker: zhang_shiping
+    Texture: {fileID: 2800000, guid: 230237d7d4828b2418492ddb13be8355, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: lu_yu
+    Texture: {fileID: 2800000, guid: 76f23759e5e9aad499c7e73ca5a7fae3, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.62
+    Axis: 0.5
+  - Speaker: ying_shao
+    Texture: {fileID: 2800000, guid: 1fcfff8a0df13ed4897966f4d484c46f, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: zheng_xuan
+    Texture: {fileID: 2800000, guid: d3c51775fad39c74dadf0720febe53d3, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: dian_wei
+    Texture: {fileID: 2800000, guid: 5707520aaa7058d41805ef7e5f285d1f, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: hua_tuo
+    Texture: {fileID: 2800000, guid: 7563f717787bc0943acd8e8a0acbd75d, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5
+  - Speaker: zhang_liao
+    Texture: {fileID: 2800000, guid: cea6eeb593c14704282998bd4b4b6a79, type: 3}
+    Right: 1
+    Flip: 0
+    Crop: 0.6
+    Axis: 0.5

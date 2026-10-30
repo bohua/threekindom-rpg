@@ -10,6 +10,9 @@ namespace ThreeKingdoms.EditorTools
     // (换色, the bible §8).
     public static partial class ChapterFieldBuilder
     {
+        // A side-quest person Codex has drawn (ResidentImporter.Chapter1Side); the stand-in resident until imported.
+        static string Side(string id) => ResidentImporter.ChapterKey(id);
+
         static string Q(string key, string from, float hue, float sat = 1f, float val = 1f) => NpcRecolor.Make(key, from, hue, sat, val);
 
         static IEnumerable<Transform> SidePeople(FieldStoryController.Place place, Transform p)
@@ -17,20 +20,20 @@ namespace ThreeKingdoms.EditorTools
             switch (place)
             {
                 case FieldStoryController.Place.Camp:
-                    yield return Person(p, "a_he 阿禾", Q("NpcAHe", Resident("N10"), -40f, 0.7f, 0.85f), new Vector3(-8.4f, 0, -4.4f));
+                    yield return Person(p, "a_he 阿禾", Side("G02"), new Vector3(-8.4f, 0, -4.4f));
                     yield return Person(p, "zheng_hao 郑蒿", Q("NpcZhengHao", Resident("N09"), -70f, 0.8f), new Vector3(-21f, 0, 6f));
                     break;
                 case FieldStoryController.Place.Anxi:
-                    yield return Person(p, "a_he 阿禾", Q("NpcAHe", Resident("N10"), -40f, 0.7f, 0.85f), new Vector3(-1.6f, 0, -20.2f));
-                    yield return Person(p, "zhang_shiping 张世平", Q("NpcZhangShiping", Resident("N20"), 120f), new Vector3(10.6f, 0, -19.4f));
-                    yield return Person(p, "su_shuang 苏双", Q("NpcSuShuang", Resident("N20"), 200f), new Vector3(12.8f, 0, -19.8f));
+                    yield return Person(p, "a_he 阿禾", Side("G02"), new Vector3(-1.6f, 0, -20.2f));
+                    yield return Person(p, "zhang_shiping 张世平", Side("G03"), new Vector3(10.6f, 0, -19.4f));
+                    yield return Person(p, "su_shuang 苏双", Side("G04"), new Vector3(12.8f, 0, -19.8f));
                     break;
                 case FieldStoryController.Place.Gongsun:
                     yield return Person(p, FieldScriptsRegions.Courier + " 驿卒", Resident("N07"), new Vector3(4.4f, 0, -19.4f));
                     break;
                 case FieldStoryController.Place.Suanzao:
                     yield return Person(p, FieldScriptsRegions.Courier + " 驿卒", Resident("N07"), new Vector3(-3.2f, 0, -24.2f));
-                    yield return Person(p, "gu_sou 鼓叟", Q("NpcGuSou", Resident("N09"), 35f, 1.1f), new Vector3(7.4f, 0, -23.4f));
+                    yield return Person(p, "gu_sou 鼓叟", Side("G01"), new Vector3(7.4f, 0, -23.4f));
                     yield return Person(p, "zang_hong 臧洪", Q("NpcZangHong", Folk("D07"), 90f), new Vector3(8.6f, 0, 21.2f));
                     yield return Person(p, "bao_xin 鲍信", Q("NpcBaoXin", Folk("D08"), 150f), new Vector3(10.8f, 0, 14.6f));
                     yield return Person(p, "bao_tao 鲍韬", Q("NpcBaoTao", Folk("D08"), 175f, 0.8f, 1.1f), new Vector3(14f, 0, 12.2f));
@@ -39,13 +42,13 @@ namespace ThreeKingdoms.EditorTools
                 {
                     float cx = BohaiPlainBuilder.CityCx;
                     yield return Person(p, FieldScriptsRegions.Courier + " 驿卒", Resident("N07"), new Vector3(cx - 4f, 0, -187.4f));
-                    yield return Person(p, "gu_sou 鼓叟", Q("NpcGuSou", Resident("N09"), 35f, 1.1f), new Vector3(cx + 10f, 0, -186f));
+                    yield return Person(p, "gu_sou 鼓叟", Side("G01"), new Vector3(cx + 10f, 0, -186f));
                     yield return Person(p, "lu_ditou 鲁堤头", Q("NpcLuDitou", Resident("N11"), 60f), new Vector3(cx + 14f, BohaiPlainBuilder.LeveeH, -228f));
                     yield return Person(p, "fan_shen 范婶", Q("NpcFanShen", Resident("N08"), 90f), new Vector3(cx - 19f, 0, -158.6f));
                     yield return Person(p, "bian_sheng 卞生", Q("NpcBianSheng", Resident("N24"), 100f, 0.8f, 0.8f), new Vector3(cx - 27f, 0, -157f));
                     yield return Person(p, "a_he 阿禾", Q("NpcAHe16", Resident("N12"), -30f, 0.7f, 0.9f), new Vector3(-31.6f, 0, -149.4f));
                     yield return Person(p, "a_he_tow 阿禾", Q("NpcAHe16", Resident("N12"), -30f, 0.7f, 0.9f), new Vector3(cx + 9f, 0, -207f));
-                    yield return Person(p, "zhang_shiping 张世平", Q("NpcZhangShiping", Resident("N20"), 120f), new Vector3(cx + 13f, 0, -183f));
+                    yield return Person(p, "zhang_shiping 张世平", Side("G03"), new Vector3(cx + 13f, 0, -183f));
                     yield return Person(p, "qz_aide 青州从事", Q("NpcQzAide", Resident("N03"), 140f), new Vector3(cx + 6f, 0, -146.5f));
                     yield return Person(p, "wu_laoli 伍老吏", Q("NpcWuLaoli", Resident("N03"), 60f), new Vector3(325f, 0, -174f));
                     yield return Person(p, "feng_widow 冯家娘子", Q("NpcFengWidow", Folk("E13"), 120f), new Vector3(337f, 0, -178f));
@@ -60,7 +63,7 @@ namespace ThreeKingdoms.EditorTools
                     break;
                 case FieldStoryController.Place.R6:
                     // Puyang's market (Gu Sou, the patrol, hidden until he comes); the new grave between Hua and Fei.
-                    yield return Person(p, "gu_sou 鼓叟", Q("NpcGuSou", Resident("N09"), 35f, 1.1f), Ground(new Vector3(226f, 0, 222f)));
+                    yield return Person(p, "gu_sou 鼓叟", Side("G01"), Ground(new Vector3(226f, 0, 222f)));
                     yield return Person(p, "puyang_patrol 曹军巡兵", Folk("F11"), Ground(new Vector3(233f, 0, 226f)));
                     yield return Person(p, "huafei_headman 华县里正", Q("NpcHuafeiHeadman", Resident("N03"), 30f, 0.8f), Ground(new Vector3(430f, 0, 104f)));
                     yield return Person(p, "huafei_peddler 费县货郎", Q("NpcHuafeiPeddler", Resident("N20"), -50f), Ground(new Vector3(418f, 0, 116f)));
@@ -71,9 +74,9 @@ namespace ThreeKingdoms.EditorTools
                     break;
                 case FieldStoryController.Place.R2:
                     // The Jingxing crossroads post station (Gu Sou, the horse pen) and the old angler below the Hutuo ferry.
-                    yield return Person(p, "gu_sou 鼓叟", Q("NpcGuSou", Resident("N09"), 35f, 1.1f), Ground(new Vector3(146f, 0, 130f)));
-                    yield return Person(p, "zhang_shiping 张世平", Q("NpcZhangShiping", Resident("N20"), 120f), Ground(new Vector3(132f, 0, 138f)));
-                    yield return Person(p, "su_shuang 苏双", Q("NpcSuShuang", Resident("N20"), 200f), Ground(new Vector3(130f, 0, 139.4f)));
+                    yield return Person(p, "gu_sou 鼓叟", Side("G01"), Ground(new Vector3(146f, 0, 130f)));
+                    yield return Person(p, "zhang_shiping 张世平", Side("G03"), Ground(new Vector3(132f, 0, 138f)));
+                    yield return Person(p, "su_shuang 苏双", Side("G04"), Ground(new Vector3(130f, 0, 139.4f)));
                     yield return Person(p, "niu_lao 牛老", Q("NpcNiuLao", Resident("N09"), 160f, 0.7f), Ground(new Vector3(283f, 0, 82f)));
                     break;
                 case FieldStoryController.Place.R7:
@@ -84,14 +87,14 @@ namespace ThreeKingdoms.EditorTools
                     yield return Person(p, "yan_bo 鄢伯", Q("NpcYanBo", Resident("N03"), 90f, 0.7f, 0.9f), Ground(new Vector3(84f, 0, 208f)));
                     yield return Person(p, "jingwang_shrine 景王祠", Q("NpcShrinePriest", Resident("N09"), 130f, 1f, 0.9f), Ground(new Vector3(104f, 0, 238f)));
                     yield return Person(p, "bu_heng 卜衡", Q("NpcBuHeng", Resident("N07"), 60f, 0.8f), Ground(new Vector3(395f, 0, 200f)));
-                    yield return Person(p, "gu_sou 鼓叟", Q("NpcGuSou", Resident("N09"), 35f, 1.1f), Ground(new Vector3(470f, 0, 199f)));
-                    yield return Person(p, "zhang_shiping 张世平", Q("NpcZhangShiping", Resident("N20"), 120f), Ground(new Vector3(98f, 0, 196f)));
-                    yield return Person(p, "su_shuang 苏双", Q("NpcSuShuang", Resident("N20"), 200f), Ground(new Vector3(100.4f, 0, 195.4f)));
+                    yield return Person(p, "gu_sou 鼓叟", Side("G01"), Ground(new Vector3(470f, 0, 199f)));
+                    yield return Person(p, "zhang_shiping 张世平", Side("G03"), Ground(new Vector3(98f, 0, 196f)));
+                    yield return Person(p, "su_shuang 苏双", Side("G04"), Ground(new Vector3(100.4f, 0, 195.4f)));
                     break;
                 case FieldStoryController.Place.R5b:
                     // Luoyang: the fire by the South Palace's platform, the old scholar at its square's edge, the well,
                     // the tomb warden at Beimang's gate tower, the hungry family on the west slope (hidden until asked).
-                    yield return Person(p, "gu_sou 鼓叟", Q("NpcGuSou", Resident("N09"), 35f, 1.1f), Ground(new Vector3(253f, 0, 176f)));
+                    yield return Person(p, "gu_sou 鼓叟", Side("G01"), Ground(new Vector3(253f, 0, 176f)));
                     yield return Person(p, "guan_hu 管虎", Q("NpcGuanHu", Resident("N09"), -90f, 0.7f, 0.85f), Ground(new Vector3(256f, 0, 174.6f)));
                     yield return Person(p, "jiang_sanniang 姜三娘", Q("NpcJiangSanniang", Resident("N08"), 160f, 0.7f, 0.85f), Ground(new Vector3(250.4f, 0, 174.4f)));
                     yield return Person(p, "qi_gong 祁恭", Q("NpcQiGong", Resident("N24"), 180f, 0.6f, 0.9f), Ground(new Vector3(241f, 0, 172f)));
@@ -102,10 +105,10 @@ namespace ThreeKingdoms.EditorTools
                     break;
                 case FieldStoryController.Place.Xiapi:
                     yield return Person(p, FieldScriptsRegions.Courier + " 驿卒", Resident("N07"), new Vector3(-2.4f, 0, -36.4f));
-                    yield return Person(p, "gu_sou 鼓叟", Q("NpcGuSou", Resident("N09"), 35f, 1.1f), new Vector3(-12f, 0, 10f));
+                    yield return Person(p, "gu_sou 鼓叟", Side("G01"), new Vector3(-12f, 0, 10f));
                     yield return Person(p, "a_he 阿禾", Q("NpcAHe16", Resident("N12"), -30f, 0.7f, 0.9f), new Vector3(-10f, 0, -30f));
-                    yield return Person(p, "zhang_shiping 张世平", Q("NpcZhangShiping", Resident("N20"), 120f), new Vector3(-20f, 0, -21f));
-                    yield return Person(p, "su_shuang 苏双", Q("NpcSuShuang", Resident("N20"), 200f), new Vector3(-17.8f, 0, -21.4f));
+                    yield return Person(p, "zhang_shiping 张世平", Side("G03"), new Vector3(-20f, 0, -21f));
+                    yield return Person(p, "su_shuang 苏双", Side("G04"), new Vector3(-17.8f, 0, -21.4f));
                     yield return Person(p, "chu_weng 褚翁", Q("NpcChuWeng", Resident("N09"), 150f, 0.8f, 0.9f), new Vector3(-14f, 0, -36f));
                     yield return Person(p, "yao_heng 姚衡", Q("NpcYaoHeng", Resident("N03"), 200f), new Vector3(-11.6f, 0, -37.4f));
                     yield return Person(p, "pan_daqiao 潘大樵", Folk("F13"), new Vector3(14f, 0, -8f));
