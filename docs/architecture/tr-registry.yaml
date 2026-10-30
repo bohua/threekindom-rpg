@@ -31,9 +31,121 @@
 # STATUS VALUES: active | deprecated | "superseded-by: TR-[system]-NNN"
 
 version: 1
-last_updated: ""
+last_updated: "2026-10-29"
 
-requirements: []
+requirements:
+  - id: TR-fate-001
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "确定性：结算为纯函数，Q16.16 定点（long 中间值）、PCG32/SplitMix64/FNV-1a 64 随机流表、4097 项 EXP 表；禁用 float/double、System.Random、UnityEngine.Random 与哈希表枚举顺序；同输入同输出（§5.3）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-002
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "偏离需因、因果同向：非默认候选须命中带标签的因果令牌（PLAYER/RANDOM/HISTORY/RELATION 相对上升）；+1 候选只用正向令牌、−1 只用负向（§4.3、§5.2③）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-003
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "两步提交：twoStep 候选首次胜出只宣告并走默认；提交阶段不重抽、只复核前置与阈值，失败撤销并冷却一阶段（§5.2⑤）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-004
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "救人两段判定：eligibility 在场景加载前、fulfillment 在场景结束时；battleObjective 只在 fulfillment；成功转 T1S、换存活路线、unchangedDeaths 照常、powerTransfer 在 atNode 应用（§4.5、§5.4）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-005
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "整档事务接口：结算返回 SettleResult（新命运段＋Changes），由 Gameplay 与库存、队伍在同一次整档原子写入中应用；pendingRecompute 读档重跑（§7.2，P0b 实装）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-006
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "文本回退：文本库缺键返回 null，调用方退到 summaryTemplate 模板；删空文本库可通关（§5.7，P1 实装）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-007
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "HARD 锚点：候选生成时按假设状态过滤，提交后复核，失败回退默认并记错误（§5.2③⑦）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-008
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "条件语言：只允许 §4.4 谓词，switch 分派；alive 含 pendingDeath；未知谓词与参数错误由 V-02 拦截（§4.4）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-009
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "态度即时更新：TAG_TO_VIEW／REACT 八维／TRUST_DELTA 初值与限幅，偏好书 Δfavor×1.5，结果四舍五入半值远离零（§5.1）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-010
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "记忆：同 who+key 覆盖、seq 全局递增、压缩规则（≤3 超 cap 压旧、4 写入 3 阶段后、5 永不）、memory() 对压缩条目仍有效（§4.6、§5.6）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-011
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "知识隔离：HISTORY 按 scope 与 delayStages 分发，不发未来事件，historyDelivered 防重复（§5.5）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-012
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "仲裁：偏离预算 ceil(在场 T1/T2×ratio)、唯一官职、驻军上限、阵营底线、存活者约束、互投；全序 (tierWeight↓, score↓, id↑)（§5.2⑥）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-013
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "构建期校验 V-01～V-06（静态）、V-08，失败即构建失败（§8.1）"
+    created: 2026-10-29
+    revised: ""
+    status: active
+  - id: TR-fate-014
+    system: ai-character-fate
+    gdd: design/gdd/ai-character-fate.md
+    adr: docs/architecture/adr-0013-fate-engine.md
+    requirement: "模拟器：无头 N 次 × 策略，输出锚点违反、偏离率、预算超额、historical 一致性、可达性缺口、EPS 影响（§8.2、§8.3）"
+    created: 2026-10-29
+    revised: ""
+    status: active
 
 # --- EXAMPLE ENTRIES (remove when first real entries are added) ---
 #

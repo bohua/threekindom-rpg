@@ -1,0 +1,67 @@
+[
+  {
+    "id": "generic.stay",
+    "stages": [],
+    "effect": {},
+    "playerProximity": 0,
+    "requiresCause": [],
+    "twoStep": false,
+    "ambitionsServed": [],
+    "summaryTemplate": "{p:self}留在原处。",
+    "canonLevel": "Provisional",
+    "source": "【测试】"
+  },
+  {
+    "id": "generic.join_protagonist",
+    "stages": [],
+    "effect": {
+      "recruitState": "available"
+    },
+    "playerProximity": 1,
+    "requiresCause": [
+      "PLAYER:+",
+      "RELATION:t_lord"
+    ],
+    "twoStep": false,
+    "ambitionsServed": [],
+    "summaryTemplate": "{p:self}愿投{p:t_lord}。",
+    "canonLevel": "Provisional",
+    "source": "【测试】",
+    "tags": {
+      "loyalty": 40,
+      "righteousness": 40,
+      "benevolence": 0,
+      "courage": 0,
+      "cunning": 0,
+      "fame": 0,
+      "profit": 0,
+      "pride": 0
+    }
+  },
+  {
+    "id": "generic.wander",
+    "stages": [],
+    "effect": {
+      "faction": "wanderer"
+    },
+    "playerProximity": -1,
+    "requiresCause": [
+      "PLAYER:-"
+    ],
+    "twoStep": false,
+    "ambitionsServed": [],
+    "summaryTemplate": "{p:self}离去游历。",
+    "canonLevel": "Provisional",
+    "source": "【测试】",
+    "tags": {
+      "loyalty": 0,
+      "righteousness": 0,
+      "benevolence": 0,
+      "courage": 0,
+      "cunning": 0,
+      "fame": 0,
+      "profit": 20,
+      "pride": 40
+    }
+  }
+]

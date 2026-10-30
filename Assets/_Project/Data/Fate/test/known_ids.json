@@ -1,0 +1,36 @@
+{
+  "scenes": [
+    "battle_t2",
+    "battle_t_siege",
+    "battle_t_siege_rescue",
+    "scene_t_proud_warning",
+    "scene_t_wild_sick",
+    "scene_t_loyal_departs"
+  ],
+  "flags": [
+    "t_relief_ready"
+  ],
+  "objectives": [
+    "t_breakout"
+  ],
+  "dialogues": [
+    "dlg_t_doomed_alive"
+  ],
+  "items": [
+    "book_t_strategy",
+    "sword_t_proud"
+  ],
+  "events": [],
+  "factions": [
+    "t_lord_band",
+    "t_house",
+    "t_rival_band",
+    "wanderer"
+  ],
+  "places": [
+    "t_city",
+    "t_town",
+    "t_camp",
+    "t_village"
+  ]
+}
