@@ -17,10 +17,26 @@ namespace ThreeKingdoms.UI.Save
         public const string Back = "[取消] 返回";
 
         public const string GameTitle = "涿郡起兵";
-        public const string Subtitle = "三国 HD-2D（暂名）　Alpha 0.1 测试版";
+        public const string Subtitle = "三国·江山如画";
         public const string NewGame = "新的游戏", Load = "读取存档", Quit = "退出游戏";
         public const string LoadTitle = "读取存档";
         public const string NoSaves = "还没有任何存档。";
+
+        // Title menu (design/ux/title-menu.md).
+        public const string Continue = "继续游戏", Settings = "设置";
+        public const string Copyright = "© 2026 三国·江山如画 制作组　第一篇章「崛起」 Alpha 0.5";
+        public const string ChapterTag = "第一篇章「崛起」";
+        public const string LoadHint = "确认 读取　　取消 返回", SettingsHint = "← → 调整　　取消 返回";
+        public const string MusicVolume = "音乐音量", EffectsVolume = "音效音量", TextSpeed = "文字速度", FullScreen = "全屏显示";
+        public const string Restore = "恢复默认", On = "开", Off = "关";
+
+        // A load card's two lines: chapter and place, then Liu Bei's level, copper and time saved.
+        public static string CardPlace(SaveData d) => $"{d.chapter}　{Place(d.location)}";
+        public static string CardDetail(SaveData d)
+        {
+            string time = DateTime.TryParse(d.savedAt, CultureInfo.InvariantCulture, DateTimeStyles.None, out var t) ? t.ToString("yyyy-MM-dd HH:mm") : d.savedAt;
+            return $"刘备 {d.leaderLevel} 级　铜钱 {d.copper}　{time}";
+        }
 
         public static string Slot(int index) => $"存档 {index}";
 

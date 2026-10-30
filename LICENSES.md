@@ -1,7 +1,8 @@
 # License register
 
 - All project-authored C# code and generated placeholder PNGs / materials / scene geometry: MIT, copyright 2026 HD-2D JRPG contributors. Commercial use permitted.
-- No third-party art, music, fonts or downloaded game assets are included.
+- No third-party art, music or downloaded game assets are included. One font exception below.
+- Assets/_Project/Resources/TitleMenu/title_serif.ttf: a subset of Noto Serif SC (weight 500 instance), SIL Open Font License 1.1, copyright Google / Adobe. Commercial use and embedding permitted; the subset is a Modified Version and keeps the OFL. https://openfontlicense.org
 - Unity Editor and Unity packages remain under their respective Unity licenses. Unity Personal commercial use depends on ongoing financial eligibility. https://unity.com/products/unity-personal
 - Blender: GPL; created artwork is not automatically GPL. https://www.blender.org/about/license/
 - Krita: GPL; your artwork belongs to you. https://krita.org/en/about/license/
