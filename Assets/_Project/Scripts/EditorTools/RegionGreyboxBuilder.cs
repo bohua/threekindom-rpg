@@ -66,7 +66,6 @@ namespace ThreeKingdoms.EditorTools
             public float[] portalFacing = new float[0];       // the way the party faces on arrival in the other scene
             public int[] portalSteps = new int[0];            // chapter steps (ChapterStep) the way is open in; empty = always
             public string gates;                              // walled places: sides with a gate, e.g. "S,W" (default "S")
-            public int[] portalSteps = new int[0];   // ChapterStep values during which the doorway is open (empty: always)
             public string arrivalName;      // the spot in front of the place, named so a portal from the hub scene finds it
         }
 
