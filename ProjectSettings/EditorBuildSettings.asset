@@ -51,42 +51,6 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/Battle_Chapter_B3.unity
     guid: e97ec9582176e3743bbd18dc4408ad9d
   - enabled: 1
-    path: Assets/_Project/Scenes/Battle_Yingchuan04.unity
-    guid: 1320233233ac79c4eaa1a1eb0002be0f
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle_Guangzong05.unity
-    guid: c998d642fa68ae6468abb1d3431de944
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle_Anxi06.unity
-    guid: 77c1d025439aae74cab9019faa4aafe6
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle_Drill07.unity
-    guid: 25913671263995443ba3746fc64fff9b
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle_Hulao08.unity
-    guid: 4039e333c9237a2488199455b76f88fc
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle_Pingyuan09.unity
-    guid: 01961972e7f88fa4cb254ed1b35246fb
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle_Panhe10.unity
-    guid: 97c3cd2bb8005894fb950f1c2a7657b3
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle_Jieqiao11.unity
-    guid: f7212b16a4f779648a55a027dafd2ac4
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle_Duchang12.unity
-    guid: 537b84afde8b01b4b98fc074f091448d
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle_XiapiEast13.unity
-    guid: c0fad241e002cdf4d8842277fcc121a9
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle_XiapiWalls14.unity
-    guid: 90be64fa9b052be4daa1110c1060c515
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle_Xiaopei15.unity
-    guid: e65e2d3051ce5014eb978fc29d36a651
-  - enabled: 1
     path: Assets/_Project/Scenes/Zhongshan_Region.unity
     guid: 32c533716dc434b4f9d44cec6cf8e0e4
   - enabled: 1
@@ -128,5 +92,41 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Region_R8.unity
     guid: ea119d073eed12148a12ee66912b1366
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Yingchuan04.unity
+    guid: 1320233233ac79c4eaa1a1eb0002be0f
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Guangzong05.unity
+    guid: c998d642fa68ae6468abb1d3431de944
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Anxi06.unity
+    guid: 77c1d025439aae74cab9019faa4aafe6
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Drill07.unity
+    guid: 25913671263995443ba3746fc64fff9b
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Hulao08.unity
+    guid: 4039e333c9237a2488199455b76f88fc
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Pingyuan09.unity
+    guid: 01961972e7f88fa4cb254ed1b35246fb
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Panhe10.unity
+    guid: 97c3cd2bb8005894fb950f1c2a7657b3
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Jieqiao11.unity
+    guid: f7212b16a4f779648a55a027dafd2ac4
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Duchang12.unity
+    guid: 537b84afde8b01b4b98fc074f091448d
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_XiapiEast13.unity
+    guid: c0fad241e002cdf4d8842277fcc121a9
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_XiapiWalls14.unity
+    guid: 90be64fa9b052be4daa1110c1060c515
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle_Xiaopei15.unity
+    guid: e65e2d3051ce5014eb978fc29d36a651
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
