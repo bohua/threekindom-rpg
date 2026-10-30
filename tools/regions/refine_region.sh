@@ -19,3 +19,5 @@ PY
 export PYTHONIOENCODING=utf-8
 python prepare_region.py "$A/$CONCEPT" "$ID" "$NAME" "hubs_$ID.json"
 python bake_ground.py "$A/$r-hd-ground" "$A/$r-hd-ground/${ID}_TERRAIN_MASK.png" "$A/$r-hd-ground/terrain_mask_classes.json" "$A/$CONCEPT" "$A/$r-blender-wild/_checks/${p}_wild_placements.json"
+python densify_detail.py "$A/$r-hd-ground/_checks/${p}_detail_placements.json" "$A/$CONCEPT/greybox"
+python bake_rock.py "$A/$CONCEPT/greybox"

@@ -172,6 +172,8 @@ public sealed class Chapter4FlowTests
         yield return WaitFor<FieldStoryController>(90f);
         py = Object.FindFirstObjectByType<FieldStoryController>();
         yield return Drive(py, py.Stage);
+        // Since the side quests (高唐旧吏, 阿禾 ④) the night guest waits until Liu Bei goes back to the county office.
+        yield return TalkTo(py, "py_clerk", 0);
         yield return PlayStage();
         yield return WaitFor<FieldStoryController>(90f);
         Assert.AreEqual(GameRun.BohaiScene, SceneManager.GetActiveScene().name);

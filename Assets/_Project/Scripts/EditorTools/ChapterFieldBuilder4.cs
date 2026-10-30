@@ -57,6 +57,7 @@ namespace ThreeKingdoms.EditorTools
                 Person(people, "taishi_ci 太史慈", Folk("F01"), new Vector3(cx + 4f, 0, -300f)),   // 0.5: off-map until F1
             };
 
+            list.AddRange(SidePeople(FieldStoryController.Place.Pingyuan, people));
             var go = new GameObject("Pingyuan Story");
             var c = go.AddComponent<FieldStoryController>();
             c.Location = FieldStoryController.Place.Pingyuan;

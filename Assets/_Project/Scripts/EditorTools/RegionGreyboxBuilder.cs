@@ -345,6 +345,26 @@ namespace ThreeKingdoms.EditorTools
             m.SetFloat("_TileMetres", 8f);   // Codex ground tiles are 960 px = 8 m
             m.SetVector("_Bounds", new Vector4(0, 0, data.width, data.height));
             m.SetColor("_Tint", new Color(1.18f, 1.16f, 1.08f));   // the painted grounds read dark under the region's sun
+            // The region's rock ground also covers every steep slope: a cliff first, then bare rock, then scree.
+            var keys = File.Exists(Path.Combine(src, "ground_layers.json"))
+                ? System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(Path.Combine(src, "ground_layers.json")), "\"([^\"]+)\"").Cast<System.Text.RegularExpressions.Match>().Select(x => x.Groups[1].Value).ToList()
+                : new List<string>();
+            int rock = -1;
+            foreach (var words in new[] { new[] { "cliff" }, new[] { "rock", "granite" }, new[] { "limestone", "stone", "scree" } })
+                if (rock < 0) rock = keys.FindIndex(k => words.Any(k.Contains));
+            m.SetFloat("_RockLayer", rock);
+            // The region's most common ground carries on past its edge.
+            m.SetFloat("_OuterLayer", Mathf.Max(0, keys.FindIndex(k => k.StartsWith("grass") || k.Contains("_grass"))));
+            if (File.Exists(Path.Combine(src, "ground_rock.png")))
+            {
+                File.Copy(Path.Combine(src, "ground_rock.png"), $"{dir}/ground_rock.png", true);
+                AssetDatabase.ImportAsset($"{dir}/ground_rock.png");
+                var ri = (TextureImporter)AssetImporter.GetAtPath($"{dir}/ground_rock.png");
+                ri.sRGBTexture = false; ri.mipmapEnabled = false; ri.npotScale = TextureImporterNPOTScale.None; ri.maxTextureSize = 1024;
+                ri.textureCompression = TextureImporterCompression.Uncompressed; ri.filterMode = FilterMode.Bilinear; ri.wrapMode = TextureWrapMode.Clamp;
+                ri.SaveAndReimport();
+                m.SetTexture("_Rock", AssetDatabase.LoadAssetAtPath<Texture2D>($"{dir}/ground_rock.png"));
+            }
             string mp = $"{matDir}/ground_painted.mat";
             if (AssetDatabase.LoadAssetAtPath<Material>(mp)) AssetDatabase.DeleteAsset(mp);
             AssetDatabase.CreateAsset(m, mp);
@@ -367,8 +387,23 @@ namespace ThreeKingdoms.EditorTools
             // The second refinement pass (user 2026-10-28 "野外……不够精细"): ground clutter by the thousand, and finer
             // trees and reeds that replace the first set's pieces of the same name.
             bool detail = !string.IsNullOrEmpty(data.detailSet) && BlenderModels.Import(data.detailSet);
+            // Leaves, reeds and grass cards are painted for a softer light and glare at noon (user 2026-10-30): one
+            // shade darker everywhere unless the hubs file names its own tint.
+            foreach (string set in detail ? new[] { data.wildSet, data.detailSet } : new[] { data.wildSet })
+                foreach (string key in BlenderModels.Keys(set))
+                    if (System.Text.RegularExpressions.Regex.IsMatch(key, "leaf|needle|foliage|reed|rush|sedge|cattail|grass|flower|wormwood|artemisia|lotus|moss|sapling|seedling|jujube_(low|sucker)")
+                        && !data.wildTint.Any(t => t.StartsWith(key + ":")))
+                        BlenderModels.Tint(set, key, new Color(0.7f, 0.74f, 0.66f));
+            // The ground clutter's stones are near white in the sun; a grey closer to the painted ground.
+            if (detail)
+                foreach (string key in BlenderModels.Keys(data.detailSet))
+                    if (System.Text.RegularExpressions.Regex.IsMatch(key, "stone|rock|granite|pebble|chip|limestone") && !data.wildTint.Any(t => t.StartsWith(key + ":")))
+                        BlenderModels.Tint(data.detailSet, key, new Color(0.74f, 0.73f, 0.7f));
             Scatter(env, "Wild", data.wildSet, data.wildLayout, detail ? data.detailSet : null, combine: false);
-            if (detail) Scatter(env, "Ground detail", data.detailSet, data.detailLayout, null, combine: true);
+            // densify_detail.py's thicker copy of the Codex clutter, when baked.
+            string concept = Regions.First(r => r.id == data.id).concept;
+            string dense = File.Exists(Path.Combine(CodexArt, concept, "greybox", "detail_dense.json")) ? $"../{concept}/greybox/detail_dense.json" : data.detailLayout;
+            if (detail) Scatter(env, "Ground detail", data.detailSet, dense, null, combine: true);
         }
 
         // The models' flat earth aprons sit on the ground as a lighter, hard-edged patch; the baked ground already blends
@@ -492,6 +527,19 @@ namespace ThreeKingdoms.EditorTools
                     r.shadowCastingMode = ShadowCastingMode.On;
                     go.AddComponent<MeshCollider>().sharedMesh = mesh;
                 }
+            if (painted)
+            {
+                // A skirt of the same ground a long way out, so the region's edge is not a cliff into the void.
+                var skirt = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                Object.DestroyImmediate(skirt.GetComponent<Collider>());
+                skirt.name = "Outer ground";
+                skirt.transform.SetParent(g, false);
+                skirt.transform.position = new Vector3(data.width / 2f, -6f, data.height / 2f);   // below every river bed
+                skirt.transform.localScale = new Vector3(data.width / 10f * 4f, 1, data.height / 10f * 4f);
+                skirt.GetComponent<MeshRenderer>().sharedMaterial = Mat("outer ground", new Color(0.56f, 0.62f, 0.44f));
+                Beyond(g, mat);
+            }
+            else
             // A skirt of the same ground 320 m out, at the border's own heights and in the same material, so the
             // region's edge reads as more of the land rather than a flat pale plane (not walkable: the edge walls stop
             // the party first).
@@ -532,6 +580,46 @@ namespace ThreeKingdoms.EditorTools
                 }
                 go.AddComponent<MeshRenderer>().sharedMaterial = outer;
             }
+        }
+
+        // The country past the region's edge (user 2026-10-30: the edges showed an empty plain): the edge ground carries
+        // on outward, then rises into low hills and far mountains, so every view out ends in land, never the skirt.
+        static void Beyond(Transform g, Material mat)
+        {
+            int W = heights.GetLength(0) - 1, D = heights.GetLength(1) - 1;
+            const int R = 720, S = 8;
+            System.Func<int, int, List<int>> axis = (n, step) =>
+            {
+                var l = new List<int>();
+                for (int v = -R; v < 0; v += step) l.Add(v);
+                for (int v = 0; v < n; v += step) l.Add(v);
+                l.Add(n);
+                for (int v = n + step; v <= n + R; v += step) l.Add(v);
+                return l;
+            };
+            var xs = axis(W, S); var zs = axis(D, S);
+            var verts = new List<Vector3>(xs.Count * zs.Count);
+            foreach (int z in zs)
+                foreach (int x in xs)
+                {
+                    float dx = Mathf.Max(0, -x, x - W), dz = Mathf.Max(0, -z, z - D), d = Mathf.Sqrt(dx * dx + dz * dz);
+                    float range = 22f + 70f * Mathf.PerlinNoise(x / 260f + 3.1f, z / 260f + 7.7f);
+                    float ridge = 1f - Mathf.Abs(Mathf.PerlinNoise(x / 90f + 11f, z / 90f + 5f) * 2f - 1f);
+                    float rise = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(40f, 520f, d)) * range * (0.65f + 0.35f * ridge)
+                               + Mathf.InverseLerp(0f, 60f, d) * 1.5f * Mathf.PerlinNoise(x / 25f, z / 25f);
+                    verts.Add(new Vector3(x, H(x, z) + rise - (d > 0 ? 0f : 0.04f), z));
+                }
+            var tris = new List<int>();
+            int nx = xs.Count;
+            for (int j = 0; j < zs.Count - 1; j++)
+                for (int i = 0; i < nx - 1; i++)
+                {
+                    // Cells inside the region belong to the terrain itself.
+                    if (xs[i] >= 0 && xs[i + 1] <= W && zs[j] >= 0 && zs[j + 1] <= D) continue;
+                    int a = j * nx + i, b = a + 1, c = a + nx, e = c + 1;
+                    tris.AddRange(new[] { a, c, b, b, c, e });
+                }
+            Save(g, "Beyond the region", verts, tris, mat);
         }
 
         // ---------- water, roads ----------

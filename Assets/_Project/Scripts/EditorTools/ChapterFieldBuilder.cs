@@ -634,6 +634,7 @@ namespace ThreeKingdoms.EditorTools
             };
             for (int i = 0; i < 3; i++)
                 Person(p, "Han soldier " + i, Folk("C09"), new Vector3(-6f + i * 6f, 0, -10f + (i % 2) * 2f));
+            people.AddRange(SidePeople(FieldStoryController.Place.Camp, p));
             var c = f.Controller;
             c.Location = FieldStoryController.Place.Camp;
             c.People = people.ToArray();
@@ -759,6 +760,7 @@ namespace ThreeKingdoms.EditorTools
             bound.gameObject.SetActive(false);
             var ox = Billboard(p, "ox 黄牛", "PROP_OX_WALK_STRIP", 0, -1.2f, new Vector3(1.8f, 1.3f, 0.8f), new Color(0.62f, 0.42f, 0.22f), frames: 4);
             people.Add(ox);
+            people.AddRange(SidePeople(FieldStoryController.Place.Anxi, p));
             var c = f.Controller;
             c.Location = FieldStoryController.Place.Anxi;
             c.People = people.ToArray();

@@ -190,6 +190,8 @@ namespace ThreeKingdoms.Gameplay.Story
         // Shows or hides what the flags say (the broken / mended bridge, the timber pile, the ox at the trough …).
         public void RefreshFlags()
         {
+            foreach (var t in People)
+                if (t && SideQuests.Present(this, IdOf(t)) is bool shown) t.gameObject.SetActive(shown);
             foreach (var t in FlagObjects)
             {
                 if (!t) continue;
