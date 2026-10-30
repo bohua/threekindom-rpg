@@ -10,7 +10,7 @@ Unity 6.3 LTS (6000.3.26f1), URP 3D, Windows x64. Original pixel placeholders, o
 
 1. In Unity Hub, sign in and activate a free Personal license (financial eligibility required).
 2. Add this directory as a project and open with the pinned Editor. Allow package import and compilation.
-3. Choose **JRPG → Create First Scene (only if absent)**. Open `Assets/Game/Scenes/Glade.unity` and press Play.
+3. Choose **JRPG → Create First Scene (only if absent)**. Open `Assets/_Project/Scenes/Glade.unity` and press Play.
 4. WASD/arrows move. Approach the green slime and press E. Click Attack to play a deterministic turn-based encounter; victory completes the quest.
 
 The setup method creates URP settings, PNG sprites, materials, ScriptableObject data and a saved scene inside Unity. Until it runs successfully, these generated assets do not exist. Existing scenes are preserved.
