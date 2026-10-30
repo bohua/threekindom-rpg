@@ -161,6 +161,8 @@ public sealed class Chapter3FlowTests
         Assert.IsFalse(run.Chapter2.DrillOpen);
         Assert.IsFalse(run.RecordVictory("battle_7"), "the drill pays once");
 
+        // 简雍打听 in Ji is played on the R1 map (R1SidequestTests); here it is taken as done before D5.
+        run.Chapter2.Set(FieldScriptsR1.JianYongEar);
         // D5 and the departure (confirm), the march, Suanzao.
         yield return TalkTo(gs, "gongsun_zan", 0);
         yield return PlayStage();

@@ -18,7 +18,7 @@ namespace ThreeKingdoms.Gameplay.Story
     // does is FieldScripts; cutscenes play through the StagePlayer like on the story stage.
     public sealed class FieldStoryController : MonoBehaviour, IStoryScreen, IStageActors, IFieldHost, IShopTier, IFieldMarks
     {
-        public enum Place { Camp, Anxi, Gongsun, Suanzao, Pingyuan, Xiapi }   // 0.3: Gongsun Zan's garrison, the Suanzao camp (FieldScripts3)
+        public enum Place { Camp, Anxi, Gongsun, Suanzao, Pingyuan, Xiapi, R1 }   // 0.3: Gongsun Zan's garrison, the Suanzao camp (FieldScripts3); R1: the 涿蓟 map's side quests (FieldScriptsR1)
 
         public Place Location;
         public BattleCatalog Catalog;
@@ -56,7 +56,7 @@ namespace ThreeKingdoms.Gameplay.Story
         public string SaveLocation => Location switch
         {
             Place.Camp => SaveData.CampLocation, Place.Gongsun => SaveData.GongsunLocation, Place.Suanzao => SaveData.SuanzaoLocation,
-            Place.Pingyuan => FieldScripts4.RegionLocation, Place.Xiapi => SaveData.XiapiLocation, _ => SaveData.AnxiLocation,
+            Place.Pingyuan => FieldScripts4.RegionLocation, Place.Xiapi => SaveData.XiapiLocation, Place.R1 => FieldScriptsR1.RegionLocation, _ => SaveData.AnxiLocation,
         };
         public int ShopTier => Location switch { Place.Anxi => 2, Place.Gongsun or Place.Suanzao or Place.Pingyuan or Place.Xiapi => 3, _ => 1 };
         public Camera MarkCamera => View;
@@ -101,6 +101,8 @@ namespace ThreeKingdoms.Gameplay.Story
                 return GameRun.ForChapter(Catalog, ChapterStep.Xiapi, 810, 900, 2, development: true);
             if (Location == Place.Pingyuan)
                 return GameRun.ForChapter(Catalog, ChapterStep.Pingyuan, 370, 500, 2, development: true);
+            if (Location == Place.R1)   // the R1 map opened on its own: 190, Gongsun Zan's garrison as the base (its side quests)
+                return GameRun.ForChapter(Catalog, ChapterStep.Gongsun, 210, 400, 2, development: true);
             if (Location == Place.Gongsun || Location == Place.Suanzao)
                 return GameRun.ForChapter(Catalog, Location == Place.Gongsun ? ChapterStep.Gongsun : ChapterStep.Suanzao, 210, 400, 2, development: true);
             var step = DevStep ?? (Location == Place.Camp ? ChapterStep.Camp : ChapterStep.Anxi);
