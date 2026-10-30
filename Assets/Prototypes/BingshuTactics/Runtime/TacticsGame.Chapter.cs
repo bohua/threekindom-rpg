@@ -77,7 +77,11 @@ namespace Prototype.BingshuTactics
         public bool NoRetreatOnDefeat;
         public int Reputation;
         public RectInt? ExitZone;
-        public List<TacticsUnitDef> Reserves = new List<TacticsUnitDef>();   // 0.5：后备武将（不在地图上，可换人上阵）           // 0.4：撤离区（OpenExit 之后，我方进入即撤出战场）              // 0.3：声望（“众望”的物防加成随之增强）
+        public List<TacticsUnitDef> Reserves = new List<TacticsUnitDef>();   // 0.5：后备武将（不在地图上，可换人上阵）
+        // 上阵规则按每场战斗设计（用户 2026-10-30：“每场战斗可以有自己的上场限制……需要设置必上人物……我方上个5-10人很正常”）：
+        // MaxDeploy＝我方可操作武将上阵上限（0＝不限）；Required＝必上人物（显示名），超出上限时其余的进后备。
+        public int MaxDeploy;
+        public string[] Required = new string[0];           // 0.4：撤离区（OpenExit 之后，我方进入即撤出战场）              // 0.3：声望（“众望”的物防加成随之增强）
     }
 
     public sealed partial class TacticsGame
@@ -111,6 +115,14 @@ namespace Prototype.BingshuTactics
 
         void BuildChapterUnits()
         {
+            // 超过本场上阵上限的我方武将（非必上者，从后往前）转入后备
+            var field = Chapter.Units.Where(d => d.Team == Team.Player && !d.Ai).ToList();
+            if (Chapter.MaxDeploy > 0 && field.Count > Chapter.MaxDeploy)
+                foreach (var d in field.Where(d => !Chapter.Required.Contains(d.Name)).Reverse().Take(field.Count - Chapter.MaxDeploy).ToList())
+                {
+                    Chapter.Units.Remove(d);
+                    Chapter.Reserves.Add(d);
+                }
             foreach (var d in Chapter.Units) SpawnUnit(d, d.Pos);
             BuildReserves();
             objective = Chapter.Objective;

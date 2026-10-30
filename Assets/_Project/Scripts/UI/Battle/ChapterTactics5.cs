@@ -119,11 +119,13 @@ namespace ThreeKingdoms.UI.Battle
                 "guan_hai" => "GuanHai", "yt_remnant" => "YtRemnant", "cao_infantry" => "CaoInfantry", "cao_cavalry" => "CaoCavalry", "cao_archer" => "CaoInfantry",
                 "cao_ren" => "CaoRen", "deserter" => "Bandit", "liukou" => "Bandit", _ => "Rebel",
             };
-            // The line-up after battle 12: the brothers on the field, Zhao Yun in reserve.
-            void Brothers(string[] rows, Vector2Int a, Vector2Int b, Vector2Int c, Vector2Int reserveAt)
+            // The line-up after battle 12: the brothers and Zhao Yun all take the field (user 2026-10-30: no three-man cap;
+            // each battle sets its own MaxDeploy / Required).
+            void Brothers(string[] rows, Vector2Int a, Vector2Int b, Vector2Int c, Vector2Int zhaoAt)
             {
                 def.Units.Add(Hero("liu_bei", a)); def.Units.Add(Hero("guan_yu", b)); def.Units.Add(Hero("zhang_fei", c));
-                if (ch.Has(ChapterState.ZhaoYunGuest)) def.Reserves.Add(Zhao(reserveAt));
+                if (ch.Has(ChapterState.ZhaoYunGuest)) def.Units.Add(Zhao(zhaoAt));
+                def.Required = new[] { "刘备", "关羽", "张飞" };
             }
             void Enemies(Vector2Int[] spots, string[] names = null)
             {
@@ -141,13 +143,15 @@ namespace ThreeKingdoms.UI.Battle
                 case "battle_12":
                 {
                     rows = Duchang; def.Where = "北海 · 都昌城外"; def.Deploy = new RectInt(3, 0, 10, 3);
-                    var slots = new[] { At(rows, 7, 10), At(rows, 5, 11), At(rows, 10, 11) };
+                    var slots = new[] { At(rows, 7, 10), At(rows, 5, 11), At(rows, 10, 11), At(rows, 3, 11), At(rows, 12, 11) };
                     var pick = ch.Has(Formation + "1") ? new[] { "zhao", "taishi" } : ch.Has(Formation + "2") ? new[] { "guan_yu", "taishi" } : new[] { "guan_yu", "zhang_fei" };
                     def.Units.Add(Hero("liu_bei", slots[0]));
                     var all = new[] { "guan_yu", "zhang_fei", "zhao", "taishi" };
                     TacticsUnitDef Make(string k, Vector2Int p) => k == "zhao" ? Zhao(p) : k == "taishi" ? Taishi(p) : Hero(k, p);
-                    for (int i = 0; i < 2; i++) def.Units.Add(Make(pick[i], slots[i + 1]));
-                    foreach (var k in all.Where(k => !pick.Contains(k))) def.Reserves.Add(Make(k, At(rows, 7, 11)));
+                    // The formation choice now decides who leads (the front slots); everyone takes the field (user 2026-10-30).
+                    var order = pick.Concat(all.Where(k => !pick.Contains(k))).ToArray();
+                    for (int i = 0; i < order.Length; i++) def.Units.Add(Make(order[i], slots[i + 1]));
+                    def.Required = new[] { "刘备" };
                     Enemies(new[] { At(rows, 7, 4), At(rows, 4, 5), At(rows, 11, 5), At(rows, 2, 1), At(rows, 13, 1), At(rows, 7, 2) },
                         new[] { null, "黄巾余部甲", "黄巾余部乙", "黄巾余部丙", "黄巾余部丁", "黄巾余部戊" });   // BALANCE_MODEL_v1 §3.11: 管亥 + 五名余部（贼众，近战）
                     def.Units[0 + 3 + 0].Leader = true;
@@ -220,7 +224,7 @@ namespace ThreeKingdoms.UI.Battle
                     def.Events.Add(new TacticsEvent
                     {
                         Round = 5,
-                        Actions = new[] { Banner("第二波 · 曹军骑兵"), new TacticsAction { Kind = TacticsActionKind.Spawn, Units = new[] { Foe(CaoCav, 11, At(rows, 2, 11), "CaoCavalry"), Foe(CaoCav, 11, At(rows, 13, 11), "CaoCavalry") } } },
+                        Actions = new[] { Banner("曹军骑兵压上") },   // all five of §3.11 start on the field
                     });
                     // Cao Ren sounds the retreat when he falls below half, or when word of Yanzhou reaches him (round 7, the
                     // betrayal the round-4 stir foreshadows; REVIEW_V05 R3).
