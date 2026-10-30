@@ -316,7 +316,7 @@ namespace Prototype.BingshuTactics
             Img(new Rect(stand.x, stand.yMax - stand.width * 1.25f * 0.42f, stand.width, stand.width * 1.25f * 0.42f), "ui/q_stand");
             DrawQ(new Rect(stand.x - 6, stand.y - 4, stand.width + 12, stand.height - 2), u);
             float tw = stand.x - tx - 6;
-            GUI.Label(new Rect(tx, r.y + 6, tw, 26), u.Name, St(20, Ivory, TextAnchor.MiddleLeft, true));
+            GUI.Label(new Rect(tx, r.y + 6, tw - 20, 26), u.Name, St(u.Name.Length > 2 ? 17 : 20, Ivory, TextAnchor.MiddleLeft, true));   // 三字名缩一号，不压五行珠
             GUI.Label(new Rect(tx, r.y + 32, tw, 20), $"Lv.{u.Level}　{TroopTraits.Name(u.Troop, u.Rank)}", St(13, SelMist, TextAnchor.MiddleLeft));
             // 五行小徽：色珠里写五行字（同设计图）
             var ec = new Vector2(tx + tw - 9, r.y + 19);
