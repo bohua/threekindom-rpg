@@ -79,7 +79,7 @@ namespace ThreeKingdoms.EditorTools
         // The prologue 天下大势 (design/gdd/prologue.md): Codex art/prologue-art into Resources/Prologue, where the
         // player reads it by name. Scrolls are 3840 wide; the map layers keep their alpha. Missing files are skipped.
         public const string PrologueDir = "Assets/_Project/Resources/Prologue";
-        static readonly string[] PrologueSources = { @"art\prologue-art", @"art\prologue-map-fx", @"art\prologue-three-armies", @"art\tianxia-regions-ui" };
+        static readonly string[] PrologueSources = { @"art\prologue-art", @"art\prologue-map-fx", @"art\prologue-three-armies", @"art\tianxia-regions-ui", @"art\tianxia-liu-march" };
         // Layers the map animation reads pixel by pixel (PrologueMapFx).
         static readonly string[] ReadableLayers = { "map_states.png", "cinnabar_circle.png", "march_arrows.png" };
 
@@ -110,7 +110,7 @@ namespace ThreeKingdoms.EditorTools
                     importer.textureCompression = TextureImporterCompression.Uncompressed;
                     importer.maxTextureSize = 4096;
                     importer.npotScale = TextureImporterNPOTScale.None;
-                    importer.wrapMode = TextureWrapMode.Clamp;
+                    importer.wrapMode = name == "march_arrow_body.png" ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;   // tiled along the march (TianxiaArrow)
                     importer.isReadable = System.Array.IndexOf(ReadableLayers, name) >= 0;
                     importer.SaveAndReimport();
                 }

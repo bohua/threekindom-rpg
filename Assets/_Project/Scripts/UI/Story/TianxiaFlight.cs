@@ -42,9 +42,11 @@ namespace ThreeKingdoms.UI.Story
         readonly VisualElement root, image, column, columnPlate, title, mist;
         readonly Label titleName, titleSites;
         readonly List<Region> regions = new List<Region>();
-        readonly Sprite[] marchFrames;
+        readonly Sprite[] marchFrames, wagonFrames, dustFrames;
+        readonly VisualElement wagon, dust;
+        readonly TianxiaArrow arrow;
         readonly Vector2[] route;   // map_base pixels
-        readonly Texture2D regionLayer, routeLayer;
+        readonly Texture2D regionLayer;
         readonly Region destination;
 
         public string From { get; }
@@ -79,20 +81,25 @@ namespace ThreeKingdoms.UI.Story
             route = RouteBetween(here?.Id, destination?.Id, a, b);
 
             regionLayer = DrawRegions(regions);
-            routeLayer = DrawRoute(route);
-            map.Overlay("map_julu", regionLayer, 1f);   // the free overlay slots of the prologue's diorama
-            map.Overlay("arrows", routeLayer, 1f);
+            map.Overlay("map_julu", regionLayer, 1f);   // a free overlay slot of the prologue's diorama
+            var path = new List<Vector3>();
+            foreach (var px in route) path.Add(World(px));
+            arrow = new TianxiaArrow(map, path, 0.85f);
 
             foreach (var r in regions) { r.Plate = RegionPlate(r); root.Add(r.Plate); }
 
-            column = new VisualElement { pickingMode = PickingMode.Ignore };
-            column.style.position = Position.Absolute;
-            column.style.width = 150; column.style.height = 120; column.style.marginLeft = -75; column.style.marginTop = -120;
-            column.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(100));
-            marchFrames = PrologueMapFx.Slice(Resources.Load<Texture2D>("Prologue/han_army_march"), 8);
-            root.Add(column);
+            // Liu Bei's column (Codex art/tianxia-liu-march; the imperial column of the prologue until it is in), the
+            // baggage wagon behind it and the dust they raise.
+            dust = Sprite(root, 120, 90);
+            wagon = Sprite(root, 180, 126);
+            column = Sprite(root, 240, 160);
+            marchFrames = PrologueMapFx.Slice(Resources.Load<Texture2D>("Prologue/liu_army_march"), 8)
+                ?? PrologueMapFx.Slice(Resources.Load<Texture2D>("Prologue/han_army_march"), 8);
+            wagonFrames = PrologueMapFx.Slice(Resources.Load<Texture2D>("Prologue/liu_wagon_march"), 8);
+            dustFrames = PrologueMapFx.Slice(Resources.Load<Texture2D>("Prologue/march_dust"), 6)
+                ?? PrologueMapFx.Slice(Resources.Load<Texture2D>("Prologue/han_army_dust"), 6);
             columnPlate = Plate("刘备军", 22, Cyan);
-            columnPlate.style.marginLeft = -48; columnPlate.style.marginTop = -164;
+            columnPlate.style.marginLeft = -48; columnPlate.style.marginTop = -200;
             root.Add(columnPlate);
 
             title = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -132,10 +139,10 @@ namespace ThreeKingdoms.UI.Story
             Vector3 mid = (a + b) * 0.5f;
             var overview = new PrologueDiorama.Pose(mid + new Vector3(0f, span * 1.1f + 9f, -span * 0.7f - 6f), mid, 42f);
             float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.18f) / 0.57f));
-            var (at, dir) = Along(route, k);
-            Vector3 p = World(at);
+            float len = arrow.Length;
+            var (p, _) = arrow.At(k * len);
             // Heading from a stretch of road around the column, so the camera turns smoothly at the bends.
-            Vector3 d = World(Along(route, Mathf.Min(1f, k + 0.1f)).at) - World(Along(route, Mathf.Max(0f, k - 0.1f)).at);
+            Vector3 d = arrow.At(Mathf.Min(len, (k + 0.1f) * len)).at - arrow.At(Mathf.Max(0f, (k - 0.1f) * len)).at;
             d.y = 0f;
             d = d.sqrMagnitude < 1e-4f ? Vector3.forward : d.normalized;
             // High and steep behind the column: the peaks of the diorama are tall next to the plains' roads.
@@ -157,19 +164,53 @@ namespace ThreeKingdoms.UI.Story
                 Follow(r.Plate, r.Label, alpha * (r.State == State.Locked ? 0.7f : 1f));
             }
 
-            // Liu Bei's column.
+            // The arrow draws the whole road on the overview, then flows forward under the march.
+            arrow.Draw(Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.03f) / 0.13f)), time, Mathf.Clamp01((0.97f - t) / 0.06f));
+
+            // Liu Bei's column at the head, the wagon some way behind, dust at their heels.
             float colA = Mathf.Clamp01((t - 0.06f) / 0.06f) * Mathf.Clamp01((0.95f - t) / 0.05f);
-            float ground = Mathf.Max(0.6f, PrologueDiorama.GroundAt(p.x, p.z));
-            Follow(column, at, colA, ground + 0.15f);
-            Follow(columnPlate, at, colA, ground + 0.15f);
-            if (marchFrames != null) column.style.backgroundImage = new StyleBackground(marchFrames[(int)(time * 8f) % marchFrames.Length]);
-            var ahead = map.Project(Norm(at + dir.normalized * 4f), 0.9f); var here = map.Project(Norm(at), 0.9f);
-            if (ahead.HasValue && here.HasValue) column.style.scale = new Scale(new Vector3(ahead.Value.x < here.Value.x ? -1f : 1f, 1f, 1f));
+            bool moving = t > 0.18f && k < 0.999f;
+            int frame = moving ? (int)(time * 8f) : 0;
+            float gap = Mathf.Min(0.9f, len * 0.08f);
+            var (wagonAt, wagonDir) = arrow.At(Mathf.Max(0f, k * len - gap));
+            var (dustAt, _) = arrow.At(Mathf.Max(0f, k * len - gap * 0.45f));
+            March(column, marchFrames, p, d, colA, frame);
+            March(wagon, wagonFrames, wagonAt, wagonDir, colA * (wagonFrames != null ? 1f : 0f), frame + 3);
+            March(dust, dustFrames, dustAt, d, colA * (moving ? 0.85f : 0f), (int)(time * 10f));
+            FollowWorld(columnPlate, p, colA);
 
             // The destination's name, then the mist.
             title.style.opacity = Mathf.Clamp01((t - 0.74f) / 0.08f) * Mathf.Clamp01((0.97f - t) / 0.05f);
             mist.style.opacity = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.88f) / 0.1f)) + Mathf.Clamp01(1f - t / 0.04f);
         }
+
+        static VisualElement Sprite(VisualElement parent, float w, float h)
+        {
+            var v = new VisualElement { pickingMode = PickingMode.Ignore };
+            v.style.position = Position.Absolute;
+            v.style.width = w; v.style.height = h; v.style.marginLeft = -w / 2f; v.style.marginTop = -h;
+            v.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(100));
+            parent.Add(v);
+            return v;
+        }
+
+        // A marching sprite standing on the road at a diorama point, facing the way the road goes on screen.
+        void March(VisualElement v, Sprite[] frames, Vector3 at, Vector3 heading, float alpha, int frame)
+        {
+            FollowWorld(v, at, frames != null ? alpha : 0f);
+            if (frames == null) return;
+            v.style.backgroundImage = new StyleBackground(frames[frame % frames.Length]);
+            var ahead = map.Project(MapOf(at + heading * 0.6f), at.y); var here = map.Project(MapOf(at), at.y);
+            if (ahead.HasValue && here.HasValue) v.style.scale = new Scale(new Vector3(ahead.Value.x < here.Value.x ? -1f : 1f, 1f, 1f));
+        }
+
+        void FollowWorld(VisualElement v, Vector3 at, float alpha)
+        {
+            var px = MapOf(at);
+            Follow(v, new Vector2(px.x * 1920f, px.y * 1080f), alpha, at.y);
+        }
+
+        static Vector2 MapOf(Vector3 world) => new Vector2(world.x / PrologueDiorama.Width, 1f - world.z / PrologueDiorama.Depth);
 
         // Lifts a pose so the camera, and its view toward the look point, stay above the peaks.
         PrologueDiorama.Pose Clear(PrologueDiorama.Pose pose, float margin, bool smooth)
@@ -193,7 +234,7 @@ namespace ThreeKingdoms.UI.Story
             root.RemoveFromHierarchy();
             map.Dispose();
             UnityEngine.Object.Destroy(regionLayer);
-            UnityEngine.Object.Destroy(routeLayer);
+            arrow.Dispose();
         }
 
         // ---------- data ----------
@@ -362,39 +403,6 @@ namespace ThreeKingdoms.UI.Story
                     }
             }
             var tex = new Texture2D(W, H, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "tianxia regions" };
-            tex.SetPixels32(px);
-            tex.Apply(false, true);
-            return tex;
-        }
-
-        static Texture2D DrawRoute(Vector2[] route)
-        {
-            const int W = 1920, H = 1080;
-            var px = new Color32[W * H];
-            float run = 0f;
-            for (int s = 1; s < route.Length; s++)
-            {
-                Vector2 a = route[s - 1], b = route[s];
-                float len = Vector2.Distance(a, b);
-                int steps = Mathf.CeilToInt(len * 3f);
-                for (int i = 0; i <= steps; i++)
-                {
-                    var p = Vector2.Lerp(a, b, i / (float)Mathf.Max(steps, 1));
-                    float along = run + len * i / Mathf.Max(steps, 1);
-                    if ((along % 9f) > 5.5f) continue;   // dashes
-                    for (int dy = -2; dy <= 2; dy++)
-                        for (int dx = -2; dx <= 2; dx++)
-                        {
-                            float r = Mathf.Sqrt(dx * dx + dy * dy);
-                            if (r > 2.2f) continue;
-                            int x = (int)p.x + dx, y = (int)p.y + dy;
-                            if (x < 0 || y < 0 || x >= W || y >= H) continue;
-                            px[(H - 1 - y) * W + x] = r < 1.3f ? (Color32)new Color(Cyan.r, Cyan.g, Cyan.b, 1f) : new Color32(16, 28, 48, 200);
-                        }
-                }
-                run += len;
-            }
-            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "tianxia route" };
             tex.SetPixels32(px);
             tex.Apply(false, true);
             return tex;
