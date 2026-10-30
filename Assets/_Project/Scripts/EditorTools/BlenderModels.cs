@@ -179,6 +179,8 @@ namespace ThreeKingdoms.EditorTools
             if (made.TryGetValue(set + "/" + key, out var m) && m) { m.SetColor("_BaseColor", c); EditorUtility.SetDirty(m); }
         }
 
+        internal static IEnumerable<string> Keys(string set) => sets.TryGetValue(set, out var d) ? d.Keys.ToList() : new List<string>();
+
         static Material Swap(string set, Material imported)
         {
             if (!imported) return null;
