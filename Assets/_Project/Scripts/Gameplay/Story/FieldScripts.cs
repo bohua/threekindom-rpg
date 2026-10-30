@@ -16,6 +16,14 @@ namespace ThreeKingdoms.Gameplay.Story
         public static IEnumerable<StageStep> OnArrive(FieldStoryController c)
         {
             if (FieldScriptsR1.Mine(c)) return FieldScriptsR1.OnArrive(c);   // the R1 map's side quests (npc-sidequests)
+            var main = OnArriveMain(c);
+            var side = SideQuests.OnArrive(c).ToList();
+            return side.Count == 0 ? main : (main ?? Enumerable.Empty<StageStep>()).Concat(side);
+        }
+
+        static IEnumerable<StageStep> OnArriveMain(FieldStoryController c)
+        {
+            if (FieldScriptsRegions.Mine(c)) return FieldScriptsRegions.OnArrive(c);   // an open region (RegionTravel)
             if (FieldScripts5.Mine(c)) return FieldScripts5.OnArrive(c);   // 0.5
             if (FieldScripts4.Mine(c)) return FieldScripts4.OnArrive(c);
             if (FieldScripts3.Mine(c)) return FieldScripts3.OnArrive(c);   // 0.3
@@ -66,6 +74,9 @@ namespace ThreeKingdoms.Gameplay.Story
         public static string Prompt(FieldStoryController c, string id)
         {
             if (FieldScriptsR1.Mine(c)) return FieldScriptsR1.Prompt(c, id);   // the R1 map's side quests (npc-sidequests)
+            var side = SideQuests.Prompt(c, id);   // chapter one's side quests (SideQuests*.cs)
+            if (side != null) return side;
+            if (FieldScriptsRegions.Mine(c)) return FieldScriptsRegions.Prompt(c, id);
             if (FieldScripts5.Mine(c)) return FieldScripts5.Prompt(c, id);   // 0.5
             if (FieldScripts4.Mine(c)) return FieldScripts4.Prompt(c, id);
             if (FieldScripts3.Mine(c)) return FieldScripts3.Prompt(c, id);
@@ -90,6 +101,8 @@ namespace ThreeKingdoms.Gameplay.Story
         public static bool Marked(FieldStoryController c, string id)
         {
             if (FieldScriptsR1.Mine(c)) return FieldScriptsR1.Marked(c, id);   // the R1 map's side quests (npc-sidequests)
+            if (SideQuests.Marked(c, id)) return true;
+            if (FieldScriptsRegions.Mine(c)) return FieldScriptsRegions.Marked(c, id);
             if (FieldScripts5.Mine(c)) return FieldScripts5.Marked(c, id);   // 0.5
             if (FieldScripts4.Mine(c)) return FieldScripts4.Marked(c, id);
             if (FieldScripts3.Mine(c)) return FieldScripts3.Marked(c, id);
@@ -111,6 +124,7 @@ namespace ThreeKingdoms.Gameplay.Story
         public static string Objective(FieldStoryController c)
         {
             if (FieldScriptsR1.Mine(c)) return FieldScriptsR1.Objective(c);   // the R1 map's side quests (npc-sidequests)
+            if (FieldScriptsRegions.Mine(c)) return FieldScriptsRegions.Objective(c);
             if (FieldScripts5.Mine(c)) return FieldScripts5.Objective(c);   // 0.5
             if (FieldScripts4.Mine(c)) return FieldScripts4.Objective(c);
             if (FieldScripts3.Mine(c)) return FieldScripts3.Objective(c);
@@ -127,6 +141,9 @@ namespace ThreeKingdoms.Gameplay.Story
         public static IEnumerable<StageStep> Talk(FieldStoryController c, string id)
         {
             if (FieldScriptsR1.Mine(c)) return FieldScriptsR1.Talk(c, id);   // the R1 map's side quests (npc-sidequests)
+            var side = SideQuests.Talk(c, id);
+            if (side != null) return side;
+            if (FieldScriptsRegions.Mine(c)) return FieldScriptsRegions.Talk(c, id);
             if (FieldScripts5.Mine(c)) return FieldScripts5.Talk(c, id);   // 0.5
             if (FieldScripts4.Mine(c)) return FieldScripts4.Talk(c, id);
             if (FieldScripts3.Mine(c)) return FieldScripts3.Talk(c, id);

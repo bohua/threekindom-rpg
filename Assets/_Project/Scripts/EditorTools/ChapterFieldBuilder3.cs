@@ -123,6 +123,7 @@ namespace ThreeKingdoms.EditorTools
             yield return ("NpcCaoBao", Folk("F06"));
             yield return ("NpcLuBu", Folk("F10"));
             yield return ("NpcRefugee", Folk("F15"));
+            foreach (var a in SideStageActors()) yield return a;
         }
 
         // ---------- Gongsun Zan's garrison (S4, about 70 × 50 m; south gate z −22, command hall steps z 15.5) ----------
@@ -210,6 +211,7 @@ namespace ThreeKingdoms.EditorTools
             Person(p, "Gate guard E", Folk("C09"), new Vector3(2.8f, 0, -20.4f));
             Person(p, "Hall guard W", Folk("D02"), new Vector3(-3.4f, 0, 15.2f));
             Person(p, "Hall guard E", Folk("D02"), new Vector3(3.4f, 0, 15.2f));
+            people.AddRange(SidePeople(FieldStoryController.Place.Gongsun, p));
             var c = f.Controller;
             c.Location = FieldStoryController.Place.Gongsun;
             c.People = people.ToArray();
@@ -304,6 +306,7 @@ namespace ThreeKingdoms.EditorTools
             };
             for (int i = 0; i < 4; i++)
                 Person(p, "Coalition soldier " + i, Folk("D13"), new Vector3(i % 2 == 0 ? -4.6f : 4.6f, 0, -26.4f + (i / 2) * 50f));
+            people.AddRange(SidePeople(FieldStoryController.Place.Suanzao, p));
             var c = f.Controller;
             c.Location = FieldStoryController.Place.Suanzao;
             c.People = people.ToArray();

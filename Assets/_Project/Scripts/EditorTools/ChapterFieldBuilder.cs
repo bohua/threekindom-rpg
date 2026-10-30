@@ -527,8 +527,13 @@ namespace ThreeKingdoms.EditorTools
 
             Ground(env, "Grass outside", "ground_camp_grass", grass, -70, 70, -60, 60, -0.02f);
             Ground(env, "Camp ground", "ground_camp_dirt_a", dirt, -30, 30, -20, 20);
-            Ground(env, "Main road", "ground_camp_ruts", new Color(0.72f, 0.62f, 0.46f), -2.5f, 2.5f, -24, 4, 0.01f);
-            Ground(env, "Command square", "ground_camp_dirt_b", new Color(0.82f, 0.72f, 0.54f), -6, 6, 0, 11, 0.012f);
+            // The road and the command square used to be two hard rectangles of another dirt on the camp ground (user
+            // 2026-10-28: every ground change needs a transition); with the Blender camp the camp dirt alone carries them.
+            if (!Directory.Exists(Path.Combine(Art, CampSet)))
+            {
+                Ground(env, "Main road", "ground_camp_ruts", new Color(0.72f, 0.62f, 0.46f), -2.5f, 2.5f, -24, 4, 0.01f);
+                Ground(env, "Command square", "ground_camp_dirt_b", new Color(0.82f, 0.72f, 0.54f), -6, 6, 0, 11, 0.012f);
+            }
 
             // Codex Blender models (user 2026-10-27: hubs are modelled, art/r3-blender-luzhi-camp); without the set, the
             // painted billboards as before.
@@ -594,6 +599,12 @@ namespace ThreeKingdoms.EditorTools
             Billboard(env, "Straw mat A", "straw_mat", -10.8f, -2.4f, new Vector3(2f, 0.2f, 1f), new Color(0.80f, 0.70f, 0.44f));
             Billboard(env, "Straw mat B", "straw_mat", -13.4f, -2.4f, new Vector3(2f, 0.2f, 1f), new Color(0.80f, 0.70f, 0.44f));
             // Stable (north-east) and training ground (north-west).
+            // The models' flat earth aprons are a lighter patch with a hard edge on the camp dirt (user 2026-10-28: "军营帐篷到
+            // 旁边的土地……颜色明显就是一个断层"): the camp ground is earth already, so they go.
+            if (campModels)
+                foreach (var r in env.GetComponentsInChildren<MeshRenderer>(true))
+                    if (r && r.bounds.size.y < 0.35f && r.sharedMaterials.Length > 0 && r.sharedMaterials.All(m => m && m.name.StartsWith("mud_camp")))
+                        Object.DestroyImmediate(r.gameObject);
             if (!M("camp_stable", "Stable", 19f, 12f)) Billboard(env, "Stable", "stable_shed", 19f, 14f, new Vector3(10f, 5f, 5f), wood, solid: true);
             Billboard(env, "Horse", "horse_brown", 17.4f, 12.6f, new Vector3(2.5f, 2f, 0.8f), new Color(0.48f, 0.30f, 0.18f));
             Billboard(env, "Trough", "horse_trough", 21f, 12.2f, new Vector3(3f, 1f, 1f), wood);
@@ -623,12 +634,23 @@ namespace ThreeKingdoms.EditorTools
             };
             for (int i = 0; i < 3; i++)
                 Person(p, "Han soldier " + i, Folk("C09"), new Vector3(-6f + i * 6f, 0, -10f + (i % 2) * 2f));
+            people.AddRange(SidePeople(FieldStoryController.Place.Camp, p));
             var c = f.Controller;
             c.Location = FieldStoryController.Place.Camp;
             c.People = people.ToArray();
             c.Spots = new[] { Spot(f, "quiver 草堆", new Vector3(23.4f, 0, 13.2f)) };
             c.ArrivalSpot = Spot(f, "Arrival (inside the gate)", new Vector3(0, 0, -17f));
             c.ReturnSpot = c.ArrivalSpot;
+            // Out through the gate into the R3 巨鹿 region (the Guangzong country round the camp) while the camp is free to
+            // walk; back in through its gate arrives inside it (RegionGreyboxBuilder, tools/regions/hubs_R3.json).
+            var gateOut = new GameObject("Portal to the Julu region").AddComponent<RegionPortal>();
+            gateOut.transform.SetParent(env, false);
+            gateOut.transform.position = new Vector3(0, 0, -25f);
+            gateOut.Size = new Vector2(8f, 3f);
+            gateOut.TargetScene = "Region_R3";
+            gateOut.ArrivalSpot = "Arrival outside Lu Zhi camp gate";
+            gateOut.Facing = Vector3.back;
+            gateOut.Steps = new[] { (int)ChapterStep.Camp };
             Huds(c);
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), CampPath);
         }
@@ -738,6 +760,7 @@ namespace ThreeKingdoms.EditorTools
             bound.gameObject.SetActive(false);
             var ox = Billboard(p, "ox 黄牛", "PROP_OX_WALK_STRIP", 0, -1.2f, new Vector3(1.8f, 1.3f, 0.8f), new Color(0.62f, 0.42f, 0.22f), frames: 4);
             people.Add(ox);
+            people.AddRange(SidePeople(FieldStoryController.Place.Anxi, p));
             var c = f.Controller;
             c.Location = FieldStoryController.Place.Anxi;
             c.People = people.ToArray();
