@@ -8,7 +8,9 @@
     "ThreeKingdoms.Save",
     "ThreeKingdoms.Data",
     "Unity.InputSystem",
-    "Prototype.BingshuTactics"
+    "Prototype.BingshuTactics",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.RenderPipelines.Core.Runtime"
   ],
   "autoReferenced": true
 }

@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 namespace ThreeKingdoms.Gameplay.Story
 {
-    // Title screen actions (game-ui GDD): a new game starts outside the south gate; loading reads a slot and rebuilds
+    // Title screen actions (game-ui GDD): a new game plays the prologue and lands at the notice board; loading reads a slot and rebuilds
     // the play-through, landing at the tavern or the saved battle's pre-battle state (save-system rule 5).
     public sealed class TitleController : MonoBehaviour
     {
@@ -16,7 +16,15 @@ namespace ThreeKingdoms.Gameplay.Story
         public void NewGame()
         {
             GameRun.Clear();
-            SceneManager.LoadScene(GameRun.TownScene);
+            GameRun.PrologueDue = true;
+            // The prologue ends on the young man of Lousang (user 2026-10-30): the game opens at home in the R1 map, and
+            // he walks to Zhuojun for the notice. Builds without the R1 map open at the notice board as before.
+            if (Application.CanStreamedLevelBeLoaded(GameRun.R1Scene))
+            {
+                GameRun.NewGame(Catalog);
+                SceneManager.LoadScene(GameRun.R1Scene);
+            }
+            else SceneManager.LoadScene(GameRun.TownScene);
         }
 
         // Ok means the scene is loading; anything else leaves the file untouched and returns why.

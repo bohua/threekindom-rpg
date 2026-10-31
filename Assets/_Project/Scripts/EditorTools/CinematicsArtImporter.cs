@@ -76,6 +76,74 @@ namespace ThreeKingdoms.EditorTools
             AssetDatabase.Refresh();
         }
 
+        // The prologue 天下大势 (design/gdd/prologue.md): Codex art/prologue-art into Resources/Prologue, where the
+        // player reads it by name. Scrolls are 3840 wide; the map layers keep their alpha. Missing files are skipped.
+        public const string PrologueDir = "Assets/_Project/Resources/Prologue";
+        static readonly string[] PrologueSources = { @"art\prologue-art", @"art\prologue-map-fx", @"art\prologue-three-armies", @"art\tianxia-regions-ui", @"art\tianxia-liu-march", @"art\tianxia-liu-march-dirs", @"art\tianxia-liu-march-west", @"art\prologue-lousang-shot" };
+        // Layers the map animation reads pixel by pixel (PrologueMapFx).
+        static readonly string[] ReadableLayers = { "map_states.png", "cinnabar_circle.png", "march_arrows.png" };
+
+        [MenuItem("JRPG/Import prologue art")]
+        public static void ImportPrologue()
+        {
+            Directory.CreateDirectory(PrologueDir);
+            foreach (var source in PrologueSources)
+            {
+                string from = Path.Combine(Root, source);
+                if (!Directory.Exists(from)) { Debug.LogWarning("No prologue art at " + from); continue; }
+                foreach (var file in Directory.GetFiles(from))
+                {
+                    string name = Path.GetFileName(file);
+                    bool picture = name.EndsWith(".png") && name != "preview.png" && !name.StartsWith("card_") && !name.StartsWith("TIANXIA_");
+                    if (!picture && (!name.EndsWith(".json") || name == "manifest.json")) continue;
+                    string to = $"{PrologueDir}/{name}";
+                    // Codex writes centre lines as [[x,y],…], which JsonUtility cannot read; store {"x":..,"y":..} points.
+                    if (name.EndsWith(".json") && File.ReadAllText(file).Contains("\"centerline\"")) File.WriteAllText(to, CentreLines(File.ReadAllText(file)));
+                    else File.Copy(file, to, true);
+                    AssetDatabase.ImportAsset(to, ImportAssetOptions.ForceUpdate);
+                    if (!picture) continue;
+                    var importer = (TextureImporter)AssetImporter.GetAtPath(to);
+                    importer.textureType = TextureImporterType.Default;
+                    importer.mipmapEnabled = false;
+                    importer.alphaIsTransparency = true;
+                    importer.filterMode = FilterMode.Bilinear;
+                    importer.textureCompression = TextureImporterCompression.Uncompressed;
+                    importer.maxTextureSize = 4096;
+                    importer.npotScale = TextureImporterNPOTScale.None;
+                    importer.wrapMode = name == "march_arrow_body.png" ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;   // tiled along the march (TianxiaArrow)
+                    importer.isReadable = System.Array.IndexOf(ReadableLayers, name) >= 0;
+                    importer.SaveAndReimport();
+                }
+            }
+            AssetDatabase.Refresh();
+        }
+
+        // Every "centerline" array in the file, as {"width","height","arrows":[{"points":[{"x","y"}…]}…]} (PrologueMapFx).
+        static string CentreLines(string json)
+        {
+            var paths = new System.Collections.Generic.List<string>();
+            for (int at = json.IndexOf("\"centerline\""); at >= 0; at = json.IndexOf("\"centerline\"", at + 1))
+            {
+                int open = json.IndexOf('[', at), depth = 0, end = open;
+                for (; end < json.Length; end++)
+                {
+                    if (json[end] == '[') depth++;
+                    else if (json[end] == ']' && --depth == 0) break;
+                }
+                var nums = System.Text.RegularExpressions.Regex.Matches(json.Substring(open, end - open), @"-?\d+(\.\d+)?");
+                var pts = new System.Collections.Generic.List<string>();
+                for (int i = 0; i + 1 < nums.Count; i += 2) pts.Add($"{{\"x\":{nums[i].Value},\"y\":{nums[i + 1].Value}}}");
+                paths.Add("{\"points\":[" + string.Join(",", pts) + "]}");
+            }
+            return "{\"width\":1920,\"height\":1080,\"arrows\":[" + string.Join(",", paths) + "]}";
+        }
+
+        public static void ImportPrologueFromCommandLine()
+        {
+            ImportPrologue();
+            EditorApplication.Exit(0);
+        }
+
         static string First(string[] sources)
         {
             foreach (var s in sources)

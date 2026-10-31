@@ -17,6 +17,9 @@ namespace ThreeKingdoms.Gameplay.Story
             IEnumerator PlayScroll(string id);
             // The opening film (opening-assembled-20261021-v1); skippable; ends at once when the file is missing.
             IEnumerator PlayOpening();
+            // The prologue 天下大势 (design/gdd/prologue.md): nine shots over scrolls, the world map and the hero cards;
+            // the player may skip it at any time.
+            IEnumerator PlayPrologue();
             // Confirm from the story side (tests, the auto pilot): types the rest, or closes the waiting scroll.
             void Advance();
         }
@@ -27,6 +30,9 @@ namespace ThreeKingdoms.Gameplay.Story
         // The last scroll asked for, so tests can see it was reached without the view.
         public static string LastScroll { get; private set; }
         public static bool OpeningRequested { get; private set; }
+        public static int PrologueCount { get; private set; }
+        // Tests and the auto pilot: end the prologue at once, as if the player chose to skip it.
+        public static bool SkipPrologue { get; set; }
 
         public static IEnumerator Scroll(string id)
         {
@@ -40,8 +46,14 @@ namespace ThreeKingdoms.Gameplay.Story
             if (View != null) yield return View.PlayOpening();
         }
 
+        public static IEnumerator Prologue()
+        {
+            PrologueCount++;
+            if (View != null && !SkipPrologue) yield return View.PlayPrologue();
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { View = null; LastScroll = null; OpeningRequested = false; }
+        static void ResetStatics() { View = null; LastScroll = null; OpeningRequested = false; PrologueCount = 0; SkipPrologue = false; }
     }
 
     // Music and sound cues (user 2026-10-24: the oath and the scroll get music later, made with Suno). A cue is an
@@ -50,7 +62,7 @@ namespace ThreeKingdoms.Gameplay.Story
     // design/cinematics/story-cinematics.md.
     public static class StoryMusic
     {
-        public const string OathCue = "taoyuan_oath", ScrollCue = "scroll_finale", AspirationCue = "victory_aspiration";
+        public const string OathCue = "taoyuan_oath", ScrollCue = "scroll_finale", AspirationCue = "victory_aspiration", PrologueCue = "prologue_tianxia";
         public const string UnrollSfx = "scroll_unroll", SealSfx = "seal_stamp", InkSfx = "ink_drop";
 
         static AudioSource music, sfx;
@@ -58,6 +70,23 @@ namespace ThreeKingdoms.Gameplay.Story
 
         // The cue now asked to play (also when its clip is missing), or null.
         public static string Current { get; private set; }
+        // 0..1 multiplier on the music (kept for narration that wants the music lower; the prologue leaves it at 1).
+        public static float Duck { get; set; } = 1f;
+        // The place's own music, looped whenever no story cue plays (user 2026-10-28: Zhuo keeps the prologue's piece
+        // so the town does not break off from it). Null where a place has none.
+        public static string Background { get; set; }
+
+        // Lets the cue now playing run on in a loop (the prologue's piece carrying on into the town).
+        public static void Loop()
+        {
+            if (music && music.isPlaying) music.loop = true;
+        }
+
+        // Called by a place each frame: starts its background piece again once a story cue has ended.
+        public static void KeepBackground()
+        {
+            if (Background != null && Current == null) Play(Background, loop: true, fadeIn: 2f);
+        }
 
         public static void Play(string cue, bool loop = false, float fadeIn = 0.6f)
         {
@@ -110,12 +139,30 @@ namespace ThreeKingdoms.Gameplay.Story
             void Update()
             {
                 if (!music) return;
-                music.volume = Mathf.MoveTowards(music.volume, fadeTo, fadeSpeed * Time.unscaledDeltaTime);
+                music.volume = Mathf.MoveTowards(music.volume, fadeTo * Duck, fadeSpeed * Time.unscaledDeltaTime);
                 if (fadeTo <= 0f && music.volume <= 0f && music.isPlaying) music.Stop();
             }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { music = sfx = null; Current = null; fadeTo = 0f; }
+        static void ResetStatics() { music = sfx = null; Current = null; fadeTo = 0f; Duck = 1f; Background = null; }
+
+        // Most scenes are built by code without an AudioListener, so nothing at all was heard (user 2026-10-28 “没有音乐和
+        // 人声”). Every loaded scene gets one on its main camera when it has none.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        static void WatchScenes()
+        {
+            EnsureListener();
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += (_, __) => EnsureListener();
+        }
+
+        public static void EnsureListener()
+        {
+            if (Object.FindAnyObjectByType<AudioListener>()) return;
+            var cam = Camera.main;
+            Debug.Log("No AudioListener in this scene; adding one to " + (cam ? cam.name : "a listener object"));
+            if (cam) cam.gameObject.AddComponent<AudioListener>();
+            else Object.DontDestroyOnLoad(new GameObject("Audio listener").AddComponent<AudioListener>().gameObject);
+        }
     }
 }

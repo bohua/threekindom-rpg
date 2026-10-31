@@ -20,6 +20,19 @@ namespace ThreeKingdoms.UI.Story
 
         public static readonly Dictionary<string, string> Lines = new Dictionary<string, string>
         {
+            // ---------- 新游戏开场·楼桑村（用户 2026-10-30：序章落在楼桑村的白身青年，与母亲的对白交代局势，再去涿郡参军）
+            // 原创对白；织席贩履、桑树如车盖、中山靖王之后见《三国志·先主传》，“羽葆盖车”童言亦出该传 ----------
+            ["dlg.open.mother.1"] = "备儿，又要扛席子进城？这几日城里不太平。",
+            ["dlg.open.liu_bei.1"] = "娘，南边来的客商说，冀州闹起了黄巾，八州一同举事。",
+            ["dlg.open.mother.2"] = "逃过来的人也这么说。巨鹿的张角自称大贤良师，头裹黄巾的人，一夜之间遍地都是。",
+            ["dlg.open.mother.3"] = "听说官府在城门口贴了榜，要招募义兵，守城讨贼。",
+            ["dlg.open.liu_bei.2"] = "孩儿正想去看看那张榜。",
+            ["dlg.open.mother.4"] = "……你小时候就在这棵桑树底下跟人说，将来要坐这样的羽葆盖车。被你叔父好一顿骂。",
+            ["dlg.open.liu_bei.3"] = "那是儿时的玩话。",
+            ["dlg.open.mother.5"] = "你祖上是中山靖王之后。你爹去得早，娘织席贩履把你拉扯大，不是要你一辈子只在村里编席子。",
+            ["dlg.open.mother.6"] = "去吧。到涿郡城里看看那张榜。若真能为乡里出一份力，娘不拦你。",
+            ["dlg.open.liu_bei.4"] = "娘放心。孩儿去去就回。",
+            ["dlg.open.mother.again"] = "去吧，城门口那张榜。路上当心。",
             // ---------- sq.lb1.L5.zhuo_horse 中山马商（一）：不是买卖 (R1_R2 §R1.2 / §R1.4) ----------
             ["dlg.lb1.su_shuang.N1.1"] = "张兄，就是他——带乡勇出城的刘家大郎。",
             ["dlg.lb1.zhang_shiping.N1.1"] = "中山张世平，这是苏双。我们贩马，年年要来涿郡几趟。",

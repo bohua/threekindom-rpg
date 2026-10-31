@@ -17,6 +17,7 @@ namespace ThreeKingdoms.Gameplay.Story
     {
         public const string TitleScene = "Title";
         public const string TownScene = "Zhuojun_Town";
+        public const string R1Scene = "Region_R1";   // 涿蓟: a new game opens in Lousang (user 2026-10-30)
         public const string TavernScene = "Zhuojun_Tavern";   // indoor scene where Guan Yu joins (user 2026-10-22)
         public static readonly string[] BattleScenes = { "Battle_Tutorial01", "Battle_Tutorial02", "Battle_Tutorial03" };
         // 0.2 黄巾篇 (V02_HUANGJIN_PLAN §3): Lu Zhi's camp and Anxi county to walk in, the story stage for scenes that are
@@ -106,9 +107,13 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static void Clear() => Current = null;
 
+        // Set by the title's 新游戏: the town plays the prologue before the player gets control (design/gdd/prologue.md).
+        // Loading a save, returning from battle and opening a scene directly never play it.
+        public static bool PrologueDue { get; set; }
+
         // Static state survives "enter play mode" without a domain reload; start every run clean.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { Current = null; SaveDirectoryOverride = null; }
+        static void ResetStatics() { Current = null; SaveDirectoryOverride = null; PrologueDue = false; }
 
         public static int BattleIndex(string encounterId) => Array.IndexOf(new[] { "battle_1", "battle_2", "battle_3", "battle_4", "battle_5", "battle_6", "battle_7", "battle_8", "battle_9", "battle_10", "battle_11", "battle_12", "battle_13", "battle_14", "battle_15" }, encounterId);
 

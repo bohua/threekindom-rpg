@@ -32,6 +32,28 @@ namespace ThreeKingdoms.Gameplay.Story
         public static bool Mine(FieldStoryController c) => c.Location == FieldStoryController.Place.R1;
 
         static int Node(FieldStoryController c) => (int)c.Run.Chapter2.Node;
+
+        // The new game's opening (user 2026-10-30): the prologue ends on the young man of Lousang, who talks with his
+        // mother and sets out for Zhuojun to answer the 募兵 notice. True from a new game until he has met Zhang Fei.
+        public static bool InOpening(FieldStoryController c) => Node(c) < 4 && !c.Run.Story.ZhangFeiJoined && !c.Run.Story.GuanYuJoined;
+
+        public static IEnumerable<StageStep> Opening(FieldStoryController c)
+        {
+            yield return Refresh(c);
+            yield return L("liu_bei_mu", "dlg.open.mother.1");
+            yield return L("liu_bei", "dlg.open.liu_bei.1");
+            yield return L("liu_bei_mu", "dlg.open.mother.2");
+            yield return L("liu_bei_mu", "dlg.open.mother.3");
+            yield return L("liu_bei", "dlg.open.liu_bei.2");
+            yield return L("liu_bei_mu", "dlg.open.mother.4");
+            yield return L("liu_bei", "dlg.open.liu_bei.3");
+            yield return L("liu_bei_mu", "dlg.open.mother.5");
+            yield return L("liu_bei_mu", "dlg.open.mother.6");
+            yield return L("liu_bei", "dlg.open.liu_bei.4");
+            yield return Flag(OpeningDone);
+        }
+
+        public const string OpeningDone = "open_mother";
         static bool Has(FieldStoryController c, string f) => c.Run.Chapter2.Has(f);
 
         // Who stands on the map at the current node and stage of each quest.
@@ -44,6 +66,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 "ji_jian_yong" => ear,
                 "ji_jian_yong_hall" => ear && Has(c, EarInn) && Has(c, EarPorridge) && Has(c, EarEastGate),
                 "liu_yu" or "kumo" => n >= 4 && n <= 6,
+                "ls_mother" => n >= 4 || InOpening(c),
                 _ when id.StartsWith("ji_") || id.StartsWith("ls_") => n >= 4,
                 _ => true,
             };
@@ -59,7 +82,7 @@ namespace ThreeKingdoms.Gameplay.Story
         public static IEnumerable<StageStep> OnArrive(FieldStoryController c)
         {
             yield return Refresh(c);
-            if (c.Run.Chapter2.Step == ChapterStep.Gongsun) yield break;
+            if (c.Run.Chapter2.Step == ChapterStep.Gongsun || InOpening(c)) yield break;
             foreach (var s in FieldScriptsRegions.OnArrive(c)) yield return s;
         }
 
@@ -92,6 +115,7 @@ namespace ThreeKingdoms.Gameplay.Story
 
         public static string Objective(FieldStoryController c)
         {
+            if (InOpening(c)) return Has(c, OpeningDone) ? "目标：沿官道去涿郡城，看城门口的募兵告示" : null;
             if (c.Run.Chapter2.Step == ChapterStep.Gongsun && !Has(c, JianYongEar))
                 return !Has(c, EarStarted) ? "目标：在蓟城南门内找简雍"
                     : Present(c, "ji_jian_yong_hall") ? "目标：到州府台阶下与简雍会合" : "目标：到燕台酒楼、市集粥棚、东便门听听城里的话";
@@ -117,6 +141,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 case "kumo": return Kumo(c);
 
                 // ---------- Lousang ----------
+                case "ls_mother" when InOpening(c): return Has(c, OpeningDone) ? new[] { L("liu_bei_mu", "dlg.open.mother.again") } : Opening(c);
                 case "ls_mother": return Has(c, "ls_mother")
                     ? new[] { L("liu_bei_mu", "dlg.lb1.liu_bei_mu.N4.3") }
                     : new[] { L("liu_bei_mu", "dlg.lb1.liu_bei_mu.N4.1"), L("liu_bei_mu", "dlg.lb1.liu_bei_mu.N4.2"), L("liu_bei_mu", "dlg.lb1.liu_bei_mu.N4.3"), Flag("ls_mother") };

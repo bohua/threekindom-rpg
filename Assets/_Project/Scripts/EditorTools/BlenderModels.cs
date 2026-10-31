@@ -21,15 +21,16 @@ namespace ThreeKingdoms.EditorTools
         public const string Root = "Assets/_Project/Art/Environment/Blender";
         public static bool Enabled = !System.Environment.GetCommandLineArgs().Contains("-noBlender");
 
-        sealed class Entry { public string Texture; public bool Clip, TwoSided, Tiling, Triplanar; public float Metres = 12f; }
+        sealed class Entry { public string Texture; public bool Clip, Blend, TwoSided, Tiling, Triplanar; public float Metres = 12f; }
         static readonly Dictionary<string, Dictionary<string, Entry>> sets = new Dictionary<string, Dictionary<string, Entry>>();
         static readonly Dictionary<string, Material> made = new Dictionary<string, Material>();
 
         static string Dir(string set) => $"{Root}/{set}";
 
         // Copies the set's FBX files, materials.json and textures into the project and makes its materials; false when
-        // the set has not been delivered.
-        internal static bool Import(string set)
+        // the set has not been delivered. maxTexture: the largest texture size kept (the prologue diorama keeps its 8K
+        // ground; town and region sets stay at 2048).
+        internal static bool Import(string set, int maxTexture = 2048)
         {
             // -blenderFrom <folder>: a revision still in review (bridge staging) instead of the approved art/<set>.
             var args = System.Environment.GetCommandLineArgs();
@@ -48,7 +49,7 @@ namespace ThreeKingdoms.EditorTools
             }
             sets[set] = entries;
             AssetDatabase.Refresh();
-            foreach (var e in entries.Values) ConfigureTexture(e);
+            foreach (var e in entries.Values) ConfigureTexture(e, maxTexture);
             foreach (string path in Directory.GetFiles(to, "*.fbx")) ConfigureModel(path.Replace('\\', '/'));
             foreach (var kv in entries) MakeMaterial(set, kv.Key, kv.Value);
             AssetDatabase.SaveAssets();
@@ -66,6 +67,7 @@ namespace ThreeKingdoms.EditorTools
                 {
                     Texture = Regex.Match(body, "\"texture\"\\s*:\\s*\"([^\"]+)\"").Groups[1].Value.Replace("\\\\", "\\"),
                     Clip = Regex.IsMatch(body, "\"alpha_clip\"\\s*:\\s*true"),
+                    Blend = Regex.IsMatch(body, "\"alpha_blend\"\\s*:\\s*true"),
                     TwoSided = Regex.IsMatch(body, "\"two_sided\"\\s*:\\s*true"),
                     Tiling = Regex.IsMatch(body, "\"tiling\"\\s*:\\s*true"),
                     // Rock faces Codex projects from the world (the Taihang cliffs): "projection": "world_triplanar".
@@ -77,14 +79,14 @@ namespace ThreeKingdoms.EditorTools
             return d;
         }
 
-        static void ConfigureTexture(Entry e)
+        static void ConfigureTexture(Entry e, int maxTexture)
         {
             if (!(AssetImporter.GetAtPath(e.Texture) is TextureImporter ti)) return;
             ti.textureType = TextureImporterType.Default;
             ti.filterMode = FilterMode.Trilinear;
             ti.mipmapEnabled = true;
             ti.anisoLevel = 4;
-            ti.maxTextureSize = 2048;
+            ti.maxTextureSize = maxTexture;
             ti.textureCompression = TextureImporterCompression.CompressedHQ;
             ti.npotScale = TextureImporterNPOTScale.None;
             ti.sRGBTexture = true;
@@ -135,12 +137,25 @@ namespace ThreeKingdoms.EditorTools
                 m.SetFloat("_AlphaClip", 1f); m.SetFloat("_Cutoff", 0.5f); m.EnableKeyword("_ALPHATEST_ON");
                 m.renderQueue = (int)RenderQueue.AlphaTest;
             }
+            else if (e.Blend) Transparent(m);
             if (e.TwoSided) m.SetFloat("_Cull", (float)CullMode.Off);
             string path = $"{Dir(set)}/Materials/{key}.mat";
             if (AssetDatabase.LoadAssetAtPath<Material>(path)) AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(m, path);
             made[set + "/" + key] = m;
             return m;
+        }
+
+        // Soft alpha (mist, the diorama's fading edges): URP transparent, no depth writes.
+        internal static void Transparent(Material m)
+        {
+            m.SetFloat("_Surface", 1f); m.SetFloat("_Blend", 0f);
+            m.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha); m.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+            m.SetFloat("_SrcBlendAlpha", (float)BlendMode.One); m.SetFloat("_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
+            m.SetFloat("_ZWrite", 0f);
+            m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            m.SetOverrideTag("RenderType", "Transparent");
+            m.renderQueue = (int)RenderQueue.Transparent;
         }
 
         // Places a model of an imported set; null when it is missing or switched off, so the caller keeps its quad

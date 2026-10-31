@@ -59,6 +59,8 @@ namespace ThreeKingdoms.UI.Story
         float toastUntil;
         ChapterState watched;
         string drawnRoute;
+        TianxiaFlight flight;
+        string flightTried;
 
         public bool CardShown => card != null && card.style.display == DisplayStyle.Flex;
         public string ShownCard => CardShown ? cardText.text : null;
@@ -96,6 +98,8 @@ namespace ThreeKingdoms.UI.Story
             cinemaHide.Add(prompt);
 
             BuildMarch();
+            // The 天下图 the marches fly over, read ahead on the story stage only (the walkable places hold no marches).
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == GameRun.StageScene) PrologueDiorama.Preload();
             // Comic panel (user 2026-10-25: the 鞭督邮 story as a 连环画): a paper-framed picture over a dimmed scene, the
             // dialogue box below it. Under everything else so lines, choices and fades stay on top.
             comic = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -232,7 +236,7 @@ namespace ThreeKingdoms.UI.Story
             if (s.Prompt != null && s.Prompt.StartsWith("raw:")) prompt.text = s.Busy ? "" : s.Prompt.Substring(4);
             foreach (var bar in letterbox) if (bar != null) bar.style.display = s.Letterbox && !cinema ? DisplayStyle.Flex : DisplayStyle.None;
             dialogue.PortraitsEnabled = true;   // user 2026-10-26: lines in the automatic scenes keep their portraits too
-            if (s.Letterbox) SceneShot();
+            if (s.Letterbox || s.Line.HasValue) SceneShot();   // -sceneShots only
             var line = s.Line;
             if (line.HasValue && !cinema && s.Card == null) dialogue.Show(line.Value.Speaker, line.Value.Line);
             else dialogue.Hide();
@@ -319,7 +323,11 @@ namespace ThreeKingdoms.UI.Story
         void ShowMarch(StagePlayer.MarchShot shot)
         {
             march.style.display = shot != null ? DisplayStyle.Flex : DisplayStyle.None;
-            if (shot == null) { drawnRoute = null; return; }
+            // On the 3D 天下图 when it is built (TianxiaFlight, user 2026-10-29); the flat chapter map otherwise.
+            if (flight != null && (shot == null || flight.From != shot.From || flight.To != shot.To)) { flight.Dispose(); flight = null; }
+            if (shot == null) { drawnRoute = null; flightTried = null; return; }
+            if (flight == null && flightTried != shot.From + shot.To) { flightTried = shot.From + shot.To; flight = TianxiaFlight.TryCreate(march, shot.From, shot.To, shot.Year); }
+            if (flight != null) { flight.Update(shot.T); MarchShots(shot); return; }
             var rect = MapRect();
             if (rect.width <= 0) return;
             Vector2 a = Point(shot.From, rect), b = Point(shot.To, rect);
@@ -403,7 +411,19 @@ namespace ThreeKingdoms.UI.Story
             if (watched != null) watched.Remembered += OnRemembered;
         }
 
-        void OnDisable() { if (watched != null) watched.Remembered -= OnRemembered; watched = null; }
+        // -marchShots <dir> (with -stage): frames of the 天下图 flight for review.
+        int marchShot;
+        static readonly float[] MarchShotAt = { 0.05f, 0.14f, 0.3f, 0.55f, 0.72f, 0.82f, 0.93f };
+        void MarchShots(StagePlayer.MarchShot shot)
+        {
+            var args = System.Environment.GetCommandLineArgs();
+            int i = System.Array.IndexOf(args, "-marchShots");
+            if (i < 0 || i + 1 >= args.Length || marchShot >= MarchShotAt.Length || shot.T < MarchShotAt[marchShot]) return;
+            System.IO.Directory.CreateDirectory(args[i + 1]);
+            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(args[i + 1], $"march-{shot.From}-{shot.To}-{marchShot++}.png"));
+        }
+
+        void OnDisable() { flight?.Dispose(); flight = null; PrologueDiorama.ReleasePreload(); if (watched != null) watched.Remembered -= OnRemembered; watched = null; }
 
         void OnRemembered(Memory m) => toasts.Enqueue(ChapterText.Remembered(m.Who));
 

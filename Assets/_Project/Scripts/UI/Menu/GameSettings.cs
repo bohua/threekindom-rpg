@@ -23,6 +23,9 @@ namespace ThreeKingdoms.UI.Menu
 
         public static bool FullScreen { get => Screen.fullScreen; set => Screen.fullScreen = value; }
 
+        // The prologue's narration (user 2026-10-28): modern Chinese, or the half-classical voice of 《三国演义》.
+        public static bool ClassicNarration { get => PlayerPrefs.GetInt("settings.classicNarration", 0) == 1; set => PlayerPrefs.SetInt("settings.classicNarration", value ? 1 : 0); }
+
         public static void Restore()
         {
             Music = DefaultMusic; Effects = DefaultEffects; TextSpeed = DefaultTextSpeed;

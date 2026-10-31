@@ -20,6 +20,24 @@ namespace ThreeKingdoms.EditorTools
     {
         const string R1ScenePath = "Assets/_Project/Scenes/Region_R1.unity";
 
+        // A spot from the refined Lousang layout's "npc_spots" (local metres from its origin), in world x/z.
+        static bool LousangSpot(string id, out Vector2 at)
+        {
+            at = default;
+            string path = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\lousang-hd-blender\_checks\layout_placements.json";
+            if (!System.IO.File.Exists(path)) return false;
+            string json = System.IO.File.ReadAllText(path);
+            int spots = json.IndexOf("\"npc_spots\"", System.StringComparison.Ordinal);
+            if (spots < 0) return false;
+            var m = System.Text.RegularExpressions.Regex.Match(json.Substring(spots), "\"" + id + "\"\\s*:\\s*\\[\\s*(-?[0-9.]+)\\s*,\\s*(-?[0-9.]+)");
+            if (!m.Success) return false;
+            var origin = new Vector2(170f, 64f);
+            var o = System.Text.RegularExpressions.Regex.Match(json, "\"origin_world_xz_m\"\\s*:\\s*\\[\\s*(-?[0-9.]+)\\s*,\\s*(-?[0-9.]+)");
+            if (o.Success) origin = new Vector2(float.Parse(o.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture), float.Parse(o.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture));
+            at = origin + new Vector2(float.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture), float.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture));
+            return true;
+        }
+
         public static void BuildR1Story()
         {
             if (!System.IO.File.Exists(R1ScenePath)) { Debug.LogWarning("Region_R1 not built; skipping its story layer."); return; }
@@ -42,7 +60,12 @@ namespace ThreeKingdoms.EditorTools
                     if (h.collider is MeshCollider || h.collider is BoxCollider && h.collider.name.StartsWith("COL")) return h.point;
                 return new Vector3(x, RegionGreyboxBuilder.H(x, z), z);
             }
-            Transform At(string name, string key, float x, float z, int frame = 0) => Person(people, name, key, On(x, z), frame);
+            Transform At(string name, string key, float x, float z, int frame = 0)
+            {
+                // Lousang's people stand where the refined village's layout puts them (art/lousang-hd-blender npc_spots).
+                if (LousangSpot(name.Split(' ')[0], out var at)) { x = at.x; z = at.y; }
+                return Person(people, name, key, On(x, z), frame);
+            }
             Transform Spot3(string name, float x, float z) { var t = new GameObject(name).transform; t.SetParent(spots, false); t.position = On(x, z); return t; }
 
             var list = new List<Transform>
@@ -82,7 +105,11 @@ namespace ThreeKingdoms.EditorTools
             c.Stage = go.AddComponent<StagePlayer>();
             c.Stage.Confirm = ProjectSetup.Action("Interact");
             c.People = list.ToArray();
-            c.Spots = new[] { Spot3("ls_tree 大桑树", 182f, 76.5f) };
+            var tree = LousangSpot("ls_tree", out var treeAt) ? treeAt : new Vector2(182f, 76.5f);
+            c.Spots = new[] { Spot3("ls_tree 大桑树", tree.x, tree.y) };
+            // The new game's opening (FieldStoryController.NewGameOpening): mother and son face to face in the yard.
+            if (LousangSpot("opening_mother", out var om)) Spot3("opening_mother", om.x, om.y);
+            if (LousangSpot("opening_liu_bei", out var ol)) Spot3("opening_liu_bei", ol.x, ol.y);
             Spot3(RegionTravel.PostArrival, 260f, 131f);
             var start = player ? player.transform.position : Vector3.zero;
             c.ArrivalSpot = Spot3("Arrival (region start)", start.x, start.z);
@@ -93,6 +120,7 @@ namespace ThreeKingdoms.EditorTools
             doc.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);
             doc.sortingOrder = 50;
             rumourGo.AddComponent<RumorHud>().Host = c;
+            LousangAmbienceBuilder.Build((x, z) => On(x, z).y);   // petals, motes, leaf light, the warm grade (user 2026-10-30)
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), R1ScenePath);
             Debug.Log("R1_STORY_BUILT");
         }

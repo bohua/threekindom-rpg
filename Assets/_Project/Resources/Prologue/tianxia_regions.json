@@ -1,0 +1,1629 @@
+{
+  "schema_version": "1.0",
+  "title": "第一篇章 · 天下图区域设计",
+  "coordinate_system": {
+    "image": "map_base.png",
+    "size": [
+      1920,
+      1080
+    ],
+    "origin": "top_left",
+    "x": "east",
+    "y": "south",
+    "unit": "pixel",
+    "world_extent_m": [
+      120,
+      67.5
+    ],
+    "world_origin": "southwest",
+    "world_axes": "X east / Y north / Z up",
+    "pixel_to_world": {
+      "x": "x / 16",
+      "y": "(1080 - y) / 16",
+      "z": "sample terrain height; do not assume zero"
+    }
+  },
+  "design_status": {
+    "boundaries": "authored design following reference relief and rivers, not surveyed administrative borders",
+    "estimated_hubs": [
+      "zhending",
+      "pingyuan",
+      "suanzao",
+      "linzi"
+    ],
+    "scene_exit_alignment": "directions proposed; region-scene exit transforms were not supplied or validated",
+    "map_scale_transition": "two-level map with cloud-covered scale cut; not continuous seamless zoom"
+  },
+  "example_state": {
+    "year": "初平二年",
+    "year_ce": 191,
+    "current": "R3",
+    "destination": "R4",
+    "locked": [
+      "R7",
+      "R8"
+    ],
+    "danger": [
+      "R6"
+    ],
+    "note": "UI state demonstration only; not a canonical script unlock schedule"
+  },
+  "known_city_anchors": {
+    "luoyang": [
+      818,
+      391
+    ],
+    "julu": [
+      1014,
+      295
+    ],
+    "guangzong": [
+      1044,
+      319
+    ],
+    "yingchuan": [
+      931,
+      439
+    ],
+    "xiapi": [
+      1194,
+      421
+    ],
+    "hedong": [
+      748,
+      336
+    ],
+    "shanyang": [
+      1085,
+      370
+    ],
+    "ji": [
+      1089,
+      190
+    ],
+    "zhuojun": [
+      1073,
+      219
+    ],
+    "ye": [
+      989,
+      337
+    ]
+  },
+  "regions": [
+    {
+      "id": "R1",
+      "name": "涿蓟",
+      "polygon": [
+        [
+          1002,
+          147
+        ],
+        [
+          1040,
+          141
+        ],
+        [
+          1104,
+          145
+        ],
+        [
+          1146,
+          166
+        ],
+        [
+          1160,
+          200
+        ],
+        [
+          1142,
+          225
+        ],
+        [
+          1115,
+          244
+        ],
+        [
+          1070,
+          249
+        ],
+        [
+          1052,
+          245
+        ],
+        [
+          1036,
+          230
+        ],
+        [
+          1018,
+          214
+        ],
+        [
+          998,
+          184
+        ]
+      ],
+      "label": [
+        1094,
+        204
+      ],
+      "hub": {
+        "id": "zhuojun",
+        "name": "涿郡",
+        "pixel": [
+          1073,
+          219
+        ],
+        "coordinate_source": "supplied_anchor"
+      },
+      "gates": [
+        {
+          "id": "R1_R2",
+          "to": "R2",
+          "pixel": [
+            1044,
+            237.5
+          ],
+          "direction": "southwest"
+        },
+        {
+          "id": "R1_R4",
+          "to": "R4",
+          "pixel": [
+            1092.5,
+            246.5
+          ],
+          "direction": "southeast"
+        }
+      ],
+      "ui_state": "open",
+      "sites": [
+        "涿郡",
+        "蓟",
+        "楼桑村",
+        "居庸关"
+      ]
+    },
+    {
+      "id": "R2",
+      "name": "中山常山",
+      "polygon": [
+        [
+          1018,
+          214
+        ],
+        [
+          1036,
+          230
+        ],
+        [
+          1052,
+          245
+        ],
+        [
+          1070,
+          249
+        ],
+        [
+          1060,
+          266
+        ],
+        [
+          1036,
+          279
+        ],
+        [
+          1013,
+          275
+        ],
+        [
+          990,
+          289
+        ],
+        [
+          967,
+          279
+        ],
+        [
+          947,
+          257
+        ],
+        [
+          970,
+          223
+        ]
+      ],
+      "label": [
+        1009,
+        253
+      ],
+      "hub": {
+        "id": "zhending",
+        "name": "真定",
+        "pixel": [
+          1001,
+          248
+        ],
+        "coordinate_source": "design_estimate"
+      },
+      "gates": [
+        {
+          "id": "R2_R1",
+          "to": "R1",
+          "pixel": [
+            1044,
+            237.5
+          ],
+          "direction": "northeast"
+        },
+        {
+          "id": "R2_R3",
+          "to": "R3",
+          "pixel": [
+            1001.5,
+            282
+          ],
+          "direction": "south"
+        },
+        {
+          "id": "R2_R4",
+          "to": "R4",
+          "pixel": [
+            1065,
+            257.5
+          ],
+          "direction": "east"
+        }
+      ],
+      "ui_state": "open",
+      "sites": [
+        "真定",
+        "安喜",
+        "太行山前"
+      ]
+    },
+    {
+      "id": "R3",
+      "name": "巨鹿魏郡",
+      "polygon": [
+        [
+          967,
+          279
+        ],
+        [
+          990,
+          289
+        ],
+        [
+          1013,
+          275
+        ],
+        [
+          1036,
+          279
+        ],
+        [
+          1060,
+          266
+        ],
+        [
+          1075,
+          286
+        ],
+        [
+          1070,
+          309
+        ],
+        [
+          1058,
+          328
+        ],
+        [
+          1047,
+          345
+        ],
+        [
+          1009,
+          350
+        ],
+        [
+          980,
+          351
+        ],
+        [
+          966,
+          337
+        ],
+        [
+          950,
+          301
+        ]
+      ],
+      "label": [
+        1008,
+        314
+      ],
+      "hub": {
+        "id": "julu",
+        "name": "巨鹿",
+        "pixel": [
+          1014,
+          295
+        ],
+        "coordinate_source": "supplied_anchor"
+      },
+      "gates": [
+        {
+          "id": "R3_R2",
+          "to": "R2",
+          "pixel": [
+            1001.5,
+            282
+          ],
+          "direction": "north"
+        },
+        {
+          "id": "R3_R4",
+          "to": "R4",
+          "pixel": [
+            1072.5,
+            297.5
+          ],
+          "direction": "east"
+        },
+        {
+          "id": "R3_R5a",
+          "to": "R5a",
+          "pixel": [
+            994.5,
+            350.5
+          ],
+          "direction": "southwest"
+        }
+      ],
+      "ui_state": "current",
+      "sites": [
+        "巨鹿",
+        "广宗",
+        "邺",
+        "卢植大营"
+      ]
+    },
+    {
+      "id": "R4",
+      "name": "渤海平原",
+      "polygon": [
+        [
+          1070,
+          249
+        ],
+        [
+          1115,
+          244
+        ],
+        [
+          1142,
+          225
+        ],
+        [
+          1175,
+          239
+        ],
+        [
+          1200,
+          260
+        ],
+        [
+          1195,
+          279
+        ],
+        [
+          1167,
+          306
+        ],
+        [
+          1110,
+          324
+        ],
+        [
+          1060,
+          341
+        ],
+        [
+          1047,
+          345
+        ],
+        [
+          1058,
+          328
+        ],
+        [
+          1070,
+          309
+        ],
+        [
+          1075,
+          286
+        ],
+        [
+          1060,
+          266
+        ]
+      ],
+      "label": [
+        1129,
+        280
+      ],
+      "hub": {
+        "id": "pingyuan",
+        "name": "平原",
+        "pixel": [
+          1110,
+          284
+        ],
+        "coordinate_source": "design_estimate"
+      },
+      "gates": [
+        {
+          "id": "R4_R1",
+          "to": "R1",
+          "pixel": [
+            1092.5,
+            246.5
+          ],
+          "direction": "northwest"
+        },
+        {
+          "id": "R4_R2",
+          "to": "R2",
+          "pixel": [
+            1065,
+            257.5
+          ],
+          "direction": "west"
+        },
+        {
+          "id": "R4_R3",
+          "to": "R3",
+          "pixel": [
+            1072.5,
+            297.5
+          ],
+          "direction": "west"
+        },
+        {
+          "id": "R4_R6",
+          "to": "R6",
+          "pixel": [
+            1085,
+            332.5
+          ],
+          "direction": "south"
+        },
+        {
+          "id": "R4_R7",
+          "to": "R7",
+          "pixel": [
+            1138.5,
+            315
+          ],
+          "direction": "southeast"
+        }
+      ],
+      "ui_state": "destination",
+      "sites": [
+        "平原",
+        "平原津",
+        "高唐",
+        "黄河大堤"
+      ]
+    },
+    {
+      "id": "R5a",
+      "name": "酸枣虎牢",
+      "polygon": [
+        [
+          911,
+          368
+        ],
+        [
+          953,
+          354
+        ],
+        [
+          980,
+          351
+        ],
+        [
+          1009,
+          350
+        ],
+        [
+          1047,
+          345
+        ],
+        [
+          1048,
+          369
+        ],
+        [
+          1026,
+          392
+        ],
+        [
+          1000,
+          407
+        ],
+        [
+          970,
+          418
+        ],
+        [
+          940,
+          426
+        ],
+        [
+          920,
+          421
+        ],
+        [
+          900,
+          405
+        ],
+        [
+          886,
+          389
+        ]
+      ],
+      "label": [
+        960,
+        391
+      ],
+      "hub": {
+        "id": "suanzao",
+        "name": "酸枣",
+        "pixel": [
+          970,
+          380
+        ],
+        "coordinate_source": "design_estimate"
+      },
+      "gates": [
+        {
+          "id": "R5a_R3",
+          "to": "R3",
+          "pixel": [
+            994.5,
+            350.5
+          ],
+          "direction": "northeast"
+        },
+        {
+          "id": "R5a_R5b",
+          "to": "R5b",
+          "pixel": [
+            898.5,
+            378.5
+          ],
+          "direction": "west"
+        },
+        {
+          "id": "R5a_R6",
+          "to": "R6",
+          "pixel": [
+            1037,
+            380.5
+          ],
+          "direction": "east"
+        },
+        {
+          "id": "R5a_R8",
+          "to": "R8",
+          "pixel": [
+            1013,
+            399.5
+          ],
+          "direction": "east"
+        }
+      ],
+      "ui_state": "open",
+      "sites": [
+        "酸枣",
+        "汜水关／虎牢关",
+        "荥阳"
+      ]
+    },
+    {
+      "id": "R5b",
+      "name": "洛阳",
+      "polygon": [
+        [
+          772,
+          361
+        ],
+        [
+          820,
+          354
+        ],
+        [
+          870,
+          352
+        ],
+        [
+          911,
+          368
+        ],
+        [
+          886,
+          389
+        ],
+        [
+          900,
+          405
+        ],
+        [
+          876,
+          426
+        ],
+        [
+          835,
+          430
+        ],
+        [
+          796,
+          420
+        ],
+        [
+          772,
+          394
+        ]
+      ],
+      "label": [
+        842,
+        396
+      ],
+      "hub": {
+        "id": "luoyang",
+        "name": "洛阳",
+        "pixel": [
+          818,
+          391
+        ],
+        "coordinate_source": "supplied_anchor"
+      },
+      "gates": [
+        {
+          "id": "R5b_R5a",
+          "to": "R5a",
+          "pixel": [
+            898.5,
+            378.5
+          ],
+          "direction": "east"
+        }
+      ],
+      "ui_state": "open",
+      "sites": [
+        "洛阳废墟",
+        "孟津"
+      ]
+    },
+    {
+      "id": "R6",
+      "name": "兖州",
+      "polygon": [
+        [
+          1047,
+          345
+        ],
+        [
+          1060,
+          341
+        ],
+        [
+          1110,
+          324
+        ],
+        [
+          1130,
+          345
+        ],
+        [
+          1145,
+          370
+        ],
+        [
+          1136,
+          395
+        ],
+        [
+          1110,
+          410
+        ],
+        [
+          1070,
+          414
+        ],
+        [
+          1046,
+          404
+        ],
+        [
+          1026,
+          392
+        ],
+        [
+          1048,
+          369
+        ]
+      ],
+      "label": [
+        1090,
+        378
+      ],
+      "hub": {
+        "id": "shanyang",
+        "name": "山阳",
+        "pixel": [
+          1085,
+          370
+        ],
+        "coordinate_source": "supplied_anchor"
+      },
+      "gates": [
+        {
+          "id": "R6_R4",
+          "to": "R4",
+          "pixel": [
+            1085,
+            332.5
+          ],
+          "direction": "north"
+        },
+        {
+          "id": "R6_R5a",
+          "to": "R5a",
+          "pixel": [
+            1037,
+            380.5
+          ],
+          "direction": "west"
+        },
+        {
+          "id": "R6_R7",
+          "to": "R7",
+          "pixel": [
+            1137.5,
+            357.5
+          ],
+          "direction": "east"
+        },
+        {
+          "id": "R6_R8",
+          "to": "R8",
+          "pixel": [
+            1090,
+            412
+          ],
+          "direction": "southeast"
+        }
+      ],
+      "ui_state": "danger",
+      "sites": [
+        "濮阳",
+        "东阿",
+        "鄄城"
+      ]
+    },
+    {
+      "id": "R7",
+      "name": "青州走廊",
+      "polygon": [
+        [
+          1110,
+          324
+        ],
+        [
+          1167,
+          306
+        ],
+        [
+          1195,
+          279
+        ],
+        [
+          1232,
+          276
+        ],
+        [
+          1268,
+          284
+        ],
+        [
+          1290,
+          301
+        ],
+        [
+          1298,
+          311
+        ],
+        [
+          1250,
+          332
+        ],
+        [
+          1225,
+          359
+        ],
+        [
+          1244,
+          376
+        ],
+        [
+          1230,
+          388
+        ],
+        [
+          1196,
+          386
+        ],
+        [
+          1166,
+          392
+        ],
+        [
+          1136,
+          395
+        ],
+        [
+          1145,
+          370
+        ],
+        [
+          1130,
+          345
+        ]
+      ],
+      "label": [
+        1211,
+        352
+      ],
+      "hub": {
+        "id": "linzi",
+        "name": "临淄",
+        "pixel": [
+          1206,
+          350
+        ],
+        "coordinate_source": "design_estimate"
+      },
+      "gates": [
+        {
+          "id": "R7_R4",
+          "to": "R4",
+          "pixel": [
+            1138.5,
+            315
+          ],
+          "direction": "northwest"
+        },
+        {
+          "id": "R7_R6",
+          "to": "R6",
+          "pixel": [
+            1137.5,
+            357.5
+          ],
+          "direction": "west"
+        },
+        {
+          "id": "R7_R8",
+          "to": "R8",
+          "pixel": [
+            1213,
+            387
+          ],
+          "direction": "south"
+        }
+      ],
+      "ui_state": "locked",
+      "sites": [
+        "济南",
+        "临淄",
+        "北海／都昌"
+      ]
+    },
+    {
+      "id": "R8",
+      "name": "徐州",
+      "polygon": [
+        [
+          1026,
+          392
+        ],
+        [
+          1046,
+          404
+        ],
+        [
+          1070,
+          414
+        ],
+        [
+          1110,
+          410
+        ],
+        [
+          1136,
+          395
+        ],
+        [
+          1166,
+          392
+        ],
+        [
+          1196,
+          386
+        ],
+        [
+          1230,
+          388
+        ],
+        [
+          1244,
+          376
+        ],
+        [
+          1278,
+          390
+        ],
+        [
+          1281,
+          421
+        ],
+        [
+          1263,
+          444
+        ],
+        [
+          1229,
+          450
+        ],
+        [
+          1195,
+          449
+        ],
+        [
+          1162,
+          440
+        ],
+        [
+          1118,
+          437
+        ],
+        [
+          1070,
+          440
+        ],
+        [
+          1026,
+          430
+        ],
+        [
+          1000,
+          407
+        ]
+      ],
+      "label": [
+        1178,
+        426
+      ],
+      "hub": {
+        "id": "xiapi",
+        "name": "下邳",
+        "pixel": [
+          1194,
+          421
+        ],
+        "coordinate_source": "supplied_anchor"
+      },
+      "gates": [
+        {
+          "id": "R8_R5a",
+          "to": "R5a",
+          "pixel": [
+            1013,
+            399.5
+          ],
+          "direction": "west"
+        },
+        {
+          "id": "R8_R6",
+          "to": "R6",
+          "pixel": [
+            1090,
+            412
+          ],
+          "direction": "northwest"
+        },
+        {
+          "id": "R8_R7",
+          "to": "R7",
+          "pixel": [
+            1213,
+            387
+          ],
+          "direction": "north"
+        }
+      ],
+      "ui_state": "locked",
+      "sites": [
+        "下邳",
+        "小沛",
+        "彭城",
+        "郯"
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "id": "R1__R2",
+      "from": "R1",
+      "to": "R2",
+      "bidirectional": true,
+      "gate": [
+        1044,
+        237.5
+      ],
+      "points": [
+        [
+          1073,
+          219
+        ],
+        [
+          1058,
+          226
+        ],
+        [
+          1044,
+          237.5
+        ],
+        [
+          1024,
+          245
+        ],
+        [
+          1001,
+          248
+        ]
+      ],
+      "name": "涿蓟—中山常山",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R1__R4",
+      "from": "R1",
+      "to": "R4",
+      "bidirectional": true,
+      "gate": [
+        1092.5,
+        246.5
+      ],
+      "points": [
+        [
+          1073,
+          219
+        ],
+        [
+          1090,
+          234
+        ],
+        [
+          1092.5,
+          246.5
+        ],
+        [
+          1102,
+          263
+        ],
+        [
+          1110,
+          284
+        ]
+      ],
+      "name": "涿蓟—渤海平原",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R2__R3",
+      "from": "R2",
+      "to": "R3",
+      "bidirectional": true,
+      "gate": [
+        1001.5,
+        282
+      ],
+      "points": [
+        [
+          1001,
+          248
+        ],
+        [
+          1007,
+          268
+        ],
+        [
+          1001.5,
+          282
+        ],
+        [
+          1010,
+          290
+        ],
+        [
+          1014,
+          295
+        ]
+      ],
+      "name": "中山常山—巨鹿魏郡",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R2__R4",
+      "from": "R2",
+      "to": "R4",
+      "bidirectional": true,
+      "gate": [
+        1065,
+        257.5
+      ],
+      "points": [
+        [
+          1001,
+          248
+        ],
+        [
+          1045,
+          254
+        ],
+        [
+          1065,
+          257.5
+        ],
+        [
+          1090,
+          270
+        ],
+        [
+          1110,
+          284
+        ]
+      ],
+      "name": "中山常山—渤海平原",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R3__R4",
+      "from": "R3",
+      "to": "R4",
+      "bidirectional": true,
+      "gate": [
+        1072.5,
+        297.5
+      ],
+      "points": [
+        [
+          1014,
+          295
+        ],
+        [
+          1044,
+          300
+        ],
+        [
+          1072.5,
+          297.5
+        ],
+        [
+          1090,
+          292
+        ],
+        [
+          1110,
+          284
+        ]
+      ],
+      "name": "广宗道—平原道",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R3__R5a",
+      "from": "R3",
+      "to": "R5a",
+      "bidirectional": true,
+      "gate": [
+        994.5,
+        350.5
+      ],
+      "points": [
+        [
+          1014,
+          295
+        ],
+        [
+          1044,
+          319
+        ],
+        [
+          1028,
+          339
+        ],
+        [
+          994.5,
+          350.5
+        ],
+        [
+          980,
+          365
+        ],
+        [
+          970,
+          380
+        ]
+      ],
+      "name": "巨鹿魏郡—酸枣虎牢",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R4__R6",
+      "from": "R4",
+      "to": "R6",
+      "bidirectional": true,
+      "gate": [
+        1085,
+        332.5
+      ],
+      "points": [
+        [
+          1110,
+          284
+        ],
+        [
+          1099,
+          309
+        ],
+        [
+          1085,
+          332.5
+        ],
+        [
+          1085,
+          348
+        ],
+        [
+          1085,
+          370
+        ]
+      ],
+      "name": "平原津—东阿道",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R4__R7",
+      "from": "R4",
+      "to": "R7",
+      "bidirectional": true,
+      "gate": [
+        1138.5,
+        315
+      ],
+      "points": [
+        [
+          1110,
+          284
+        ],
+        [
+          1135,
+          296
+        ],
+        [
+          1138.5,
+          315
+        ],
+        [
+          1172,
+          325
+        ],
+        [
+          1206,
+          350
+        ]
+      ],
+      "name": "渤海平原—青州走廊",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R5a__R5b",
+      "from": "R5a",
+      "to": "R5b",
+      "bidirectional": true,
+      "gate": [
+        898.5,
+        378.5
+      ],
+      "points": [
+        [
+          970,
+          380
+        ],
+        [
+          936,
+          378
+        ],
+        [
+          898.5,
+          378.5
+        ],
+        [
+          863,
+          380
+        ],
+        [
+          818,
+          391
+        ]
+      ],
+      "name": "酸枣—虎牢—洛阳",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R5a__R6",
+      "from": "R5a",
+      "to": "R6",
+      "bidirectional": true,
+      "gate": [
+        1037,
+        380.5
+      ],
+      "points": [
+        [
+          970,
+          380
+        ],
+        [
+          1002,
+          377
+        ],
+        [
+          1037,
+          380.5
+        ],
+        [
+          1057,
+          378
+        ],
+        [
+          1085,
+          370
+        ]
+      ],
+      "name": "酸枣虎牢—兖州",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R5a__R8",
+      "from": "R5a",
+      "to": "R8",
+      "bidirectional": true,
+      "gate": [
+        1013,
+        399.5
+      ],
+      "points": [
+        [
+          970,
+          380
+        ],
+        [
+          994,
+          390
+        ],
+        [
+          1013,
+          399.5
+        ],
+        [
+          1045,
+          416
+        ],
+        [
+          1105,
+          424
+        ],
+        [
+          1194,
+          421
+        ]
+      ],
+      "name": "酸枣虎牢—徐州",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R6__R7",
+      "from": "R6",
+      "to": "R7",
+      "bidirectional": true,
+      "gate": [
+        1137.5,
+        357.5
+      ],
+      "points": [
+        [
+          1085,
+          370
+        ],
+        [
+          1110,
+          360
+        ],
+        [
+          1137.5,
+          357.5
+        ],
+        [
+          1165,
+          356
+        ],
+        [
+          1206,
+          350
+        ]
+      ],
+      "name": "兖州—青州走廊",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R6__R8",
+      "from": "R6",
+      "to": "R8",
+      "bidirectional": true,
+      "gate": [
+        1090,
+        412
+      ],
+      "points": [
+        [
+          1085,
+          370
+        ],
+        [
+          1088,
+          392
+        ],
+        [
+          1090,
+          412
+        ],
+        [
+          1120,
+          425
+        ],
+        [
+          1194,
+          421
+        ]
+      ],
+      "name": "兖州—徐州",
+      "status": "design_centerline"
+    },
+    {
+      "id": "R7__R8",
+      "from": "R7",
+      "to": "R8",
+      "bidirectional": true,
+      "gate": [
+        1213,
+        387
+      ],
+      "points": [
+        [
+          1206,
+          350
+        ],
+        [
+          1210,
+          370
+        ],
+        [
+          1213,
+          387
+        ],
+        [
+          1206,
+          404
+        ],
+        [
+          1194,
+          421
+        ]
+      ],
+      "name": "青州走廊—徐州",
+      "status": "design_centerline"
+    }
+  ],
+  "travel_design": {
+    "example_route": "R3__R4",
+    "duration_s": 8.0,
+    "phases": [
+      {
+        "id": 1,
+        "time_s": [
+          0,
+          1.2
+        ],
+        "name": "选择目的地",
+        "camera": "overview",
+        "action": "highlight destination and dashed route; confirm destination before departure"
+      },
+      {
+        "id": 2,
+        "time_s": [
+          1.2,
+          4.5
+        ],
+        "name": "沿途低飞",
+        "camera": "follow route northeast, constant travel direction",
+        "altitude_m_above_terrain": [
+          3,
+          6
+        ],
+        "action": "small Liu Bei squad follows route; camera above squad; terrain clearance to be runtime validated"
+      },
+      {
+        "id": 3,
+        "time_s": [
+          4.5,
+          6.2
+        ],
+        "name": "抵达压低",
+        "camera": "descend above destination, look toward hub",
+        "altitude_m_above_terrain": [
+          2,
+          4
+        ],
+        "action": "fade in region name, keep heading stable"
+      },
+      {
+        "id": 4,
+        "time_s": [
+          6.2,
+          8.0
+        ],
+        "name": "云雾换景",
+        "camera": "cloud occlusion then regional camera",
+        "action": "close from four edges, cut scale at full occlusion, reveal destination scene",
+        "full_occlusion_s": [
+          6.85,
+          7.15
+        ]
+      }
+    ],
+    "controls": {
+      "navigate": "方向键",
+      "confirm": "Enter",
+      "back": "Esc",
+      "skip_travel": "Space"
+    },
+    "current_region_pulse": {
+      "period_s": 2.4,
+      "edge_alpha": [
+        0.45,
+        0.85
+      ]
+    },
+    "name_fade_in_s": 0.8,
+    "reverse_routes": "reverse centerline point order; retain paired gate; heading from first nonzero tangent",
+    "access_rule": "locked regions cannot be selected; danger regions require visible warning; final story unlock conditions supplied by game"
+  }
+}
