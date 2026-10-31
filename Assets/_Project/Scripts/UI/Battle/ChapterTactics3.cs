@@ -83,11 +83,11 @@ namespace ThreeKingdoms.UI.Battle
                 def.Units.Add(Hero(G("liu_bei"), At(rows, 2, 8)));
                 def.Units.Add(Hero(G("guan_yu"), At(rows, 7, 10)));
                 def.Units.Add(Hero(G("zhang_fei"), At(rows, 5, 9)));
-                var spots = new[] { At(rows, 7, 1), At(rows, 4, 2), At(rows, 11, 2) };
+                var spots = new[] { At(rows, 7, 1), At(rows, 4, 2), At(rows, 11, 2), At(rows, 9, 1) };
                 for (int i = 0; i < encounter.Enemies.Count; i++)
                 {
                     var u = Foe(encounter.Enemies[i], spots[i]);
-                    u.Name = "白马义从" + "甲乙丙"[i]; u.Leader = i == 0; u.Key = "BaimaRider";
+                    u.Name = "白马义从" + "甲乙丙丁"[i]; u.Leader = i == 0; u.Key = "BaimaRider";
                     def.Units.Add(u);
                 }
                 def.Objective = "演武：让三名白马骑将认输（兵力归零即下场）";
@@ -107,13 +107,13 @@ namespace ThreeKingdoms.UI.Battle
             for (int i = 0; i < encounter.Enemies.Count; i++)
             {
                 var e = encounter.Enemies[i];
-                var pos = i == 0 ? At(map, 7, 1) : i == 1 ? At(map, 5, 3) : At(map, 10, 3);
+                var pos = i == 0 ? At(map, 7, 1) : i == 1 ? At(map, 5, 3) : i == 2 ? At(map, 10, 3) : At(map, 7, 3);
                 var u = Foe(e, pos);
                 if (i == 0)
                 {
-                    u.Leader = true; u.Floor = 0.5f; u.Hp = Mathf.RoundToInt(u.Hp * 1.6f); u.Key = "LuBu"; u.Move = 0;   // REVIEW_V03 R7: Lü Bu holds the gate
+                    u.Leader = true; u.Floor = 0.5f; u.Key = "LuBu"; u.Move = 0;   // REVIEW_V03 R7: Lü Bu holds the gate; BALANCE_MODEL_v1 C17: level + Floor, no extra troops
                 }
-                else { u.Name = "并州骑" + "甲乙"[i - 1]; u.Focus = zhang.Name; }
+                else { u.Name = "并州骑" + "甲乙丙"[i - 1]; u.Focus = zhang.Name; }
                 def.Units.Add(u);
             }
             var guan = Hero(G("guan_yu"), At(map, 7, 13));

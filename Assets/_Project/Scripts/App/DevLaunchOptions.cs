@@ -27,6 +27,8 @@ namespace ThreeKingdoms.App
             ThreeKingdoms.Gameplay.Story.FieldStoryController.DevTalk = LaunchArgs.Get("-fieldTalk");
             // Screenshot runs keep playing when the window is not in front.
             if (LaunchArgs.Has("-sceneShots") || LaunchArgs.Has("-chapterShots") || LaunchArgs.Has("-comicShots") || LaunchArgs.Has("-marchShots")) Application.runInBackground = true;
+            // -freeRoam: Zhuojun's ways out to R1 open and the gate guards stand aside (playtest of the whole map).
+            if (LaunchArgs.Has("-freeRoam")) ThreeKingdoms.Gameplay.RegionPortal.FreeRoam = true;
             // -prologueShots <dir>: the town plays the prologue as after 新游戏 and saves a frame per subtitle line.
             if (LaunchArgs.Has("-prologueShots")) { Application.runInBackground = true; ThreeKingdoms.Gameplay.Story.GameRun.PrologueDue = true; }
             string stageId = LaunchArgs.Get("-stage");
@@ -193,11 +195,17 @@ namespace ThreeKingdoms.App
                 var tab = tabKey switch
                 {
                     "equip" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Equip, "skills" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Skills,
-                    "bingshu" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Bingshu, "generals" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Generals,
-                    "system" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.System, "chronicle" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Chronicle, _ => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Items,
+                    "bingshu" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Bingshu, "bingshut" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Bingshu, "bingshuk" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Bingshu, "generals" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Generals,
+                    "system" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.System, "chronicle" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Chronicle,
+                    "achievements" => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Achievements, _ => ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Items,
                 };
+                // The achievement page shown with the first four scrolls sealed, as in its design image.
+                if (tab == ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Achievements)
+                    foreach (var s in ThreeKingdoms.UI.Story.InkScrollText.Chapter1.Take(4)) run.Chapter2.UnlockAchievement(s.Id);
                 menu.Show(tab);
                 if (pick > 0) menu.SelectGeneral(pick);
+                if (tabKey == "bingshut") menu.ShowListTab(1);   // 策略一览 on 武技
+                if (tabKey == "bingshuk") { menu.ShowLibraryTab(1); menu.ShowListTab(1); }   // 藏书阁 on 功法书
                 if (tab == ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Equip) menu.PickFor(ThreeKingdoms.Core.Economy.EquipSlot.Weapon);
                 yield break;
             }

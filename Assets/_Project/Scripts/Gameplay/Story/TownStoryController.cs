@@ -518,7 +518,7 @@ namespace ThreeKingdoms.Gameplay.Story
             if (TownInside.Contains(p)) wasInside = true;
             else if (!Gates.Any(g => Passage(g).Contains(p + Vector3.up))) wasInside = false;
             foreach (var gate in Gates)
-                if (wasInside && gate.Guards && gate.Guards.gameObject.activeSelf && Passage(gate).Contains(p + Vector3.up))
+                if (!RegionPortal.FreeRoam && wasInside && gate.Guards && gate.Guards.gameObject.activeSelf && Passage(gate).Contains(p + Vector3.up))
                 {
                     StartCoroutine(TurnBack(gate));
                     return true;

@@ -24,9 +24,6 @@ MonoBehaviour:
   - General: {fileID: 11400000, guid: 15b646034c6d8e1429e38e8ca0083a09, type: 2}
     Level: 4
     FocusEscort: 0
-  - General: {fileID: 11400000, guid: 15b646034c6d8e1429e38e8ca0083a09, type: 2}
-    Level: 4
-    FocusEscort: 0
   Ai: 1
   SkillEveryRounds: 3
   ExpReward: 60

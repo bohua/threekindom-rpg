@@ -43,8 +43,22 @@ namespace ThreeKingdoms.UI.Story
                 "陶謙病篤，謂別駕麋竺曰：「非劉備不能安此州也。」謙死，竺率州人迎先主，先主未敢當。陳登、孔融皆勸之，先主遂領徐州。——事本《三國志·先主傳》；三讓之數本《三國演義》第十二回"),
         };
 
-        // Only the last scroll of the current version gets the 完成 seal (0.2: 安喜掛印; 0.3: 焚洛陽; 0.4: 界橋).
-        public static bool Sealed(string id) => id == "sanrang";   // the last scroll of the chapter (0.5)
+        // The chapter's scrolls in story order, with the year each is reached (the achievement page, user 2026-10-26).
+        public readonly struct Chapter1Scroll
+        {
+            public readonly string Id;
+            public readonly int Year;
+            public Chapter1Scroll(string id, int year) { Id = id; Year = year; }
+            public string Title => TryGet(Id, out var e) ? e.Title : Id;
+        }
+
+        public static readonly Chapter1Scroll[] Chapter1 =
+        {
+            new Chapter1Scroll("taoyuan", 184), new Chapter1Scroll("huangjin", 184), new Chapter1Scroll("zhuanzhan", 184),
+            new Chapter1Scroll("anxi", 185), new Chapter1Scroll("wenjiu", 190), new Chapter1Scroll("sanying", 190),
+            new Chapter1Scroll("fen_luoyang", 191), new Chapter1Scroll("panhe", 192), new Chapter1Scroll("jieqiao", 192),
+            new Chapter1Scroll("beihai", 193), new Chapter1Scroll("sanrang", 194),
+        };
 
         public static bool TryGet(string id, out Entry entry) => Entries.TryGetValue(id ?? "", out entry);
 
@@ -89,6 +103,7 @@ namespace ThreeKingdoms.UI.Story
         }
 
         public const string Seal = "完成";
+        public static string AchievementUnlocked(string title) => "成就解鎖　" + title;
         public const string Continue = "▼ 確認";
         public const string SkipOpening = "［取消］跳過片頭";
     }

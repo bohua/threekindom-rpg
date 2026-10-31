@@ -160,7 +160,8 @@ namespace ThreeKingdoms.EditorTools
 
         // Places a model of an imported set; null when it is missing or switched off, so the caller keeps its quad
         // version. COL_ children become box colliders; the whole piece is one occluder.
-        internal static Transform Place(string set, Transform parent, string model, string name, Vector3 at, float yaw = 0f)
+        // meshColliders: COL_ children keep their shape as mesh colliders (terrain) instead of becoming boxes.
+        internal static Transform Place(string set, Transform parent, string model, string name, Vector3 at, float yaw = 0f, bool meshColliders = false)
         {
             if (!Enabled || string.IsNullOrEmpty(set) || !sets.ContainsKey(set)) return null;
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir(set)}/{model}.fbx");
@@ -173,6 +174,13 @@ namespace ThreeKingdoms.EditorTools
             var root = go.transform;
             foreach (var r in go.GetComponentsInChildren<MeshRenderer>(true))
             {
+                if (r.name.StartsWith("COL_") && meshColliders)
+                {
+                    r.gameObject.AddComponent<MeshCollider>().sharedMesh = r.GetComponent<MeshFilter>().sharedMesh;
+                    Object.DestroyImmediate(r.GetComponent<MeshFilter>());
+                    Object.DestroyImmediate(r);
+                    continue;
+                }
                 if (r.name.StartsWith("COL_"))
                 {
                     var b = LocalBounds(root, r.GetComponent<MeshFilter>());

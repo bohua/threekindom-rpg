@@ -19,10 +19,13 @@ MonoBehaviour:
     Level: 9
     FocusEscort: 0
   - General: {fileID: 11400000, guid: 4fb9141471448254483bdb459fcffe42, type: 2}
-    Level: 7
+    Level: 4
     FocusEscort: 0
   - General: {fileID: 11400000, guid: 4fb9141471448254483bdb459fcffe42, type: 2}
-    Level: 7
+    Level: 4
+    FocusEscort: 0
+  - General: {fileID: 11400000, guid: 4fb9141471448254483bdb459fcffe42, type: 2}
+    Level: 4
     FocusEscort: 0
   Ai: 1
   SkillEveryRounds: 3

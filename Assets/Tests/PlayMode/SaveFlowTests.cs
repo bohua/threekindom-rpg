@@ -23,6 +23,7 @@ public sealed class SaveFlowTests
     public void Fresh()
     {
         GameRun.Clear();
+        CloudCurtain.Clear();
         dir = Path.Combine(Application.temporaryCachePath, "save-flow-" + Guid.NewGuid().ToString("N"));
         GameRun.SaveDirectoryOverride = dir;
     }

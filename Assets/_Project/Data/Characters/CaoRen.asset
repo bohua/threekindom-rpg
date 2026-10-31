@@ -15,9 +15,10 @@ MonoBehaviour:
   Id: cao_ren
   DisplayName: "\u66F9\u4EC1"
   Troop: 1
-  Force: 90
-  Command: 86
+  Force: 82
+  Command: 88
   Intellect: 60
+  Element: 4
   ForceGrowth: 0
   CommandGrowth: 0
   IntellectGrowth: 0

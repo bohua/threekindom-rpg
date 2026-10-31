@@ -51,12 +51,29 @@ public sealed class Chapter3RulesTests
     }
 
     [Test]
-    public void OnlyTheLastScrollOfTheVersionIsSealed()
+    public void EverySealUnlocksItsAchievementOnceAndItIsSaved()
     {
-        Assert.IsFalse(InkScrollText.Sealed("anxi"));
-        Assert.IsFalse(InkScrollText.Sealed(ChapterScripts3.ScrollFenLuoyang), "0.4 moved the seal to 界橋");
-        Assert.IsFalse(InkScrollText.Sealed(ChapterScripts4.ScrollJieqiao), "0.5 moved the seal to 三讓徐州");
-        Assert.IsTrue(InkScrollText.Sealed(ChapterScripts5.ScrollSanrang));
+        var state = new ThreeKingdoms.Core.Story.ChapterState();
+        Assert.IsTrue(state.UnlockAchievement(ChapterScripts.ScrollAnxi));
+        Assert.IsFalse(state.UnlockAchievement(ChapterScripts.ScrollAnxi), "only the first seal is an unlock");
+        Assert.IsTrue(state.UnlockAchievement(ChapterScripts5.ScrollSanrang));
+        var restored = ThreeKingdoms.Core.Story.ChapterState.Restore(state.Step, state.Flags, state.Memories);
+        CollectionAssert.AreEquivalent(new[] { ChapterScripts.ScrollAnxi, ChapterScripts5.ScrollSanrang }, restored.Achievements);
+    }
+
+    [Test]
+    public void TheAchievementPageListsEveryScrollOnceInStoryOrder()
+    {
+        var ids = InkScrollText.Chapter1.Select(s => s.Id).ToList();
+        CollectionAssert.AreEquivalent(InkScrollText.Ids.ToList(), ids);
+        CollectionAssert.AllItemsAreUnique(ids);
+        var years = InkScrollText.Chapter1.Select(s => s.Year).ToList();
+        CollectionAssert.IsOrdered(years);
+    }
+
+    [Test]
+    public void TheVersionScrollsFitTheirLimit()
+    {
         foreach (var id in new[] { ChapterScripts3.ScrollWenjiu, ChapterScripts3.ScrollSanying, ChapterScripts3.ScrollFenLuoyang })
         {
             Assert.IsTrue(InkScrollText.TryGet(id, out var e), id);

@@ -1,0 +1,327 @@
+{
+  "fateDataVersion": 1,
+  "wP": 16384,
+  "wA": 13107,
+  "wR": 13107,
+  "wI": 22938,
+  "tau": 6554,
+  "hT1": 22938,
+  "hT2": 16384,
+  "hT3": 0,
+  "hT1S": 0,
+  "eps": 3277,
+  "deviationBudgetRatio": 9830,
+  "randomRateT1": 0,
+  "randomRateT2": 1966,
+  "randomRateT3": 5243,
+  "relationCauseThreshold": 40,
+  "memoryCap": 40,
+  "favorBandClose": 40,
+  "favorBandDistant": -20,
+  "favoredBookMultiplier": 98304,
+  "react": {
+    "authority": [
+      3,
+      0,
+      -2,
+      2,
+      0,
+      2,
+      0,
+      -2
+    ],
+    "benevolence": [
+      0,
+      3,
+      8,
+      0,
+      0,
+      0,
+      -2,
+      0
+    ],
+    "break_promise": [
+      -6,
+      -10,
+      -3,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "captured": [
+      -2,
+      -3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -6
+    ],
+    "courtesy": [
+      2,
+      3,
+      2,
+      0,
+      2,
+      3,
+      0,
+      6
+    ],
+    "deceit": [
+      -3,
+      -8,
+      -4,
+      0,
+      3,
+      -2,
+      2,
+      -1
+    ],
+    "fought_against": [
+      -2,
+      -2,
+      0,
+      2,
+      0,
+      0,
+      0,
+      1
+    ],
+    "fought_alongside": [
+      4,
+      6,
+      0,
+      4,
+      0,
+      1,
+      0,
+      0
+    ],
+    "gift": [
+      0,
+      1,
+      0,
+      0,
+      0,
+      2,
+      6,
+      0
+    ],
+    "gift_book": [
+      0,
+      1,
+      0,
+      0,
+      5,
+      2,
+      1,
+      2
+    ],
+    "gift_treasure": [
+      0,
+      1,
+      0,
+      2,
+      0,
+      4,
+      5,
+      3
+    ],
+    "insult": [
+      -2,
+      -3,
+      -1,
+      1,
+      -2,
+      -4,
+      0,
+      -10
+    ],
+    "keep_promise": [
+      4,
+      8,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "spared": [
+      0,
+      6,
+      5,
+      0,
+      0,
+      0,
+      0,
+      -3
+    ],
+    "valor": [
+      0,
+      2,
+      0,
+      8,
+      -1,
+      2,
+      0,
+      1
+    ],
+    "wisdom": [
+      0,
+      0,
+      0,
+      -1,
+      8,
+      1,
+      0,
+      1
+    ]
+  },
+  "tagToView": {
+    "authority": [
+      0,
+      1,
+      0,
+      0,
+      6,
+      0
+    ],
+    "benevolence": [
+      6,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "break_promise": [
+      0,
+      0,
+      0,
+      -10,
+      0,
+      4
+    ],
+    "captured": [
+      0,
+      1,
+      0,
+      0,
+      2,
+      0
+    ],
+    "courtesy": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "deceit": [
+      0,
+      0,
+      2,
+      -4,
+      0,
+      8
+    ],
+    "fought_against": [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "fought_alongside": [
+      0,
+      2,
+      0,
+      2,
+      0,
+      0
+    ],
+    "gift": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "gift_book": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "gift_treasure": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "insult": [
+      0,
+      0,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "keep_promise": [
+      0,
+      0,
+      0,
+      6,
+      0,
+      0
+    ],
+    "spared": [
+      0,
+      0,
+      0,
+      2,
+      0,
+      0
+    ],
+    "valor": [
+      0,
+      6,
+      0,
+      0,
+      2,
+      0
+    ],
+    "wisdom": [
+      0,
+      0,
+      6,
+      0,
+      0,
+      1
+    ]
+  },
+  "trustDelta": {
+    "break_promise": -10,
+    "captured": -3,
+    "courtesy": 1,
+    "deceit": -6,
+    "fought_alongside": 4,
+    "gift": 1,
+    "gift_book": 1,
+    "gift_treasure": 1,
+    "insult": -2,
+    "keep_promise": 6,
+    "spared": 3
+  }
+}

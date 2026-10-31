@@ -58,8 +58,9 @@ namespace ThreeKingdoms.EditorTools
             for (int i = 0; i < ids.Length; i++)
             {
                 var game = BingshuTacticsBuilder.CreateScene();
-                game.CharMats = CharKeys.Select(k => AssetDatabase.LoadAssetAtPath<Material>($"{Chars}/{k}/{k}_Pixel.mat")).Where(m => m).ToList();
+                game.CharMats = game.CharMats.Concat(CharKeys.Select(k => AssetDatabase.LoadAssetAtPath<Material>($"{Chars}/{k}/{k}_Pixel.mat")).Where(m => m)).ToList();   // mounted Zhao Yun first
                 game.HdGround = ground;
+                if (ids[i] == "battle_8") game.HdKit = ImportKit(HulaoKitSource, "Assets/_Project/Art/Chapter3/HulaoHD");   // user 2026-10-26: renovate Hulao the Anxi way
                 // Daylight battles take the bright noon grade (user 2026-10-25); the night camp keeps the default HD-2D look.
                 if (ids[i] != "battle_4") game.HD2DProfile = ChapterFieldBuilder.NoonProfile(ChapterFieldBuilder.NoonBattlePath, depthOfField: false);
                 var bridge = new GameObject("Chapter Tactics").AddComponent<ChapterTactics>();
@@ -93,6 +94,40 @@ namespace ThreeKingdoms.EditorTools
                 AssetDatabase.CreateAsset(m, matPath);
             }
             AssetDatabase.SaveAssets();
+        }
+
+        // Hulao Pass HD kit (Codex art/hulao-hd, 120 px/m after the approved T8 concept): ground tiles are read when the
+        // blended ground is baked; walls, cliffs, banks, walkway and bridge deck repeat; the rest are clipped sprites.
+        const string HulaoKitSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\hulao-hd";
+        static readonly string[] KitRepeat = { "hd_", "cliff_", "bank_", "wall_hulao_face", "wall_hulao_walkway", "bridge_hulao_deck" };
+
+        static Texture2D[] ImportKit(string source, string dir)
+        {
+            if (!Directory.Exists(source)) return new Texture2D[0];
+            Directory.CreateDirectory(dir);
+            foreach (var f in Directory.GetFiles(source, "*.png"))
+            {
+                var name = Path.GetFileName(f);
+                if (name.StartsWith("preview") || name.StartsWith("contact")) continue;
+                File.Copy(f, $"{dir}/{name}", true);
+            }
+            AssetDatabase.Refresh();
+            var list = new System.Collections.Generic.List<Texture2D>();
+            foreach (var path in Directory.GetFiles(dir, "*.png"))
+            {
+                string p = path.Replace('\\', '/'), n = Path.GetFileNameWithoutExtension(p);
+                var imp = (TextureImporter)AssetImporter.GetAtPath(p);
+                if (imp == null) continue;
+                bool repeat = KitRepeat.Any(k => n.StartsWith(k));
+                imp.textureType = TextureImporterType.Default; imp.mipmapEnabled = true; imp.filterMode = FilterMode.Trilinear;
+                imp.wrapMode = repeat ? TextureWrapMode.Repeat : TextureWrapMode.Clamp; imp.npotScale = TextureImporterNPOTScale.None;
+                imp.maxTextureSize = 4096; imp.textureCompression = TextureImporterCompression.Uncompressed;
+                imp.alphaIsTransparency = !repeat; imp.isReadable = n.StartsWith("hd_");
+                imp.SaveAndReimport();
+                list.Add(AssetDatabase.LoadAssetAtPath<Texture2D>(p));
+            }
+            Debug.Log("CHAPTER_TACTICS_KIT " + dir + " " + list.Count);
+            return list.ToArray();
         }
 
         // hd_grass, hd_road, hd_sand, hd_camp, hd_ford, hd_bridge …: high-resolution painterly tiles, one per 4 m (ZTile).

@@ -142,6 +142,19 @@ namespace Prototype.BingshuTactics
 
         void ScatterFoliage()
         {
+            if (HulaoKit)
+            {
+                // 高清套件：只在草地上稀疏放灌丛，不再撒像素草丛
+                for (int x = 0; x < W; x++)
+                    for (int y = 0; y < H; y++)
+                    {
+                        var kp = new Vector2Int(x, y);
+                        if (grid.TerrainAt(kp) != Terrain.Grass) continue;
+                        float kh = Hash(x, y, 77), kh2 = Hash(x, y, 78);
+                        if (kh < 0.12f) KitBillboard("shrub_hulao", Tile(kp) + new Vector3((kh2 - 0.5f) * T * 0.6f, 0, (kh - 0.06f) * T * 3f), 0.55f);
+                    }
+                return;
+            }
             for (int x = 0; x < W; x++)
                 for (int y = 0; y < H; y++)
                 {

@@ -14,15 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: ThreeKingdoms.Data::ThreeKingdoms.Data.Battle.GeneralDefinition
   Id: zhang_fei
   DisplayName: "\u5F20\u98DE"
-  Troop: 0
-  Force: 95
-  Command: 75
-  Intellect: 45
-  ForceGrowth: 3
-  CommandGrowth: 2
-  IntellectGrowth: 1
+  Troop: 1
+  Force: 97
+  Command: 78
+  Intellect: 40
+  Element: 5
+  ForceGrowth: 0
+  CommandGrowth: 0
+  IntellectGrowth: 0
   Skills:
   - Level: 1
     Skill: {fileID: 11400000, guid: f0d746d07fb3790459d9943924ac6fb5, type: 2}
   - Level: 3
     Skill: {fileID: 11400000, guid: 5de0c6055792064449fe7be64d9908ca, type: 2}
+  - Level: 10
+    Skill: {fileID: 11400000, guid: 74bf036ee2ecd3f4996e4fa6c853a633, type: 2}

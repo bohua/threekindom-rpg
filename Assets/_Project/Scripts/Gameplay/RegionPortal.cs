@@ -21,6 +21,9 @@ namespace ThreeKingdoms.Gameplay
 
         // Set once any portal has loaded a scene: a town whose early story keeps its gates shut opens its ways out after.
         public static bool VisitedRegion;
+        // Playtest switch (-freeRoam): the ways out of Zhuojun to R1 are open from the start and the gate guards let the
+        // party through, so the whole chapter-1 build can be walked title → prologue → Zhuojun → R1 without the story gates.
+        public static bool FreeRoam;
 
         static string pendingArrival;
         static Vector3 pendingFacing;
@@ -51,7 +54,7 @@ namespace ThreeKingdoms.Gameplay
 
         bool Open()
         {
-            if (AfterRegionVisit && !VisitedRegion && !SceneManager.GetActiveScene().name.StartsWith("Region_")) return false;
+            if (AfterRegionVisit && !VisitedRegion && !FreeRoam && !SceneManager.GetActiveScene().name.StartsWith("Region_")) return false;
             if (Steps.Length == 0) return true;
             var run = GameRun.Current;
             return run == null || Steps.Contains((int)run.Chapter2.Step);

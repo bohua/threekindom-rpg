@@ -1,0 +1,9 @@
+<linker>
+  <!-- ADR-0013: fate data DTOs are created by Newtonsoft through reflection; keep them in IL2CPP builds. -->
+  <assembly fullname="ThreeKingdoms.Core">
+    <namespace fullname="ThreeKingdoms.Core.Fate" preserve="all" />
+  </assembly>
+  <assembly fullname="ThreeKingdoms.Data">
+    <namespace fullname="ThreeKingdoms.Data.Fate" preserve="all" />
+  </assembly>
+</linker>

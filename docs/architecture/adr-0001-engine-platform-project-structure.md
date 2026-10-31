@@ -148,7 +148,7 @@ Narrative ─► UI, Gameplay, Core
 UI ────────► Gameplay, Core
 Gameplay ──► Save, Data, Core
 Save ──────► Core                                       （另加 Newtonsoft）
-Data ──────► Core
+Data ──────► Core                                       （另加 Newtonsoft，由 ADR-0013 修订）
 Core ──────► （无）
 
 EditorTools ──► 任意运行时程序集（仅 Editor 平台）
@@ -165,7 +165,7 @@ Tests.PlayMode ──► Gameplay, UI, Narrative, App
 | Yarn Spinner for Unity | UPM（自带 asmdef） | Narrative、App |
 | UniTask | UPM（自带 asmdef） | Gameplay、UI、Narrative、App（Core 不得引用） |
 | DOTween | Asset 导入到 `Assets/Plugins/`，用 DOTween Utility Panel → “Create ASMDEF” 生成程序集 | UI、Gameplay |
-| Newtonsoft Json | UPM | Save |
+| Newtonsoft Json | UPM | Save；Data（命运数据加载，由 ADR-0013 修订） |
 
 UniTask 的 DOTween 支持（`UNITASK_DOTWEEN_SUPPORT`）只能在 DOTween 生成 asmdef 之后开启。
 
