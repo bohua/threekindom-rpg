@@ -76,7 +76,7 @@ namespace Prototype.BingshuTactics
             white = Texture2D.whiteTexture;
             Log("布阵：点选我方武将，再点蓝色格子调整站位。可先打开「兵书回路」配书。");
             if (IsChapter && SeedOverride.HasValue) Chapter.Seed = SeedOverride.Value;
-            if (IsChapter && Chapter.AutoPlay) { autoPlay = true; mode = Mode.Busy; StartCoroutine(BattleLoop()); }
+            if (IsChapter && Chapter.AutoPlay) { autoPlay = true; mode = Mode.Busy; StartCoroutine(VfxDemoArg ? VfxDemo() : BattleLoop()); }
             var args = System.Environment.GetCommandLineArgs();
             int i = System.Array.IndexOf(args, "-poc-shots");
             if (i >= 0 && i + 1 < args.Length) StartCoroutine(AutoShots(args[i + 1]));
@@ -438,6 +438,7 @@ namespace Prototype.BingshuTactics
             UpdateCamera();   // 跟随、自由查看、对准人物、单挑拉近（TacticsGame.Camera.cs）
 
             UpdateRigs();
+            UpdateVfx();   // 特效序列帧、特写与横幅、去色与天色（TacticsGame.Vfx.cs）
             UpdateScenery();
             UpdateCastRings();
             UpdateChapter();
@@ -525,6 +526,7 @@ namespace Prototype.BingshuTactics
 
         void HandlePadAndKeys()
         {
+            if (Time.unscaledTime < inputBlockUntil) return;   // 跳过演出后的输入防抖
             if ((mouseScreen - lastMouse).sqrMagnitude > 4f) padMode = false;
             lastMouse = mouseScreen;
             var pulse = DirPulse();
@@ -862,6 +864,7 @@ namespace Prototype.BingshuTactics
             if (s.Name.StartsWith("换上·")) { yield return SwapOut(u, s.Name.Substring(3)); yield break; }   // 0.5 后备换人
             u.Cp -= s.Cost;
             popups.Add((views[u].position + Vector3.up * (2.4f * HeadK), "武技·" + s.Name, new Color(1f, 0.85f, 0.3f), 0f));
+            yield return SkillCutIn(u, s);   // 专属技能：漫画特写
             if (s.Range < 0)
             {
                 var target = At(targetTile);
@@ -873,6 +876,7 @@ namespace Prototype.BingshuTactics
             }
             else yield return Lunge(u, targetTile == u.Pos ? u.Pos + Vector2Int.right : targetTile);
             var area = grid.AreaOf(s, u.Pos, targetTile).ToList();
+            yield return SkillFx(u, s, targetTile);   // 专属技能：独有动画，播到最强一帧再结算
             yield return Apply(u, s, area, 1f);
         }
 
@@ -933,6 +937,7 @@ namespace Prototype.BingshuTactics
             Log($"{u.Name} 发动策略「{s.Name}」{(u.PendingMul > 1f ? $"（威力×{u.PendingMul:0.00}）" : "")}");
             popups.Add((views[u].position + Vector3.up * (2.4f * HeadK), "策略·" + s.Name, Wuxing.Tint(s.Element), 0f));
             yield return Lunge(u, u.Pos + Grid.DirTo(u.Pos, u.PendingTarget));
+            yield return StrategyFx(u, s, CastArea(u));   // 五行策略特效，播到最强一帧再结算
             yield return Apply(u, s, CastArea(u), u.PendingMul);
             GainCp(u, 4);   // 策略命中 +4（每次施放一次）
         }
@@ -962,7 +967,9 @@ namespace Prototype.BingshuTactics
                     var craft = u.Crafts[0];
                     Log($"吕布 武技「{craft.Name}」！");
                     popups.Add((views[u].position + Vector3.up * (2.6f * HeadK), "天下无双", new Color(1f, 0.4f, 0.3f), 0f));
+                    yield return SkillCutIn(u, craft);   // 敌方绝学：B 漫画分格（从右滑入、锯齿边、董卓军徽记）
                     yield return Lunge(u, foe.Pos);
+                    yield return SkillFx(u, craft, foe.Pos);
                     yield return Apply(u, craft, grid.LineArea(u.Pos, Grid.DirTo(u.Pos, foe.Pos), craft.Length, 1).ToList(), 1f);
                     u.At = now + AtClock.Delay(110, u.Speed);
                 }
@@ -1173,10 +1180,14 @@ namespace Prototype.BingshuTactics
             float sw = Screen.width / S;
 
             DrawWorldLabels();
-            DrawAtBarV();
-            if (mode != Mode.Duel && mode != Mode.Circuit) DrawPartyV(sw);
-            DrawTopBarV(sw);
-            DrawMinimap(sw);
+            bool hudHidden = HudHiddenByCutin;   // 完整特写时界面淡出（BATTLE_VFX_DESIGN 2.4）
+            if (!hudHidden)
+            {
+                DrawAtBarV();
+                if (mode != Mode.Duel && mode != Mode.Circuit) DrawPartyV(sw);
+                DrawTopBarV(sw);
+                DrawMinimap(sw);
+            }
 
             if (mode == Mode.Deploy) DrawDeploy(sw);
             if (mode == Mode.Circuit) DrawCircuit(sw);
@@ -1186,6 +1197,7 @@ namespace Prototype.BingshuTactics
             if (mode == Mode.TargetSkill || mode == Mode.TargetAttack || mode == Mode.TargetMove) DrawHoverInfo(sw);
             if (mode == Mode.Idle || mode == Mode.Busy || mode == Mode.Deploy) DrawHoverInfo(sw);
             if (IsChapter) DrawChapterOverlay(sw);
+            DrawScreenLayer(sw);
             DrawHitFeelDebug();
             if (mode == Mode.Victory || mode == Mode.Defeat)
                 GUI.Label(new Rect(0, 280, sw, 60), mode == Mode.Victory ? "胜 利" : "败 退", new GUIStyle(big) { alignment = TextAnchor.MiddleCenter, fontSize = 48 });
