@@ -48,6 +48,10 @@ namespace Prototype.BingshuTactics
             ["fx_wood_heal"] = 12, ["fx_drum"] = 8, ["fx_flag_wave"] = 12, ["fx_leaves"] = 8,
             ["fx_earth_wall"] = 10, ["fx_bazhen"] = 12, ["fx_flag_rise"] = 8, ["fx_dust"] = 8,
             ["fx_arrow_volley"] = 10, ["fx_arrow_streak"] = 8, ["fx_glint"] = 8,
+            // S3 刘备、张飞、赵云
+            ["fx_lb_rally"] = 12, ["fx_lb_arrow"] = 8, ["fx_lb_guard"] = 12,
+            ["fx_zf_sweep"] = 10, ["fx_zf_shout"] = 8, ["fx_zf_quake"] = 10,
+            ["fx_zy_shield"] = 12, ["fx_zy_thrust2"] = 10,
         };
 
         // 格子地面的实际高度：战场有高低与 3D 地形，用射线取地表，避免特效埋进地里
@@ -357,6 +361,16 @@ namespace Prototype.BingshuTactics
             ["关羽/突击"] = new CutinArt { Busts = new[] { "cutin_guanyu_tuji" }, Name = "name_tuji", Color = new Color(0.16f, 0.45f, 0.30f) },
             ["关羽/破阵"] = new CutinArt { Busts = new[] { "cutin_guanyu_pozhen" }, Name = "name_pozhen", Color = new Color(0.16f, 0.45f, 0.30f) },
             ["关羽/拖刀"] = new CutinArt { Busts = new[] { "cutin_guanyu_tuodao_eye", "cutin_guanyu_tuodao_blade", "cutin_guanyu_tuodao_full" }, Name = "name_tuodao", Panels = true, Color = new Color(0.16f, 0.45f, 0.30f) },
+            // S3：刘备橙、张飞墨黑、赵云银白
+            ["刘备/整队"] = new CutinArt { Busts = new[] { "cutin_liubei_zhengdui" }, Name = "name_zhengdui", Color = new Color(0.78f, 0.42f, 0.12f) },
+            ["刘备/流矢"] = new CutinArt { Busts = new[] { "cutin_liubei_liushi" }, Name = "name_liushi", Color = new Color(0.78f, 0.42f, 0.12f) },
+            ["刘备/火矢"] = new CutinArt { Busts = new[] { "cutin_liubei_liushi" }, Name = "name_liushi", Color = new Color(0.78f, 0.42f, 0.12f) },   // 旧名，主稿 K12 改为流矢
+            ["刘备/众望"] = new CutinArt { Busts = new[] { "cutin_liubei_zhongwang_eye", "cutin_liubei_zhongwang_hand", "cutin_liubei_zhongwang_full" }, Name = "name_zhongwang", Panels = true, Color = new Color(0.78f, 0.42f, 0.12f) },
+            ["张飞/横扫"] = new CutinArt { Busts = new[] { "cutin_zhangfei_hengsao" }, Name = "name_hengsao", Color = new Color(0.13f, 0.13f, 0.15f) },
+            ["张飞/威慑"] = new CutinArt { Busts = new[] { "cutin_zhangfei_weishe" }, Name = "name_weishe", Color = new Color(0.13f, 0.13f, 0.15f) },
+            ["张飞/断桥"] = new CutinArt { Busts = new[] { "cutin_zhangfei_duanqiao_eye", "cutin_zhangfei_duanqiao_bridge", "cutin_zhangfei_duanqiao_full" }, Name = "name_duanqiao", Panels = true, Color = new Color(0.13f, 0.13f, 0.15f) },
+            ["赵云/援护"] = new CutinArt { Busts = new[] { "cutin_zhaoyun_yuanhu" }, Name = "name_yuanhu", Color = new Color(0.52f, 0.58f, 0.66f) },
+            ["赵云/连击"] = new CutinArt { Busts = new[] { "cutin_zhaoyun_lianji" }, Name = "name_lianji", Color = new Color(0.52f, 0.58f, 0.66f) },
         };
 
         CutinArt CutinFor(Unit u, SkillDef s) =>
@@ -405,6 +419,45 @@ namespace Prototype.BingshuTactics
                     PlayFlip("fx_sparks", 0, me + cam.transform.right * 0.3f, 0.12f);
                     yield return ShowWait(0.35f);
                     PlayFlip("fx_gy_arc", 0, (me + at) / 2f, 0f, 1.1f, 1.4f, green, left);
+                    yield return ShowWait(0.3f);
+                    break;
+                // ---- S3 刘备 ----
+                case "刘备/整队":
+                    if (PlayFlip("fx_lb_rally", 0, at, 0f, 1f, 1.25f, FireLight) == null) yield break;
+                    yield return ShowWait(0.35f);
+                    break;
+                case "刘备/流矢":
+                case "刘备/火矢":
+                    if (!VfxTex("fx_lb_arrow")) yield break;
+                    for (int k = 0; k < 3; k++) PlayBolt("fx_lb_arrow", me + Vector3.up * 0.8f, at + Vector3.up * 0.5f, 0.3f, k * 0.1f);
+                    yield return ShowWait(0.45f);
+                    break;
+                case "刘备/众望":
+                    if (PlayFlip("fx_lb_guard", 0, at, 0f, 1f, 1.3f, new Color(1f, 0.85f, 0.45f)) == null) yield break;
+                    yield return ShowWait(0.4f);
+                    break;
+                // ---- S3 张飞（墨黑，不加亮） ----
+                case "张飞/横扫":
+                    if (PlayFlip("fx_zf_sweep", 0, me, 0f, 1f, 1f) == null) yield break;
+                    PlayFlip("fx_dust", 0, me, 0.2f, 1.6f);
+                    yield return ShowWait(0.35f);
+                    break;
+                case "张飞/威慑":
+                    if (PlayFlip("fx_zf_shout", 0, me + Vector3.up * 0.4f, 0f, 1.2f, 1f) == null) yield break;
+                    yield return ShowWait(0.3f);
+                    break;
+                case "张飞/断桥":
+                    if (PlayFlip("fx_zf_quake", 0, at, 0f, 1f, 1.1f) == null) yield break;
+                    PlayFlip("fx_dust", 0, at, 0.15f, 1.3f);
+                    yield return ShowWait(0.35f);
+                    break;
+                // ---- S3 赵云（骑兵，原格） ----
+                case "赵云/援护":
+                    if (PlayFlip("fx_zy_shield", 0, me, 0f, 1.05f, 1.35f, new Color(0.85f, 0.92f, 1f)) == null) yield break;
+                    yield return ShowWait(0.35f);
+                    break;
+                case "赵云/连击":
+                    if (PlayFlip("fx_zy_thrust2", 0, (me + at) / 2f + Vector3.up * 0.35f, 0f, 1f, 1.35f, new Color(0.85f, 0.92f, 1f), left) == null) yield break;
                     yield return ShowWait(0.3f);
                     break;
             }
@@ -522,6 +575,24 @@ namespace Prototype.BingshuTactics
         {
             yield return FxWait(1.2f);
             var hero = units.FirstOrDefault(x => x.Alive && x.Name == "关羽") ?? units.First(x => x.Alive && x.Team == Team.Player);
+            // 刘备、张飞、赵云（在场时）的专属技能先演
+            foreach (var (who, names) in new[] { ("刘备", new[] { "整队", "流矢", "众望" }), ("张飞", new[] { "横扫", "威慑", "断桥" }), ("赵云", new[] { "援护", "连击" }) })
+            {
+                var g = units.FirstOrDefault(x => x.Alive && x.Name == who);
+                if (g == null) continue;
+                var gFoe = units.Where(x => x.Alive && x.Team == Team.Enemy).OrderBy(x => Grid.Dist(x.Pos, g.Pos)).First();
+                var gAlly = units.FirstOrDefault(x => x.Alive && x.Team == g.Team && x != g) ?? g;
+                foreach (var name in names)
+                {
+                    var s = g.Crafts.FirstOrDefault(c => c.Name == name) ?? new SkillDef { Name = name };
+                    var tgt = name == "整队" || name == "众望" ? gAlly : gFoe;
+                    active = g; Log($"演示：{g.Name}「{name}」");
+                    yield return SkillCutIn(g, s);
+                    yield return Lunge(g, tgt.Pos);
+                    yield return SkillFx(g, s, tgt.Pos);
+                    yield return FxWait(1.0f);
+                }
+            }
             var caster = units.FirstOrDefault(x => x.Alive && x.Name == "刘备") ?? hero;
             var foe = units.Where(x => x.Alive && x.Team == Team.Enemy).OrderBy(x => Grid.Dist(x.Pos, hero.Pos)).First();
             foreach (var name in new[] { "突击", "破阵", "拖刀" })
