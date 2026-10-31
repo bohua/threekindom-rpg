@@ -48,7 +48,7 @@ namespace Prototype.BingshuTactics
             var g = t.Guardian;
             if (g == null || g == t || !g.Alive || g.Team != t.Team || Grid.Dist(g.Pos, t.Pos) > 2) return t;
             if (covered != null && !covered.Add(g)) return t;
-            t.Guardian = null;
+            t.Guardian = null; coveredBy = g;
             popups.Add((views[g].position + Vector3.up * (2.5f * HeadK), "众望·代受", new Color(0.55f, 0.9f, 1f), 0f));
             Log($"{g.Name} 挺身替 {t.Name} 挡下这一击！");
             return g;
