@@ -52,6 +52,9 @@ namespace Prototype.BingshuTactics
             ["fx_lb_rally"] = 12, ["fx_lb_arrow"] = 8, ["fx_lb_guard"] = 12,
             ["fx_zf_sweep"] = 10, ["fx_zf_shout"] = 8, ["fx_zf_quake"] = 10,
             ["fx_zy_shield"] = 12, ["fx_zy_thrust2"] = 10,
+            // S4 吕布、三英、通用武技
+            ["fx_lvbu_cleave"] = 10, ["fx_sanying_cross"] = 10,
+            ["fx_tech_thrust"] = 8, ["fx_tech_smash"] = 8, ["fx_tech_guard"] = 8, ["fx_tech_pillar"] = 10, ["fx_tech_qi"] = 8, ["fx_tech_swirl"] = 8,
         };
 
         // 格子地面的实际高度：战场有高低与 3D 地形，用射线取地表，避免特效埋进地里
@@ -353,7 +356,7 @@ namespace Prototype.BingshuTactics
         }
 
         // ---------------- 专属技能（S1：关羽） ----------------
-        sealed class CutinArt { public string[] Busts; public string Name; public bool Panels; public Color Color; }
+        sealed class CutinArt { public string[] Busts; public string Name; public bool Panels; public Color Color; public string Emblem; public bool FacesLeft; }
 
         // 每人最强绝学（众望、拖刀、断桥、天下无双）用 B 漫画分格，其余专属技能用 A 横条（用户 2026-10-30）
         static readonly Dictionary<string, CutinArt> Cutins = new Dictionary<string, CutinArt>
@@ -371,17 +374,20 @@ namespace Prototype.BingshuTactics
             ["张飞/断桥"] = new CutinArt { Busts = new[] { "cutin_zhangfei_duanqiao_eye", "cutin_zhangfei_duanqiao_bridge", "cutin_zhangfei_duanqiao_full" }, Name = "name_duanqiao", Panels = true, Color = new Color(0.13f, 0.13f, 0.15f) },
             ["赵云/援护"] = new CutinArt { Busts = new[] { "cutin_zhaoyun_yuanhu" }, Name = "name_yuanhu", Color = new Color(0.52f, 0.58f, 0.66f) },
             ["赵云/连击"] = new CutinArt { Busts = new[] { "cutin_zhaoyun_lianji" }, Name = "name_lianji", Color = new Color(0.52f, 0.58f, 0.66f) },
+            // S4：吕布（敌方，赤金，画像本身朝左）与刘关张合体技三英（不分是谁发动）
+            ["吕布/天下无双"] = new CutinArt { Busts = new[] { "cutin_lvbu_wushuang_eye", "cutin_lvbu_wushuang_halberd", "cutin_lvbu_wushuang_full" }, Name = "name_wushuang", Panels = true, Color = new Color(0.45f, 0.24f, 0.08f), Emblem = "emblem_dongzhuo", FacesLeft = true },
+            ["*/三英"] = new CutinArt { Busts = new[] { "cutin_zhangfei_weishe", "cutin_guanyu_pozhen", "cutin_sanying_trio" }, Name = "name_sanying", Panels = true, Color = new Color(0.30f, 0.22f, 0.12f) },
         };
 
         CutinArt CutinFor(Unit u, SkillDef s) =>
-            Cutins.TryGetValue(u.Name + "/" + s.Name, out var c) && c.Busts.All(b => VfxTex(b)) ? c : null;
+            (Cutins.TryGetValue(u.Name + "/" + s.Name, out var c) || Cutins.TryGetValue("*/" + s.Name, out c)) && c.Busts.All(b => VfxTex(b)) ? c : null;
 
         IEnumerator SkillCutIn(Unit u, SkillDef s)
         {
             if (!HitFeelSettings.Enabled || HitFeelSettings.Cutin == 0 || Skipping(u)) yield break;
             var art = CutinFor(u, s);
             if (art == null) yield break;
-            string key = u.Name + "/" + s.Name;
+            string key = Cutins.ContainsKey(u.Name + "/" + s.Name) ? u.Name + "/" + s.Name : "*/" + s.Name;
             bool seen = Chapter?.CutinKnown?.Invoke(key) ?? false;
             bool full = !ShortShows && (HitFeelSettings.Cutin == 2 || !seen);
             vfxSkip = false;
@@ -460,7 +466,47 @@ namespace Prototype.BingshuTactics
                     if (PlayFlip("fx_zy_thrust2", 0, (me + at) / 2f + Vector3.up * 0.35f, 0f, 1f, 1.35f, new Color(0.85f, 0.92f, 1f), left) == null) yield break;
                     yield return ShowWait(0.3f);
                     break;
+                // ---- S4 ----
+                case "吕布/天下无双":
+                {
+                    var dir = at - me; dir.y = 0f;
+                    var mid = me + (dir.sqrMagnitude > 1e-3f ? dir.normalized * T : Vector3.zero);   // 巨刃只覆盖正前方 2 格
+                    if (PlayFlip("fx_lvbu_cleave", 0, mid, 0f, 1f, 1.35f, new Color(1f, 0.6f, 0.2f), left) == null) yield break;
+                    yield return ShowWait(0.3f);
+                    break;
+                }
+                default:
+                    yield return GenericTechFx(s, me, at, left);
+                    break;
             }
+        }
+
+        // 通用武技（功法书）：没有特写，按五行一套轻量特效（BATTLE_VFX_DESIGN 4.3）
+        IEnumerator GenericTechFx(SkillDef s, Vector3 me, Vector3 at, bool left)
+        {
+            Flip f = s.Name switch
+            {
+                "刺击" or "突阵" => PlayFlip("fx_tech_thrust", 0, (me + at) / 2f + Vector3.up * 0.35f, 0f, 1f, 1.2f, null, left),
+                "猛击" or "疾风骤雨" => PlayFlip("fx_tech_smash", 0, at, 0f, 1f, 1.2f),
+                "迂回" => PlayFlip("fx_tech_swirl", 0, at, 0f, 1f, 1.15f),
+                "闪避" => PlayFlip("fx_tech_swirl", 0, me, 0f, 1f, 1.15f),
+                "调息" or "死战" => PlayFlip("fx_tech_qi", 0, me, 0f, 1f, 1.15f),
+                "格挡" => PlayFlip("fx_tech_guard", 0, me, 0f, 1f, 1.15f),
+                "中流砥柱" => PlayFlip("fx_tech_pillar", 0, me, 0f, 1f, 1.2f, EarthLight),
+                _ => null
+            };
+            if (f != null) yield return ShowWait(0.25f);
+        }
+
+        // 合体技三英（Chapter3.SanYing 调用）：特写＋三色刀光在吕布格交叉
+        IEnumerator SanYingFx(Unit u, Unit lubu)
+        {
+            var s = new SkillDef { Name = "三英" };
+            yield return SkillCutIn(u, s);
+            if (!HitFeelSettings.Enabled || !VfxTex("fx_sanying_cross")) yield break;
+            FocusOn(views[lubu].position);
+            PlayFlip("fx_sanying_cross", 0, views[lubu].position, 0f, 1.1f, 1.4f, new Color(1f, 0.85f, 0.5f));
+            yield return ShowWait(0.55f);
         }
 
         // ---------------- 屏幕层：特写、横幅 ----------------
@@ -506,6 +552,7 @@ namespace Prototype.BingshuTactics
             DrawPanel(sw, c, VfxTex(art.Busts[2]), new Rect(sw * 0.36f, 120, sw * 0.62f, 330), Ease((c.T - 0.3f) / 0.14f), 3f);
             GUI.matrix = m;
             DrawName(sw, c, new Rect(sw * 0.58f, 430, 360, 150), (c.T - 0.42f) / 0.1f);
+            if (c.Enemy) { var em = VfxTex(art.Emblem); if (em) GUI.DrawTexture(new Rect(sw * 0.05f, 430, 110, 110), em, ScaleMode.ScaleToFit); }
             if (c.Glint && c.T > 0.6f && c.T < 0.7f) Rect(new Rect(0, 140, sw * 0.62f, 3), new Color(1, 1, 1, 0.9f));   // 眼部横光（计入闪白）
         }
 
@@ -524,11 +571,12 @@ namespace Prototype.BingshuTactics
                 Rect(new Rect(lx, ly, 60 + (i % 3) * 40, 2), new Color(1, 1, 1, 0.22f));
             }
             Rect(new Rect(x, y, w, 2), new Color(0.85f, 0.9f, 0.95f, 0.9f)); Rect(new Rect(x, y + h - 2, w, 2), new Color(0.85f, 0.9f, 0.95f, 0.9f));
+            DrawEnemyMarks(c, band);
             if (bust)
             {
                 float bh = h * (small ? 1.05f : 1.25f), bw = bh * bust.width / bust.height;
                 var br = c.Enemy ? new Rect(x + w - bw - 20, y + h - bh, bw, bh) : new Rect(x + 20, y + h - bh, bw, bh);
-                GUI.DrawTextureWithTexCoords(br, bust, c.Enemy ? new Rect(1, 0, -1, 1) : new Rect(0, 0, 1, 1));
+                GUI.DrawTextureWithTexCoords(br, bust, Mirror(c) ? new Rect(1, 0, -1, 1) : new Rect(0, 0, 1, 1));
             }
             if (name)
             {
@@ -552,8 +600,30 @@ namespace Prototype.BingshuTactics
             GUIUtility.RotateAroundPivot(angle * (c.Enemy ? -1 : 1), r.center * S);
             Rect(new Rect(r.x - 4, r.y - 4, r.width + 8, r.height + 8), new Color(0.88f, 0.92f, 0.96f, 1f));
             Rect(r, new Color(c.Art.Color.r, c.Art.Color.g, c.Art.Color.b, 1f));
-            GUI.DrawTextureWithTexCoords(r, tex, c.Enemy ? new Rect(1, 0, -1, 1) : new Rect(0, 0, 1, 1));
+            // 按格子比例裁切，不拉伸：已构好图的横条（眼、兵器）居中裁，胸像取中偏上一段（脸的位置）；敌方画像朝向按素材标注镜像
+            float want = r.width / r.height, have = tex.width / (float)tex.height, frac = have / want;
+            var uv = have < want ? new Rect(0, have > 2.5f ? (1f - frac) / 2f : (1f - frac) * 0.65f, 1, frac) : new Rect((1f - want / have) / 2f, 0, want / have, 1);
+            if (Mirror(c)) uv = new Rect(uv.x + uv.width, uv.y, -uv.width, uv.height);
+            GUI.DrawTextureWithTexCoords(r, tex, uv);
             GUI.matrix = m;
+        }
+
+        bool Mirror(CutinShow c) => c.Enemy != c.Art.FacesLeft;
+
+        // 敌方横幅：锯齿边＋阵营徽记（敌我不靠颜色区分，BATTLE_VFX_DESIGN 2.4）
+        void DrawEnemyMarks(CutinShow c, Rect band)
+        {
+            if (!c.Enemy) return;
+            var m = GUI.matrix;
+            for (float y = band.y; y < band.yMax; y += 18f)
+            {
+                var d = new Rect(band.x - 9f, y, 18f, 18f);
+                GUIUtility.RotateAroundPivot(45f, d.center * S);
+                Rect(d, new Color(c.Art.Color.r, c.Art.Color.g, c.Art.Color.b, 0.94f));
+                GUI.matrix = m;
+            }
+            var em = VfxTex(c.Art.Emblem);
+            if (em) GUI.DrawTexture(new Rect(band.x + 14f, band.y + 10f, 76f, 76f), em, ScaleMode.ScaleToFit);
         }
 
         void DrawName(float sw, CutinShow c, Rect r, float a)
@@ -604,13 +674,35 @@ namespace Prototype.BingshuTactics
                 yield return SkillFx(hero, s, foe.Pos);
                 yield return FxWait(1.0f);
             }
+            // S4：吕布天下无双（敌方 B 分格）、三英合体、通用武技
+            var lubu = units.FirstOrDefault(x => x.Alive && x.Name == "吕布");
+            if (lubu != null)
+            {
+                var near = units.Where(x => x.Alive && x.Team == Team.Player).OrderBy(x => Grid.Dist(x.Pos, lubu.Pos)).First();
+                var ws = lubu.Crafts.FirstOrDefault(c => c.Name == "天下无双") ?? new SkillDef { Name = "天下无双" };
+                active = lubu; Log("演示：吕布「天下无双」");
+                yield return SkillCutIn(lubu, ws);
+                yield return Lunge(lubu, near.Pos);
+                yield return SkillFx(lubu, ws, near.Pos);
+                yield return FxWait(1.0f);
+                active = near; Log("演示：合体技「三英」");
+                yield return SanYingFx(near, lubu);
+                yield return FxWait(1.0f);
+            }
+            foreach (var name in new[] { "刺击", "猛击", "格挡", "中流砥柱", "调息", "闪避" })
+            {
+                active = hero; Log($"演示：通用武技「{name}」");
+                yield return Lunge(hero, foe.Pos);
+                yield return SkillFx(hero, new SkillDef { Name = name }, foe.Pos);
+                yield return FxWait(0.6f);
+            }
             foreach (var name in new[] { "引火", "火烧营寨", "火海", "截流", "水攻", "决堤", "抚军", "鼓舞", "收拢溃卒", "坚壁", "八阵", "箭雨", "万箭齐发" })
             {
                 var s = Strategies.All.First(x => x.Name == name);
                 active = caster; Log($"演示：策略「{name}」");
                 popups.Add((views[caster].position + Vector3.up * (2.4f * HeadK), "策略·" + name, Wuxing.Tint(s.Element), 0f));
                 yield return Lunge(caster, foe.Pos);
-                var target = s.TargetsAllies ? units.First(x => x.Alive && x.Team == caster.Team && x != caster) : foe;
+                var target = s.TargetsAllies ? units.FirstOrDefault(x => x.Alive && x.Team == caster.Team && x != caster) ?? caster : foe;
                 var area = s.Radius >= 99 ? Friends(caster).Select(f => f.Pos).ToList()
                          : s.Area == Area.Single ? new List<Vector2Int> { target.Pos }
                          : s.Area == Area.Line ? grid.LineArea(target.Pos + Grid.DirTo(target.Pos, caster.Pos) * 2, Grid.DirTo(caster.Pos, target.Pos), s.Length, s.Width).ToList()

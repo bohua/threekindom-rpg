@@ -89,6 +89,7 @@ namespace Prototype.BingshuTactics
             yield return ShowLine("张飞", "大哥、二哥，一起上！");
             yield return ShowLine("关羽", "三弟，左右夹击！");
             yield return ShowLine("刘备", "吕布，休想走脱！");
+            yield return SanYingFx(u, lubu);   // 合体技特写与三色刀光（TacticsGame.Vfx.cs）
             int total = 0;
             foreach (var key in new[] { "ZhangFei", "GuanYu", "LiuBei" })
             {

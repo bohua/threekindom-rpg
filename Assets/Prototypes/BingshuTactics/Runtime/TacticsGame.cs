@@ -967,7 +967,9 @@ namespace Prototype.BingshuTactics
                     var craft = u.Crafts[0];
                     Log($"吕布 武技「{craft.Name}」！");
                     popups.Add((views[u].position + Vector3.up * (2.6f * HeadK), "天下无双", new Color(1f, 0.4f, 0.3f), 0f));
+                    yield return SkillCutIn(u, craft);   // 敌方绝学：B 漫画分格（从右滑入、锯齿边、董卓军徽记）
                     yield return Lunge(u, foe.Pos);
+                    yield return SkillFx(u, craft, foe.Pos);
                     yield return Apply(u, craft, grid.LineArea(u.Pos, Grid.DirTo(u.Pos, foe.Pos), craft.Length, 1).ToList(), 1f);
                     u.At = now + AtClock.Delay(110, u.Speed);
                 }
