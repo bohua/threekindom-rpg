@@ -126,6 +126,7 @@ namespace ThreeKingdoms.EditorTools
             string concept = Regions.First(r => r.id == id).concept;
             string src = Path.Combine(CodexArt, concept, "greybox");
             data = JsonUtility.FromJson<RegionData>(File.ReadAllText(Path.Combine(src, "region.json")));
+            LousangHd(data);
             dir = $"{Root}/{id}";
             matDir = dir + "/Materials";
             Directory.CreateDirectory(matDir);
@@ -136,8 +137,9 @@ namespace ThreeKingdoms.EditorTools
                 if (File.Exists(Path.Combine(src, f))) File.Copy(Path.Combine(src, f), $"{dir}/{f}", true);
             AssetDatabase.Refresh();
             // Each set once: a second import would remake (and orphan) the materials already on placed pieces.
+            if (Directory.Exists(Path.Combine(CodexArt, LousangTrees))) BlenderModels.Import(LousangTrees, 4096);
             foreach (var set in data.places.Select(p => p.set).Concat(data.walls.Select(w => w.set)).Concat(data.scatter.Select(v => v.set)).Concat(data.backdrop.Select(b => b.set)).Where(x => !string.IsNullOrEmpty(x)).Distinct())
-                BlenderModels.Import(set);
+                BlenderModels.Import(set, set == LousangSet ? 8192 : 2048);   // Lousang's painted ground is 8K
 
             MountedImporter.Import();
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -1036,8 +1038,11 @@ namespace ThreeKingdoms.EditorTools
                 var pos = piece.position_m != null && piece.position_m.Length >= 2 ? piece.position_m : piece.position;
                 var at = new Vector3(pos[0] + p.layoutX, (pos.Length > 2 ? pos[2] : 0f) + p.layoutY, pos[1] + p.layoutZ);
                 var t = BlenderModels.Place(p.set, g, piece.asset, string.IsNullOrEmpty(piece.child) ? piece.asset : piece.child, at, -(piece.rotation_z_deg + piece.rotation_z));
+                // Lousang's trees come from their own set (art/lousang-hd-trees).
+                if (!t && p.set == LousangSet) t = BlenderModels.Place(LousangTrees, g, piece.asset, piece.asset, at, -(piece.rotation_z_deg + piece.rotation_z));
                 if (!t) continue;
                 n++;
+                if (piece.asset == "lousang_ground" || piece.asset == "lousang_stream") ConformToGround(t, piece.asset == "lousang_stream" ? 0.02f : 0.05f);
                 if (string.IsNullOrEmpty(piece.child)) continue;
                 var keep = t.GetComponentsInChildren<Transform>(true).FirstOrDefault(c => c.name == piece.child);
                 if (!keep) { Object.DestroyImmediate(t.gameObject); continue; }
@@ -1045,7 +1050,78 @@ namespace ThreeKingdoms.EditorTools
                     Object.DestroyImmediate(r.gameObject);
                 keep.localPosition = new Vector3(0, keep.localPosition.y, 0);
             }
+            if (p.set == LousangSet && n > 0) LousangGreenery(g, file.placements.Any(x => x.asset != null && (x.asset.StartsWith("peach") || x.asset.StartsWith("apricot"))));
             return n > 0;
+        }
+
+        // ---------- 楼桑村精修 (user 2026-10-30: "需要在细节和贴图上做到高分辨率以及梦幻的感觉") ----------
+        // Codex art/lousang-hd-concept set the look; art/lousang-hd-blender (houses, yards, props, painted ground) and
+        // art/lousang-hd-trees (the great mulberry, mulberries, peach, apricot, willow, flowers, grass) replace the
+        // first Lousang set wherever the region used it, by the same model names.
+        const string LousangSet = "lousang-hd-blender", LousangTrees = "lousang-hd-trees";
+
+        static void LousangHd(RegionData d)
+        {
+            if (!Directory.Exists(Path.Combine(CodexArt, LousangSet))) return;
+            foreach (var p in d.places)
+            {
+                if (p.set != "r1-blender-lousang") continue;
+                p.set = LousangSet;
+                if (p.id == "lousang") p.layout = "_checks/layout_placements.json";
+            }
+        }
+
+        // The painted ground and the stream follow the land under them (the layout assumes flat ground at 1 m).
+        static void ConformToGround(Transform t, float lift)
+        {
+            foreach (var f in t.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var mesh = Object.Instantiate(f.sharedMesh);
+                var v = mesh.vertices;
+                for (int i = 0; i < v.Length; i++)
+                {
+                    var w = f.transform.TransformPoint(v[i]);
+                    w.y = H(w.x, w.z) + lift;
+                    v[i] = f.transform.InverseTransformPoint(w);
+                }
+                mesh.vertices = v;
+                mesh.RecalculateBounds();
+                mesh.RecalculateNormals();
+                string path = $"{dir}/{t.name}_{f.name}_conformed.asset";
+                if (AssetDatabase.LoadAssetAtPath<Mesh>(path)) AssetDatabase.DeleteAsset(path);
+                AssetDatabase.CreateAsset(mesh, path);
+                f.sharedMesh = mesh;
+                var col = f.GetComponent<MeshCollider>();
+                if (col) col.sharedMesh = mesh;
+            }
+        }
+
+        // Peach and apricot by the houses, a willow by the stream, flowers along the fences and grass in the green, after
+        // the concept's overview (local metres from the village centre, +z north).
+        static readonly (string model, float x, float z, float yaw)[] LousangPlants =
+        {
+            ("peach_tree", -14f, 6f, 20f), ("peach_tree_b", 4f, -15f, 110f), ("apricot_tree", -9f, 18f, 200f), ("apricot_tree_b", 19f, -6f, 300f),
+            ("peach_tree", 21f, 19f, 70f), ("apricot_tree", -19f, -12f, 160f), ("willow_tree", -22f, 2f, 0f), ("willow_tree", -21f, -16f, 120f),
+            ("flower_bush", 6.5f, 8.5f, 0f), ("flower_bush_b", 9f, 6f, 40f), ("flower_bush_c", 15.5f, 9f, 90f), ("flower_bush", -4f, 12f, 130f),
+            ("flower_bush_b", -11f, -4f, 200f), ("flower_bush_c", 3f, -9f, 260f), ("flower_bush", 17f, 2f, 300f), ("flower_bush_b", -2f, 20f, 15f),
+        };
+
+        static void LousangGreenery(Transform g, bool layoutHasTrees)
+        {
+            var rng = new System.Random(1607);
+            foreach (var (model, x, z, yaw) in layoutHasTrees ? new (string, float, float, float)[0] : LousangPlants)
+            {
+                var w = g.TransformPoint(new Vector3(x, 0, z));
+                BlenderModels.Place(LousangTrees, g, model, model, g.InverseTransformPoint(new Vector3(w.x, H(w.x, w.z), w.z)), yaw);
+            }
+            // Grass clumps scattered on the green ring around the village, clear of the yards and paths.
+            for (int i = 0; i < 140; i++)
+            {
+                float a = (float)(rng.NextDouble() * Mathf.PI * 2), r = 15f + (float)rng.NextDouble() * 9f;
+                var w = g.TransformPoint(new Vector3(Mathf.Cos(a) * r, 0, Mathf.Sin(a) * r));
+                string m = new[] { "grass_clump", "grass_clump_b", "grass_clump_c", "flower_bush" }[rng.Next(i % 9 == 0 ? 4 : 3)];
+                BlenderModels.Place(LousangTrees, g, m, m + " " + i, g.InverseTransformPoint(new Vector3(w.x, H(w.x, w.z), w.z)), (float)(rng.NextDouble() * 360));
+            }
         }
 
         // A walled place from its set's modules: 8 m and 4 m runs (stretched a little to fit), corners, the gate model in
