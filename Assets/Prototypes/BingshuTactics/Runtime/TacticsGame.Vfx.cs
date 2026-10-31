@@ -53,7 +53,7 @@ namespace Prototype.BingshuTactics
             ["fx_zf_sweep"] = 10, ["fx_zf_shout"] = 8, ["fx_zf_quake"] = 10,
             ["fx_zy_shield"] = 12, ["fx_zy_thrust2"] = 10,
             // S4 吕布、三英、通用武技
-            ["fx_lvbu_cleave"] = 10, ["fx_sanying_cross"] = 10,
+            ["fx_lvbu_cleave"] = 10, ["fx_sanying_cross"] = 10, ["fx_zj_flag"] = 8,
             ["fx_tech_thrust"] = 8, ["fx_tech_smash"] = 8, ["fx_tech_guard"] = 8, ["fx_tech_pillar"] = 10, ["fx_tech_qi"] = 8, ["fx_tech_swirl"] = 8,
         };
 
@@ -160,6 +160,7 @@ namespace Prototype.BingshuTactics
         // ---------------- 演出状态：跳过与频率 ----------------
         bool vfxSkip, skipEnemyTurn; float inputBlockUntil;
         readonly HashSet<string> strategiesShown = new HashSet<string>();
+        readonly HashSet<string> enemyCutinsShown = new HashSet<string>();   // 敌方首领、具名将领：每场首次完整特写
         bool ShortShows => autoPlay && !FullFeelInAuto && !ForceFullShows;   // 电脑代打、快进：一律简短版
 
         // 演出期间等待：可按确认键跳过（跳过后 150 ms 内不吃输入，防止一键穿透到下一个菜单）
@@ -197,8 +198,17 @@ namespace Prototype.BingshuTactics
             FocusOn(center);   // 镜头移到作用范围（换人行动时自动回到跟随）
             switch (s.Name)
             {
+                case "纵火":   // 张角专属：黄巾令旗特写（敌方 A 横条，每场首次），令旗一挥、火从目标脚下窜起；火色与我方相同，不画妖术
+                    if (!VfxTex("fx_fire_tile")) yield break;
+                    yield return SkillCutIn(u, s);
+                    vfxSkip = false;
+                    PlayFlip("fx_zj_flag", 0, views[u].position + cam.transform.right * 0.3f, 0f, 1f, 1.15f);
+                    yield return ShowWait(0.2f);
+                    PlayFlip("fx_fire_tile", 0, center, 0f, 1f, 1.3f, FireLight);
+                    PlayFlip("fx_embers", 0, center + Vector3.up * 0.9f, 0.4f);
+                    yield return ShowWait(0.45f);   // 同场再放时只有这段就地演出（约 0.8 s）
+                    break;
                 case "引火":
-                case "纵火":
                     if (!VfxTex("fx_fire_tile")) yield break;
                     PlayBolt("fx_fire_bolt", views[u].position + Vector3.up * 0.9f, center + Vector3.up * 0.5f, 0.35f);
                     yield return ShowWait(0.3f);
@@ -376,6 +386,7 @@ namespace Prototype.BingshuTactics
             ["赵云/连击"] = new CutinArt { Busts = new[] { "cutin_zhaoyun_lianji" }, Name = "name_lianji", Color = new Color(0.52f, 0.58f, 0.66f) },
             // S4：吕布（敌方，赤金，画像本身朝左）与刘关张合体技三英（不分是谁发动）
             ["吕布/天下无双"] = new CutinArt { Busts = new[] { "cutin_lvbu_wushuang_eye", "cutin_lvbu_wushuang_halberd", "cutin_lvbu_wushuang_full" }, Name = "name_wushuang", Panels = true, Color = new Color(0.45f, 0.24f, 0.08f), Emblem = "emblem_dongzhuo", FacesLeft = true },
+            ["张角/纵火"] = new CutinArt { Busts = new[] { "cutin_zhangjiao_zonghuo" }, Name = "name_zonghuo", Color = new Color(0.55f, 0.44f, 0.10f), Emblem = "emblem_huangjin", FacesLeft = true },
             ["*/三英"] = new CutinArt { Busts = new[] { "cutin_zhangfei_weishe", "cutin_guanyu_pozhen", "cutin_sanying_trio" }, Name = "name_sanying", Panels = true, Color = new Color(0.30f, 0.22f, 0.12f) },
         };
 
@@ -388,11 +399,13 @@ namespace Prototype.BingshuTactics
             var art = CutinFor(u, s);
             if (art == null) yield break;
             string key = Cutins.ContainsKey(u.Name + "/" + s.Name) ? u.Name + "/" + s.Name : "*/" + s.Name;
-            bool seen = Chapter?.CutinKnown?.Invoke(key) ?? false;
-            bool full = !ShortShows && (HitFeelSettings.Cutin == 2 || !seen);
+            bool enemy = u.Team == Team.Enemy;
+            if (enemy && !enemyCutinsShown.Add(key)) yield break;   // 敌方：每场首次完整，同名招再放只就地演出
+            bool seen = !enemy && (Chapter?.CutinKnown?.Invoke(key) ?? false);
+            bool full = !ShortShows && (enemy || HitFeelSettings.Cutin == 2 || !seen);
             vfxSkip = false;
             cutin = new CutinShow { Art = art, Unit = u, Short = !full, T = 0f, Enemy = u.Team == Team.Enemy };
-            if (full) { Chapter?.CutinSeen?.Invoke(key); Desaturate(true); }
+            if (full) { if (!enemy) Chapter?.CutinSeen?.Invoke(key); Desaturate(true); }   // 敌方的不记进存档
             cutin.Glint = full && FlashBudgetLeft;   // 眼部横光计入光敏上限
             if (cutin.Glint) CountFlash();
             float dur = full ? (art.Panels ? 0.9f : 0.7f) : 0.3f;
@@ -688,6 +701,18 @@ namespace Prototype.BingshuTactics
                 active = near; Log("演示：合体技「三英」");
                 yield return SanYingFx(near, lubu);
                 yield return FxWait(1.0f);
+            }
+            var zj = units.FirstOrDefault(x => x.Alive && x.Name == "张角");
+            if (zj != null)
+            {
+                var zt = units.Where(x => x.Alive && x.Team == Team.Player).OrderBy(x => Grid.Dist(x.Pos, zj.Pos)).First();
+                for (int k = 0; k < 2; k++)   // 第二次：同场再放，只有就地演出
+                {
+                    active = zj; Log($"演示：张角「纵火」{(k == 0 ? "（首次）" : "（同场第二次）")}");
+                    yield return Lunge(zj, zt.Pos);
+                    yield return StrategyFx(zj, Zonghuo, new List<Vector2Int> { zt.Pos });
+                    yield return FxWait(1.0f);
+                }
             }
             foreach (var name in new[] { "刺击", "猛击", "格挡", "中流砥柱", "调息", "闪避" })
             {
