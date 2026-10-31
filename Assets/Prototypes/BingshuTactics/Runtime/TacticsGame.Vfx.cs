@@ -144,13 +144,14 @@ namespace Prototype.BingshuTactics
         // ---------------- 演出状态：跳过与频率 ----------------
         bool vfxSkip, skipEnemyTurn; float inputBlockUntil;
         readonly HashSet<string> strategiesShown = new HashSet<string>();
-        bool ShortShows => autoPlay && !FullFeelInAuto;   // 电脑代打、快进：一律简短版
+        bool ShortShows => autoPlay && !FullFeelInAuto && !ForceFullShows;   // 电脑代打、快进：一律简短版
 
         // 演出期间等待：可按确认键跳过（跳过后 150 ms 内不吃输入，防止一键穿透到下一个菜单）
         IEnumerator ShowWait(float seconds)
         {
             for (float t = 0f; t < seconds && !vfxSkip; t += fxDt)
             {
+                ShowTimeAdded?.Invoke(fxDt);
                 if (ConfirmPressed && Time.unscaledTime >= inputBlockUntil)
                 {
                     vfxSkip = true; inputBlockUntil = Time.unscaledTime + 0.15f;
@@ -241,6 +242,8 @@ namespace Prototype.BingshuTactics
             vfxSkip = false;
             cutin = new CutinShow { Art = art, Unit = u, Short = !full, T = 0f, Enemy = u.Team == Team.Enemy };
             if (full) { Chapter?.CutinSeen?.Invoke(key); Desaturate(true); }
+            cutin.Glint = full && FlashBudgetLeft;   // 眼部横光计入光敏上限
+            if (cutin.Glint) CountFlash();
             float dur = full ? (art.Panels ? 0.9f : 0.7f) : 0.3f;
             yield return ShowWait(dur);
             cutin = null;
@@ -277,7 +280,7 @@ namespace Prototype.BingshuTactics
         }
 
         // ---------------- 屏幕层：特写、横幅 ----------------
-        sealed class CutinShow { public CutinArt Art; public Unit Unit; public bool Short, Enemy; public float T; }
+        sealed class CutinShow { public CutinArt Art; public Unit Unit; public bool Short, Enemy, Glint; public float T; }
         CutinShow cutin;
         (Texture2D tex, bool enemy, bool big, float t)? banner;
 
@@ -319,7 +322,7 @@ namespace Prototype.BingshuTactics
             DrawPanel(sw, c, VfxTex(art.Busts[2]), new Rect(sw * 0.36f, 120, sw * 0.62f, 330), Ease((c.T - 0.3f) / 0.14f), 3f);
             GUI.matrix = m;
             DrawName(sw, c, new Rect(sw * 0.58f, 430, 360, 150), (c.T - 0.42f) / 0.1f);
-            if (c.T > 0.6f && c.T < 0.7f) Rect(new Rect(0, 140, sw * 0.62f, 3), new Color(1, 1, 1, 0.9f));   // 眼部横光（计入闪白）
+            if (c.Glint && c.T > 0.6f && c.T < 0.7f) Rect(new Rect(0, 140, sw * 0.62f, 3), new Color(1, 1, 1, 0.9f));   // 眼部横光（计入闪白）
         }
 
         // A 横条（完整版或简短版）：主色底＋速度线，胸像在前，技能名在后
@@ -352,7 +355,7 @@ namespace Prototype.BingshuTactics
                 GUI.DrawTexture(new Rect(nx, y + (h - nh) / 2, nw, nh), name, ScaleMode.ScaleToFit);
                 GUI.color = o;
             }
-            if (!small && c.T > 0.55f && c.T < 0.62f) Rect(new Rect(x, y + h * 0.32f, w * 0.45f, 3), new Color(1, 1, 1, 0.9f));   // 眼部横光
+            if (!small && c.Glint && c.T > 0.55f && c.T < 0.62f) Rect(new Rect(x, y + h * 0.32f, w * 0.45f, 3), new Color(1, 1, 1, 0.9f));   // 眼部横光
         }
 
         void DrawPanel(float sw, CutinShow c, Texture2D tex, Rect r, float slide, float angle)

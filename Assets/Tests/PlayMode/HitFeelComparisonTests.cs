@@ -32,6 +32,9 @@ public sealed class HitFeelComparisonTests
         TacticsGame.SeedOverride = null;
         TacticsGame.BattleLogged = null;
         TacticsGame.HitLogged = null;
+        TacticsGame.FlashCounted = null;
+        TacticsGame.ShowTimeAdded = null;
+        TacticsGame.ForceFullShows = false;
         TacticsGame.Chapter = null;
         GameRun.Clear();
     }
@@ -43,6 +46,8 @@ public sealed class HitFeelComparisonTests
         public readonly Dictionary<string, int> HeavyWhy = new Dictionary<string, int>();   // 重击的原因组合
         public bool Won; public int Rounds;
     }
+
+    static float lastStart, lastEnd;   // 本场战斗从开场到结束的游戏时间
 
     static IEnumerator Play(string scene, int seed, bool feel, Run run)
     {
@@ -57,12 +62,14 @@ public sealed class HitFeelComparisonTests
         TacticsGame game = null;
         while (game == null) { Assert.Less(Time.realtimeSinceStartup, deadline, "waiting for " + scene); yield return null; game = Object.FindFirstObjectByType<TacticsGame>(); }
         yield return null;
+        lastStart = Time.time;
         Application.targetFrameRate = -1;   // 不限帧率只让代打跑得快；战斗结果不依赖帧率
         while (!game.ChapterFinished && !game.Lost)
         {
             Assert.Less(Time.realtimeSinceStartup, deadline, scene + " did not finish");
             yield return null;
         }
+        lastEnd = Time.time;
         run.Won = game.Won; run.Rounds = game.Rounds;
         run.Log.Add($"END won={run.Won} rounds={run.Rounds}");
         TacticsGame.BattleLogged = null; TacticsGame.HitLogged = null;
@@ -146,6 +153,52 @@ public sealed class HitFeelComparisonTests
         string text = $"# 打击感档位比例（{battles} 场电脑代打，{hits} 次命中）\n\n胜率 {wins}/{battles}\n\n全部：{Shares(total)}\n\n| 战斗 | 胜 | 各档比例 |\n| --- | --- | --- |\n" + string.Join("\n", rows) + "\n\n重击原因组合：" + string.Join("，", why.OrderByDescending(k => k.Value).Select(k => $"{k.Key} {k.Value}")) + "\n";
         System.IO.File.WriteAllText(report, text);
         Debug.Log("HITFEEL_STATS\n" + text);
+        Assert.GreaterOrEqual(battles, seeds >= 9 ? 100 : 12);
+    }
+
+    // 节奏预算与光敏（BATTLE_VFX_DESIGN 2.6、2.7）：完整版设置（每次完整、代打也完整）下 100 场以上电脑代打，
+    // 演出增量 ≤ 战斗时长 15%，全屏每秒闪白 ≤ 3 次。较慢，只在设了环境变量 HITFEEL_BUDGET（报告文件路径）时运行。
+    [UnityTest, Timeout(14400000)]
+    public IEnumerator ShowBudget_Over100Battles()
+    {
+        string report = System.Environment.GetEnvironmentVariable("HITFEEL_BUDGET");
+        if (string.IsNullOrEmpty(report)) { Assert.Ignore("set HITFEEL_BUDGET=<report file> to run the 100-battle pacing budget"); yield break; }
+        int seeds = int.TryParse(System.Environment.GetEnvironmentVariable("HITFEEL_SEEDS"), out int sn) ? sn : 9;
+        int keepCutin = HitFeelSettings.Cutin;
+        HitFeelSettings.Cutin = 2; TacticsGame.ForceFullShows = true;
+        double showAll = 0, durAll = 0, worstRatio = 0; int battles = 0, worstFlashes = 0, overWindows = 0, flashesAll = 0; string worstBattle = "";
+        var rows = new List<string>();
+        foreach (var scene in StatScenes)
+        {
+            double sceneShow = 0, sceneDur = 0; int sceneFlashMax = 0;
+            for (int seed = 1; seed <= seeds; seed++)
+            {
+                double show = 0; var flashes = new List<float>();
+                TacticsGame.ShowTimeAdded = dt => show += dt;
+                TacticsGame.FlashCounted = t => flashes.Add(t);
+                var r = new Run();
+                yield return Play(scene, seed, true, r);
+                double dur = lastEnd - lastStart;
+                battles++; showAll += show; durAll += dur; sceneShow += show; sceneDur += dur; flashesAll += flashes.Count;
+                double ratio = show / System.Math.Max(1e-3, dur - show);
+                if (ratio > worstRatio) { worstRatio = ratio; worstBattle = $"{scene} 种子 {seed}"; }
+                for (int i = 0; i < flashes.Count; i++)
+                {
+                    int n = flashes.Count(f => f >= flashes[i] && f < flashes[i] + 1f);
+                    if (n > 3) overWindows++;
+                    sceneFlashMax = Mathf.Max(sceneFlashMax, n); worstFlashes = Mathf.Max(worstFlashes, n);
+                }
+            }
+            rows.Add($"| {scene} | {sceneShow / System.Math.Max(1e-3, sceneDur - sceneShow) * 100:0.0}% | {sceneFlashMax} |");
+        }
+        HitFeelSettings.Cutin = keepCutin;
+        double all = showAll / System.Math.Max(1e-3, durAll - showAll);
+        string text = $"# 特效节奏预算与光敏（{battles} 场电脑代打，技能特写每次完整、代打也放完整版）\n\n" +
+                      $"演出增量合计 {all * 100:0.0}%（目标 ≤ 15%）；单场最高 {worstRatio * 100:0.0}%（{worstBattle}）\n\n" +
+                      $"全屏每秒闪白最多 {worstFlashes} 次（目标 ≤ 3）；超过 3 次的 1 秒窗口 {overWindows} 个；计入的闪白共 {flashesAll} 次\n\n" +
+                      "| 战斗 | 演出增量 | 每秒闪白最多 |\n| --- | --- | --- |\n" + string.Join("\n", rows) + "\n";
+        System.IO.File.WriteAllText(report, text);
+        Debug.Log("HITFEEL_BUDGET\n" + text);
         Assert.GreaterOrEqual(battles, seeds >= 9 ? 100 : 12);
     }
 

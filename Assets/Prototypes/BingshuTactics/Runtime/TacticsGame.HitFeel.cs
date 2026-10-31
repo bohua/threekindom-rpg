@@ -87,6 +87,22 @@ namespace Prototype.BingshuTactics
         readonly Queue<float> flashTimes = new Queue<float>();
         float lastHeavyShake = -99f;
 
+        // 光敏：全屏合计每秒最多 3 次闪白（受击闪白、二闪、特写眼部横光都计数）
+        bool FlashBudgetLeft
+        {
+            get
+            {
+                while (flashTimes.Count > 0 && Time.time - flashTimes.Peek() > 1f) flashTimes.Dequeue();
+                return flashTimes.Count < HitFeelProfile.Current.MaxFlashesPerSecond;
+            }
+        }
+
+        void CountFlash() { flashTimes.Enqueue(Time.time); FlashCounted?.Invoke(Time.time); }
+
+        public static System.Action<float> FlashCounted;   // 测试：每一次计入的闪白
+        public static System.Action<float> ShowTimeAdded;  // 测试：演出等待的累计时间（节奏预算）
+        public static bool ForceFullShows;                 // 测试：电脑代打也放完整版
+
         void OpenSlot() { FlushHits(); slotPeak = (HitTier)(-9); }
         void CloseSlot() { FlushHits(); slotPeak = (HitTier)(-9); }
 
@@ -103,7 +119,7 @@ namespace Prototype.BingshuTactics
             bool soft = flashTimes.Count >= p.MaxFlashesPerSecond;
             bool flashed = false;
             foreach (var h in batch) flashed |= TargetFx(h.e, h.tier, h.a, h.t, soft, p);
-            if (flashed) flashTimes.Enqueue(Time.time);
+            if (flashed) CountFlash();
 
             var top = batch.OrderByDescending(h => (int)h.tier).First();
             if ((int)top.tier <= (int)slotPeak) return;
@@ -229,7 +245,11 @@ namespace Prototype.BingshuTactics
             if (rig.Flash2Delay > 0f)
             {
                 rig.Flash2Delay -= dt;
-                if (rig.Flash2Delay <= 0f) { rig.FlashT = rig.Flash2T; rig.FlashGoldNow = rig.Flash2Gold; }
+                if (rig.Flash2Delay <= 0f)
+                {
+                    // 二闪也计入全屏每秒 3 次的光敏上限；满了就不闪
+                    if (FlashBudgetLeft) { rig.FlashT = rig.Flash2T; rig.FlashGoldNow = rig.Flash2Gold; CountFlash(); }
+                }
             }
             if (rig.FlashT > 0f) { rig.FlashT -= dt; return (1f, (rig.FlashGoldNow ? Gold : Color.white) * rig.FlashBright); }
             return (0f, Color.black);
