@@ -159,13 +159,16 @@ namespace Prototype.BingshuTactics
 
         // ---------------- 演出状态：跳过与频率 ----------------
         bool vfxSkip, skipEnemyTurn; float inputBlockUntil;
+        float showScale = 1f;   // 同场再放的策略：简短版，主体演出按 60% 播（节奏预算，BATTLE_VFX_DESIGN 2.6）
         readonly HashSet<string> strategiesShown = new HashSet<string>();
         readonly HashSet<string> enemyCutinsShown = new HashSet<string>();   // 敌方首领、具名将领：每场首次完整特写
+        readonly HashSet<string> cutinsThisBattle = new HashSet<string>();  // 我方：同一场内每个特写最多完整一次（节奏预算）
         bool ShortShows => autoPlay && !FullFeelInAuto && !ForceFullShows;   // 电脑代打、快进：一律简短版
 
         // 演出期间等待：可按确认键跳过（跳过后 150 ms 内不吃输入，防止一键穿透到下一个菜单）
         IEnumerator ShowWait(float seconds)
         {
+            seconds *= showScale;
             for (float t = 0f; t < seconds && !vfxSkip; t += fxDt)
             {
                 ShowTimeAdded?.Invoke(fxDt);
@@ -194,6 +197,9 @@ namespace Prototype.BingshuTactics
             int tier = Strategies.Tier(s);
             bool first = strategiesShown.Add(s.Name);
             bool full = first && !ShortShows && tier >= 2;   // 二、三阶策略每场首次完整：镜头与天色
+            showScale = first ? 1f : 0.6f;   // 同场再放：不出横幅，主体缩短
+            bannerAllowed = first;
+            try {
             var center = area.Aggregate(Vector3.zero, (acc, p) => acc + GroundAt(p)) / area.Count;
             FocusOn(center);   // 镜头移到作用范围（换人行动时自动回到跟随）
             switch (s.Name)
@@ -363,6 +369,7 @@ namespace Prototype.BingshuTactics
                     break;
                 }
             }
+        } finally { showScale = 1f; bannerAllowed = true; }
         }
 
         // ---------------- 专属技能（S1：关羽） ----------------
@@ -402,7 +409,8 @@ namespace Prototype.BingshuTactics
             bool enemy = u.Team == Team.Enemy;
             if (enemy && !enemyCutinsShown.Add(key)) yield break;   // 敌方：每场首次完整，同名招再放只就地演出
             bool seen = !enemy && (Chapter?.CutinKnown?.Invoke(key) ?? false);
-            bool full = !ShortShows && (enemy || HitFeelSettings.Cutin == 2 || !seen);
+            bool firstThisBattle = cutinsThisBattle.Add(key);
+            bool full = !ShortShows && firstThisBattle && (enemy || HitFeelSettings.Cutin == 2 || !seen);   // “每次完整”＝每场首次完整，同场再放用简短版
             vfxSkip = false;
             cutin = new CutinShow { Art = art, Unit = u, Short = !full, T = 0f, Enemy = u.Team == Team.Enemy };
             if (full) { if (!enemy) Chapter?.CutinSeen?.Invoke(key); Desaturate(true); }   // 敌方的不记进存档
@@ -527,8 +535,11 @@ namespace Prototype.BingshuTactics
         CutinShow cutin;
         (Texture2D tex, bool enemy, bool big, float t)? banner;
 
+        bool bannerAllowed = true;
+
         void ShowBanner(string tex, Unit u, bool big)
         {
+            if (!bannerAllowed) return;
             var t = VfxTex(tex);
             if (t) banner = (t, u.Team == Team.Enemy, big, 0f);
         }

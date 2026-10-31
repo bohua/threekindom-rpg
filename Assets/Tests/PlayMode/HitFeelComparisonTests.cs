@@ -165,7 +165,8 @@ public sealed class HitFeelComparisonTests
         if (string.IsNullOrEmpty(report)) { Assert.Ignore("set HITFEEL_BUDGET=<report file> to run the 100-battle pacing budget"); yield break; }
         int seeds = int.TryParse(System.Environment.GetEnvironmentVariable("HITFEEL_SEEDS"), out int sn) ? sn : 9;
         int keepCutin = HitFeelSettings.Cutin;
-        HitFeelSettings.Cutin = 2; TacticsGame.ForceFullShows = true;
+        int mode = System.Environment.GetEnvironmentVariable("HITFEEL_BUDGET_MODE") == "default" ? 1 : 2;   // 默认设置或最坏情况
+        HitFeelSettings.Cutin = mode; TacticsGame.ForceFullShows = true;
         double showAll = 0, durAll = 0, worstRatio = 0; int battles = 0, worstFlashes = 0, overWindows = 0, flashesAll = 0; string worstBattle = "";
         var rows = new List<string>();
         foreach (var scene in StatScenes)
@@ -193,7 +194,7 @@ public sealed class HitFeelComparisonTests
         }
         HitFeelSettings.Cutin = keepCutin;
         double all = showAll / System.Math.Max(1e-3, durAll - showAll);
-        string text = $"# 特效节奏预算与光敏（{battles} 场电脑代打，技能特写每次完整、代打也放完整版）\n\n" +
+        string text = $"# 特效节奏预算与光敏（{battles} 场电脑代打，{(mode == 2 ? "最坏情况：技能特写每场首次完整" : "默认设置：存档首次完整，之后简短")}，代打也放完整版）\n\n" +
                       $"演出增量合计 {all * 100:0.0}%（目标 ≤ 15%）；单场最高 {worstRatio * 100:0.0}%（{worstBattle}）\n\n" +
                       $"全屏每秒闪白最多 {worstFlashes} 次（目标 ≤ 3）；超过 3 次的 1 秒窗口 {overWindows} 个；计入的闪白共 {flashesAll} 次\n\n" +
                       "| 战斗 | 演出增量 | 每秒闪白最多 |\n| --- | --- | --- |\n" + string.Join("\n", rows) + "\n";

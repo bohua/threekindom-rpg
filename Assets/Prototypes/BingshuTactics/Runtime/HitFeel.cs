@@ -84,7 +84,7 @@ namespace Prototype.BingshuTactics
         public static bool ZoomAndSlow { get => PlayerPrefs.GetInt(ZoomKey, 1) == 1; set => PlayerPrefs.SetInt(ZoomKey, value ? 1 : 0); }
         public static bool GridRipple { get => PlayerPrefs.GetInt(RippleKey, 1) == 1; set => PlayerPrefs.SetInt(RippleKey, value ? 1 : 0); }
 
-        // 技能特写：0 关／1 首次完整（之后简短）／2 每次完整
+        // 技能特写：0 关／1 存档首次完整（之后简短）／2 每场首次完整（同场再放仍用简短版）
         public const string CutinKey = "settings.hitfeel.cutin";
         public static int Cutin { get => PlayerPrefs.GetInt(CutinKey, 1); set => PlayerPrefs.SetInt(CutinKey, Mathf.Clamp(value, 0, 2)); }
 
