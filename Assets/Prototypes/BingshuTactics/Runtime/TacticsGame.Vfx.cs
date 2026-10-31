@@ -43,6 +43,11 @@ namespace Prototype.BingshuTactics
         {
             ["fx_fire_bolt"] = 8, ["fx_fire_tile"] = 12, ["fx_fire_wall"] = 12, ["fx_embers"] = 8,
             ["fx_gy_thrust"] = 8, ["fx_gy_downcut"] = 8, ["fx_gy_arc"] = 10, ["fx_sparks"] = 8,
+            // S2 水木土金
+            ["fx_water_tile"] = 12, ["fx_water_wave"] = 12, ["fx_water_flood"] = 12, ["fx_mist"] = 8,
+            ["fx_wood_heal"] = 12, ["fx_drum"] = 8, ["fx_flag_wave"] = 12, ["fx_leaves"] = 8,
+            ["fx_earth_wall"] = 10, ["fx_bazhen"] = 12, ["fx_flag_rise"] = 8, ["fx_dust"] = 8,
+            ["fx_arrow_volley"] = 10, ["fx_arrow_streak"] = 8, ["fx_glint"] = 8,
         };
 
         // 格子地面的实际高度：战场有高低与 3D 地形，用射线取地表，避免特效埋进地里
@@ -67,11 +72,12 @@ namespace Prototype.BingshuTactics
             public float Time, Delay; public bool Mirror; public float Roll;
             public Vector3 From, To; public float Travel;   // 飞行物：在 Travel 秒内从 From 飞到 To
             public Light Light; public float LightPeak;
+            public bool Flat;   // 贴地平放（俯视条带，如八阵阵线）
         }
         readonly List<Flip> flips = new List<Flip>();
 
         // 播放一条横向序列帧：pos 为落地点（帧底边中心）；frames 由图宽／帧宽推出时可传 0
-        Flip PlayFlip(string tex, int frames, Vector3 pos, float delay = 0f, float scale = 1f, float glow = 1.2f, Color? light = null, bool mirror = false, float roll = 0f)
+        Flip PlayFlip(string tex, int frames, Vector3 pos, float delay = 0f, float scale = 1f, float glow = 1.2f, Color? light = null, bool mirror = false, float roll = 0f, bool flat = false)
         {
             var t = VfxTex(tex);
             if (!t) return null;
@@ -80,14 +86,17 @@ namespace Prototype.BingshuTactics
             var go = new GameObject("vfx " + tex);
             go.transform.position = pos;
             var mesh = new Mesh { name = tex };
-            mesh.vertices = new[] { new Vector3(-w / 2, 0, 0), new Vector3(w / 2, 0, 0), new Vector3(w / 2, h, 0), new Vector3(-w / 2, h, 0) };
+            float y0 = flat ? -h / 2 : 0f;   // 贴地的以格子中心为中心，立着的以底边为落地点
+            if (flat) pos += Vector3.up * 0.04f;
+            mesh.vertices = new[] { new Vector3(-w / 2, y0, 0), new Vector3(w / 2, y0, 0), new Vector3(w / 2, y0 + h, 0), new Vector3(-w / 2, y0 + h, 0) };
             mesh.triangles = new[] { 0, 2, 1, 0, 3, 2 };
             mesh.uv = new Vector2[4];
             mesh.RecalculateBounds();
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var r = go.AddComponent<MeshRenderer>();
             r.sharedMaterial = VfxMaterial(t, glow); r.shadowCastingMode = ShadowCastingMode.Off; r.receiveShadows = false;
-            var f = new Flip { T = go.transform, Mesh = mesh, Tex = t, Frames = frames, Delay = delay, Mirror = mirror, Roll = roll, From = pos, To = pos };
+            var f = new Flip { T = go.transform, Mesh = mesh, Tex = t, Frames = frames, Delay = delay, Mirror = mirror, Roll = roll, From = pos, To = pos, Flat = flat };
+            go.transform.position = pos;
             if (light.HasValue)
             {
                 var l = new GameObject("vfx light").AddComponent<Light>();
@@ -136,7 +145,7 @@ namespace Prototype.BingshuTactics
                     var sp = cam.WorldToScreenPoint(next) - cam.WorldToScreenPoint(p);
                     f.Roll = Mathf.Atan2(sp.y, sp.x) * Mathf.Rad2Deg;
                 }
-                f.T.rotation = camRot * Quaternion.Euler(0, 0, f.Roll);
+                f.T.rotation = f.Flat ? Quaternion.Euler(90f, yaw, 0f) : camRot * Quaternion.Euler(0, 0, f.Roll);
                 if (f.Light) f.Light.intensity = f.LightPeak * Mathf.Sin(Mathf.Clamp01(f.Time / life) * Mathf.PI);
             }
         }
@@ -163,8 +172,12 @@ namespace Prototype.BingshuTactics
 
         bool Skipping(Unit u) => u.Team == Team.Enemy && skipEnemyTurn;
 
-        // ---------------- 策略配方（S1：火系；其余策略待 S2 素材） ----------------
-        static readonly Color FireLight = new Color(1f, 0.55f, 0.15f);
+        // ---------------- 策略配方（S1 火系、S2 水木土金） ----------------
+        static readonly Color FireLight = new Color(1f, 0.55f, 0.15f), WaterLight = new Color(0.35f, 0.65f, 1f),
+            WoodLight = new Color(0.4f, 1f, 0.6f), EarthLight = new Color(1f, 0.8f, 0.4f), MetalLight = new Color(0.95f, 0.92f, 0.82f);
+
+        // 屏幕上向左：条带素材按向右画，向左时镜像
+        bool ScreenLeft(Vector3 from, Vector3 to) => Vector3.Dot(to - from, cam.transform.right) < 0f;
 
         IEnumerator StrategyFx(Unit u, SkillDef s, List<Vector2Int> area)
         {
@@ -214,6 +227,124 @@ namespace Prototype.BingshuTactics
                     for (int k = 0; k < 4; k++) PlayFlip("fx_embers", 0, center + new Vector3((k - 1.5f) * 0.8f, 1.2f, 0), 0.7f + k * 0.1f, 1.5f);
                     yield return ShowWait(0.6f);
                     break;
+                // ---- 水 ----
+                case "截流":
+                    if (!VfxTex("fx_water_tile")) yield break;
+                    PlayFlip("fx_water_tile", 0, center, 0f, 1f, 1.25f, WaterLight);
+                    PlayFlip("fx_mist", 0, center, 0.5f);
+                    yield return ShowWait(0.35f);
+                    break;
+                case "水攻":
+                {
+                    if (!VfxTex("fx_water_wave")) yield break;
+                    ShowBanner("banner_shuigong", u, false);
+                    if (full) PushCamera(center, 0.03f);
+                    var src = views[u].position;
+                    bool left = ScreenLeft(src, center);
+                    var line = area.OrderBy(p => Vector3.Distance(Tile(p), src)).ToList();
+                    for (int k = 0; k < line.Count; k++)
+                        PlayFlip("fx_water_wave", 0, GroundAt(line[k]), k * 0.08f, 1f, 1.2f, k == line.Count / 2 ? WaterLight : (Color?)null, left);
+                    yield return ShowWait(0.45f);
+                    break;
+                }
+                case "决堤":
+                {
+                    if (!VfxTex("fx_water_flood")) yield break;
+                    ShowBanner("banner_juedi", u, true);
+                    if (full) { PushCamera(center, 0.04f); TintSky(new Color(0.55f, 0.78f, 1f)); }
+                    var src = views[u].position;
+                    bool left = ScreenLeft(src, center);
+                    float near2 = area.Min(p => Vector3.Distance(Tile(p), src));
+                    yield return ShowWait(0.3f);
+                    foreach (var p in area)
+                    {
+                        float d = Vector3.Distance(Tile(p), src) - near2;
+                        PlayFlip("fx_water_flood", 0, Scatter(GroundAt(p)), d / T * 0.06f + (float)fxRng.NextDouble() * 0.05f, Vary(), 1.25f, (Mathf.Abs(p.x + p.y) % 3 == 0) ? WaterLight : (Color?)null, left);
+                    }
+                    for (int k = 0; k < 4; k++) PlayFlip("fx_mist", 0, Scatter(center), 0.8f + k * 0.08f, 1.6f);
+                    yield return ShowWait(0.6f);
+                    break;
+                }
+                // ---- 木（回复：兵力回涨，不画溃卒跑回） ----
+                case "抚军":
+                    if (!VfxTex("fx_wood_heal")) yield break;
+                    PlayFlip("fx_wood_heal", 0, center, 0f, 1f, 1.25f, WoodLight);
+                    PlayFlip("fx_leaves", 0, center + Vector3.up * 1.2f, 0.2f);
+                    yield return ShowWait(0.35f);
+                    break;
+                case "鼓舞":
+                {
+                    if (!VfxTex("fx_drum")) yield break;
+                    ShowBanner("banner_guwu", u, false);
+                    if (full) PushCamera(center, 0.03f);
+                    PlayFlip("fx_drum", 0, center, 0f, 1f, 1.15f, WoodLight);
+                    var allies = area.Where(p => At(p) != null && At(p).Team == u.Team).ToList();
+                    foreach (var p in allies) { PlayFlip("fx_flag_wave", 0, GroundAt(p) + cam.transform.right * 0.35f, 0.2f); PlayFlip("fx_wood_heal", 0, GroundAt(p), 0.3f, 1f, 1.2f); }
+                    yield return ShowWait(0.55f);
+                    break;
+                }
+                case "收拢溃卒":
+                {
+                    if (!VfxTex("fx_wood_heal")) yield break;
+                    ShowBanner("banner_shoulong", u, true);
+                    if (full) { PushCamera(center, 0.03f); TintSky(new Color(0.8f, 1f, 0.82f)); }
+                    // 只照亮在场友军：每人脚下青气，旗帜扬起
+                    int k = 0;
+                    foreach (var p in area.OrderBy(p => Vector3.Distance(Tile(p), center)))
+                    {
+                        PlayFlip("fx_wood_heal", 0, GroundAt(p), 0.15f + k * 0.06f, 1.1f, 1.3f, k % 2 == 0 ? WoodLight : (Color?)null);
+                        PlayFlip("fx_flag_wave", 0, GroundAt(p) + cam.transform.right * 0.35f, 0.1f + k * 0.06f);
+                        k++;
+                    }
+                    PlayFlip("fx_leaves", 0, center + Vector3.up * 1.5f, 0.4f, 1.6f);
+                    yield return ShowWait(0.6f);
+                    break;
+                }
+                // ---- 土 ----
+                case "坚壁":
+                {
+                    if (!VfxTex("fx_earth_wall")) yield break;
+                    var toward = (views[u].position - center); toward.y = 0f;
+                    var front = center + (toward.sqrMagnitude > 1e-3f ? toward.normalized * 0.45f : Vector3.zero);
+                    PlayFlip("fx_earth_wall", 0, front, 0f, 1f, 1.1f, EarthLight);
+                    PlayFlip("fx_dust", 0, front, 0.1f);
+                    yield return ShowWait(0.35f);
+                    break;
+                }
+                case "八阵":
+                {
+                    if (!VfxTex("fx_bazhen")) yield break;
+                    ShowBanner("banner_bazhen", u, true);
+                    if (full) { PushCamera(center, 0.04f); TintSky(new Color(1f, 0.86f, 0.58f)); }
+                    var top = center; top.y = area.Max(p => GroundAt(p).y) + 0.06f;   // 贴地阵线放在范围内最高的地面上，不被高低地形埋住
+                    PlayFlip("fx_bazhen", 0, top, 0f, 0.95f, 1.2f, EarthLight, flat: true);
+                    int k = 0;
+                    foreach (var p in area.Where(p => Grid.Dist(p, area.OrderBy(q => Vector3.Distance(Tile(q), center)).First()) == 2).Take(8))
+                        PlayFlip("fx_flag_rise", 0, GroundAt(p), 0.25f + 0.07f * k++);
+                    yield return ShowWait(0.8f);
+                    break;
+                }
+                // ---- 金（箭雨：箭落地即散，不留插地的箭） ----
+                case "箭雨":
+                    if (!VfxTex("fx_arrow_volley")) yield break;
+                    foreach (var p in area) { PlayFlip("fx_arrow_volley", 0, Scatter(GroundAt(p)), (float)fxRng.NextDouble() * 0.12f, Vary(), 1.2f); PlayFlip("fx_glint", 0, GroundAt(p) + Vector3.up * 0.2f, 0.45f); }
+                    yield return ShowWait(0.45f);
+                    break;
+                case "万箭齐发":
+                {
+                    if (!VfxTex("fx_arrow_volley")) yield break;
+                    ShowBanner("banner_wanjian", u, true);
+                    if (full) PushCamera(center, 0.04f);
+                    // 三波：高空箭队掠过，随后落进范围；数字只在第三波之后结算（Apply 在本协程返回后才执行）
+                    for (int wave = 0; wave < 3; wave++)
+                    {
+                        PlayFlip("fx_arrow_streak", 0, center + Vector3.up * 2.6f + cam.transform.right * (wave - 1) * 0.6f, wave * 0.35f, 1.4f, 1.15f);
+                        foreach (var p in area) PlayFlip("fx_arrow_volley", 0, Scatter(GroundAt(p)), wave * 0.35f + 0.25f + (float)fxRng.NextDouble() * 0.08f, Vary(), 1.2f, wave == 2 && p == area[0] ? MetalLight : (Color?)null);
+                    }
+                    foreach (var p in area) PlayFlip("fx_glint", 0, GroundAt(p) + Vector3.up * 0.2f, 1.3f);
+                    yield return ShowWait(1.35f);
+                    break;
+                }
             }
         }
 
@@ -402,13 +533,17 @@ namespace Prototype.BingshuTactics
                 yield return SkillFx(hero, s, foe.Pos);
                 yield return FxWait(1.0f);
             }
-            foreach (var name in new[] { "引火", "火烧营寨", "火海" })
+            foreach (var name in new[] { "引火", "火烧营寨", "火海", "截流", "水攻", "决堤", "抚军", "鼓舞", "收拢溃卒", "坚壁", "八阵", "箭雨", "万箭齐发" })
             {
                 var s = Strategies.All.First(x => x.Name == name);
                 active = caster; Log($"演示：策略「{name}」");
                 popups.Add((views[caster].position + Vector3.up * (2.4f * HeadK), "策略·" + name, Wuxing.Tint(s.Element), 0f));
                 yield return Lunge(caster, foe.Pos);
-                var area = s.Area == Area.Single ? new List<Vector2Int> { foe.Pos } : grid.Diamond(foe.Pos, s.Radius).ToList();   // 演示不受射程限制
+                var target = s.TargetsAllies ? units.First(x => x.Alive && x.Team == caster.Team && x != caster) : foe;
+                var area = s.Radius >= 99 ? Friends(caster).Select(f => f.Pos).ToList()
+                         : s.Area == Area.Single ? new List<Vector2Int> { target.Pos }
+                         : s.Area == Area.Line ? grid.LineArea(target.Pos + Grid.DirTo(target.Pos, caster.Pos) * 2, Grid.DirTo(caster.Pos, target.Pos), s.Length, s.Width).ToList()
+                         : grid.Diamond(target.Pos, s.Radius).ToList();   // 演示不受射程限制
                 yield return StrategyFx(caster, s, area);
                 yield return FxWait(1.6f);
             }
