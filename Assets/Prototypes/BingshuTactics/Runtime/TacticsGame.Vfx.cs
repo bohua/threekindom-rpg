@@ -38,6 +38,28 @@ namespace Prototype.BingshuTactics
             return m;
         }
 
+        // 每条序列帧的帧数（帧格不一定是正方形，不能用宽÷高推算）
+        static readonly Dictionary<string, int> VfxFrames = new Dictionary<string, int>
+        {
+            ["fx_fire_bolt"] = 8, ["fx_fire_tile"] = 12, ["fx_fire_wall"] = 12, ["fx_embers"] = 8,
+            ["fx_gy_thrust"] = 8, ["fx_gy_downcut"] = 8, ["fx_gy_arc"] = 10, ["fx_sparks"] = 8,
+        };
+
+        // 格子地面的实际高度：战场有高低与 3D 地形，用射线取地表，避免特效埋进地里
+        Vector3 GroundAt(Vector2Int p)
+        {
+            var at = Tile(p);
+            foreach (var hit in Physics.RaycastAll(at + Vector3.up * 40f, Vector3.down, 80f))
+                if (tileOf.TryGetValue(hit.collider, out var hp) && hp == p) { at.y = Mathf.Max(at.y, hit.point.y); break; }
+            var u = At(p);
+            if (u != null && views.TryGetValue(u, out var v)) at.y = Mathf.Max(at.y, v.position.y);
+            return at;
+        }
+
+        // 打散格子：每团火焰在格内随机错位、大小略变，不让一排火焰连成方块（地形过渡原则）
+        Vector3 Scatter(Vector3 at) => at + new Vector3((float)fxRng.NextDouble() - 0.5f, 0f, (float)fxRng.NextDouble() - 0.5f) * (T * 0.45f);
+        float Vary() => 0.85f + 0.3f * (float)fxRng.NextDouble();
+
         // ---------------- 序列帧播放器 ----------------
         sealed class Flip
         {
@@ -53,7 +75,7 @@ namespace Prototype.BingshuTactics
         {
             var t = VfxTex(tex);
             if (!t) return null;
-            if (frames <= 0) frames = Mathf.Max(1, t.width / t.height);
+            if (frames <= 0) frames = VfxFrames.TryGetValue(tex, out var known) ? known : Mathf.Max(1, t.width / t.height);
             float w = t.width / (float)frames / VfxPpm * scale, h = t.height / VfxPpm * scale;
             var go = new GameObject("vfx " + tex);
             go.transform.position = pos;
@@ -145,12 +167,13 @@ namespace Prototype.BingshuTactics
 
         IEnumerator StrategyFx(Unit u, SkillDef s, List<Vector2Int> area)
         {
-            if (!HitFeelSettings.Enabled || Skipping(u)) yield break;
+            if (!HitFeelSettings.Enabled || Skipping(u) || area.Count == 0) yield break;
             vfxSkip = false;
             int tier = Strategies.Tier(s);
             bool first = strategiesShown.Add(s.Name);
             bool full = first && !ShortShows && tier >= 2;   // 二、三阶策略每场首次完整：镜头与天色
-            var center = area.Count > 0 ? area.Aggregate(Vector3.zero, (acc, p) => acc + Tile(p)) / area.Count : Tile(u.PendingTarget);
+            var center = area.Aggregate(Vector3.zero, (acc, p) => acc + GroundAt(p)) / area.Count;
+            FocusOn(center);   // 镜头移到作用范围（换人行动时自动回到跟随）
             switch (s.Name)
             {
                 case "引火":
@@ -170,7 +193,7 @@ namespace Prototype.BingshuTactics
                         PlayBolt("fx_fire_bolt", views[u].position + Vector3.up * 0.9f, center + new Vector3((k - 1) * 0.5f, 0.4f, (k % 2) * 0.4f - 0.2f), 0.35f, k * 0.08f);
                     yield return ShowWait(0.45f);
                     foreach (var p in area.OrderBy(p => Vector3.Distance(Tile(p), center)))
-                        PlayFlip("fx_fire_tile", 0, Tile(p), Vector3.Distance(Tile(p), center) / T * 0.06f, 1f, 1.3f, p == area[0] ? FireLight : (Color?)null);
+                        PlayFlip("fx_fire_tile", 0, Scatter(GroundAt(p)), Vector3.Distance(Tile(p), center) / T * 0.06f + (float)fxRng.NextDouble() * 0.05f, Vary(), 1.3f, p == area[0] ? FireLight : (Color?)null);
                     PlayFlip("fx_embers", 0, center + Vector3.up * 1f, 0.6f, 1.5f);
                     yield return ShowWait(0.4f);
                     break;
@@ -185,7 +208,7 @@ namespace Prototype.BingshuTactics
                     foreach (var p in area)
                     {
                         float d = Vector3.Distance(Tile(p), from) - near;
-                        PlayFlip("fx_fire_wall", 0, Tile(p), d / T * 0.08f, 1f, 1.35f, (Mathf.Abs(p.x + p.y) % 3 == 0) ? FireLight : (Color?)null);
+                        PlayFlip("fx_fire_wall", 0, Scatter(GroundAt(p)), d / T * 0.08f + (float)fxRng.NextDouble() * 0.06f, Vary(), 1.35f, (Mathf.Abs(p.x + p.y) % 3 == 0) ? FireLight : (Color?)null);
                     }
                     for (int k = 0; k < 4; k++) PlayFlip("fx_embers", 0, center + new Vector3((k - 1.5f) * 0.8f, 1.2f, 0), 0.7f + k * 0.1f, 1.5f);
                     yield return ShowWait(0.6f);
@@ -228,8 +251,9 @@ namespace Prototype.BingshuTactics
         {
             if (!HitFeelSettings.Enabled || Skipping(u)) yield break;
             vfxSkip = false;
-            var at = Tile(targetTile); var me = views[u].position;
+            var at = GroundAt(targetTile); var me = views[u].position;
             bool left = Vector3.Dot(at - me, cam.transform.right) < 0f;
+            FocusOn((me + at) / 2f);
             var green = new Color(0.35f, 1f, 0.6f);
             switch (u.Name + "/" + s.Name)
             {
@@ -280,7 +304,7 @@ namespace Prototype.BingshuTactics
                 float slide = Ease(t / 0.18f), fade = t > 0.85f ? 1f - (t - 0.85f) / 0.25f : 1f;
                 float x = enemy ? Mathf.Lerp(sw, sw - w - 40, slide) : Mathf.Lerp(-w, 40, slide);
                 var o = GUI.color; GUI.color = new Color(1, 1, 1, fade);
-                GUI.DrawTexture(new Rect(x, big ? 70 : 90, w, h), tex, ScaleMode.ScaleToFit);
+                GUI.DrawTexture(new Rect(x, big ? 150 : 170, w, h), tex, ScaleMode.ScaleToFit);   // 让开顶栏与右上小地图
                 GUI.color = o;
             }
             if (cutin == null) return;
@@ -353,6 +377,40 @@ namespace Prototype.BingshuTactics
             var o = GUI.color; GUI.color = new Color(1, 1, 1, Mathf.Clamp01(a));
             GUI.DrawTexture(r, name, ScaleMode.ScaleToFit);
             GUI.color = o;
+        }
+
+        bool HudHiddenByCutin => cutin != null && !cutin.Short && cutin.T > 0.03f && cutin.T < (cutin.Art.Panels ? 0.88f : 0.68f);
+
+        // ---------------- 演示（-vfxDemo）：在真实战场上依次播放已有素材的全部特效，供录像审看；不进入战斗循环 ----------------
+        static readonly bool VfxDemoArg = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-vfxDemo") >= 0;
+
+        IEnumerator VfxDemo()
+        {
+            yield return FxWait(1.2f);
+            var hero = units.FirstOrDefault(x => x.Alive && x.Name == "关羽") ?? units.First(x => x.Alive && x.Team == Team.Player);
+            var caster = units.FirstOrDefault(x => x.Alive && x.Name == "刘备") ?? hero;
+            var foe = units.Where(x => x.Alive && x.Team == Team.Enemy).OrderBy(x => Grid.Dist(x.Pos, hero.Pos)).First();
+            foreach (var name in new[] { "突击", "破阵", "拖刀" })
+            {
+                var s = hero.Crafts.FirstOrDefault(c => c.Name == name) ?? new SkillDef { Name = name };
+                active = hero; Log($"演示：{hero.Name}「{name}」");
+                yield return SkillCutIn(hero, s);
+                yield return Lunge(hero, foe.Pos);
+                yield return SkillFx(hero, s, foe.Pos);
+                yield return FxWait(1.0f);
+            }
+            foreach (var name in new[] { "引火", "火烧营寨", "火海" })
+            {
+                var s = Strategies.All.First(x => x.Name == name);
+                active = caster; Log($"演示：策略「{name}」");
+                popups.Add((views[caster].position + Vector3.up * (2.4f * HeadK), "策略·" + name, Wuxing.Tint(s.Element), 0f));
+                yield return Lunge(caster, foe.Pos);
+                var area = s.Area == Area.Single ? new List<Vector2Int> { foe.Pos } : grid.Diamond(foe.Pos, s.Radius).ToList();   // 演示不受射程限制
+                yield return StrategyFx(caster, s, area);
+                yield return FxWait(1.6f);
+            }
+            yield return FxWait(1f);
+            Application.Quit();
         }
 
         // ---------------- 画面：去色、天色、推近 ----------------

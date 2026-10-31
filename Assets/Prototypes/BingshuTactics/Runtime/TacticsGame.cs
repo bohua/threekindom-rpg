@@ -76,7 +76,7 @@ namespace Prototype.BingshuTactics
             white = Texture2D.whiteTexture;
             Log("布阵：点选我方武将，再点蓝色格子调整站位。可先打开「兵书回路」配书。");
             if (IsChapter && SeedOverride.HasValue) Chapter.Seed = SeedOverride.Value;
-            if (IsChapter && Chapter.AutoPlay) { autoPlay = true; mode = Mode.Busy; StartCoroutine(BattleLoop()); }
+            if (IsChapter && Chapter.AutoPlay) { autoPlay = true; mode = Mode.Busy; StartCoroutine(VfxDemoArg ? VfxDemo() : BattleLoop()); }
             var args = System.Environment.GetCommandLineArgs();
             int i = System.Array.IndexOf(args, "-poc-shots");
             if (i >= 0 && i + 1 < args.Length) StartCoroutine(AutoShots(args[i + 1]));
@@ -1178,10 +1178,14 @@ namespace Prototype.BingshuTactics
             float sw = Screen.width / S;
 
             DrawWorldLabels();
-            DrawAtBarV();
-            if (mode != Mode.Duel && mode != Mode.Circuit) DrawPartyV(sw);
-            DrawTopBarV(sw);
-            DrawMinimap(sw);
+            bool hudHidden = HudHiddenByCutin;   // 完整特写时界面淡出（BATTLE_VFX_DESIGN 2.4）
+            if (!hudHidden)
+            {
+                DrawAtBarV();
+                if (mode != Mode.Duel && mode != Mode.Circuit) DrawPartyV(sw);
+                DrawTopBarV(sw);
+                DrawMinimap(sw);
+            }
 
             if (mode == Mode.Deploy) DrawDeploy(sw);
             if (mode == Mode.Circuit) DrawCircuit(sw);
