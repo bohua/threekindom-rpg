@@ -263,10 +263,24 @@ namespace ThreeKingdoms.Gameplay.Story
             if (mother)
             {
                 mother.gameObject.SetActive(true);
-                // In the open yard south-west of the house (her own spot is under the eaves, hidden from the camera).
-                // Placed first, so the prologue's last shot fades out onto him already at home.
-                PlaceAt(mother, Ground(mother.position + new Vector3(-4f, 0f, -5f)));
-                PlaceAt(Player.transform, Ground(mother.position + new Vector3(-1.5f, 0f, -0.6f)));
+                // In the yard in front of the Liu home (her own spot is under the eaves, hidden from the camera): the
+                // house's front faces the way from it to her spot. Placed first, so the prologue's last shot fades out
+                // onto him already at home.
+                var home = GameObject.Find("liubei_home");
+                GameObject om = GameObject.Find("opening_mother"), ol = GameObject.Find("opening_liu_bei");
+                if (om && ol)   // the refined village's own spots for this scene
+                {
+                    PlaceAt(mother, Ground(om.transform.position));
+                    PlaceAt(Player.transform, Ground(ol.transform.position));
+                }
+                else if (home)
+                {
+                    var front = mother.position - home.transform.position; front.y = 0f;
+                    front = front.sqrMagnitude > 0.01f ? front.normalized : Vector3.back;
+                    PlaceAt(mother, Ground(home.transform.position + front * 6.5f));
+                }
+                else PlaceAt(mother, Ground(mother.position + new Vector3(-4f, 0f, -5f)));
+                if (!(om && ol)) PlaceAt(Player.transform, Ground(mother.position + new Vector3(-1.5f, 0f, -0.6f)));
                 Face(mother);
                 var face = Player.transform.position - mother.position; face.y = 0f;
                 if (face.sqrMagnitude > 0.01f) mother.rotation = Quaternion.LookRotation(face);

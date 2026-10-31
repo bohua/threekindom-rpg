@@ -122,3 +122,11 @@
 - 标题“新游戏”现在进入 R1 涿蓟（Region_R1）：序章→刘备在楼桑村家门前院→刘母对白（黄巾八州并起、官府贴榜募义兵、羽葆盖车童言、中山靖王之后、“去吧”）→目标“沿官道去涿郡城，看城门口的募兵告示”。原创对白，键 `dlg.open.*`（SidequestText）。关张此时不随行。走进涿郡后照原 0.1 流程，入城导览不播。
 - 没有 R1 场景的构建仍落在涿郡告示栏前（旧路径保留）。
 - 天下图首次加载：编辑器约 13.5 秒、Windows 构建约 1.1 秒；剧情舞台场景开场时后台预加载。
+
+## 13. 楼桑村精修（用户 2026-10-30：“需要在细节和贴图上做到高分辨率以及梦幻的感觉”）
+
+- 定调：Codex `art/lousang-hd-concept`（全貌、刘家前院、大桑树三张效果图＋资产清单）。
+- 建模：`art/lousang-hd-blender`（房屋、地基、篱笆院门、织席机、晾席架等道具、8K 手绘地面、溪流；第 3 批 `art/lousang-hd-layout-v3` 已合入：全村按效果图重排、刘家门朝南、墙面与木构贴图加强、地面重画、`npc_spots`）与 `art/lousang-hd-trees`（大桑树、桑桃杏柳、花草、fx 贴图）。
+- 接入：RegionGreyboxBuilder 把 R1 中用 `r1-blender-lousang` 的地点换成新套（同名模型），楼桑村按新 layout 摆放，树从树套取，地面与溪流贴合地形；ChapterFieldBuilderR1 按 `npc_spots` 放楼桑村人物与开场站位（opening_mother / opening_liu_bei）。
+- 梦幻效果：LousangAmbienceBuilder —— 飘落桃杏花瓣、桑树下光尘、叶隙光斑聚光灯（cookie）、村内局部 Volume（柔光 Bloom、暖色、轻微暗角）。
+- 待定：茅草屋顶在游戏机位仍偏平，是否再补一轮由用户看图决定。
