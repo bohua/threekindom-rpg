@@ -221,6 +221,7 @@ namespace ThreeKingdoms.Gameplay.Story
                     yield return Say("lu_yu", "dlg.lb1.lu_yu.N6.kept.1");
                     Run.Life.AddReputation(1);
                     ch.Remember("lu_yu", "rubbing", "kept_rubbing", "mem.lu_yu.rubbing.kept_rubbing");
+                    ch.Set(SideQuests.KeepsakePrefix + "shijing_copy");
                     yield return Say("system", "dlg.lb1.L4.rub.keepsake");
                 }
                 yield return ReputationChanged(Run.Life.Reputation - before);

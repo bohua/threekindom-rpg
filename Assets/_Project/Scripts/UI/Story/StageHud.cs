@@ -406,9 +406,9 @@ namespace ThreeKingdoms.UI.Story
         void WatchMemories(ChapterState chapter)
         {
             if (chapter == watched) return;
-            if (watched != null) watched.Remembered -= OnRemembered;
+            if (watched != null) { watched.Remembered -= OnRemembered; watched.Flagged -= OnFlagged; }
             watched = chapter;
-            if (watched != null) watched.Remembered += OnRemembered;
+            if (watched != null) { watched.Remembered += OnRemembered; watched.Flagged += OnFlagged; }
         }
 
         // -marchShots <dir> (with -stage): frames of the 天下图 flight for review.
@@ -423,9 +423,16 @@ namespace ThreeKingdoms.UI.Story
             ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(args[i + 1], $"march-{shot.From}-{shot.To}-{marchShot++}.png"));
         }
 
-        void OnDisable() { flight?.Dispose(); flight = null; PrologueDiorama.ReleasePreload(); if (watched != null) watched.Remembered -= OnRemembered; watched = null; }
+        void OnDisable() { flight?.Dispose(); flight = null; PrologueDiorama.ReleasePreload(); if (watched != null) { watched.Remembered -= OnRemembered; watched.Flagged -= OnFlagged; } watched = null; }
 
         void OnRemembered(Memory m) => toasts.Enqueue(ChapterText.Remembered(m.Who));
+
+        // A keepsake on the shelf (KeepsakeCatalog): one 信物入栏 toast in the memory toast's place.
+        void OnFlagged(string flag)
+        {
+            var k = KeepsakeCatalog.FromFlag(flag);
+            if (k != null) toasts.Enqueue($"信物入栏：{k.Name}");
+        }
 
         void TickToast()
         {

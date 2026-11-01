@@ -218,6 +218,7 @@ namespace ThreeKingdoms.Gameplay.Story
                 yield return Flag(HuMarket);
                 yield return Flag(HuMarket + (Has(c, HuCampRule) ? "=camp_rule" : "=liu_yu"));
                 yield return Reputation(1);
+                yield return Flag(SideQuests.KeepsakePrefix + "hu_horse_tally");
                 yield return L("system", "dlg.lb1.hu_market.keepsake");
                 yield break;
             }

@@ -207,6 +207,14 @@ namespace ThreeKingdoms.App
                 if (tabKey == "bingshut") menu.ShowListTab(1);   // 策略一览 on 武技
                 if (tabKey == "bingshuk") { menu.ShowLibraryTab(1); menu.ShowListTab(1); }   // 藏书阁 on 功法书
                 if (tab == ThreeKingdoms.UI.Menu.MainMenuHud.Tab.Equip) menu.PickFor(ThreeKingdoms.Core.Economy.EquipSlot.Weapon);
+                // menu-keepsakes / menu-keepsakes-unheld: 物品｜信物 with seven keepsakes held, as in its design image.
+                if (tabKey.StartsWith("keepsakes"))
+                {
+                    foreach (var id in new[] { "gu_sou_drumsticks", "zang_hong_draft", "bao_tao_arrow", "lu_ditou_clappers", "zhang_shiping_ledger", "pan_daqiao_tags", "chu_weng_mat" })
+                        run.Chapter2.Set(ThreeKingdoms.Gameplay.Story.SideQuests.KeepsakePrefix + id);
+                    menu.ShowItemPage(1);
+                    if (!tabKey.EndsWith("unheld")) menu.Move(0, 1);   // 臧洪盟辞底稿
+                }
                 yield break;
             }
             if (town && Panel == ThreeKingdoms.Gameplay.Story.TownStoryController.ArcheryPanel) town.OpenArchery();
