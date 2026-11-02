@@ -52,6 +52,7 @@ namespace ThreeKingdoms.UI.Menu
         void OnDisable()
         {
             if (Controller != null) { Controller.PanelOpened -= OnOpened; Controller.PanelClosed -= OnClosed; }
+            WatchKeepsakes(null);
         }
 
         void OnOpened(string p)
@@ -61,6 +62,7 @@ namespace ThreeKingdoms.UI.Menu
             generalIndex = 0;
             Message = "";
             Current = Mode.Root;
+            itemPage = 0;
             Show(Tab.Items);
         }
 
@@ -75,6 +77,7 @@ namespace ThreeKingdoms.UI.Menu
             if (tab == Tab.Bingshu) { plateSlot = 0; bingshuFocus = 0; }
             if (tab == Tab.Chronicle) sourceIndex = 0;
             if (tab == Tab.Achievements) { achIndex = 0; achScroll = 0; }
+            if (tab == Tab.Items) { keepIndex = 0; keepScroll = 0; }
         }
 
         public void NextTab(int delta)
@@ -111,7 +114,7 @@ namespace ThreeKingdoms.UI.Menu
             if (column == 0 && CurrentTab != Tab.Generals && CurrentTab != Tab.System && CurrentTab != Tab.Bingshu && CurrentTab != Tab.Chronicle && CurrentTab != Tab.Achievements) { column = 1; return; }
             switch (CurrentTab)
             {
-                case Tab.Items: ConfirmItem(); break;
+                case Tab.Items: if (KeepsakePage) Message = "信物只能观看，不能使用或出售。"; else ConfirmItem(); break;
                 case Tab.Equip: ConfirmEquip(); break;
                 case Tab.Skills: Message = SkillUseBlocked(SkillRows().ElementAtOrDefault(skillIndex)) ?? ""; break;
                 case Tab.Bingshu: ConfirmBingshu(); break;
@@ -132,6 +135,7 @@ namespace ThreeKingdoms.UI.Menu
                 case Tab.Bingshu: MoveBingshu(dx, dy); return;
                 case Tab.Chronicle: MoveChronicle(dy); return;
                 case Tab.Achievements: MoveAchievements(dx, dy); return;
+                case Tab.Items when KeepsakePage: MoveKeepsakes(dx, dy); return;
             }
             if (dx != 0)
             {
@@ -160,6 +164,8 @@ namespace ThreeKingdoms.UI.Menu
 
         void Update()
         {
+            WatchKeepsakes(Controller?.Run?.Chapter2);
+            TickKeepsakeToast();
             if (Current != Mode.Root || replaying || Time.frameCount <= openedFrame) return;
             var kb = Keyboard.current; var pad = Gamepad.current;
             if (pad != null && (pad.leftStick.ReadValue().sqrMagnitude > 0.25f || pad.dpad.ReadValue() != Vector2.zero
@@ -190,10 +196,11 @@ namespace ThreeKingdoms.UI.Menu
             else if (dir != Vector2Int.zero && Time.unscaledTime >= repeatAt) { repeatAt = Time.unscaledTime + 0.09f; Move(dir.x, dir.y); }
         }
 
-        // Y / Tab: 武将 → 技能; 兵书 cycles 命盘 / 藏书阁 / 策略一览; 系统 switches settings / saves; 史事 switches the narration.
+        // Y / Tab: 物品 ⇄ 信物; 武将 → 技能; 兵书 cycles 命盘 / 藏书阁 / 策略一览; 系统 switches settings / saves; 史事 switches the narration.
         public void Alternate()
         {
             if (CurrentTab == Tab.Generals) Show(Tab.Skills);
+            else if (CurrentTab == Tab.Items) ShowItemPage(1 - itemPage);
             else if (CurrentTab == Tab.Bingshu) bingshuFocus = (bingshuFocus + 1) % 3;
             else if (CurrentTab == Tab.System) column = column == 2 ? 1 : 2;
             else if (CurrentTab == Tab.Chronicle) ToggleNarration();
@@ -210,6 +217,7 @@ namespace ThreeKingdoms.UI.Menu
 
         void OnGUI()
         {
+            DrawKeepsakeToast();
             if (Current != Mode.Root || replaying || Controller == null || Controller.Run == null) return;
             if (paint == null)
             {
@@ -228,7 +236,10 @@ namespace ThreeKingdoms.UI.Menu
             DrawChrome();
             switch (CurrentTab)
             {
-                case Tab.Items: DrawParty(); DrawItems(); break;
+                case Tab.Items:
+                    if (KeepsakePage) DrawKeepsakes(); else { DrawParty(); DrawItems(); }
+                    DrawItemPages();
+                    break;
                 case Tab.Equip: DrawParty(); DrawEquip(); break;
                 case Tab.Skills: DrawParty(); DrawSkills(); break;
                 case Tab.Bingshu: DrawBingshu(); break;
@@ -304,6 +315,7 @@ namespace ThreeKingdoms.UI.Menu
                 case Tab.Skills: yield return ("A", "Enter", "使用"); break;
                 case Tab.Generals: yield return ("A", "Enter", "查看装备"); yield return ("Y", "Tab", "查看技能"); break;
                 case Tab.Achievements: yield return ("A", "Enter", "重看画卷"); break;
+                case Tab.Items: if (!KeepsakePage) yield return ("A", "Enter", "确认"); yield return ("Y", "Tab", KeepsakePage ? "物品" : "信物"); break;
                 case Tab.Bingshu: yield return ("A", "Enter", "镶嵌兵书"); yield return ("X", "C", "卸下"); yield return ("Y", "Tab", "切换列表"); break;
                 case Tab.Chronicle: yield return ("A", "Enter", "重看序章"); yield return ("Y", "Tab", "旁白文体"); break;
                 default: yield return ("A", "Enter", "确认"); break;

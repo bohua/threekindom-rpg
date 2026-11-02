@@ -17,6 +17,7 @@ namespace ThreeKingdoms.EditorTools
         const string SectorSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\bingshu-sector-highlights";
         const string KindsSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\bingshu-two-kinds";
         const string VacantSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\bingshu-vacant-dim";
+        const string KeepsakeSource = @"D:\BuildArtifacts\Codex\hd2d-jrpg\art\keepsake-icons";
         public const string Dir = "Assets/_Project/Art/UI/TravelMenu";
         public const string BingshuDir = "Assets/Prototypes/BingshuTactics/Art/Destiny";
 
@@ -41,6 +42,10 @@ namespace ThreeKingdoms.EditorTools
             // Dark inactive directions and the hollow empty socket (user 2026-10-26).
             if (Directory.Exists(VacantSource))
                 foreach (var src in Directory.GetFiles(VacantSource, "*.png").Where(f => Path.GetFileName(f).StartsWith("sector_dim_") || Path.GetFileName(f).StartsWith("socket_vacant")))
+                    File.Copy(src, $"{Dir}/{Path.GetFileName(src)}", true);
+            // 物品｜信物: the keepsake pictures and the busts of people without a portrait (art/keepsake-icons, 2026-11-01).
+            if (Directory.Exists(KeepsakeSource))
+                foreach (var src in Directory.GetFiles(KeepsakeSource, "keepsake_*.png"))
                     File.Copy(src, $"{Dir}/{Path.GetFileName(src)}", true);
             if (Directory.Exists(Source))
             {

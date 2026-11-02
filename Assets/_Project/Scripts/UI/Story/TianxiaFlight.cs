@@ -24,6 +24,8 @@ namespace ThreeKingdoms.UI.Story
             ["anxi"] = new Vector2(1009, 255), ["wancheng"] = new Vector2(826, 507), ["gaotang"] = new Vector2(1089, 321),
             ["suanzao"] = new Vector2(970, 380), ["hulao"] = new Vector2(888, 398), ["pingyuan"] = new Vector2(1110, 284),
             ["jieqiao"] = new Vector2(1032, 292), ["zhending"] = new Vector2(1001, 248), ["duchang"] = new Vector2(1268, 330),
+            // The other region hubs (RegionTravel's courier flies hub to hub).
+            ["julu"] = new Vector2(1014, 295), ["shanyang"] = new Vector2(1085, 370), ["linzi"] = new Vector2(1206, 350), ["xiapi"] = new Vector2(1194, 421),
         };
 
         public enum State { Locked, Open, Danger, Current, Destination }

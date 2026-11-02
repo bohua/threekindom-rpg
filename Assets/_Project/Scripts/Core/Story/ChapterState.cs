@@ -78,6 +78,8 @@ namespace ThreeKingdoms.Core.Story
         public const string Year193 = "y193", Year194 = "y194", TaishiGuest = "guest_taishi", Patrol15 = "b15", Xiapi14 = "b14";
 
         public event Action<Memory> Remembered;
+        // A flag set for the first time (the keepsake shelf's 信物入栏 toast listens for keepsake.<id>).
+        public event Action<string> Flagged;
 
         // User 2026-10-26: every ink scroll ends with the 完成 seal, and the seal unlocks that scroll's achievement,
         // kept in the save with the other chapter flags. Returns true the first time.
@@ -91,7 +93,7 @@ namespace ThreeKingdoms.Core.Story
         public IEnumerable<string> Achievements => flags.Where(f => f.StartsWith(AchievementPrefix, StringComparison.Ordinal)).Select(f => f.Substring(AchievementPrefix.Length));
 
         public bool Has(string flag) => flags.Contains(flag);
-        public void Set(string flag) { if (!string.IsNullOrEmpty(flag)) flags.Add(flag); }
+        public void Set(string flag) { if (!string.IsNullOrEmpty(flag) && flags.Add(flag)) Flagged?.Invoke(flag); }
 
         // Battle 3 won (Alpha 0.1's last battle): the chapter opens with Zou Jing's orders.
         public void OpenAfterZhuojun(bool zhuojunWon)

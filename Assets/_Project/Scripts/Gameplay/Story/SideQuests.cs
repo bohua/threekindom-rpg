@@ -11,7 +11,7 @@ namespace ThreeKingdoms.Gameplay.Story
     // memory keys follow 10_REVIEW §4 exactly. A region's quests live in SideQuests<Region>.cs.
     public static class SideQuests
     {
-        // A keepsake (信物, bible §6) is a flag plus a line; the keepsake shelf comes with its own system design.
+        // A keepsake (信物, bible §6) is a flag plus a line; the shelf (KeepsakeCatalog, 行旅 物品｜信物) shows it.
         public const string KeepsakePrefix = "keepsake.";
         public static bool HasKeepsake(ChapterState ch, string id) => ch.Has(KeepsakePrefix + id);
         public static IEnumerable<StageStep> Keepsake(string id)
