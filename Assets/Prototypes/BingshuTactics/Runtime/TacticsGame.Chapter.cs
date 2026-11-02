@@ -77,7 +77,10 @@ namespace Prototype.BingshuTactics
         public bool NoRetreatOnDefeat;
         public int Reputation;
         public RectInt? ExitZone;
-        public List<TacticsUnitDef> Reserves = new List<TacticsUnitDef>();   // 0.5：后备武将（不在地图上，可换人上阵）           // 0.4：撤离区（OpenExit 之后，我方进入即撤出战场）              // 0.3：声望（“众望”的物防加成随之增强）
+        public List<TacticsUnitDef> Reserves = new List<TacticsUnitDef>();
+        // 专属技能特写的“整个存档首次完整”：主线用存档标记回答是否看过、并在完整播放后记下（BATTLE_VFX_DESIGN 2.6）
+        public System.Func<string, bool> CutinKnown;
+        public System.Action<string> CutinSeen;   // 0.5：后备武将（不在地图上，可换人上阵）           // 0.4：撤离区（OpenExit 之后，我方进入即撤出战场）              // 0.3：声望（“众望”的物防加成随之增强）
     }
 
     public sealed partial class TacticsGame

@@ -74,7 +74,7 @@ namespace Prototype.BingshuTactics
                 FocusOn(alive[focusIndex]);
             }
 
-            var target = manual ? manualTarget : AutoTarget();
+            var target = demoFocus ?? (manual ? manualTarget : AutoTarget());
             if (!camInit) { camTarget = target; camInit = true; }
             camTarget = Vector3.SmoothDamp(camTarget, target, ref camVel, 0.25f);
 

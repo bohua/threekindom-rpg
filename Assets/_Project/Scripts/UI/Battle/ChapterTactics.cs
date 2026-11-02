@@ -59,6 +59,8 @@ namespace ThreeKingdoms.UI.Battle
             var launch = System.Environment.GetCommandLineArgs();
             def.AutoPlay = AutoPlay || System.Array.IndexOf(launch, "-chapterShots") >= 0 || System.Array.IndexOf(launch, "-hitfeelCapture") >= 0;   // hit-feel recordings too
             def.Finished = OnFinished;
+            def.CutinKnown = key => Run.Chapter2.Has("cutin:" + key);   // 技能特写：整个存档首次完整（BATTLE_VFX_DESIGN 2.6）
+            def.CutinSeen = key => Run.Chapter2.Set("cutin:" + key);
             TacticsGame.Chapter = def;
             if (!Run.IsDevelopment && Run.NextBattleId == EncounterId)
             {
