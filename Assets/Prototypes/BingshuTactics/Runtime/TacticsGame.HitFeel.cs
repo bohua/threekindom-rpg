@@ -336,6 +336,7 @@ namespace Prototype.BingshuTactics
             for (int f = 0; f < frames && !ChapterFinished; f++)
             {
                 yield return new WaitForEndOfFrame();
+                CaptureFrame = f;
                 ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, $"f{f:00000}.png"));
             }
             Debug.Log($"HITFEEL_CAPTURE done {dir} feel={HitFeelSettings.Enabled}");

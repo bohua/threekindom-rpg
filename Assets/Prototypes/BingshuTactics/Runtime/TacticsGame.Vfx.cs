@@ -95,6 +95,7 @@ namespace Prototype.BingshuTactics
             var mesh = new Mesh { name = tex };
             float y0 = flat ? -h / 2 : 0f;   // 贴地的以格子中心为中心，立着的以底边为落地点
             if (flat) pos += Vector3.up * 0.04f;
+            else pos += (cam.transform.position - pos).normalized * 0.7f;   // 沿视线往镜头前挪一点（屏幕位置不变）：贴身互砍时刀光不被相邻人物挡住
             mesh.vertices = new[] { new Vector3(-w / 2, y0, 0), new Vector3(w / 2, y0, 0), new Vector3(w / 2, y0 + h, 0), new Vector3(-w / 2, y0 + h, 0) };
             mesh.triangles = new[] { 0, 2, 1, 0, 3, 2 };
             mesh.uv = new Vector2[4];
@@ -664,6 +665,152 @@ namespace Prototype.BingshuTactics
 
         // ---------------- 演示（-vfxDemo）：在真实战场上依次播放已有素材的全部特效，供录像审看；不进入战斗循环 ----------------
         static readonly bool VfxDemoArg = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-vfxDemo") >= 0;
+        static readonly bool VfxMeleeArg = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-vfxMelee") >= 0;
+        public static int CaptureFrame;   // 录像帧号（-hitfeelCapture），演示分段用
+
+        void Seg(string name) { Log("演示：" + name); Debug.Log($"VFX_SEG {CaptureFrame} {name}"); }
+
+        // 演示用的命中：只走打击感（闪白、击退、挤压、顿帧、震屏）与飘字，不扣兵力、不改任何状态
+        void DemoHit(Unit a, Unit t, HitTier tier, float coef = 1f)
+        {
+            OpenSlot();
+            var e = MakeHitEvent(a, t, HitKind.Attack);
+            int dmg = Combat.Damage(a, t, coef, true, Element.None, HMul(a, t), InCamp(t));
+            e.Damage = dmg; e.Broke = false; e.LastBlow = tier == HitTier.Rout;
+            pendingHits.Add((e, tier, a, t));
+            popups.Add((views[t].position + Vector3.up * (1.8f * HeadK), dmg.ToString(), tier >= HitTier.Heavy ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 0.95f, 0.8f), 0f));
+        }
+
+        // 把 u 摆到 foe 旁边的空格（只改表现与站位，演示专用），两人面对面
+        bool PlaceBeside(Unit u, Unit foe, Vector2Int? prefer = null)
+        {
+            var spots = grid.Diamond(foe.Pos, 1).Where(p => p != foe.Pos && grid.In(p) && !Grid.Impassable(grid.TerrainAt(p)) && (At(p) == null || At(p) == u));
+            if (prefer.HasValue) spots = spots.OrderBy(p => Grid.Dist(p, prefer.Value));
+            var list = spots.ToList();
+            if (list.Count == 0) return false;
+            u.Pos = list[0]; views[u].position = Tile(u.Pos);
+            Face(u, Tile(foe.Pos) - Tile(u.Pos)); Face(foe, Tile(u.Pos) - Tile(foe.Pos));
+            return true;
+        }
+
+        // 演示镜头：固定对准贴身的两人并拉近（不随行动者切换而回到跟随）
+        Vector3? demoFocus;
+        void CloseCam(Unit a, Unit b) { zoomLevel = 0.38f; demoFocus = (views[a].position + views[b].position) / 2f + Vector3.up * 0.4f; }
+
+        IEnumerator Exchange(Unit a, Unit t, HitTier tier, float coef = 1f)
+        {
+            yield return Lunge(a, t.Pos);
+            DemoHit(a, t, tier, coef);
+            yield return FxWait(0.55f);
+        }
+
+        IEnumerator MeleeSkill(Unit u, Unit t, string name, HitTier tier, float coef = 1.4f)
+        {
+            var s = u.Crafts.FirstOrDefault(c => c.Name == name) ?? new SkillDef { Name = name };
+            Seg($"{u.Name}「{name}」");
+            CloseCam(u, t);
+            yield return SkillCutIn(u, s);
+            yield return Lunge(u, t.Pos);
+            yield return SkillFx(u, s, t.Pos);
+            if (name != "援护" && name != "威慑") DemoHit(u, t, tier, coef);
+            yield return FxWait(0.9f);
+        }
+
+        // -vfxDemo -vfxMelee：近战贴身演示（用户 2026-11-01：要看面对面互砍时的效果和技能）
+        IEnumerator MeleeDemo()
+        {
+            yield return FxWait(1.2f);
+            var foes = units.Where(x => x.Alive && x.Team == Team.Enemy).ToList();
+            var lubu = foes.FirstOrDefault(x => x.Name == "吕布");
+            foreach (var who in new[] { "关羽", "张飞", "赵云", "刘备" })
+            {
+                var h = units.FirstOrDefault(x => x.Alive && x.Name == who && x.Team == Team.Player);
+                if (h == null) continue;
+                var f = lubu ?? foes.Where(x => x.Alive).OrderBy(x => Grid.Dist(x.Pos, h.Pos)).First();
+                if (!PlaceBeside(h, f)) continue;
+                CloseCam(h, f);
+                active = h;
+                yield return FxWait(0.6f);
+                // 普攻互砍：普通 → 敌打我 → 重击（压制）→ 击破档 → 破将档
+                Seg($"{who} 普攻互砍"); yield return Exchange(h, f, HitTier.Normal);
+                active = f; yield return Exchange(f, h, HitTier.Normal);
+                active = h; yield return Exchange(h, f, HitTier.Heavy, 1.2f);
+                Seg($"{who} 击破、破将档"); yield return Exchange(h, f, HitTier.Break, 1.3f);
+                yield return Exchange(h, f, HitTier.Rout, 1.5f);
+                switch (who)
+                {
+                    case "关羽":
+                        yield return MeleeSkill(h, f, "突击", HitTier.Heavy);
+                        yield return MeleeSkill(h, f, "破阵", HitTier.Heavy);
+                        yield return MeleeSkill(h, f, "拖刀", HitTier.Rout, 1.8f);
+                        foreach (var g in new[] { "猛击", "刺击", "疾风骤雨" })
+                        {
+                            Seg($"通用武技「{g}」"); CloseCam(h, f);
+                            yield return Lunge(h, f.Pos); yield return SkillFx(h, new SkillDef { Name = g }, f.Pos); DemoHit(h, f, HitTier.Heavy, 1.2f); yield return FxWait(0.7f);
+                        }
+                        break;
+                    case "张飞":
+                    {
+                        // 横扫：再把两个敌人贴到张飞身边
+                        int k = 0;
+                        foreach (var o in foes.Where(x => x != f && x.Alive).OrderBy(x => Grid.Dist(x.Pos, h.Pos)).Take(2))
+                        {
+                            var free = grid.Diamond(h.Pos, 1).Where(p => p != h.Pos && grid.In(p) && !Grid.Impassable(grid.TerrainAt(p)) && At(p) == null).ToList();
+                            if (free.Count == 0) break;
+                            var spot = free[0];
+                            o.Pos = spot; views[o].position = Tile(spot); Face(o, Tile(h.Pos) - Tile(spot)); k++;
+                        }
+                        var s = h.Crafts.FirstOrDefault(c => c.Name == "横扫") ?? new SkillDef { Name = "横扫" };
+                        Seg("张飞「横扫」（身边多个敌人）"); CloseCam(h, f);
+                        yield return SkillCutIn(h, s); yield return Lunge(h, f.Pos); yield return SkillFx(h, s, f.Pos);
+                        OpenSlot();
+                        foreach (var o in foes.Where(x => x.Alive && Grid.Dist(x.Pos, h.Pos) <= 1)) { var e = MakeHitEvent(h, o, HitKind.Technique); e.Damage = 30; pendingHits.Add((e, HitTier.Heavy, h, o)); }
+                        yield return FxWait(0.9f);
+                        yield return MeleeSkill(h, f, "威慑", HitTier.Heavy);
+                        yield return MeleeSkill(h, f, "断桥", HitTier.Rout, 1.7f);
+                        break;
+                    }
+                    case "赵云":
+                        yield return MeleeSkill(h, f, "援护", HitTier.Normal);
+                        yield return MeleeSkill(h, f, "连击", HitTier.Heavy);
+                        break;
+                    case "刘备":
+                    {
+                        // 众望：刘备护住相邻友军，敌人砍友军时刘备挺身代受
+                        var ally = units.FirstOrDefault(x => x.Alive && x.Team == Team.Player && x != h && !x.Ai);
+                        if (ally == null) break;
+                        PlaceBeside(ally, f); PlaceBeside(h, f, ally.Pos);
+                        var s = h.Crafts.FirstOrDefault(c => c.Name == "众望") ?? new SkillDef { Name = "众望" };
+                        Seg("刘备「众望」替友军挡刀"); CloseCam(h, f);
+                        yield return SkillCutIn(h, s); yield return Lunge(h, ally.Pos); yield return SkillFx(h, s, ally.Pos);
+                        yield return FxWait(0.5f);
+                        active = f; yield return Lunge(f, ally.Pos);
+                        popups.Add((views[h].position + Vector3.up * (2.5f * HeadK), "众望·代受", new Color(0.55f, 0.9f, 1f), 0f));
+                        coveredBy = h; DemoHit(f, h, HitTier.Normal);
+                        yield return FxWait(0.9f);
+                        break;
+                    }
+                }
+            }
+            if (lubu != null)
+            {
+                var near = units.Where(x => x.Alive && x.Team == Team.Player).OrderBy(x => Grid.Dist(x.Pos, lubu.Pos)).First();
+                PlaceBeside(near, lubu);
+                var ws = lubu.Crafts.FirstOrDefault(c => c.Name == "天下无双") ?? new SkillDef { Name = "天下无双" };
+                Seg($"吕布「天下无双」对贴身的{near.Name}"); CloseCam(near, lubu); active = lubu;
+                enemyCutinsShown.Clear();
+                yield return SkillCutIn(lubu, ws); yield return Lunge(lubu, near.Pos); yield return SkillFx(lubu, ws, near.Pos);
+                DemoHit(lubu, near, HitTier.Heavy, 1.3f);
+                yield return FxWait(1.0f);
+                Seg("合体技「三英」"); active = near;
+                yield return SanYingFx(near, lubu);
+                DemoHit(near, lubu, HitTier.Rout, 2f);
+                yield return FxWait(1.2f);
+            }
+            Seg("结束");
+            yield return FxWait(0.8f);
+            Application.Quit();
+        }
 
         IEnumerator VfxDemo()
         {
