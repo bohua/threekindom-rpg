@@ -54,5 +54,12 @@ public sealed class KeepsakeShelfTests
         Assert.IsFalse(menu.KeepsakePage, "and back to 物品");
         menu.Back();
         Assert.AreEqual(MainMenuHud.Mode.Closed, menu.Current);
+
+        // In the town (no StageHud) the menu shows the 信物入栏 toast itself: the rubbing kept at Lu's house.
+        c.Run.Chapter2.Set(SideQuests.KeepsakePrefix + "shijing_copy");
+        // The seven set above queue first (two seconds each); the rubbing's toast comes last.
+        float deadline = Time.unscaledTime + 25f;
+        while (menu.ShownKeepsakeToast != "信物入栏：石经摹本" && Time.unscaledTime < deadline) yield return null;
+        Assert.AreEqual("信物入栏：石经摹本", menu.ShownKeepsakeToast);
     }
 }

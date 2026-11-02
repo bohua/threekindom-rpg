@@ -10,27 +10,27 @@ namespace ThreeKingdoms.Gameplay.Story
     // script v1.1, Chapter1Chronicle; nobody else builds the travel). The main line always has a home: the walkable
     // scene of its current step (Pingyuan in 191–193, Xiapi in 194 …). From home or from any open region, a post-station
     // courier opens the realm map's list of the regions open this year; going back home returns to the step's scene.
-    // Steps without a walkable home (story stages, battles) have no travel. The flight over the 3D 天下图 (PR #37,
-    // TianxiaFlight) is to play between the two scenes once that branch is merged; until then a fade.
+    // Steps without a walkable home (story stages, battles) have no travel. Between the two scenes the party flies over
+    // the 3D 天下图 (a March step: StageHud plays TianxiaFlight from the region hub here to the one there).
     public static class RegionTravel
     {
         public sealed class Region
         {
-            public readonly string Id, Name, Scene;
-            public Region(string id, string name, string scene) { Id = id; Name = name; Scene = scene; }
+            public readonly string Id, Name, Scene, Place;   // Place: its hub on the 天下图 (tianxia_regions.json)
+            public Region(string id, string name, string scene, string place) { Id = id; Name = name; Scene = scene; Place = place; }
         }
 
         public static readonly IReadOnlyList<Region> Regions = new[]
         {
-            new Region(Chapter1Chronicle.R1, "涿蓟", "Region_R1"),
-            new Region(Chapter1Chronicle.R2, "中山常山", "Zhongshan_Region"),
-            new Region(Chapter1Chronicle.R3, "巨鹿魏郡", "Region_R3"),
-            new Region(Chapter1Chronicle.R4, "渤海平原", GameRun.BohaiScene),
-            new Region(Chapter1Chronicle.R5a, "酸枣虎牢", "Region_R5A"),
-            new Region(Chapter1Chronicle.R5b, "洛阳", "Region_R5B"),
-            new Region(Chapter1Chronicle.R6, "兖州", "Region_R6"),
-            new Region(Chapter1Chronicle.R7, "青州", "Region_R7"),
-            new Region(Chapter1Chronicle.R8, "徐州", "Region_R8"),
+            new Region(Chapter1Chronicle.R1, "涿蓟", "Region_R1", "zhuojun"),
+            new Region(Chapter1Chronicle.R2, "中山常山", "Zhongshan_Region", "zhending"),
+            new Region(Chapter1Chronicle.R3, "巨鹿魏郡", "Region_R3", "julu"),
+            new Region(Chapter1Chronicle.R4, "渤海平原", GameRun.BohaiScene, "pingyuan"),
+            new Region(Chapter1Chronicle.R5a, "酸枣虎牢", "Region_R5A", "suanzao"),
+            new Region(Chapter1Chronicle.R5b, "洛阳", "Region_R5B", "luoyang"),
+            new Region(Chapter1Chronicle.R6, "兖州", "Region_R6", "shanyang"),
+            new Region(Chapter1Chronicle.R7, "青州", "Region_R7", "linzi"),
+            new Region(Chapter1Chronicle.R8, "徐州", "Region_R8", "xiapi"),
         };
 
         // Every region scene has this spot at its post station (ChapterFieldBuilderRegions).
@@ -92,12 +92,13 @@ namespace ThreeKingdoms.Gameplay.Story
         {
             string here = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name, home = Home(ch);
             var targets = new List<(string label, StageStep[] go)>();
-            if (here != home) targets.Add(("raw:回" + HomeName(ch), GoHome(home)));
+            string from = PlaceOf(here), year = YearKey(ch);
+            if (here != home) targets.Add(("raw:回" + HomeName(ch), GoHome(home, from, year)));
             foreach (var id in Open(ch))
             {
                 var r = ById(id);
                 if (r.Scene == here || r.Scene == home || !Application.CanStreamedLevelBeLoaded(r.Scene)) continue;
-                targets.Add(("raw:前往" + r.Name + (Danger(ch, id) ? "（危险区域）" : ""), Go(r)));
+                targets.Add(("raw:前往" + r.Name + (Danger(ch, id) ? "（危险区域）" : ""), Go(r, from, year)));
             }
             return targets;
         }
@@ -118,16 +119,29 @@ namespace ThreeKingdoms.Gameplay.Story
             GameRun.GongsunScene => "公孙瓒营", GameRun.SuanzaoScene => "酸枣大营", GameRun.BohaiScene => "平原", GameRun.XiapiScene => "下邳", _ => "主线所在地",
         };
 
-        static StageStep[] Go(Region r) => new[]
+        // Where a scene sits on the 天下图: a region's hub, or the main line's home camp or town.
+        public static string PlaceOf(string scene) => ByScene(scene)?.Place ?? scene switch
         {
-            Call(() => RegionPortal.SetArrival(PostArrival, Vector3.forward)),
-            Fade(1f), Load(r.Scene),
+            GameRun.GongsunScene => "ji", GameRun.SuanzaoScene => "suanzao", GameRun.XiapiScene => "xiapi", _ => null,
         };
 
-        static StageStep[] GoHome(string home) => new[]
+        // The year the flight shows (year.<n> of the run's chronicle node).
+        public static string YearKey(ChapterState ch) => "year." + ch.Year;
+
+        // The flight first, then a fade into the region (the flight's own mist closes in at its end).
+        static StageStep Flight(string from, string to, string year) =>
+            from != null && to != null && from != to ? March(from, to, year) : Call(() => { });
+
+        static StageStep[] Go(Region r, string from, string year) => new[]
         {
-            Call(() => { if (GameRun.Current != null) GameRun.Current.NextArrival = GameRun.Arrival.ReturnFromBattle; }),
-            Fade(1f), Load(home),
+            // The arrival is asked for after the flight, just before the load, so nothing on the way can take it.
+            Flight(from, r.Place, year), Call(() => RegionPortal.SetArrival(PostArrival, Vector3.forward)), Fade(1f), Load(r.Scene),
+        };
+
+        static StageStep[] GoHome(string home, string from, string year) => new[]
+        {
+            Flight(from, PlaceOf(home), year),
+            Call(() => { if (GameRun.Current != null) GameRun.Current.NextArrival = GameRun.Arrival.ReturnFromBattle; }), Fade(1f), Load(home),
         };
     }
 }

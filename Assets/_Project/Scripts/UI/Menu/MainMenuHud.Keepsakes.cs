@@ -104,21 +104,65 @@ namespace ThreeKingdoms.UI.Menu
         }
 
         // The bound person: their own keepsake bust if the shelf has one, else the dialogue portrait's head and chest.
+        // On a card it is round with a silver ring, as in the design image (art/keepsake-shelf-ui).
         void PersonHead(float x, float y, float s, KeepsakeCatalog.Entry e, bool round)
         {
             var p = paint;
             var r = p.R(x, y, s, s);
-            if (round) p.Disc(p.P(x + s / 2, y + s / 2), s * 0.52f * p.K, SilverA(0.55f));
-            if (p.Icon(r, "keepsake_bust_" + e.Who, ScaleMode.ScaleAndCrop)) return;
-            if (Portraits != null && Portraits.TryGet(e.Who, out var entry) && entry.Texture)
+            Texture src = p.Art("keepsake_bust_" + e.Who);
+            var uv = new Rect(0, 0, 1, 1);
+            if (!src && Portraits != null && Portraits.TryGet(e.Who, out var entry) && entry.Texture)
             {
-                float aspect = entry.Texture.width / (float)entry.Texture.height;
-                float w = 0.46f, h = w * aspect;
-                GUI.DrawTextureWithTexCoords(r, entry.Texture, new Rect(Mathf.Clamp01(entry.Axis - w / 2), 1f - h - 0.04f, w, h));
+                src = entry.Texture;
+                float w = 0.46f, h = w * entry.Texture.width / entry.Texture.height;
+                uv = new Rect(Mathf.Clamp01(entry.Axis - w / 2), 1f - h - 0.04f, w, h);
+            }
+            if (!src)
+            {
+                p.Disc(p.P(x + s / 2, y + s / 2), s * 0.48f * p.K, new Color(0.16f, 0.25f, 0.34f));
+                p.Text(x, y, s, s, e.WhoName.Substring(0, 1), s * 0.5f, MenuPaint.Ivory, TextAnchor.MiddleCenter, true);
                 return;
             }
-            p.Disc(p.P(x + s / 2, y + s / 2), s * 0.48f * p.K, new Color(0.16f, 0.25f, 0.34f));
-            p.Text(x, y, s, s, e.WhoName.Substring(0, 1), s * 0.5f, MenuPaint.Ivory, TextAnchor.MiddleCenter, true);
+            if (!round)
+            {
+                if (src is Texture2D && uv.width >= 1f) GUI.DrawTexture(r, src, ScaleMode.ScaleAndCrop);
+                else GUI.DrawTextureWithTexCoords(r, src, uv);
+                return;
+            }
+            p.Disc(p.P(x + s / 2, y + s / 2), s * 0.53f * p.K, SilverA(0.7f));
+            GUI.DrawTexture(r, RoundHead(e.Who, src, uv), ScaleMode.StretchToFill);
+        }
+
+        readonly System.Collections.Generic.Dictionary<string, Texture2D> roundHeads = new System.Collections.Generic.Dictionary<string, Texture2D>();
+
+        // A circular crop of the head, made once per person: blit the head into a small render texture, read it back
+        // and clear the corners (the source textures are not readable, and IMGUI has no masks).
+        Texture2D RoundHead(string who, Texture src, Rect uv)
+        {
+            if (roundHeads.TryGetValue(who, out var done) && done) return done;
+            const int n = 128;
+            var rt = RenderTexture.GetTemporary(n, n, 0, RenderTextureFormat.ARGB32);
+            var was = RenderTexture.active;
+            Graphics.Blit(src, rt, new Vector2(uv.width, uv.height), new Vector2(uv.x, uv.y));
+            RenderTexture.active = rt;
+            var t = new Texture2D(n, n, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            t.ReadPixels(new Rect(0, 0, n, n), 0, 0);
+            RenderTexture.active = was;
+            RenderTexture.ReleaseTemporary(rt);
+            var px = t.GetPixels32();
+            float c = (n - 1) / 2f, radius = n / 2f - 1f;
+            for (int yy = 0; yy < n; yy++)
+            for (int xx = 0; xx < n; xx++)
+            {
+                float d = Mathf.Sqrt((xx - c) * (xx - c) + (yy - c) * (yy - c));
+                var q = px[yy * n + xx];
+                q.a = (byte)(q.a * Mathf.Clamp01(radius - d));
+                px[yy * n + xx] = q;
+            }
+            t.SetPixels32(px);
+            t.Apply();
+            roundHeads[who] = t;
+            return t;
         }
 
         void DrawKeepsakeDetail(KeepsakeCatalog.Entry e, int got, int total)
@@ -151,6 +195,55 @@ namespace ThreeKingdoms.UI.Menu
             p.Text(1100, 648, 520, 64, e.Origin, 20, MenuPaint.Ivory, TextAnchor.UpperLeft, false, true);
             p.Text(1036, 712, 70, 34, "描述：", 19, MenuPaint.Mist);
             p.Text(1100, 712, 520, 64, e.Description, 20, MenuPaint.Ivory, TextAnchor.UpperLeft, false, true);
+        }
+
+        // 信物入栏 where no StageHud shows it (the town of Zhuojun: the stone-classic rubbing kept at Lu's house). Same place
+        // and look as StageHud's memory toast: bottom right, a silver-edged panel, a cyan diamond, two seconds.
+        ThreeKingdoms.Core.Story.ChapterState keepWatched;
+        readonly System.Collections.Generic.Queue<string> keepToasts = new System.Collections.Generic.Queue<string>();
+        string keepToast; float keepToastUntil;
+        public string ShownKeepsakeToast => keepToast;
+
+        void WatchKeepsakes(ThreeKingdoms.Core.Story.ChapterState ch)
+        {
+            if (ch == keepWatched) return;
+            if (keepWatched != null) keepWatched.Flagged -= OnKeepsakeFlag;
+            keepWatched = ch;
+            if (keepWatched != null) keepWatched.Flagged += OnKeepsakeFlag;
+        }
+
+        void OnKeepsakeFlag(string flag)
+        {
+            var k = KeepsakeCatalog.FromFlag(flag);
+            if (k != null && FindFirstObjectByType<ThreeKingdoms.UI.Story.StageHud>() == null) keepToasts.Enqueue($"信物入栏：{k.Name}");
+        }
+
+        void TickKeepsakeToast()
+        {
+            if (keepToast != null && Time.unscaledTime >= keepToastUntil) keepToast = null;
+            if (keepToast == null && keepToasts.Count > 0) { keepToast = keepToasts.Dequeue(); keepToastUntil = Time.unscaledTime + 2f; }
+        }
+
+        void DrawKeepsakeToast()
+        {
+            if (keepToast == null || Current == Mode.Root) return;
+            float k = Screen.height / 1080f;
+            var text = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(22 * k), alignment = TextAnchor.MiddleLeft, richText = false };
+            text.normal.textColor = MenuPaint.Ivory;
+            float w = text.CalcSize(new GUIContent(keepToast)).x + 76 * k, h = 52 * k;
+            var r = new Rect(Screen.width - 40 * k - w, Screen.height - 230 * k - h, w, h);
+            GUI.depth = -10;
+            var o = GUI.color;
+            GUI.color = new Color(0.063f, 0.110f, 0.188f, 0.92f); GUI.DrawTexture(r, Texture2D.whiteTexture);
+            GUI.color = MenuPaint.Silver;
+            float b = Mathf.Max(1f, 2 * k);
+            GUI.DrawTexture(new Rect(r.x, r.y, r.width, b), Texture2D.whiteTexture); GUI.DrawTexture(new Rect(r.x, r.yMax - b, r.width, b), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.x, r.y, b, r.height), Texture2D.whiteTexture); GUI.DrawTexture(new Rect(r.xMax - b, r.y, b, r.height), Texture2D.whiteTexture);
+            GUI.color = o;
+            var mark = new GUIStyle(text) { fontSize = Mathf.RoundToInt(18 * k) };
+            mark.normal.textColor = MenuPaint.Cyan;
+            GUI.Label(new Rect(r.x + 22 * k, r.y, 24 * k, h), "◆", mark);
+            GUI.Label(new Rect(r.x + 50 * k, r.y, w - 50 * k, h), keepToast, text);
         }
     }
 }

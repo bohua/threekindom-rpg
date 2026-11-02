@@ -52,6 +52,7 @@ namespace ThreeKingdoms.UI.Menu
         void OnDisable()
         {
             if (Controller != null) { Controller.PanelOpened -= OnOpened; Controller.PanelClosed -= OnClosed; }
+            WatchKeepsakes(null);
         }
 
         void OnOpened(string p)
@@ -163,6 +164,8 @@ namespace ThreeKingdoms.UI.Menu
 
         void Update()
         {
+            WatchKeepsakes(Controller?.Run?.Chapter2);
+            TickKeepsakeToast();
             if (Current != Mode.Root || replaying || Time.frameCount <= openedFrame) return;
             var kb = Keyboard.current; var pad = Gamepad.current;
             if (pad != null && (pad.leftStick.ReadValue().sqrMagnitude > 0.25f || pad.dpad.ReadValue() != Vector2.zero
@@ -214,6 +217,7 @@ namespace ThreeKingdoms.UI.Menu
 
         void OnGUI()
         {
+            DrawKeepsakeToast();
             if (Current != Mode.Root || replaying || Controller == null || Controller.Run == null) return;
             if (paint == null)
             {
